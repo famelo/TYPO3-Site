@@ -1,0 +1,8 @@
+/fileadmin/
+/uploads/
+
+/typo3temp/
+
+/typo3conf/temp_CACHED*
+/typo3conf/temp_fieldInfo.php
+/typo3conf/ENABLE_INSTALL_TOOL
