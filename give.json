@@ -1,0 +1,22 @@
+{
+  "variables": [
+    {
+      "name": "site_name",
+      "question": "Please specify a name for this site",
+      "default": "New TYPO3 site"
+    }
+  ],
+  "replacements": [
+    {
+      "search": "'sitename' => 'New TYPO3 site',",
+      "replace": "'sitename' => '{{site_name}}',",
+      "name": "LocalConfiguration.php"
+    }
+  ],
+  "submodules": [
+    {
+      "module": "famelo/TYPO3",
+      "path": "typo3conf/ext/"
+    }
+  ]
+}
