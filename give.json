@@ -4,6 +4,11 @@
       "name": "site_name",
       "question": "Please specify a name for this site",
       "default": "New TYPO3 site"
+    },
+    {
+      "name": "template_name",
+      "question": "Please specify a name for the template",
+      "default": "template"
     }
   ],
   "replacements": [
@@ -16,7 +21,10 @@
   "submodules": [
     {
       "module": "famelo/TYPO3",
-      "path": "typo3conf/ext/"
+      "path": "typo3conf/ext/{{template_name}}",
+      "variables": {
+        "name": "{{template_name}}"
+      }
     }
   ]
 }
