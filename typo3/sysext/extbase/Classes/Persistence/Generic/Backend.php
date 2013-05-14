@@ -267,6 +267,7 @@ class Backend implements \TYPO3\CMS\Extbase\Persistence\Generic\BackendInterface
 		} else {
 			$query = $this->persistenceManager->createQueryForType($className);
 			$query->getQuerySettings()->setRespectStoragePage(FALSE);
+			$query->getQuerySettings()->setRespectSysLanguage(FALSE);
 			return $query->matching($query->equals('uid', $identifier))->execute()->getFirst();
 		}
 	}
@@ -361,6 +362,9 @@ class Backend implements \TYPO3\CMS\Extbase\Persistence\Generic\BackendInterface
 	protected function persistObjects() {
 		$this->visitedDuringPersistence = new \TYPO3\CMS\Extbase\Persistence\ObjectStorage();
 		foreach ($this->aggregateRootObjects as $object) {
+			if ($object->_isNew()) {
+				$this->insertObject($object);
+			}
 			$this->persistObject($object, NULL);
 		}
 		foreach ($this->changedEntities as $object) {

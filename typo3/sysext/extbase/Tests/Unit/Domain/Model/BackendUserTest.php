@@ -81,64 +81,6 @@ class BackendUserTest extends \TYPO3\CMS\Extbase\Tests\Unit\BaseTestCase {
 	/**
 	 * @test
 	 */
-	public function getBackendUserGroupsInitiallyReturnsEmptyStorage() {
-		$this->assertEquals(new \TYPO3\CMS\Extbase\Persistence\ObjectStorage(), $this->fixture->getBackendUserGroups());
-	}
-
-	/**
-	 * @test
-	 */
-	public function setBackendUserGroupsSetsBackendUserGroups() {
-		$backendUserGroups = new \TYPO3\CMS\Extbase\Persistence\ObjectStorage();
-		$group1 = new \TYPO3\CMS\Extbase\Domain\Model\BackendUserGroup();
-		$backendUserGroups->attach($group1);
-
-		$this->fixture->setBackendUserGroups($backendUserGroups);
-		$this->assertSame(
-			$backendUserGroups,
-			$this->fixture->getBackendUserGroups()
-		);
-	}
-
-	/**
-	 * @test
-	 */
-	public function addBackendUserGroupAddsBackendUserGroup() {
-		$group1 = new \TYPO3\CMS\Extbase\Domain\Model\BackendUserGroup();
-
-		$this->fixture->addBackendUserGroup($group1);
-		$this->assertTrue($this->fixture->getBackendUserGroups()->contains($group1));
-	}
-
-	/**
-	 * @test
-	 */
-	public function removeBackendUserGroupRemovesBackendUserGroup() {
-		$group1 = new \TYPO3\CMS\Extbase\Domain\Model\BackendUserGroup();
-
-		$this->fixture->addBackendUserGroup($group1);
-		$this->fixture->removeBackendUserGroup($group1);
-		$this->assertFalse($this->fixture->getBackendUserGroups()->contains($group1));
-	}
-
-	/**
-	 * @test
-	 */
-	public function removeAllBackendUserGroupsRemovesAllBackendUserGroups() {
-		$group1 = new \TYPO3\CMS\Extbase\Domain\Model\BackendUserGroup();
-		$group2 = new \TYPO3\CMS\Extbase\Domain\Model\BackendUserGroup();
-
-		$this->fixture->addBackendUserGroup($group1);
-		$this->fixture->addBackendUserGroup($group2);
-		$this->fixture->removeAllBackendUserGroups();
-
-		$this->assertFalse($this->fixture->getBackendUserGroups()->contains($group1));
-		$this->assertFalse($this->fixture->getBackendUserGroups()->contains($group2));
-	}
-
-	/**
-	 * @test
-	 */
 	public function getIsDisabledInitiallyReturnsFalse() {
 		$this->assertFalse($this->fixture->getIsDisabled());
 	}
@@ -326,62 +268,6 @@ class BackendUserTest extends \TYPO3\CMS\Extbase\Tests\Unit\BaseTestCase {
 		$date = new \DateTime();
 		$this->fixture->setLastLoginDateAndTime($date);
 		$this->assertSame($date, $this->fixture->getLastLoginDateAndTime());
-	}
-
-	/**
-	 * @test
-	 */
-	public function getFileMountsInitiallyReturnsEmpty() {
-		$this->assertSame(0, $this->fixture->getFileMounts()->count());
-	}
-
-	/**
-	 * @test
-	 */
-	public function setFileMountsSetsFileMounts() {
-		$fileMounts = new \TYPO3\CMS\Extbase\Persistence\ObjectStorage();
-		$this->fixture->setFileMounts($fileMounts);
-
-		$this->assertSame(
-			$fileMounts,
-			$this->fixture->getFileMounts()
-		);
-	}
-
-	/**
-	 * @test
-	 */
-	public function addFileMountAddsFileMount() {
-		$fileMount = new \TYPO3\CMS\Extbase\Domain\Model\FileMount();
-
-		$this->fixture->addFileMount($fileMount);
-		$this->assertTrue($this->fixture->getFileMounts()->contains($fileMount));
-	}
-
-	/**
-	 * @test
-	 */
-	public function removeFileMountRemovesFileMount() {
-		$fileMount = new \TYPO3\CMS\Extbase\Domain\Model\FileMount();
-
-		$this->fixture->addFileMount($fileMount);
-		$this->fixture->removeFileMount($fileMount);
-		$this->assertFalse($this->fixture->getFileMounts()->contains($fileMount));
-	}
-
-	/**
-	 * @test
-	 */
-	public function removeAllFileMountsRemovesAllFileMounts() {
-		$fileMount = new \TYPO3\CMS\Extbase\Domain\Model\FileMount();
-		$fileMount2 = new \TYPO3\CMS\Extbase\Domain\Model\FileMount();
-
-		$this->fixture->addFileMount($fileMount);
-		$this->fixture->addFileMount($fileMount2);
-		$this->fixture->removeAllFileMounts();
-
-		$this->assertFalse($this->fixture->getFileMounts()->contains($fileMount));
-		$this->assertFalse($this->fixture->getFileMounts()->contains($fileMount2));
 	}
 }
 

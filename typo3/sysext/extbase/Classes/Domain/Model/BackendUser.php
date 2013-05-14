@@ -46,11 +46,6 @@ class BackendUser extends \TYPO3\CMS\Extbase\DomainObject\AbstractEntity {
 	protected $isAdministrator = FALSE;
 
 	/**
-	 * @var \TYPO3\CMS\Extbase\Persistence\ObjectStorage<\TYPO3\CMS\Extbase\Domain\Model\BackendUserGroup>
-	 */
-	protected $backendUserGroups = NULL;
-
-	/**
 	 * @var boolean
 	 */
 	protected $isDisabled = FALSE;
@@ -81,31 +76,9 @@ class BackendUser extends \TYPO3\CMS\Extbase\DomainObject\AbstractEntity {
 	protected $lastLoginDateAndTime;
 
 	/**
-	 * @var \TYPO3\CMS\Extbase\Persistence\ObjectStorage<\TYPO3\CMS\Extbase\Domain\Model\FileMount>
-	 */
-	protected $fileMounts = NULL;
-
-	/**
 	 * @var boolean
 	 */
 	protected $ipLockIsDisabled = FALSE;
-
-	/**
-	 * Constructs this backend user
-	 */
-	public function __construct() {
-		$this->initializeObject();
-	}
-
-	/**
-	 * Initialize object
-	 *
-	 * @return void
-	 */
-	public function initializeObject() {
-		$this->fileMounts = new \TYPO3\CMS\Extbase\Persistence\ObjectStorage();
-		$this->backendUserGroups = new \TYPO3\CMS\Extbase\Persistence\ObjectStorage();
-	}
 
 	/**
 	 * Gets the user name.
@@ -143,54 +116,6 @@ class BackendUser extends \TYPO3\CMS\Extbase\DomainObject\AbstractEntity {
 	 */
 	public function setIsAdministrator($isAdministrator) {
 		$this->isAdministrator = $isAdministrator;
-	}
-
-	/**
-	 * Getter for the backend user groups
-	 *
-	 * @return \TYPO3\CMS\Extbase\Persistence\ObjectStorage<\TYPO3\CMS\Extbase\Domain\Model\BackendUserGroup>
-	 */
-	public function getBackendUserGroups() {
-		return $this->backendUserGroups;
-	}
-
-	/**
-	 * Setter for the backend user groups
-	 *
-	 * @param \TYPO3\CMS\Extbase\Persistence\ObjectStorage $backendUserGroups
-	 * @return void
-	 */
-	public function setBackendUserGroups(\TYPO3\CMS\Extbase\Persistence\ObjectStorage $backendUserGroups) {
-		$this->backendUserGroups = $backendUserGroups;
-	}
-
-	/**
-	 * Adds a backend user group to this backend user
-	 *
-	 * @param \TYPO3\CMS\Extbase\Domain\Model\BackendUserGroup $backendUserGroup
-	 * @return void
-	 */
-	public function addBackendUserGroup(\TYPO3\CMS\Extbase\Domain\Model\BackendUserGroup $backendUserGroup) {
-		$this->backendUserGroups->attach($backendUserGroup);
-	}
-
-	/**
-	 * Removes backend user group from this backend user
-	 *
-	 * @param \TYPO3\CMS\Extbase\Domain\Model\BackendUserGroup $backendUserGroup
-	 * @return void
-	 */
-	public function removeBackendUserGroup(\TYPO3\CMS\Extbase\Domain\Model\BackendUserGroup $backendUserGroup) {
-		$this->backendUserGroups->detach($backendUserGroup);
-	}
-
-	/**
-	 * Remove all backend user groups from this backend user
-	 *
-	 * @return void
-	 */
-	public function removeAllBackendUserGroups() {
-		$this->backendUserGroups = new \TYPO3\CMS\Extbase\Persistence\ObjectStorage();
 	}
 
 	/**
@@ -360,54 +285,6 @@ class BackendUser extends \TYPO3\CMS\Extbase\DomainObject\AbstractEntity {
 	 */
 	public function setLastLoginDateAndTime(\DateTime $dateAndTime = NULL) {
 		$this->lastLoginDateAndTime = $dateAndTime;
-	}
-
-	/**
-	 * Setter for the file mounts
-	 *
-	 * @param \TYPO3\CMS\Extbase\Persistence\ObjectStorage $fileMounts
-	 * @return void
-	 */
-	public function setFileMounts(\TYPO3\CMS\Extbase\Persistence\ObjectStorage $fileMounts) {
-		$this->fileMounts = $fileMounts;
-	}
-
-	/**
-	 * Adds a file mount to this backend user
-	 *
-	 * @param \TYPO3\CMS\Extbase\Domain\Model\FileMount $fileMount
-	 * @return void
-	 */
-	public function addFileMount(\TYPO3\CMS\Extbase\Domain\Model\FileMount $fileMount) {
-		$this->fileMounts->attach($fileMount);
-	}
-
-	/**
-	 * Removes file mount from this backend user
-	 *
-	 * @param \TYPO3\CMS\Extbase\Domain\Model\FileMount $fileMount
-	 * @return void
-	 */
-	public function removeFileMount(\TYPO3\CMS\Extbase\Domain\Model\FileMount $fileMount) {
-		$this->fileMounts->detach($fileMount);
-	}
-
-	/**
-	 * Remove all file mounts from this backend user
-	 *
-	 * @return void
-	 */
-	public function removeAllFileMounts() {
-		$this->fileMounts = new \TYPO3\CMS\Extbase\Persistence\ObjectStorage();
-	}
-
-	/**
-	 * Getter of file mounts
-	 *
-	 * @return \TYPO3\CMS\Extbase\Persistence\ObjectStorage
-	 */
-	public function getFileMounts() {
-		return $this->fileMounts;
 	}
 }
 

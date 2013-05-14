@@ -37,14 +37,12 @@ config.tx_extbase {
 					columns {
 						username.mapOnProperty = userName
 						admin.mapOnProperty = isAdministrator
-						usergroup.mapOnProperty = backendUserGroups
 						disable.mapOnProperty = isDisabled
 						realName.mapOnProperty = realName
 						starttime.mapOnProperty = startDateAndTime
 						endtime.mapOnProperty = endDateAndTime
 						disableIPlock.mapOnProperty = ipLockIsDisabled
 						lastlogin.mapOnProperty = lastLoginDateAndTime
-						file_mountpoints.mapOnProperty = fileMounts
 					}
 				}
 			}
