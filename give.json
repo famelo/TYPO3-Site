@@ -15,7 +15,17 @@
     {
       "search": "'sitename' => 'New TYPO3 site',",
       "replace": "'sitename' => '{{site_name}}',",
-      "name": "LocalConfiguration.php"
+      "name": "AdditionalFactoryConfiguration.php"
+    },
+    {
+      "search": "'template',",
+      "replace": "'{{template_name}}',",
+      "name": "AdditionalFactoryConfiguration.php"
+    },
+    {
+      "search": "EXT:template/",
+      "replace": "EXT:{{template_name}}/",
+      "name": "Template.sql"
     }
   ],
   "submodules": [
