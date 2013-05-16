@@ -1,6 +1,3 @@
-[submodule "typo3conf/ext/template"]
-	path = typo3conf/ext/template
-	url = https://github.com/famelo/TYPO3.git
 [submodule "typo3conf/ext/flux"]
 	path = typo3conf/ext/flux
 	url = git://github.com/FluidTYPO3/flux.git
