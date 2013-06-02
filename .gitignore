@@ -9,3 +9,5 @@
 /typo3conf/realurl_autoconf.php
 /typo3conf/LocalConfiguration.php
 typo3conf/ext/template
+/typo3conf/ext/kickstarter/
+/typo3conf/ext/extension_builder/
