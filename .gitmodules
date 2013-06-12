@@ -10,3 +10,6 @@
 [submodule "typo3conf/ext/vhs"]
 	path = typo3conf/ext/vhs
 	url = git@github.com:mneuhaus/vhs.git
+[submodule "typo3conf/ext/autoswitchtolistview"]
+	path = typo3conf/ext/autoswitchtolistview
+	url = git://github.com/georgringer/autoswitchtolistview.git
