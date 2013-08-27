@@ -22,7 +22,7 @@
 *
 *  This copyright notice MUST APPEAR in all copies of the script!
 *
-*  $Id: class.tx_devlog.php 27926 2009-12-21 21:25:11Z francois $
+*  $Id: class.tx_devlog.php 75578 2013-05-28 13:07:32Z francois $
 ***************************************************************/
 
 

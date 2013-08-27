@@ -622,6 +622,11 @@ class TypoScriptFrontendController {
 	public $anchorPrefix = '';
 
 	/**
+	 * IDs we already rendered for this page (to make sure they are unique)
+	 */
+	private $usedUniqueIds = array();
+
+	/**
 	 * Page content render object
 	 *
 	 * @var \TYPO3\CMS\Frontend\ContentObject\ContentObjectRenderer
@@ -906,7 +911,8 @@ class TypoScriptFrontendController {
 		$this->fe_user->checkPid = $this->TYPO3_CONF_VARS['FE']['checkFeUserPid'];
 		$this->fe_user->lifetime = intval($this->TYPO3_CONF_VARS['FE']['lifetime']);
 		// List of pid's acceptable
-		$this->fe_user->checkPid_value = $GLOBALS['TYPO3_DB']->cleanIntList(\TYPO3\CMS\Core\Utility\GeneralUtility::_GP('pid'));
+		$pid = \TYPO3\CMS\Core\Utility\GeneralUtility::_GP('pid');
+		$this->fe_user->checkPid_value = $pid ? $GLOBALS['TYPO3_DB']->cleanIntList($pid) : 0;
 		// Check if a session is transferred:
 		if (\TYPO3\CMS\Core\Utility\GeneralUtility::_GP('FE_SESSION_KEY')) {
 			$fe_sParts = explode('-', \TYPO3\CMS\Core\Utility\GeneralUtility::_GP('FE_SESSION_KEY'));
@@ -2454,11 +2460,19 @@ class TypoScriptFrontendController {
 	 * @param integer $TCAloaded Probably, keep hands of this value. Just don't set it.
 	 * @return void
 	 * @see getCompressedTCarray()
-	 * @deprecated since 6.1, will be removed in two versions
+	 * @deprecated since 6.1, will be removed in two versions. Obsolete in regular frontend, eid scripts should use \TYPO3\CMS\Frontend\Utility\EidUtility::initTCA()
 	 */
 	public function includeTCA($TCAloaded = 1) {
 		// Full TCA is always loaded during bootstrap in FE, this method is obsolete.
 		\TYPO3\CMS\Core\Utility\GeneralUtility::logDeprecatedFunction();
+
+		// Compatibility layer:
+		// The if below is NOT true in usual frontend (non eid) context, TCA is loaded by bootstrap.
+		// If an eid script calls this method to load TCA, use
+		// \TYPO3\CMS\Frontend\Utility\EidUtility::initTCA() instead.
+		if (!isset($GLOBALS['TCA']['pages'])) {
+			\TYPO3\CMS\Core\Core\Bootstrap::getInstance()->loadCachedTca();
+		}
 	}
 
 	/**
@@ -2566,11 +2580,9 @@ class TypoScriptFrontendController {
 	 * Updating content of the two rootLines IF the language key is set!
 	 */
 	protected function updateRootLinesWithTranslations() {
-		if ($this->sys_language_uid && is_array($this->tmpl->rootLine)) {
-			$this->tmpl->rootLine = array_reverse($this->sys_page->getRootLine($this->id, $this->MP));
-		}
-		if ($this->sys_language_uid && is_array($this->rootLine)) {
+		if ($this->sys_language_uid) {
 			$this->rootLine = $this->sys_page->getRootLine($this->id, $this->MP);
+			$this->tmpl->updateRootlineData($this->rootLine);
 		}
 	}
 
@@ -2837,6 +2849,8 @@ class TypoScriptFrontendController {
 								header('Cache-Control: must-revalidate, post-check=0, pre-check=0');
 								header('Content-Type: ' . $mimeType);
 								header('Content-Disposition: attachment; filename="' . basename($absoluteFileName) . '"');
+								header('Content-Length: ' . filesize($absoluteFileName));
+								\TYPO3\CMS\Core\Utility\GeneralUtility::flushOutputBuffers();
 								readfile($absoluteFileName);
 								die;
 							} else {
@@ -4530,6 +4544,26 @@ if (version == "n3") {
 			$headers = $this->csConvObj->conv($headers, $this->renderCharset, $charset);
 		}
 		\TYPO3\CMS\Core\Utility\GeneralUtility::plainMailEncoded($email, $subject, $message, $headers, $encoding, $charset);
+	}
+
+	/**
+	 * Returns a unique id to be used as a XML ID (in HTML / XHTML mode)
+	 *
+	 * @param string $desired The desired id. If already used it is suffixed with a number
+	 * @return string The unique id
+	 */
+	public function getUniqueId($desired = '') {
+		if ($desired === '') {
+			// id has to start with a letter to reach XHTML compliance
+			$uniqueId = 'a' . $this->uniqueHash();
+		} else {
+			$uniqueId = $desired;
+			for ($i = 1; isset($this->usedUniqueIds[$uniqueId]); $i++) {
+				$uniqueId = $desired . '_' . $i;
+			}
+		}
+		$this->usedUniqueIds[$uniqueId] = TRUE;
+		return $uniqueId;
 	}
 
 	/*********************************************

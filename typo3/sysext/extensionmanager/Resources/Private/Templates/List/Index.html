@@ -11,6 +11,8 @@
 </f:section>
 
 <f:section name="Content">
+	<f:flashMessages renderMode="div" />
+
 	<div class="uploadForm" style="display: none;">
 		<span class="spinner"></span>
 		<f:translate key="extensionList.loading"/>
@@ -38,7 +40,7 @@
 			<f:for each="{extensions}" as="extension" key="extensionKey">
 				<f:if condition="{extension.terObject}">
 					<f:then>
-						<tr id="{extensionKey}" class="{f:if(condition:'{extension.terObject.reviewState} >= 0', then:'', else:'insecure')} {f:if(condition:'{extension.installed}', then: '', else: 'inactive')}">
+						<tr id="{extensionKey}" class="{f:if(condition:'{extension.terObject.reviewState} == -1', then:'insecure')}{f:if(condition:'{extension.terObject.reviewState} == -2', then:'outdated')} {f:if(condition:'{extension.installed}', then: '', else: 'inactive')}">
 					</f:then>
 					<f:else>
 						<tr id="{extensionKey}" class="{f:if(condition:'{extension.installed}', then: '', else: 'inactive')}">

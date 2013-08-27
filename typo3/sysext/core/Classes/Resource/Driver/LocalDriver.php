@@ -225,7 +225,9 @@ class LocalDriver extends \TYPO3\CMS\Core\Resource\Driver\AbstractDriver {
 		$dirPath = \TYPO3\CMS\Core\Utility\GeneralUtility::fixWindowsFilePath(
 			PathUtility::dirname($fileIdentifier)
 		);
-		if ($dirPath !== '' && $dirPath !== '/') {
+		if ($dirPath === '' || $dirPath === '.') {
+			$dirPath = '/';
+		} elseif ($dirPath !== '/') {
 			$dirPath = '/' . trim($dirPath, '/') . '/';
 		}
 		$absoluteFilePath = $this->absoluteBasePath . ltrim($fileIdentifier, '/');
@@ -406,7 +408,7 @@ class LocalDriver extends \TYPO3\CMS\Core\Resource\Driver\AbstractDriver {
 	 */
 	protected function getFileAndFoldernamesInPath($path, $recursive = FALSE) {
 		if ($recursive) {
-			$iterator = new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator($path, \FilesystemIterator::CURRENT_AS_FILEINFO));
+			$iterator = new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator($path, \FilesystemIterator::CURRENT_AS_FILEINFO), \RecursiveIteratorIterator::SELF_FIRST);
 		} else {
 			$iterator = new \RecursiveDirectoryIterator($path, \FilesystemIterator::CURRENT_AS_FILEINFO);
 		}
@@ -843,6 +845,7 @@ class LocalDriver extends \TYPO3\CMS\Core\Resource\Driver\AbstractDriver {
 	 * @param \TYPO3\CMS\Core\Resource\Folder $folderToCopy
 	 * @param \TYPO3\CMS\Core\Resource\Folder $targetFolder
 	 * @param string $newFolderName
+	 * @throws \TYPO3\CMS\Core\Resource\Exception\FileOperationErrorException
 	 * @return boolean
 	 */
 	public function copyFolderWithinStorage(\TYPO3\CMS\Core\Resource\Folder $folderToCopy, \TYPO3\CMS\Core\Resource\Folder $targetFolder, $newFolderName) {
@@ -851,18 +854,22 @@ class LocalDriver extends \TYPO3\CMS\Core\Resource\Driver\AbstractDriver {
 		$targetFolderPath = $this->getAbsolutePath($targetFolder) . $newFolderName . '/';
 		mkdir($targetFolderPath);
 		$sourceFolderPath = $this->getAbsolutePath($folderToCopy);
-		/** @var $iterator RecursiveDirectoryIterator */
-		$iterator = new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator($sourceFolderPath));
+		/** @var $iterator \RecursiveDirectoryIterator */
+		$iterator = new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator($sourceFolderPath), \RecursiveIteratorIterator::SELF_FIRST);
 		while ($iterator->valid()) {
-			/** @var $current RecursiveDirectoryIterator */
+			/** @var $current \RecursiveDirectoryIterator */
 			$current = $iterator->current();
+			$fileName = $current->getFilename();
 			$itemSubPath = $iterator->getSubPathname();
-			if ($current->isDir() && !($itemSubPath === '..' || $itemSubPath === '.')) {
+			if ($current->isDir() && !($fileName === '..' || $fileName === '.')) {
 				mkdir($targetFolderPath . $itemSubPath);
 			} elseif ($current->isFile()) {
 				$result = copy($sourceFolderPath . $itemSubPath, $targetFolderPath . $itemSubPath);
 				if ($result === FALSE) {
-					throw new \TYPO3\CMS\Core\Resource\Exception\FileOperationErrorException('Copying file "' . $sourceFolderPath . $itemSubPath . '" to "' . $targetFolderPath . $itemSubPath . '" failed.', 1330119452);
+					throw new \TYPO3\CMS\Core\Resource\Exception\FileOperationErrorException(
+						'Copying file "' . $sourceFolderPath . $itemSubPath . '" to "' . $targetFolderPath . $itemSubPath . '" failed.',
+						1330119452
+					);
 				}
 			}
 			$iterator->next();
@@ -1108,8 +1115,8 @@ class LocalDriver extends \TYPO3\CMS\Core\Resource\Driver\AbstractDriver {
 			throw new \TYPO3\CMS\Core\Resource\Exception\InvalidFileNameException('Invalid characters in fileName "' . $fileName . '"', 1320572272);
 		}
 		$filePath = $parentFolder->getIdentifier() . $this->sanitizeFileName(ltrim($fileName, '/'));
-		// TODO set permissions of new file
 		$result = touch($this->absoluteBasePath . $filePath);
+		GeneralUtility::fixPermissions($this->absoluteBasePath . ltrim($filePath, '/'));
 		clearstatcache();
 		if ($result !== TRUE) {
 			throw new \RuntimeException('Creating file ' . $filePath . ' failed.', 1320569854);

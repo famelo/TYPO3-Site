@@ -25,7 +25,7 @@ namespace TYPO3\CMS\Install\Updates;
  ***************************************************************/
 /**
  * Upgrade wizard that moves all RTE magic images (usually in uploads/)
- * that have the prefix RTEmagicC_* to the default storage (usually fileadmin/_migrated_/RTE/)
+ * that have the prefix RTEmagicC_* to the default storage (usually fileadmin/_migrated/RTE/)
  * and also updates the according fields (e.g. tt_content:123:bodytext) with the new string, and updates
  * the softreference index
  *
@@ -38,7 +38,7 @@ class RteMagicImagesUpdateWizard extends \TYPO3\CMS\Install\Updates\AbstractUpda
 	 * title of the update wizard
 	 * @var string
 	 */
-	protected $title = 'Migrate all RTE magic images from uploads/RTEmagicC_* to fileadmin/_migrated_/RTE/';
+	protected $title = 'Migrate all RTE magic images from uploads/RTEmagicC_* to fileadmin/_migrated/RTE/';
 
 	/**
 	 * the default storage
@@ -87,7 +87,17 @@ class RteMagicImagesUpdateWizard extends \TYPO3\CMS\Install\Updates\AbstractUpda
 	 * @return boolean TRUE if an update is needed, FALSE otherwise
 	 */
 	public function checkForUpdate(&$description) {
-		$description = 'This update wizard goes through all magic images, located in ' . \TYPO3\CMS\Core\Utility\PathUtility::dirname($this->oldPrefix) . '., and moves the files to fileadmin/_migrated_/RTE/.<br />It also moves the files from uploads/ to the fileadmin/_migrated/ path.';
+		$description = 'This update wizard goes through all magic images, located in ' . \TYPO3\CMS\Core\Utility\PathUtility::dirname($this->oldPrefix) . '., and moves the files to fileadmin/_migrated/RTE/.';
+		$description .= '<br />It also moves the files from uploads/ to the fileadmin/_migrated/ path.';
+		// Issue warning about sys_refindex needing to be up to date
+		/** @var \TYPO3\CMS\Core\Messaging\FlashMessage $message */
+		$message = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance(
+			'TYPO3\\CMS\\Core\\Messaging\\FlashMessage',
+			'This script bases itself on the references contained in the general reference index (sys_refindex). It is strongly advised to update it before running this wizard.',
+			'Updating the reference index',
+			\TYPO3\CMS\Core\Messaging\FlashMessage::WARNING
+		);
+		$description .= $message->render();
 
 		// wizard is only available if oldPrefix set
 		if ($this->oldPrefix) {
@@ -117,7 +127,7 @@ class RteMagicImagesUpdateWizard extends \TYPO3\CMS\Install\Updates\AbstractUpda
 		}
 
 		$fileadminDirectory = rtrim($GLOBALS['TYPO3_CONF_VARS']['BE']['fileadminDir'], '/');
-		$targetDirectory = '/_migrated_/RTE/';
+		$targetDirectory = '/_migrated/RTE/';
 		$fullTargetDirectory = PATH_site . $fileadminDirectory . $targetDirectory;
 
 		// create the directory, if necessary
@@ -144,7 +154,7 @@ class RteMagicImagesUpdateWizard extends \TYPO3\CMS\Install\Updates\AbstractUpda
 
 				$format = 'File \'%s\' does not exist. Referencing field: %s.%d.%s. The reference was not migrated.';
 				$message = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('\TYPO3\CMS\Core\Messaging\FlashMessage',
-					sprintf($format, $sourceFileName, $refRecord['tablename'], $row['recuid'], $row['field']),
+					sprintf($format, $sourceFileName, $refRecord['tablename'], $refRecord['recuid'], $refRecord['field']),
 					'', \TYPO3\CMS\Core\Messaging\FlashMessage::WARNING
 				);
 				/** @var \TYPO3\CMS\Core\Messaging\FlashMessage $message */
@@ -160,18 +170,27 @@ class RteMagicImagesUpdateWizard extends \TYPO3\CMS\Install\Updates\AbstractUpda
 			if ($file instanceof \TYPO3\CMS\Core\Resource\File) {
 				// and now update the referencing field
 				$targetFieldName = $refRecord['field'];
-				$targetRecord = $GLOBALS['TYPO3_DB']->exec_SELECTgetSingleRow('uid, ' . $targetFieldName, $refRecord['table'], 'uid=' . intval($refRecord['recuid']));
+				$targetRecord = $GLOBALS['TYPO3_DB']->exec_SELECTgetSingleRow('uid, ' . $targetFieldName, $refRecord['tablename'], 'uid=' . intval($refRecord['recuid']));
 				if ($targetRecord) {
-					// replace the old filename with the new one, and update the according record
-					$targetRecord[$targetFieldName] = str_replace($sourceFileName, $targetFileName, $targetRecord[$targetFieldName]);
+					// Replace the old filename with the new one, and add data-* attributes used by the RTE
+					$searchString = 'src="' . $sourceFileName . '"';
+					$replacementString = 'src="' . $fileadminDirectory . $targetFileName . '"';
+					$replacementString .= ' data-htmlarea-file-uid="' . $file->getUid() . '"';
+					$replacementString .= ' data-htmlarea-file-table="sys_file"';
+					$targetRecord[$targetFieldName] = str_replace(
+						$searchString,
+						$replacementString,
+						$targetRecord[$targetFieldName]
+					);
+					// Update the record
 					$GLOBALS['TYPO3_DB']->exec_UPDATEquery(
-						$refRecord['table'],
+						$refRecord['tablename'],
 						'uid=' . intval($refRecord['recuid']),
 						array($targetFieldName => $targetRecord[$targetFieldName])
 					);
 					$queries[] = str_replace(LF, ' ', $GLOBALS['TYPO3_DB']->debug_lastBuiltQuery);
 
-					// finally, update the sys_refindex table as well
+					// Finally, update the sys_refindex table as well
 					$GLOBALS['TYPO3_DB']->exec_UPDATEquery(
 						'sys_refindex',
 						'hash=' . $GLOBALS['TYPO3_DB']->fullQuoteStr($refRecord['hash'], 'sys_refindex'),

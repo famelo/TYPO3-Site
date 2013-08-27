@@ -15,6 +15,8 @@ if(typeof GridElementsDD === "undefined"){
 
 	if(Ext.get('ext-cms-layout-db-layout-php')) {
 
+		Ext.select('.t3-page-lang-column > br').remove();
+
 		// add action for show/hide gridColumn contents
 		var toggleIcons = Ext.select('.toggle-content').elements;
 		Ext.each(toggleIcons, function(el) {
@@ -49,16 +51,16 @@ if(typeof GridElementsDD === "undefined"){
 		}
 
 		// add allowed ctypes to addNewButtons of gridColumns and contentElements
-		var rowHeaders = Ext.select('.t3-row-header').elements;
-		Ext.each(rowHeaders, function(rowHeader){
-			var rowHeaderLinkNew = Ext.get(rowHeader).select('a').first();
-			if(rowHeaderLinkNew !== null) {
-				var onClick = rowHeaderLinkNew.getAttribute('onclick');
+		var newCeWrappers = Ext.select('.t3-page-ce-wrapper-new-ce').elements;
+		Ext.each(newCeWrappers, function(newCeWrapper){
+			var newCeWrapperLinkNew = Ext.get(newCeWrapper).select('a').first();
+			if(newCeWrapperLinkNew !== null) {
+				var onClick = newCeWrapperLinkNew.getAttribute('onclick');
 				if (typeof onClick !== 'function' && onClick !== null && !onClick.match(/tx_gridelements_allowed=/)) {
-					var parentColumn = Ext.get(rowHeader).findParent('td.t3-gridCell', 4);
+					var parentColumn = Ext.get(newCeWrapper).findParent('td.t3-gridCell', 5);
 					if(parentColumn){
-						var allowedCTypes = [];
 						var currentClasses = Ext.get(parentColumn).dom.className.split(' ');
+						var allowedCTypes = new Array;
 						for (var i = 0; i < currentClasses.length; i++) {
 							var currentClass = currentClasses[i];
 							if(currentClass.substr(0, 9) == 't3-allow-'){
@@ -67,7 +69,7 @@ if(typeof GridElementsDD === "undefined"){
 						}
 						if(allowedCTypes[0] !== 'all'){
 							onClick = onClick.replace('db_new_content_el.php?', 'db_new_content_el.php?tx_gridelements_allowed=' + allowedCTypes.join(',') + '&');
-							rowHeaderLinkNew.set({onclick: onClick});
+							newCeWrapperLinkNew.set({onclick: onClick});
 						}
 					}
 				}
@@ -166,6 +168,11 @@ if(typeof GridElementsDD === "undefined"){
 				} else {
 					dropZoneID = Ext.get(parentCell).id;
 				}
+				if(Ext.get(parentCell).hasClass('t3-page-lang-column')) {
+					var dropZone = Ext.get(parentCell).select('.t3-page-ce-dropzone').elements[0];
+					var dropZoneIdParts = dropZone.id.split('-page');
+					dropZoneID = 'DD_DROP_PIDx' + dropZoneIdParts[0].substr(7);
+				}
 				var currentDropZone = document.createElement('div');
 				Ext.get(currentDropZone).addClass([
 					'x-dd-makedroptarget',
@@ -180,7 +187,7 @@ if(typeof GridElementsDD === "undefined"){
 		// add dropzones within .t3-page-ce existing elements
 		var dropZoneEl = Ext.select('.t3-page-ce .t3-page-ce-body').elements;
 		Ext.each(dropZoneEl, function(currentElement){
-			var dropZoneID = Ext.get(currentElement).parent().select('.t3-page-ce-header span a span').elements[0].getAttribute('title');
+			var dropZoneID = Ext.get(currentElement).parent().select('.t3-page-ce-header span span').elements[0].getAttribute('title');
 			var currentDropZone = document.createElement('div');
 			currentDropZone.innerHTML = dropZoneTpl;
 			Ext.get(currentDropZone).select('div.x-dd-droptargetarea').set({title: dropZoneID});
@@ -207,7 +214,7 @@ if(typeof GridElementsDD === "undefined"){
 				lastIcon = Ext.get(firstNewIconContainer.select('.t3-icon:last').elements[0].parentNode.cloneNode(true));
 
 			lastIcon.set({onclick:'', title:''});
-			lastIcon.select('span').set({class:'t3-icon t3-icon-actions t3-icon-actions-document t3-icon-document-new'});
+			lastIcon.select('span').set({"class":'t3-icon t3-icon-actions t3-icon-actions-document t3-icon-document-new'});
 			lastIcon.insertAfter(Ext.get(firstNewIconContainer.select('.t3-icon:last').elements[0].parentNode));
 
 			var

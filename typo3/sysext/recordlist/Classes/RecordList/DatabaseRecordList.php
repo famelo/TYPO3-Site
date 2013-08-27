@@ -836,6 +836,18 @@ class DatabaseRecordList extends \TYPO3\CMS\Recordlist\RecordList\AbstractDataba
 			default:
 				// Regular fields header:
 				$theData[$fCol] = '';
+
+				// Check if $fCol is really a field and get the label and remove the colons at the end
+				$sortLabel = \TYPO3\CMS\Backend\Utility\BackendUtility::getItemLabel($table, $fCol);
+				if ($sortLabel !== NULL) {
+					$sortLabel = $GLOBALS['LANG']->sL($sortLabel, TRUE);
+					$sortLabel = rtrim(trim($sortLabel), ':');
+				} else {
+					// No TCA field, only output the $fCol variable with square brackets []
+					$sortLabel = htmlspecialchars($fCol);
+					$sortLabel = '<i>[' . rtrim(trim($sortLabel), ':') . ']</i>';
+				}
+
 				if ($this->table && is_array($currentIdList)) {
 					// If the numeric clipboard pads are selected, show duplicate sorting link:
 					if ($this->clipNumPane()) {
@@ -848,11 +860,11 @@ class DatabaseRecordList extends \TYPO3\CMS\Recordlist\RecordList\AbstractDataba
 							$editIdList = '\'+editList(\'' . $table . '\',\'' . $editIdList . '\')+\'';
 						}
 						$params = '&edit[' . $table . '][' . $editIdList . ']=edit&columnsOnly=' . $fCol . '&disHelp=1';
-						$iTitle = sprintf($GLOBALS['LANG']->getLL('editThisColumn'), rtrim(trim($GLOBALS['LANG']->sL(\TYPO3\CMS\Backend\Utility\BackendUtility::getItemLabel($table, $fCol))), ':'));
+						$iTitle = sprintf($GLOBALS['LANG']->getLL('editThisColumn'), $sortLabel);
 						$theData[$fCol] .= '<a href="#" onclick="' . htmlspecialchars(\TYPO3\CMS\Backend\Utility\BackendUtility::editOnClick($params, $this->backPath, -1)) . '" title="' . htmlspecialchars($iTitle) . '">' . \TYPO3\CMS\Backend\Utility\IconUtility::getSpriteIcon('actions-document-open') . '</a>';
 					}
 				}
-				$theData[$fCol] .= $this->addSortLink($GLOBALS['LANG']->sL(\TYPO3\CMS\Backend\Utility\BackendUtility::getItemLabel($table, $fCol, '<i>[|]</i>')), $fCol, $table);
+				$theData[$fCol] .= $this->addSortLink($sortLabel, $fCol, $table);
 				break;
 			}
 		}
@@ -1033,7 +1045,7 @@ class DatabaseRecordList extends \TYPO3\CMS\Recordlist\RecordList\AbstractDataba
 				}
 				// "Edit Perms" link:
 				if ($table == 'pages' && $GLOBALS['BE_USER']->check('modules', 'web_perm') && \TYPO3\CMS\Core\Utility\ExtensionManagementUtility::isLoaded('perm')) {
-					$cells['perms'] = '<a href="' . htmlspecialchars((\TYPO3\CMS\Core\Utility\ExtensionManagementUtility::extRelPath('perm') . 'mod1/index.php' . '?id=' . $row['uid'] . '&return_id=' . $row['uid'] . '&edit=1')) . '" title="' . $GLOBALS['LANG']->getLL('permissions', TRUE) . '">' . \TYPO3\CMS\Backend\Utility\IconUtility::getSpriteIcon('status-status-locked') . '</a>';
+					$cells['perms'] = '<a href="' . htmlspecialchars((\TYPO3\CMS\Backend\Utility\BackendUtility::getModuleUrl('web_perm') . '&id=' . $row['uid'] . '&return_id=' . $row['uid'] . '&edit=1')) . '" title="' . $GLOBALS['LANG']->getLL('permissions', TRUE) . '">' . \TYPO3\CMS\Backend\Utility\IconUtility::getSpriteIcon('status-status-locked') . '</a>';
 				} elseif (!$this->table && $GLOBALS['BE_USER']->check('modules', 'web_perm')) {
 					$cells['perms'] = $this->spaceIcon;
 				}
@@ -1233,7 +1245,12 @@ class DatabaseRecordList extends \TYPO3\CMS\Recordlist\RecordList\AbstractDataba
 	 * @return string HTML of reference a link, will be empty if there are no
 	 */
 	protected function createReferenceHtml($tableName, $uid) {
-		$rows = $GLOBALS['TYPO3_DB']->exec_SELECTgetRows('tablename, recuid, field', 'sys_refindex', 'ref_table = ' . $GLOBALS['TYPO3_DB']->fullQuoteStr($tableName, 'sys_refindex') . ' AND ref_uid = ' . $uid . ' AND deleted = 0', '', '', '0,20');
+		$rows = $GLOBALS['TYPO3_DB']->exec_SELECTgetRows(
+			'tablename, recuid, field',
+			'sys_refindex',
+			'ref_table = ' . $GLOBALS['TYPO3_DB']->fullQuoteStr($tableName, 'sys_refindex') .
+				' AND ref_uid = ' . $uid . ' AND deleted = 0'
+		);
 		return $this->generateReferenceToolTip($rows, '\'' . $tableName . '\', \'' . $uid . '\'');
 	}
 
@@ -1250,11 +1267,13 @@ class DatabaseRecordList extends \TYPO3\CMS\Recordlist\RecordList\AbstractDataba
 			0 => '',
 			1 => ''
 		);
+		// Reset translations
+		$this->translations = array();
 		$translations = $this->translateTools->translationInfo($table, $row['uid'], 0, $row, $this->selFieldList);
-		$this->translations = $translations['translations'];
 		// Language title and icon:
 		$out[0] = $this->languageFlag($row[$GLOBALS['TCA'][$table]['ctrl']['languageField']]);
 		if (is_array($translations)) {
+			$this->translations = $translations['translations'];
 			// Traverse page translations and add icon for each language that does NOT yet exist:
 			$lNew = '';
 			foreach ($this->pageOverlays as $lUid_OnPage => $lsysRec) {

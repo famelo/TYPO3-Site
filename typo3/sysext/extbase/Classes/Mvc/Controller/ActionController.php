@@ -59,7 +59,14 @@ class ActionController extends \TYPO3\CMS\Extbase\Mvc\Controller\AbstractControl
 	 * @var string
 	 * @api
 	 */
-	protected $viewObjectNamePattern = 'Tx_@extension_View_@controller_@action@format';
+	protected $viewObjectNamePattern = '@vendor\@extension\View\@controller\@action@format';
+
+	/**
+	 * @var string
+	 * @api
+	 * @deprecated since Extbase 6.2, will be removed two versions later
+	 */
+	protected $deprecatedViewObjectNamePattern = 'Tx_@extension_View_@controller_@action@format';
 
 	/**
 	 * A list of formats and object names of the views which should render them.
@@ -274,6 +281,7 @@ class ActionController extends \TYPO3\CMS\Extbase\Mvc\Controller\AbstractControl
 			}
 			$validationResult = $this->arguments->getValidationResults();
 			if (!$validationResult->hasErrors()) {
+				$this->signalSlotDispatcher->dispatch(__CLASS__, 'beforeCallActionMethod', array('controllerName' => get_class($this), 'actionMethodName' => $this->actionMethodName, 'preparedArguments' => $preparedArguments));
 				$actionResult = call_user_func_array(array($this, $this->actionMethodName), $preparedArguments);
 			} else {
 				$methodTagsValues = $this->reflectionService->getMethodTagsValues(get_class($this), $this->actionMethodName);
@@ -350,7 +358,8 @@ class ActionController extends \TYPO3\CMS\Extbase\Mvc\Controller\AbstractControl
 		}
 		if (!isset($view)) {
 			$view = $this->objectManager->get('TYPO3\\CMS\\Extbase\\Mvc\\View\\NotFoundView');
-			$view->assign('errorMessage', 'No template was found. View could not be resolved for action "' . $this->request->getControllerActionName() . '"');
+			$view->assign('errorMessage', 'No template was found. View could not be resolved for action "'
+				. $this->request->getControllerActionName() . '" in class "' . $this->request->getControllerObjectName() . '"');
 		}
 		$view->setControllerContext($this->controllerContext);
 		if (method_exists($view, 'injectSettings')) {
@@ -388,7 +397,14 @@ class ActionController extends \TYPO3\CMS\Extbase\Mvc\Controller\AbstractControl
 	 * @api
 	 */
 	protected function resolveViewObjectName() {
-		$possibleViewName = $this->viewObjectNamePattern;
+		$vendorName = $this->request->getControllerVendorName();
+
+		if ($vendorName !== NULL) {
+			$possibleViewName = str_replace('@vendor', $vendorName, $this->viewObjectNamePattern);
+		} else {
+			$possibleViewName = $this->deprecatedViewObjectNamePattern;
+		}
+
 		$extensionName = $this->request->getControllerExtensionName();
 		$possibleViewName = str_replace('@extension', $extensionName, $possibleViewName);
 		$possibleViewName = str_replace('@controller', $this->request->getControllerName(), $possibleViewName);

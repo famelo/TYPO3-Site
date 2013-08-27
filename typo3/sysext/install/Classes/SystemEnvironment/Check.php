@@ -317,15 +317,24 @@ class Check {
 		$minimumMaximumExecutionTime = 30;
 		$recommendedMaximumExecutionTime = 240;
 		$currentMaximumExecutionTime = ini_get('max_execution_time');
-		if ($currentMaximumExecutionTime == 0 && PHP_SAPI !== 'cli') {
-			$status = new WarningStatus();
-			$status->setTitle('Infinite PHP script execution time');
-			$status->setMessage(
-				'Your max_execution_time is set to 0 (infinite). While TYPO3 is fine' .
-				' with this, you risk a denial-of-service of you system if for whatever' .
-				' reason some script hangs in an infinite loop. You are usually on safe side ' .
-				' if max_execution_time is reduced to ' . $recommendedMaximumExecutionTime
-			);
+		if ($currentMaximumExecutionTime == 0) {
+			if (PHP_SAPI === 'cli') {
+				$status = new OkStatus();
+				$status->setTitle('Infinite PHP script execution time');
+				$status->setMessage(
+					'Maximum PHP script execution time is always set to infinite (0) in cli mode.' .
+					' The setting used for web requests can not be checked from command line.'
+				);
+			} else {
+				$status = new WarningStatus();
+				$status->setTitle('Infinite PHP script execution time');
+				$status->setMessage(
+					'Your max_execution_time is set to 0 (infinite). While TYPO3 is fine' .
+					' with this, you risk a denial-of-service of you system if for whatever' .
+					' reason some script hangs in an infinite loop. You are usually on safe side ' .
+					' if max_execution_time is reduced to ' . $recommendedMaximumExecutionTime
+				);
+			}
 		} elseif ($currentMaximumExecutionTime < $minimumMaximumExecutionTime) {
 			$status = new ErrorStatus();
 			$status->setTitle('Low PHP script execution time');
@@ -700,8 +709,8 @@ class Check {
 				$status->setMessage(
 					'suhosin.executor.include.whitelist= ' . implode(' ', $currentWhiteListArray) . '. vfs' .
 					' is currently not a hard requirement of TYPO3 CMS but tons of unit tests rely on it.' .
-					' Furthermore, vfs is likely a base for an additional compatibilyt layer in the future.' .
-					' A useful setting is "suhosin.executor.include.whitelist = phar vfs"'
+					' Furthermore, vfs is likely a base for an additional compatibility layer in the future.' .
+					' A useful setting is "suhosin.executor.include.whitelist = phar vfs".'
 				);
 			} else {
 				$status = new OkStatus();

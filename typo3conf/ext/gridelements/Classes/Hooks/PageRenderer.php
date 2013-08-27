@@ -129,7 +129,7 @@ class PageRenderer {
 				";
 
 				$allowedCTypesClassesByColPos = array();
-				$layoutSetup = \TYPO3\CMS\Core\Utility\GeneralUtility::callUserFunction('EXT:cms/classes/class.tx_cms_backendlayout.php:tx_cms_BackendLayout->getSelectedBackendLayout', intval(\TYPO3\CMS\Core\Utility\GeneralUtility::_GP('id')), $this);
+				$layoutSetup = \TYPO3\CMS\Core\Utility\GeneralUtility::callUserFunction('TYPO3\\CMS\\Backend\\View\\BackendLayoutView->getSelectedBackendLayout', intval(\TYPO3\CMS\Core\Utility\GeneralUtility::_GP('id')), $this);
 				if (is_array($layoutSetup)) {
 					foreach($layoutSetup['__config']['backend_layout.']['rows.'] as $rows){
 						foreach($rows as $row){
@@ -192,7 +192,7 @@ class PageRenderer {
 							"top.geSprites = {
 								copyfrompage: '" . \TYPO3\CMS\Backend\Utility\IconUtility::getSpriteIconClasses('extensions-gridelements-copyfrompage') . "',
 								pastecopy: '" . \TYPO3\CMS\Backend\Utility\IconUtility::getSpriteIconClasses('extensions-gridelements-pastecopy') . "',
-								pasteref: '" . \TYPO3\CMS\Backend\Utility\IconUtility::getSpriteIconClasses('extensions-gridelements-pasteref') . "',
+								pasteref: '" . \TYPO3\CMS\Backend\Utility\IconUtility::getSpriteIconClasses('extensions-gridelements-pasteref') . "'
 							};",
 							"top.backPath = '" . $GLOBALS['BACK_PATH'] . "';"
 						),

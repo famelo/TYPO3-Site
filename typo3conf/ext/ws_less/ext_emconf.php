@@ -3,7 +3,7 @@
 /***************************************************************
  * Extension Manager/Repository config file for ext "ws_less".
  *
- * Auto generated 14-05-2013 10:49
+ * Auto generated 27-08-2013 19:22
  *
  * Manual updates:
  * Only the data in the array - everything else is removed by next
@@ -15,7 +15,7 @@ $EM_CONF[$_EXTKEY] = array (
 	'description' => 'Compiles less files to CSS files.',
 	'category' => 'fe',
 	'shy' => 0,
-	'version' => '1.2.0',
+	'version' => '1.2.2',
 	'dependencies' => '',
 	'conflicts' => '',
 	'priority' => '',

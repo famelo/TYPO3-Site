@@ -5257,12 +5257,12 @@ class ContentObjectRenderer {
 	 * Implements the TypoScript data type "getText". This takes a string with parameters and based on those a value from somewhere in the system is returned.
 	 *
 	 * @param string $string The parameter string, eg. "field : title" or "field : navtitle // field : title" (in the latter case and example of how the value is FIRST splitted by "//" is shown)
-	 * @param mixed $fieldArray Alternative field array; If you set this to an array this variable will be used to look up values for the "field" key. Otherwise the current page record in $GLOBALS['TSFE']->page is used.
+	 * @param NULL|array $fieldArray Alternative field array; If you set this to an array this variable will be used to look up values for the "field" key. Otherwise the current page record in $GLOBALS['TSFE']->page is used.
 	 * @return string The value fetched
 	 * @see getFieldVal()
 	 * @todo Define visibility
 	 */
-	public function getData($string, $fieldArray) {
+	public function getData($string, $fieldArray = NULL) {
 		global $TYPO3_CONF_VARS;
 		if (!is_array($fieldArray)) {
 			$fieldArray = $GLOBALS['TSFE']->page;
@@ -5637,6 +5637,9 @@ class ContentObjectRenderer {
 				} catch (\RuntimeException $e) {
 					// Element wasn't found
 					$link_paramA[0] = NULL;
+				} catch (\TYPO3\CMS\Core\Resource\Exception\ResourceDoesNotExistException $e) {
+					// Resource was not found
+					return $linktxt;
 				}
 			}
 			// Link parameter value
@@ -6910,14 +6913,16 @@ class ContentObjectRenderer {
 	public function DBgetDelete($table, $uid, $doExec = FALSE) {
 		if (intval($uid)) {
 			if ($GLOBALS['TCA'][$table]['ctrl']['delete']) {
+				$updateFields = array();
+				$updateFields[$GLOBALS['TCA'][$table]['ctrl']['delete']] = 1;
+				if ($GLOBALS['TCA'][$table]['ctrl']['tstamp']) {
+					$updateFields[$GLOBALS['TCA'][$table]['ctrl']['tstamp']] = $GLOBALS['EXEC_TIME'];
+				}
+
 				if ($doExec) {
-					return $GLOBALS['TYPO3_DB']->exec_UPDATEquery($table, 'uid=' . intval($uid), array(
-						$GLOBALS['TCA'][$table]['ctrl']['delete'] => 1
-					));
+					return $GLOBALS['TYPO3_DB']->exec_UPDATEquery($table, 'uid=' . intval($uid), $updateFields);
 				} else {
-					return $GLOBALS['TYPO3_DB']->UPDATEquery($table, 'uid=' . intval($uid), array(
-						$GLOBALS['TCA'][$table]['ctrl']['delete'] => 1
-					));
+					return $GLOBALS['TYPO3_DB']->UPDATEquery($table, 'uid=' . intval($uid), $updateFields);
 				}
 			} else {
 				if ($doExec) {

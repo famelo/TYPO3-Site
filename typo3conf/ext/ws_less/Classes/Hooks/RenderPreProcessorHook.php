@@ -33,6 +33,9 @@ class tx_Wsless_Hooks_RenderPreProcessorHook {
 
 	protected $parser;
 	
+	
+	protected $defaultoutputdir = "typo3temp/ws_less/";
+	
 	/**
 	 * Main hook function
 	 * 
@@ -57,20 +60,22 @@ class tx_Wsless_Hooks_RenderPreProcessorHook {
 				continue;
 			}
 
-			$outputdir = "typo3temp/ws_less";
-
+			$outputdir = $defaultoutputdir;
+			
 			// search settings for less file
 			foreach ($GLOBALS['TSFE']->pSetup['includeCSS.'] as $key => $subconf) {
 				if ($GLOBALS['TSFE']->pSetup['includeCSS.'][$key] == $file) {
-					if (isset($GLOBALS['TSFE']->pSetup['includeCSS.'][$key . '.']['outputdir'])) $outputdir = rtrim($GLOBALS['TSFE']->pSetup['includeCSS.'][$key . '.']['outputdir'],"/");
+					if (isset($GLOBALS['TSFE']->pSetup['includeCSS.'][$key . '.']['outputdir'])) $outputdir = trim($GLOBALS['TSFE']->pSetup['includeCSS.'][$key . '.']['outputdir']);
 				}
 			}
+			
+			$outputdir = (substr($outputdir, -1) == '/') ? $outputdir : $outputdir."/";
 
 			$lessFilename = t3lib_div::getFileAbsFileName($conf['file']);
 
 			// create filename - hash is importand due to the possible conflicts with same filename in different folder
-			t3lib_div::mkdir_deep(PATH_site.$outputdir."/");
-			$cssRelativeFilename = $outputdir."/".$pathinfo['filename']."_".hash('sha1',$file).".css";
+			t3lib_div::mkdir_deep(PATH_site.$outputdir);
+			$cssRelativeFilename = $outputdir.$pathinfo['filename']. (($outputdir == $defaultoutputdir) ? "_".hash('sha1',$file) : "") .".css";
 			$cssFilename = PATH_site.$cssRelativeFilename;
 
 			$cache = $GLOBALS['typo3CacheManager']->getCache('ws_less');

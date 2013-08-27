@@ -148,6 +148,50 @@ class MailUtilityTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 		$this->assertEquals($returnString, 'abcdefghijklmnopqrst' . LF . 'uvwxyz' . LF . '123456');
 	}
 
+	/**
+	 * @test
+	 */
+	public function breakLinesForEmailBreaksTextIfLineIsLongerThanTheLineWidth() {
+		$str = 'Mein Link auf eine News (Link: http://zzzzzzzzzzzzz.xxxxxxxxx.de/index.php?id=10&tx_ttnews%5Btt_news%5D=1&cHash=66f5af320da29b7ae1cda49047ca7358)';
+		$returnString = \TYPO3\CMS\Core\Utility\MailUtility::breakLinesForEmail($str);
+		$this->assertEquals($returnString, 'Mein Link auf eine News (Link:' . LF . 'http://zzzzzzzzzzzzz.xxxxxxxxx.de/index.php?id=10&tx_ttnews%5Btt_news%5D=1&cHash=66f5af320da29b7ae1cda49047ca7358)');
+	}
+
+	/**
+	 * Data provider for parseAddressesTest
+	 *
+	 * @return array Data sets
+	 */
+	public function parseAddressesProvider() {
+		return array(
+			'name &ltemail&gt;' => array('name <email@example.org>', array('email@example.org' => 'name')),
+			'&lt;email&gt;' => array('<email@example.org>', array('email@example.org')),
+			'@localhost' => array('@localhost', array()),
+			'000@example.com' => array('000@example.com', array('000@example.com')),
+			'email' => array('email@example.org', array('email@example.org')),
+			'email1,email2' => array('email1@example.org,email2@example.com', array('email1@example.org', 'email2@example.com')),
+			'name &ltemail&gt;,email2' => array('name <email1@example.org>,email2@example.com', array('email1@example.org' => 'name', 'email2@example.com')),
+			'"last, first" &lt;name@example.org&gt;' => array('"last, first" <email@example.org>', array('email@example.org' => '"last, first"')),
+			'email,name &ltemail&gt;,"last, first" &lt;name@example.org&gt;' => array(
+				'email1@example.org, name <email2@example.org>, "last, first" <email3@example.org>',
+				array(
+					'email1@example.org',
+					'email2@example.org' => 'name',
+					'email3@example.org' => '"last, first"'
+				)
+			)
+		);
+	}
+
+	/**
+	 * @test
+	 * @dataProvider parseAddressesProvider
+	 */
+	public function parseAddressesTest($source, $addressList) {
+		$returnArray = \TYPO3\CMS\Core\Utility\MailUtility::parseAddresses($source);
+		$this->assertEquals($addressList, $returnArray);
+	}
+
 }
 
 ?>

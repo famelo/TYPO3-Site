@@ -1048,7 +1048,12 @@ class FormEngine {
 					$typeField = substr($GLOBALS['TCA'][$table]['ctrl']['type'], 0, strpos($GLOBALS['TCA'][$table]['ctrl']['type'], ':'));
 				}
 				// Create a JavaScript code line which will ask the user to save/update the form due to changing the element. This is used for eg. "type" fields and others configured with "requestUpdate"
-				if ($GLOBALS['TCA'][$table]['ctrl']['type'] && !strcmp($field, $typeField) || $GLOBALS['TCA'][$table]['ctrl']['requestUpdate'] && \TYPO3\CMS\Core\Utility\GeneralUtility::inList($GLOBALS['TCA'][$table]['ctrl']['requestUpdate'], $field)) {
+				if (
+					$GLOBALS['TCA'][$table]['ctrl']['type']
+					&& !strcmp($field, $typeField)
+					|| $GLOBALS['TCA'][$table]['ctrl']['requestUpdate']
+					&& \TYPO3\CMS\Core\Utility\GeneralUtility::inList(str_replace(' ', '', $GLOBALS['TCA'][$table]['ctrl']['requestUpdate']), $field)
+				) {
 					if ($GLOBALS['BE_USER']->jsConfirmation(1)) {
 						$alertMsgOnChange = 'if (confirm(TBE_EDITOR.labels.onChangeAlert) && TBE_EDITOR.checkSubmit(-1)){ TBE_EDITOR.submitForm() };';
 					} else {
@@ -2360,8 +2365,32 @@ function ' . $evalData . '(value) {
 					} else {
 						$rowCopy = array();
 						$rowCopy[$field] = $imgPath;
-						$thumbnailCode = \TYPO3\CMS\Backend\Utility\BackendUtility::thumbCode($rowCopy, $table, $field, $this->backPath, 'thumbs.php', $config['uploadfolder'], 0, ' align="middle"');
-						$imgs[] = '<span class="nobr">' . $thumbnailCode . $imgPath . '</span>';
+						$thumbnailCode = '';
+						try {
+							$thumbnailCode = \TYPO3\CMS\Backend\Utility\BackendUtility::thumbCode(
+								$rowCopy, $table, $field, $this->backPath, 'thumbs.php',
+								$config['uploadfolder'], 0, ' align="middle"'
+							);
+							$thumbnailCode = '<span class="nobr">' . $thumbnailCode . $imgPath . '</span>';
+
+						} catch (\Exception $exception) {
+							/** @var $flashMessage FlashMessage */
+							$message = $exception->getMessage();
+							$flashMessage = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance(
+								'TYPO3\\CMS\\Core\\Messaging\\FlashMessage',
+								htmlspecialchars($message), '', \TYPO3\CMS\Core\Messaging\FlashMessage::ERROR, TRUE
+							);
+							$class = 'TYPO3\\CMS\\Core\\Messaging\\FlashMessageService';
+							/** @var $flashMessageService \TYPO3\CMS\Core\Messaging\FlashMessageService */
+							$flashMessageService = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance($class);
+							$defaultFlashMessageQueue = $flashMessageService->getMessageQueueByIdentifier();
+							$defaultFlashMessageQueue->enqueue($flashMessage);
+
+							$logMessage = $message . ' (' . $table . ':' . $row['uid'] . ')';
+							\TYPO3\CMS\Core\Utility\GeneralUtility::sysLog($logMessage, 'core', \TYPO3\CMS\Core\Utility\GeneralUtility::SYSLOG_SEVERITY_WARNING);
+						}
+
+						$imgs[] = $thumbnailCode;
 					}
 				}
 				$thumbsnail = implode('<br />', $imgs);
@@ -2561,7 +2590,8 @@ function ' . $evalData . '(value) {
 	 */
 	public function getSingleField_typeFlex($table, $field, $row, &$PA) {
 		// Data Structure:
-		$dataStructArray = \TYPO3\CMS\Backend\Utility\BackendUtility::getFlexFormDS($PA['fieldConf']['config'], $row, $table);
+		$dataStructArray = \TYPO3\CMS\Backend\Utility\BackendUtility::getFlexFormDS($PA['fieldConf']['config'], $row, $table, $field);
+
 		$item = '';
 		// Manipulate Flexform DS via TSConfig and group access lists
 		if (is_array($dataStructArray)) {
@@ -2667,7 +2697,7 @@ function ' . $evalData . '(value) {
 						}
 						$displayConditionResult = TRUE;
 						if ($dataStruct['ROOT']['TCEforms']['displayCond']) {
-							$displayConditionResult = $elementConditionMatcher->match($dataStruct['ROOT']['TCEforms']['displayCond'], $fakeRow, 'vDef');
+							$displayConditionResult = $elementConditionMatcher->match($dataStruct['ROOT']['TCEforms']['displayCond'], $fakeRow, 'vDEF');
 						}
 						// If sheets displayCond leads to false
 						if (!$skipCondition && !$displayConditionResult) {
@@ -2928,7 +2958,7 @@ function ' . $evalData . '(value) {
 							$rotateLang = array($PA['_valLang']);
 						}
 						$conditionData = is_array($editData) ? $editData : array();
-						// Add current $row to data processed by isDisplayCondition()
+						// Add current $row to data processed by \TYPO3\CMS\Backend\Form\ElementConditionMatcher
 						$conditionData['parentRec'] = $row;
 						$tRows = array();
 
@@ -3671,7 +3701,7 @@ function ' . $evalData . '(value) {
 		// Create selector box of the options
 		$sSize = $params['autoSizeMax'] ? \TYPO3\CMS\Core\Utility\MathUtility::forceIntegerInRange($itemArrayC + 1, \TYPO3\CMS\Core\Utility\MathUtility::forceIntegerInRange($params['size'], 1), $params['autoSizeMax']) : $params['size'];
 		if (!$selector) {
-			$isMultiple = $params['size'] != 1;
+			$isMultiple = $params['maxitems'] != 1 && $params['size'] != 1;
 			$selector = '<select id="' . uniqid('tceforms-multiselect-') . '" ' . ($params['noList'] ? 'style="display: none"' : 'size="' . $sSize . '"' . $this->insertDefStyle('group', 'tceforms-multiselect')) . ($isMultiple ? ' multiple="multiple"' : '') . ' name="' . $fName . '_list" ' . $onFocus . $params['style'] . $disabled . '>' . implode('', $opt) . '</select>';
 		}
 		$icons = array(
@@ -5768,8 +5798,8 @@ function ' . $evalData . '(value) {
 	public function printNeededJSFunctions() {
 		// JS evaluation:
 		$out = $this->JSbottom($this->formName);
-		// Integrate JS functions for the element browser if such fields or IRRE fields were processed:
-		if ($this->printNeededJS['dbFileIcons'] || $this->inline->inlineCount) {
+		// Integrate JS functions for the element browser if such fields or IRRE fields or suggest wizard were processed:
+		if ($this->printNeededJS['dbFileIcons'] > 0 || $this->inline->inlineCount > 0 || $this->suggest->suggestCount > 0) {
 			$out .= '
 
 
@@ -5780,7 +5810,7 @@ function ' . $evalData . '(value) {
 
 			<script type="text/javascript">
 				/*<![CDATA[*/
-			' . $this->dbFileCon(('document.' . $this->formName)) . '
+			' . $this->dbFileCon('document.' . $this->formName) . '
 				/*]]>*/
 			</script>';
 		}
@@ -5951,9 +5981,7 @@ function ' . $evalData . '(value) {
 		\TYPO3\CMS\Core\Utility\GeneralUtility::logDeprecatedFunction();
 		/** @var $elementConditionMatcher \TYPO3\CMS\Backend\Form\ElementConditionMatcher */
 		$elementConditionMatcher = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Backend\\Form\\ElementConditionMatcher');
-		$elementConditionMatcher->setRecord($row);
-		$elementConditionMatcher->setFlexformValueKey($ffValueKey);
-		return $elementConditionMatcher->match($displayCond);
+		return $elementConditionMatcher->match($displayCond, $row, $ffValueKey);
 	}
 
 	/**
@@ -6300,6 +6328,5 @@ function ' . $evalData . '(value) {
 	}
 
 }
-
 
 ?>

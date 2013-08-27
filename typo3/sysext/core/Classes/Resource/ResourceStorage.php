@@ -941,16 +941,15 @@ class ResourceStorage {
 		if (!$this->checkFileActionPermission('write', $file)) {
 			throw new Exception\InsufficientFileWritePermissionsException('Writing to file "' . $file->getIdentifier() . '" is not allowed.', 1330121088);
 		}
-			// Call driver method to update the file and update file properties afterwards
-		try {
-			$result = $this->driver->setFileContents($file, $contents);
-			$fileInfo = $this->driver->getFileInfo($file);
-			$fileInfo['sha1'] = $this->driver->hash($file, 'sha1');
-			$file->updateProperties($fileInfo);
-			$this->getFileRepository()->update($file);
-		} catch (\RuntimeException $e) {
-			throw $e;
+		if ($this->checkFileExtensionPermission($file->getName()) === FALSE) {
+			throw new Exception\IllegalFileExtensionException('You are not allowed to edit a file with extension "' . $file->getExtension() . '"', 1366711933);
 		}
+			// Call driver method to update the file and update file properties afterwards
+		$result = $this->driver->setFileContents($file, $contents);
+		$fileInfo = $this->driver->getFileInfo($file);
+		$fileInfo['sha1'] = $this->driver->hash($file, 'sha1');
+		$file->updateProperties($fileInfo);
+		$this->getFileRepository()->update($file);
 		return $result;
 	}
 
@@ -966,6 +965,9 @@ class ResourceStorage {
 	 * @return FileInterface The file object
 	 */
 	public function createFile($fileName, Folder $targetFolderObject) {
+		if ($this->checkFileExtensionPermission($fileName) === FALSE) {
+			throw new Exception\IllegalFileExtensionException('You are not allowed to create a file with this extension on storage "' . $targetFolderObject->getCombinedIdentifier() . '"', 1366711745);
+		}
 		if (!$this->checkFolderActionPermission('add', $targetFolderObject)) {
 			throw new Exception\InsufficientFolderWritePermissionsException('You are not allowed to create directories on this storage "' . $targetFolderObject->getIdentifier() . '"', 1323059807);
 		}
@@ -1031,15 +1033,11 @@ class ResourceStorage {
 		$sourceStorage = $file->getStorage();
 		// Call driver method to create a new file from an existing file object,
 		// and return the new file object
-		try {
-			if ($sourceStorage === $this) {
-				$newFileObject = $this->driver->copyFileWithinStorage($file, $targetFolder, $targetFileName);
-			} else {
-				$tempPath = $file->getForLocalProcessing();
-				$newFileObject = $this->driver->addFile($tempPath, $targetFolder, $targetFileName);
-			}
-		} catch (Exception\AbstractFileOperationException $e) {
-			throw $e;
+		if ($sourceStorage === $this) {
+			$newFileObject = $this->driver->copyFileWithinStorage($file, $targetFolder, $targetFileName);
+		} else {
+			$tempPath = $file->getForLocalProcessing();
+			$newFileObject = $this->driver->addFile($tempPath, $targetFolder, $targetFileName);
 		}
 		$this->emitPostFileCopySignal($file, $targetFolder);
 		return $newFileObject;
@@ -1254,6 +1252,10 @@ class ResourceStorage {
 		if ($file->getIdentifier() == $targetFileName) {
 			return $file;
 		}
+		// Check if file extension is allowed
+		if ($this->checkFileExtensionPermission($targetFileName) === FALSE) {
+			throw new Exception\IllegalFileExtensionException('You are not allowed to rename a file with to this extension', 1371466663);
+		}
 		// Check if user is allowed to rename
 		if (!$this->checkUserActionPermission('rename', 'File')) {
 			throw new Exception\InsufficientUserPermissionsException('You are not allowed to rename files."', 1319219349);
@@ -1376,22 +1378,18 @@ class ResourceStorage {
 		$this->emitPreFolderMoveSignal($folderToMove, $targetParentFolder, $newFolderName);
 		// Get all file objects now so we are able to update them after moving the folder
 		$fileObjects = $this->getAllFileObjectsInFolder($folderToMove);
-		try {
-			if ($sourceStorage === $this) {
-				$fileMappings = $this->driver->moveFolderWithinStorage($folderToMove, $targetParentFolder, $newFolderName);
-			} else {
-				$fileMappings = $this->moveFolderBetweenStorages($folderToMove, $targetParentFolder, $newFolderName);
-			}
-			// Update the identifier and storage of all file objects
-			foreach ($fileObjects as $oldIdentifier => $fileObject) {
-				$newIdentifier = $fileMappings[$oldIdentifier];
-				$fileObject->updateProperties(array('storage' => $this, 'identifier' => $newIdentifier));
-				$this->getFileRepository()->update($fileObject);
-			}
-			$returnObject = $this->getFolder($fileMappings[$folderToMove->getIdentifier()]);
-		} catch (\TYPO3\CMS\Core\Exception $e) {
-			throw $e;
+		if ($sourceStorage === $this) {
+			$fileMappings = $this->driver->moveFolderWithinStorage($folderToMove, $targetParentFolder, $newFolderName);
+		} else {
+			$fileMappings = $this->moveFolderBetweenStorages($folderToMove, $targetParentFolder, $newFolderName);
 		}
+		// Update the identifier and storage of all file objects
+		foreach ($fileObjects as $oldIdentifier => $fileObject) {
+			$newIdentifier = $fileMappings[$oldIdentifier];
+			$fileObject->updateProperties(array('storage' => $this, 'identifier' => $newIdentifier));
+			$this->getFileRepository()->update($fileObject);
+		}
+		$returnObject = $this->getFolder($fileMappings[$folderToMove->getIdentifier()]);
 		$this->emitPostFolderMoveSignal($folderToMove, $targetParentFolder, $newFolderName);
 		return $returnObject;
 	}
@@ -1478,18 +1476,14 @@ class ResourceStorage {
 		$this->emitPreFolderRenameSignal($folderObject, $newName);
 
 		$fileObjects = $this->getAllFileObjectsInFolder($folderObject);
-		try {
-			$fileMappings = $this->driver->renameFolder($folderObject, $newName);
-			// Update the identifier of all file objects
-			foreach ($fileObjects as $oldIdentifier => $fileObject) {
-				$newIdentifier = $fileMappings[$oldIdentifier];
-				$fileObject->updateProperties(array('identifier' => $newIdentifier));
-				$this->getFileRepository()->update($fileObject);
-			}
-			$returnObject = $this->getFolder($fileMappings[$folderObject->getIdentifier()]);
-		} catch (\Exception $e) {
-			throw $e;
+		$fileMappings = $this->driver->renameFolder($folderObject, $newName);
+		// Update the identifier of all file objects
+		foreach ($fileObjects as $oldIdentifier => $fileObject) {
+			$newIdentifier = $fileMappings[$oldIdentifier];
+			$fileObject->updateProperties(array('identifier' => $newIdentifier));
+			$this->getFileRepository()->update($fileObject);
 		}
+		$returnObject = $this->getFolder($fileMappings[$folderObject->getIdentifier()]);
 
 		$this->emitPostFolderRenameSignal($folderObject, $newName);
 
@@ -1546,16 +1540,22 @@ class ResourceStorage {
 	 */
 	public function fetchFolderListFromDriver($path, $start = 0, $numberOfItems = 0, array $folderFilterCallbacks = array(), $recursive = FALSE) {
 		$items = $this->driver->getFolderList($path, $start, $numberOfItems, $folderFilterCallbacks, $recursive);
-		// Exclude the _processed_ folder, so it won't get indexed etc
-		$processingFolder = $this->getProcessingFolder();
-		if ($processingFolder && $path == '/') {
-			$processedFolderIdentifier = $this->processingFolder->getIdentifier();
-			$processedFolderIdentifier = trim($processedFolderIdentifier, '/');
-			if (isset($items[$processedFolderIdentifier])) {
-				unset($items[$processedFolderIdentifier]);
+		if (!empty($items)) {
+			// Exclude the _processed_ folder, so it won't get indexed etc
+			// The processed folder might be any sub folder in storage
+			$processingFolder = $this->getProcessingFolder();
+			if ($processingFolder) {
+				$processedFolderIdentifier = $this->processingFolder->getIdentifier();
+				$processedFolderIdentifier = trim($processedFolderIdentifier, '/');
+				$processedFolderIdentifierParts = explode('/', $processedFolderIdentifier);
+				$processedFolderName = array_pop($processedFolderIdentifierParts);
+				$processedFolderParent = implode('/', $processedFolderIdentifierParts);
+				if ($processedFolderParent === trim($path, '/') && isset($items[$processedFolderName])) {
+					unset($items[$processedFolderName]);
+				}
 			}
+			uksort($items, 'strnatcasecmp');
 		}
-		uksort($items, 'strnatcasecmp');
 		return $items;
 	}
 

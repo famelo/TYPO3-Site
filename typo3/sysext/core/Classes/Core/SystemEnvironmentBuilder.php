@@ -76,7 +76,7 @@ class SystemEnvironmentBuilder {
 	 */
 	static protected function defineBaseConstants() {
 		// This version, branch and copyright
-		define('TYPO3_version', '6.1.0');
+		define('TYPO3_version', '6.1.3');
 		define('TYPO3_branch', '6.1');
 		define('TYPO3_copyright_year', '1998-2013');
 
@@ -84,7 +84,7 @@ class SystemEnvironmentBuilder {
 		define('TYPO3_URL_GENERAL', 'http://typo3.org/');
 		define('TYPO3_URL_ORG', 'http://typo3.org/');
 		define('TYPO3_URL_LICENSE', 'http://typo3.org/licenses');
-		define('TYPO3_URL_EXCEPTION', 'http://typo3.org/go/exception/v4/');
+		define('TYPO3_URL_EXCEPTION', 'http://typo3.org/go/exception/CMS/');
 		define('TYPO3_URL_MAILINGLISTS', 'http://lists.typo3.org/cgi-bin/mailman/listinfo');
 		define('TYPO3_URL_DOCUMENTATION', 'http://typo3.org/documentation/');
 		define('TYPO3_URL_DOCUMENTATION_TSREF', 'http://docs.typo3.org/typo3cms/TyposcriptReference/');

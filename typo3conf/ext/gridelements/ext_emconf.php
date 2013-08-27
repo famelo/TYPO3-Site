@@ -3,7 +3,7 @@
 /***************************************************************
  * Extension Manager/Repository config file for ext "gridelements".
  *
- * Auto generated 14-05-2013 10:49
+ * Auto generated 27-08-2013 19:23
  *
  * Manual updates:
  * Only the data in the array - everything else is removed by next
@@ -16,7 +16,7 @@ $EM_CONF[$_EXTKEY] = array (
 It offers a lot of new features like advanced drag & drop or real references, that improve the usability of the page and list module to speed up the daily work with the backend.',
 	'category' => 'be',
 	'shy' => 0,
-	'version' => '2.0.0',
+	'version' => '2.0.2',
 	'dependencies' => '',
 	'conflicts' => '',
 	'priority' => 'bottom',
@@ -40,7 +40,7 @@ It offers a lot of new features like advanced drag & drop or real references, th
 			'cms' => '',
 			'version' => '',
 			'php' => '5.3.3-0.0.0',
-			'typo3' => '6.0.0-0.0.0',
+			'typo3' => '6.0.0-6.1.99',
 		),
 		'conflicts' => 
 		array (

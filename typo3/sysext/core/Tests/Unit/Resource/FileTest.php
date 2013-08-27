@@ -24,8 +24,6 @@ namespace TYPO3\CMS\Core\Tests\Unit\Resource;
  * This copyright notice MUST APPEAR in all copies of the script!
  ***************************************************************/
 
-require_once 'vfsStream/vfsStream.php';
-
 /**
  * Testcase for the file class of the TYPO3 FAL
  *
@@ -392,7 +390,39 @@ class FileTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 		$this->assertSame($expectedExtension, $fixture->getExtension());
 	}
 
+	/**
+	 * @test
+	 */
+	public function indexablePropertyIsByDefaultTrue() {
+		$fixture = new \TYPO3\CMS\Core\Resource\File(array());
+		$this->assertAttributeEquals(TRUE, 'indexable', $fixture);
+	}
 
+	/**
+	 * @test
+	 */
+	public function indexablePropertyCanBeSetAndGet() {
+		$fixture = new \TYPO3\CMS\Core\Resource\File(array());
+		foreach (array(FALSE, TRUE) as $value) {
+			$fixture->setIndexable($value);
+			$this->assertSame($value, $fixture->isIndexable());
+		}
+	}
+
+	/**
+	 * @test
+	 */
+	public function callMethodLoadIndexRecordWithPropertyIndexableSetToFalseAndCheckWhetherIsIndexedReturnsNull() {
+		$method = new \ReflectionMethod(
+			'TYPO3\CMS\Core\Resource\File', 'loadIndexRecord'
+		);
+		$method->setAccessible(TRUE);
+
+		$fixture = new \TYPO3\CMS\Core\Resource\File(array());
+		$fixture->setIndexable(FALSE);
+		$method->invoke($fixture);
+		$this->assertNull($fixture->isIndexed());
+	}
 }
 
 ?>
