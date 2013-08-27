@@ -63,7 +63,7 @@ TYPO3.Workspaces.Toolbar.selectStateActionCombo = new Ext.form.ComboBox({
 	valueField: 'uid',
 	displayField: 'title',
 	mode: 'local',
-	emptyText: TYPO3.l10n.localize('chooseAction'),
+	emptyText: TYPO3.lang.chooseAction,
 	selectOnFocus: true,
 	disabled : true,
 	hidden : true,	 // we hide it by default and show it in case there are any actions available
@@ -74,21 +74,7 @@ TYPO3.Workspaces.Toolbar.selectStateActionCombo = new Ext.form.ComboBox({
 	listeners: {
 		'select' : function () {
 			var selection = TYPO3.Workspaces.WorkspaceGrid.getSelectionModel().getSelections();
-			var nextStage = this.getValue();
-
-			// Use integrity check since "publish execute" stage is effective
-			if (nextStage == -20) {
-				var parameters = {
-					type: 'selection',
-					selection: TYPO3.Workspaces.Helpers.getElementsArrayOfSelectionForIntegrityCheck(selection)
-				};
-
-				TYPO3.Workspaces.Actions.checkIntegrity(parameters, function() {
-					TYPO3.Workspaces.Actions.sendToSpecificStageWindow(selection, nextStage);
-				});
-			} else {
-				TYPO3.Workspaces.Actions.sendToSpecificStageWindow(selection, nextStage);
-			}
+			TYPO3.Workspaces.Actions.sendToSpecificStageWindow(selection, this.getValue());
 		}
 	}
 });
@@ -119,7 +105,7 @@ TYPO3.Workspaces.Toolbar.selectStateMassActionCombo = new Ext.form.ComboBox({
 	valueField: 'action',
 	displayField: 'title',
 	mode: 'local',
-	emptyText: TYPO3.l10n.localize('chooseMassAction'),
+	emptyText: TYPO3.lang.chooseMassAction,
 	selectOnFocus: true,
 	triggerAction: 'all',
 	editable: false,
@@ -129,28 +115,22 @@ TYPO3.Workspaces.Toolbar.selectStateMassActionCombo = new Ext.form.ComboBox({
 	listeners: {
 		'select' : function (combo, record) {
 			var label = '';
-			var affectWholeWorkspaceWarning = TYPO3.l10n.localize('tooltip.affectWholeWorkspace');
-			var language = TYPO3.Workspaces.MainStore.baseParams.language;
-			var checkIntegrity = false;
-
+			var affectWholeWorkspaceWarning = TYPO3.lang["tooltip.affectWholeWorkspace"];
 			switch (record.data.action) {
 				case 'publish':
-					label = TYPO3.l10n.localize('tooltip.publishAll');
-					checkIntegrity = true;
+					label = TYPO3.lang["tooltip.publishAll"];
 					break;
 				case 'swap':
-					label = TYPO3.l10n.localize('tooltip.swapAll');
-					checkIntegrity = true;
+					label = TYPO3.lang["tooltip.swapAll"];
 					break;
 				case 'discard':
-					label = TYPO3.l10n.localize('tooltip.discardAll');
+					label = TYPO3.lang["tooltip.discardAll"];
 					break;
 			}
 			top.TYPO3.Windows.close('executeMassActionWindow');
-
-			var configuration = {
+			var dialog = top.TYPO3.Windows.showWindow({
 				id: 'executeMassActionWindow',
-				title: TYPO3.l10n.localize('window.massAction.title'),
+				title: TYPO3.lang["window.massAction.title"],
 				items: [
 					{
 						xtype: 'form',
@@ -173,19 +153,16 @@ TYPO3.Workspaces.Toolbar.selectStateMassActionCombo = new Ext.form.ComboBox({
 						id: 'executeMassActionOkButton',
 						data: record.data,
 						scope: this,
-						text: TYPO3.l10n.localize('ok'),
+						text: TYPO3.lang.ok,
 						disabled:false,
 						handler: function(event) {
-							TYPO3.Workspaces.Actions.triggerMassAction(
-								event.data.action,
-								language
-							);
+							TYPO3.Workspaces.Actions.triggerMassAction(event.data.action);
 						}
 					},
 					{
 						id: 'executeMassActionCancleButton',
 						scope: this,
-						text: TYPO3.l10n.localize('cancel'),
+						text: TYPO3.lang.cancel,
 						handler: function() {
 							top.TYPO3.Windows.close('executeMassActionWindow');
 							// if clicks during action - this also interrupts the running process -- not the nices way but efficient
@@ -193,19 +170,7 @@ TYPO3.Workspaces.Toolbar.selectStateMassActionCombo = new Ext.form.ComboBox({
 						}
 					}
 				]
-			};
-
-			if (checkIntegrity && language != 'all') {
-				var parameters = {
-					type: 'all',
-					language: language
-				};
-				TYPO3.Workspaces.Actions.checkIntegrity(parameters, function() {
-					top.TYPO3.Windows.showWindow(configuration);
-				});
-			} else {
-				top.TYPO3.Windows.showWindow(configuration);
-			}
+			});
 		}
 	}
 });
@@ -227,7 +192,7 @@ TYPO3.Workspaces.Toolbar.depthFilter = new Ext.form.ComboBox({
 	displayField: 'label',
 	id: 'depthSelector',
 	mode: 'local',
-	emptyText: TYPO3.l10n.localize('depth'),
+	emptyText: TYPO3.lang.depth,
 	selectOnFocus: true,
 	triggerAction: 'all',
 	editable: false,
@@ -237,12 +202,12 @@ TYPO3.Workspaces.Toolbar.depthFilter = new Ext.form.ComboBox({
 		autoLoad: true,
 		fields: ['depth','label'],
 		data : [
-			['0', TYPO3.l10n.localize('depth_0')],
-			['1', TYPO3.l10n.localize('depth_1')],
-			['2', TYPO3.l10n.localize('depth_2')],
-			['3', TYPO3.l10n.localize('depth_3')],
-			['4', TYPO3.l10n.localize('depth_4')],
-			['999', TYPO3.l10n.localize('depth_infi')]
+			['0', TYPO3.lang.depth_0],
+			['1', TYPO3.lang.depth_1],
+			['2', TYPO3.lang.depth_2],
+			['3', TYPO3.lang.depth_3],
+			['4', TYPO3.lang.depth_4],
+			['999', TYPO3.lang.depth_infi]
 		]
 	}),
 	value: 999,
@@ -261,48 +226,8 @@ TYPO3.Workspaces.Toolbar.depthFilter = new Ext.form.ComboBox({
 	}
 });
 
-TYPO3.Workspaces.Toolbar.LanguageSelector = new Ext.form.ComboBox({
-	width: 150,
-	listWidth: 350,
-	lazyRender: true,
-	valueField: 'uid',
-	displayField: 'title',
-	mode: 'local',
-	emptyText: TYPO3.l10n.localize('language.selectLanguage'),
-	selectOnFocus: true,
-	triggerAction: 'all',
-	editable: false,
-	forceSelection: true,
-	tpl: '<tpl for="."><div class="x-combo-list-item"><span class="{cls}">&nbsp;</span> {title}</div></tpl>',
-	store: new Ext.data.DirectStore({
-		storeId: 'languages',
-		root: 'data',
-		totalProperty: 'total',
-		idProperty: 'uid',
-		fields: [
-			{name : 'uid'},
-			{name : 'title'},
-			{name : 'cls'}
-		],
-		listeners: {
-			load: function() {
-				TYPO3.Workspaces.Toolbar.LanguageSelector.setValue(TYPO3.settings.Workspaces.language);
-			}
-		}
-	}),
-	listeners: {
-		select: function (comboBox, record, index) {
-			TYPO3.Workspaces.ExtDirectActions.saveLanguageSelection(this.getValue());
-			TYPO3.Workspaces.MainStore.setBaseParam('language', this.getValue());
-			TYPO3.Workspaces.MainStore.load();
-		}
-	}
-});
-
 TYPO3.Workspaces.Toolbar.FullTopToolbar = [
 	TYPO3.Workspaces.Toolbar.depthFilter,
-	'-',
-	TYPO3.Workspaces.Toolbar.LanguageSelector,
 	{xtype: 'tbfill'},
 	TYPO3.Workspaces.Toolbar.search
 ];

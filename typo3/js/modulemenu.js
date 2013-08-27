@@ -69,7 +69,9 @@ TYPO3.ModuleMenu.Store = new Ext.data.JsonStore({
 
 TYPO3.ModuleMenu.Template = new Ext.XTemplate(
 		'<div id="typo3-docheader">',
-		'	<div class="typo3-docheader-functions">',
+		'	<div id="typo3-docheader-row1">',
+		'		<div class="buttonsleft"></div>',
+		'		<div class="buttonsright"></div>',
 		'	</div>',
 		'</div>',
 		'<ul id="typo3-menu">',
@@ -255,10 +257,9 @@ TYPO3.ModuleMenu.App = {
 				TYPO3.Backend.NavigationContainer.hide();
 				TYPO3.Backend.NavigationDummy.show();
 			}
-
-			this.highlightModuleMenuItem(mod);
-			this.loadedModule = mod;
 			this.openInContentFrame(record.originalLink, params);
+			this.loadedModule = mod;
+			this.highlightModuleMenuItem(mod);
 
 				// compatibility
 			top.currentSubScript = record.originalLink;
@@ -323,14 +324,11 @@ TYPO3.ModuleMenu.App = {
 	},
 
 	openInContentFrame: function(url, params) {
-		var urlToLoad;
 		if (top.nextLoadModuleUrl) {
 			TYPO3.Backend.ContentContainer.setUrl(top.nextLoadModuleUrl);
 			top.nextLoadModuleUrl = '';
 		} else {
-			urlToLoad = url + (params ? (url.indexOf('?') !== -1 ? '&' : '?') + params : '')
-			TYPO3.Backend.ContentContainer.setUrl(urlToLoad);
-			return;
+			TYPO3.Backend.ContentContainer.setUrl(url + (params ? (url.indexOf('?') !== -1 ? '&' : '?') + params : ''));
 		}
 	},
 

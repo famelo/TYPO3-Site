@@ -1,43 +1,57 @@
 <?php
-namespace TYPO3\CMS\Fluid\Tests\Unit\ViewHelpers\Form;
 
 /*                                                                        *
- * This script is backported from the TYPO3 Flow package "TYPO3.Fluid".   *
+ * This script belongs to the FLOW3 package "Fluid".                      *
  *                                                                        *
  * It is free software; you can redistribute it and/or modify it under    *
- * the terms of the GNU Lesser General Public License, either version 3   *
- *  of the License, or (at your option) any later version.                *
+ * the terms of the GNU Lesser General Public License as published by the *
+ * Free Software Foundation, either version 3 of the License, or (at your *
+ * option) any later version.                                             *
+ *                                                                        *
+ * This script is distributed in the hope that it will be useful, but     *
+ * WITHOUT ANY WARRANTY; without even the implied warranty of MERCHAN-    *
+ * TABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Lesser       *
+ * General Public License for more details.                               *
+ *                                                                        *
+ * You should have received a copy of the GNU Lesser General Public       *
+ * License along with the script.                                         *
+ * If not, see http://www.gnu.org/licenses/lgpl.html                      *
  *                                                                        *
  * The TYPO3 project - inspiring people to share!                         *
  *                                                                        */
 
-require_once(__DIR__ . '/Fixtures/EmptySyntaxTreeNode.php');
-require_once(__DIR__ . '/Fixtures/Fixture_UserDomainClass.php');
-require_once(__DIR__ . '/FormFieldViewHelperBaseTestcase.php');
+require_once(dirname(__FILE__) . '/Fixtures/EmptySyntaxTreeNode.php');
+require_once(dirname(__FILE__) . '/Fixtures/Fixture_UserDomainClass.php');
+require_once(dirname(__FILE__) . '/../ViewHelperBaseTestcase.php');
 
 /**
  * Test for the "Upload" Form view helper
+ *
+ * @license http://www.gnu.org/licenses/lgpl.html GNU Lesser General Public License, version 3 or later
  */
-class UploadViewHelperTest extends \TYPO3\CMS\Fluid\Tests\Unit\ViewHelpers\Form\FormFieldViewHelperBaseTestcase {
+class Tx_Fluid_Tests_Unit_ViewHelpers_Form_UploadViewHelperTest extends Tx_Fluid_ViewHelpers_ViewHelperBaseTestcase {
 
 	/**
-	 * @var \TYPO3\CMS\Fluid\ViewHelpers\Form\UploadViewHelper
+	 * var Tx_Fluid_ViewHelpers_Form_UploadViewHelper
 	 */
 	protected $viewHelper;
 
 	public function setUp() {
 		parent::setUp();
-		$this->viewHelper = $this->getAccessibleMock('TYPO3\\CMS\\Fluid\\ViewHelpers\\Form\\UploadViewHelper', array('setErrorClassAttribute', 'registerFieldNameForFormTokenGeneration'));
-		$this->arguments['name'] = '';
+		$this->viewHelper = $this->getAccessibleMock('Tx_Fluid_ViewHelpers_Form_UploadViewHelper', array('setErrorClassAttribute', 'registerFieldNameForFormTokenGeneration'));
 		$this->injectDependenciesIntoViewHelper($this->viewHelper);
 		$this->viewHelper->initializeArguments();
 	}
 
 	/**
 	 * @test
+	 * @author Bastian Waidelich <bastian@typo3.org>
 	 */
 	public function renderCorrectlySetsTagName() {
-		$this->tagBuilder->expects($this->once())->method('setTagName')->with('input');
+		$mockTagBuilder = $this->getMock('Tx_Fluid_Core_ViewHelper_TagBuilder', array('setTagName'), array(), '', FALSE);
+		$mockTagBuilder->expects($this->once())->method('setTagName')->with('input');
+		$this->viewHelper->_set('tag', $mockTagBuilder);
+		$this->viewHelper->setArguments(new Tx_Fluid_Core_ViewHelper_Arguments(array()));
 
 		$this->viewHelper->initialize();
 		$this->viewHelper->render();
@@ -45,29 +59,30 @@ class UploadViewHelperTest extends \TYPO3\CMS\Fluid\Tests\Unit\ViewHelpers\Form\
 
 	/**
 	 * @test
+	 * @author Sebastian Kurfürst <sebastian@typo3.org>
+	 * @author Bastian Waidelich <bastian@typo3.org>
 	 */
 	public function renderCorrectlySetsTypeNameAndValueAttributes() {
-		$mockTagBuilder = $this->getMock('TYPO3\\CMS\\Fluid\\Core\\ViewHelper\\TagBuilder', array('addAttribute', 'setContent', 'render'), array(), '', FALSE);
+		$mockTagBuilder = $this->getMock('Tx_Fluid_Core_ViewHelper_TagBuilder', array('addAttribute', 'setContent', 'render'), array(), '', FALSE);
 		$mockTagBuilder->expects($this->at(0))->method('addAttribute')->with('type', 'file');
 		$mockTagBuilder->expects($this->at(1))->method('addAttribute')->with('name', 'someName');
-		$this->viewHelper->expects($this->at(0))->method('registerFieldNameForFormTokenGeneration')->with('someName[name]');
-		$this->viewHelper->expects($this->at(1))->method('registerFieldNameForFormTokenGeneration')->with('someName[type]');
-		$this->viewHelper->expects($this->at(2))->method('registerFieldNameForFormTokenGeneration')->with('someName[tmp_name]');
-		$this->viewHelper->expects($this->at(3))->method('registerFieldNameForFormTokenGeneration')->with('someName[error]');
-		$this->viewHelper->expects($this->at(4))->method('registerFieldNameForFormTokenGeneration')->with('someName[size]');
+		$this->viewHelper->expects($this->once())->method('registerFieldNameForFormTokenGeneration')->with('someName');
 		$mockTagBuilder->expects($this->once())->method('render');
-		$this->viewHelper->injectTagBuilder($mockTagBuilder);
-		$arguments = array(
-			'name' => 'someName'
-		);
+		$this->viewHelper->_set('tag', $mockTagBuilder);
+
+		$arguments = new Tx_Fluid_Core_ViewHelper_Arguments(array(
+			'name' => 'someName',
+		));
+
 		$this->viewHelper->setArguments($arguments);
-		$this->viewHelper->setViewHelperNode(new \TYPO3\CMS\Fluid\Tests\Unit\ViewHelpers\Form\Fixtures\EmptySyntaxTreeNode());
+		$this->viewHelper->setViewHelperNode(new Tx_Fluid_ViewHelpers_Fixtures_EmptySyntaxTreeNode());
 		$this->viewHelper->initialize();
 		$this->viewHelper->render();
 	}
 
 	/**
 	 * @test
+	 * @author Bastian Waidelich <bastian@typo3.org>
 	 */
 	public function renderCallsSetErrorClassAttribute() {
 		$this->viewHelper->expects($this->once())->method('setErrorClassAttribute');

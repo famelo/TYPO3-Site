@@ -1,5 +1,4 @@
 <?php
-namespace TYPO3\CMS\Fluid\ViewHelpers;
 
 /*                                                                        *
  * This script is part of the TYPO3 project - inspiring people to share!  *
@@ -13,6 +12,7 @@ namespace TYPO3\CMS\Fluid\ViewHelpers;
  * TABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General      *
  * Public License for more details.                                       *
  *                                                                        */
+
 /**
  * This ViewHelper renders CObjects from the global TypoScript configuration.
  *
@@ -22,32 +22,25 @@ namespace TYPO3\CMS\Fluid\ViewHelpers;
  * <f:cObject typoscriptObjectPath="lib.someLibObject" />
  * </code>
  * <output>
- * rendered lib.someLibObject
+ * // rendered lib.someLibObject
  * </output>
  *
  * <code title="Specify cObject data & current value">
  * <f:cObject typoscriptObjectPath="lib.customHeader" data="{article}" current="{article.title}" />
  * </code>
  * <output>
- * rendered lib.customHeader. data and current value will be available in TypoScript
+ * // rendered lib.customHeader. data and current value will be available in TypoScript
  * </output>
  *
  * <code title="inline notation">
  * {article -> f:cObject(typoscriptObjectPath: 'lib.customHeader')}
  * </code>
  * <output>
- * rendered lib.customHeader. data will be available in TypoScript
+ * // rendered lib.customHeader. data will be available in TypoScript
  * </output>
+ *
  */
-class CObjectViewHelper extends \TYPO3\CMS\Fluid\Core\ViewHelper\AbstractViewHelper {
-
-	/**
-	 * Disable the escaping interceptor because otherwise the child nodes would be escaped before this view helper
-	 * can decode the text's entities.
-	 *
-	 * @var boolean
-	 */
-	protected $escapingInterceptorEnabled = FALSE;
+class Tx_Fluid_ViewHelpers_CObjectViewHelper extends Tx_Fluid_Core_ViewHelper_AbstractViewHelper {
 
 	/**
 	 * @var array
@@ -55,22 +48,22 @@ class CObjectViewHelper extends \TYPO3\CMS\Fluid\Core\ViewHelper\AbstractViewHel
 	protected $typoScriptSetup;
 
 	/**
-	 * @var \TYPO3\CMS\Frontend\Controller\TypoScriptFrontendController contains a backup of the current $GLOBALS['TSFE'] if used in BE mode
+	 * @var	t3lib_fe contains a backup of the current $GLOBALS['TSFE'] if used in BE mode
 	 */
 	protected $tsfeBackup;
 
 	/**
-	 * @var \TYPO3\CMS\Extbase\Configuration\ConfigurationManagerInterface
+	 * @var Tx_Extbase_Configuration_ConfigurationManagerInterface
 	 */
 	protected $configurationManager;
 
 	/**
-	 * @param \TYPO3\CMS\Extbase\Configuration\ConfigurationManagerInterface $configurationManager
+	 * @param Tx_Extbase_Configuration_ConfigurationManagerInterface $configurationManager
 	 * @return void
 	 */
-	public function injectConfigurationManager(\TYPO3\CMS\Extbase\Configuration\ConfigurationManagerInterface $configurationManager) {
+	public function injectConfigurationManager(Tx_Extbase_Configuration_ConfigurationManagerInterface $configurationManager) {
 		$this->configurationManager = $configurationManager;
-		$this->typoScriptSetup = $this->configurationManager->getConfiguration(\TYPO3\CMS\Extbase\Configuration\ConfigurationManagerInterface::CONFIGURATION_TYPE_FULL_TYPOSCRIPT);
+		$this->typoScriptSetup = $this->configurationManager->getConfiguration(Tx_Extbase_Configuration_ConfigurationManagerInterface::CONFIGURATION_TYPE_FULL_TYPOSCRIPT);
 	}
 
 	/**
@@ -79,43 +72,48 @@ class CObjectViewHelper extends \TYPO3\CMS\Fluid\Core\ViewHelper\AbstractViewHel
 	 * @param string $typoscriptObjectPath the TypoScript setup path of the TypoScript object to render
 	 * @param mixed $data the data to be used for rendering the cObject. Can be an object, array or string. If this argument is not set, child nodes will be used
 	 * @param string $currentValueKey
-	 * @throws \TYPO3\CMS\Fluid\Core\ViewHelper\Exception
 	 * @return string the content of the rendered TypoScript object
+	 * @author Bastian Waidelich <bastian@typo3.org>
+	 * @author Niels Pardon <mail@niels-pardon.de>
 	 */
 	public function render($typoscriptObjectPath, $data = NULL, $currentValueKey = NULL) {
 		if (TYPO3_MODE === 'BE') {
 			$this->simulateFrontendEnvironment();
 		}
+
 		if ($data === NULL) {
 			$data = $this->renderChildren();
 		}
 		$currentValue = NULL;
 		if (is_object($data)) {
-			$data = \TYPO3\CMS\Extbase\Reflection\ObjectAccess::getGettableProperties($data);
-		} elseif (is_string($data) || is_numeric($data)) {
-			$currentValue = (string) $data;
+			$data = Tx_Extbase_Reflection_ObjectAccess::getGettableProperties($data);
+		} elseif (is_string($data)) {
+			$currentValue = $data;
 			$data = array($data);
 		}
-		$contentObject = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Frontend\\ContentObject\\ContentObjectRenderer');
+		$contentObject = t3lib_div::makeInstance('tslib_cObj');
 		$contentObject->start($data);
 		if ($currentValue !== NULL) {
 			$contentObject->setCurrentVal($currentValue);
 		} elseif ($currentValueKey !== NULL && isset($data[$currentValueKey])) {
 			$contentObject->setCurrentVal($data[$currentValueKey]);
 		}
-		$pathSegments = \TYPO3\CMS\Core\Utility\GeneralUtility::trimExplode('.', $typoscriptObjectPath);
+
+		$pathSegments = t3lib_div::trimExplode('.', $typoscriptObjectPath);
 		$lastSegment = array_pop($pathSegments);
 		$setup = $this->typoScriptSetup;
 		foreach ($pathSegments as $segment) {
-			if (!array_key_exists(($segment . '.'), $setup)) {
-				throw new \TYPO3\CMS\Fluid\Core\ViewHelper\Exception('TypoScript object path "' . htmlspecialchars($typoscriptObjectPath) . '" does not exist', 1253191023);
+			if (!array_key_exists($segment . '.', $setup)) {
+				throw new Tx_Fluid_Core_ViewHelper_Exception('TypoScript object path "' . htmlspecialchars($typoscriptObjectPath) . '" does not exist' , 1253191023);
 			}
 			$setup = $setup[$segment . '.'];
 		}
 		$content = $contentObject->cObjGetSingle($setup[$lastSegment], $setup[$lastSegment . '.']);
+
 		if (TYPO3_MODE === 'BE') {
 			$this->resetFrontendEnvironment();
 		}
+
 		return $content;
 	}
 
@@ -124,10 +122,11 @@ class CObjectViewHelper extends \TYPO3\CMS\Fluid\Core\ViewHelper\AbstractViewHel
 	 * This somewhat hacky work around is currently needed because the cObjGetSingle() function of tslib_cObj relies on this setting
 	 *
 	 * @return void
+	 * @author Bastian Waidelich <bastian@typo3.org>
 	 */
 	protected function simulateFrontendEnvironment() {
 		$this->tsfeBackup = isset($GLOBALS['TSFE']) ? $GLOBALS['TSFE'] : NULL;
-		$GLOBALS['TSFE'] = new \stdClass();
+		$GLOBALS['TSFE'] = new stdClass();
 		$GLOBALS['TSFE']->cObjectDepthCounter = 100;
 	}
 
@@ -135,6 +134,7 @@ class CObjectViewHelper extends \TYPO3\CMS\Fluid\Core\ViewHelper\AbstractViewHel
 	 * Resets $GLOBALS['TSFE'] if it was previously changed by simulateFrontendEnvironment()
 	 *
 	 * @return void
+	 * @author Bastian Waidelich <bastian@typo3.org>
 	 * @see simulateFrontendEnvironment()
 	 */
 	protected function resetFrontendEnvironment() {

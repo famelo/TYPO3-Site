@@ -58,6 +58,10 @@ div.typo3-dyntabmenu-divs {
 .x-grid3-row-selected {
 	color: #4D4D4D;
 }
+a#goPreviewLinkButton {
+	line-height: 18px;
+	color: #ffffff;
+}
 #typo3-mod-php div.typo3-noDoc {
 	margin: 0px 0px;
 }
@@ -73,8 +77,7 @@ div.x-grid3-row img.x-action-col-icon {
 	display:none;
 }
 
-div.x-grid3-row-over img.x-action-col-icon,
-div.x-grid3-row img.x-action-col-icon.t3-visible {
+div.x-grid3-row-over img.x-action-col-icon {
 	display:inline-block;
 }
 
@@ -210,8 +213,4 @@ img.t3-icon-workspaces-sendtonextstage {
 
 img.t3-icon-workspaces-sendtoprevstage {
 	background-position: 0 4px !important;
-}
-
-table.t3-workspaces-foldout-contentDiff td.content {
-	word-break: break-all;
 }

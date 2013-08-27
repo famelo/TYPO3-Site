@@ -1,5 +1,5 @@
 <?php
-namespace TYPO3\CMS\Fluid\Compatibility;
+
 
 /*                                                                        *
  * This script is part of the TYPO3 project - inspiring people to share!  *
@@ -13,23 +13,26 @@ namespace TYPO3\CMS\Fluid\Compatibility;
  * TABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General      *
  * Public License for more details.                                       *
  *                                                                        */
+
+/**
+ */
 /**
  * Build a template parser.
  * Use this class to get a fresh instance of a correctly initialized Fluid template parser.
  */
-class TemplateParserBuilder {
-
+class Tx_Fluid_Compatibility_TemplateParserBuilder {
 	/**
 	 * Creates a new TemplateParser which is correctly initialized. This is the correct
 	 * way to get a Fluid parser instance.
 	 *
-	 * @return \TYPO3\CMS\Fluid\Core\Parser\TemplateParser A correctly initialized Template Parser
+	 * @return Tx_Fluid_Core_TemplateParser A correctly initialized Template Parser
 	 */
 	static public function build() {
-		$templateParser = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Fluid\\Core\\Parser\\TemplateParser');
-		$templateParser->injectObjectManager(\TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Extbase\\Object\\ObjectManager'));
+		$templateParser = t3lib_div::makeInstance('Tx_Fluid_Core_Parser_TemplateParser');
+		$templateParser->injectObjectManager(t3lib_div::makeInstance('Tx_Extbase_Object_ObjectManager'));
 		return $templateParser;
 	}
 }
+
 
 ?>

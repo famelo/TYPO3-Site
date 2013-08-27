@@ -1,6 +1,8 @@
 /***************************************************************
 *  AJAX selectors for TCEforms
 *
+* $Id$
+*
 *  Copyright notice
 *
 *  (c) 2007-2011 Andreas Wolf <andreas.wolf@ikt-werk.de>

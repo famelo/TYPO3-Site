@@ -1,11 +1,8 @@
 <?php
-namespace TYPO3\CMS\Extbase\Configuration;
-
 /***************************************************************
  *  Copyright notice
  *
- *  (c) 2010-2013 Extbase Team (http://forge.typo3.org/projects/typo3v4-mvc)
- *  Extbase is a backport of TYPO3 Flow. All credits go to the TYPO3 Flow team.
+ *  (c) 2009 Jochen Rau <jochen.rau@typoplanet.de>
  *  All rights reserved
  *
  *  This script is part of the TYPO3 project. The TYPO3 project is
@@ -16,9 +13,6 @@ namespace TYPO3\CMS\Extbase\Configuration;
  *
  *  The GNU General Public License can be found at
  *  http://www.gnu.org/copyleft/gpl.html.
- *  A copy is found in the textfile GPL.txt and important notices to the license
- *  from the author is found in LICENSE.txt distributed with these scripts.
- *
  *
  *  This script is distributed in the hope that it will be useful,
  *  but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -29,24 +23,28 @@ namespace TYPO3\CMS\Extbase\Configuration;
  ***************************************************************/
 
 /**
- * Class ConfigurationManagerInterface
+ *
+ *
+ * @package Extbase
+ * @subpackage Configuration
+ * @version $ID:$
  */
-interface ConfigurationManagerInterface extends \TYPO3\CMS\Core\SingletonInterface {
+interface Tx_Extbase_Configuration_ConfigurationManagerInterface extends t3lib_Singleton {
 
 	const CONFIGURATION_TYPE_FRAMEWORK = 'Framework';
 	const CONFIGURATION_TYPE_SETTINGS = 'Settings';
 	const CONFIGURATION_TYPE_FULL_TYPOSCRIPT = 'FullTypoScript';
 
 	/**
-	 * @param \TYPO3\CMS\Frontend\ContentObject\ContentObjectRenderer $contentObject
+	 * @param tslib_cObj $contentObject
 	 * @return void
 	 */
-	public function setContentObject(\TYPO3\CMS\Frontend\ContentObject\ContentObjectRenderer $contentObject = NULL);
+	public function setContentObject(tslib_cObj $contentObject = NULL);
 
 	/**
 	 * Get the content object
 	 *
-	 * @return \TYPO3\CMS\Frontend\ContentObject\ContentObjectRenderer
+	 * @return tslib_cObj
 	 * @api (v4 only)
 	 */
 	public function getContentObject();
@@ -73,17 +71,5 @@ interface ConfigurationManagerInterface extends \TYPO3\CMS\Core\SingletonInterfa
 	 */
 	public function setConfiguration(array $configuration = array());
 
-	/**
-	 * Returns TRUE if a certain feature, identified by $featureName
-	 * should be activated, FALSE for backwards-compatible behavior.
-	 *
-	 * This is an INTERNAL API used throughout Extbase and Fluid for providing backwards-compatibility.
-	 * Do not use it in your custom code!
-	 *
-	 * @param string $featureName
-	 * @return boolean
-	 */
-	public function isFeatureEnabled($featureName);
 }
-
 ?>

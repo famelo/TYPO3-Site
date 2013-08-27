@@ -2,7 +2,7 @@
 /***************************************************************
  *  Copyright notice
  *
- *  (c) 2009-2013 Julian Kleinhans <typo3@kj187.de>
+ *  (c) 2009-2011 Julian Kleinhans <typo3@kj187.de>
  *  All rights reserved
  *
  *  This script is part of the TYPO3 project. The TYPO3 project is
@@ -21,11 +21,68 @@
  *
  *  This copyright notice MUST APPEAR in all copies of the script!
  ***************************************************************/
-require_once \TYPO3\CMS\Core\Utility\ExtensionManagementUtility::extPath('recycler', 'Classes/helper/class.tx_recycler_helper.php');
-/*
- * @deprecated since 6.0, the classname tx_recycler_view_deletedRecords and this file is obsolete
- * and will be removed with 6.2. The class was renamed and is now located at:
- * typo3/sysext/recycler/Classes/Controller/DeletedRecordsController.php
- */
-require_once \TYPO3\CMS\Core\Utility\ExtensionManagementUtility::extPath('recycler') . 'Classes/Controller/DeletedRecordsController.php';
+
+require_once(t3lib_extMgm::extPath('recycler', 'classes/helper/class.tx_recycler_helper.php'));
+
+/**
+ * Deleted Records View
+ *
+ * @author  Erik Frister <erik_frister@otq-solutions.com>
+ * @author	Julian Kleinhans <typo3@kj187.de>
+ * @package	TYPO3
+ * @subpackage	tx_recycler
+ * @version $Id$
+ **/
+class tx_recycler_view_deletedRecords {
+
+	/**
+	 * Transforms the rows for the deleted Records into the Array View necessary for ExtJS Ext.data.ArrayReader
+	 *
+	 * @param array     $rows   Array with table as key and array with all deleted rows
+	 * @param integer	$totalDeleted: Number of deleted records in total, for PagingToolbar
+	 * @return string   JSON Array
+	 **/
+	public function transform ($deletedRowsArray, $totalDeleted) {
+		$total = 0;
+
+		$jsonArray = array(
+			'rows'	=> array(),
+		);
+
+			// iterate
+		if (is_array($deletedRowsArray) && count($deletedRowsArray) > 0) {
+			foreach($deletedRowsArray as $table => $rows) {
+				$total += count($deletedRowsArray[$table]);
+
+				foreach($rows as $row) {
+					$backendUser = t3lib_BEfunc::getRecord('be_users', $row[$GLOBALS['TCA'][$table]['ctrl']['cruser_id']], 'username', '', FALSE);
+					$jsonArray['rows'][] = array(
+						'uid'	=> $row['uid'],
+						'pid'	=> $row['pid'],
+						'table'	=> $table,
+						'crdate' => date($GLOBALS['TYPO3_CONF_VARS']['SYS']['ddmmyy'] . ' ' . $GLOBALS['TYPO3_CONF_VARS']['SYS']['hhmm'], $row[$GLOBALS['TCA'][$table]['ctrl']['crdate']]),
+						'tstamp' => date($GLOBALS['TYPO3_CONF_VARS']['SYS']['ddmmyy'] . ' ' . $GLOBALS['TYPO3_CONF_VARS']['SYS']['hhmm'], $row[$GLOBALS['TCA'][$table]['ctrl']['tstamp']]),
+						'owner' => htmlspecialchars($backendUser['username']),
+						'owner_uid' => $row[$GLOBALS['TCA'][$table]['ctrl']['cruser_id']],
+						'tableTitle' => tx_recycler_helper::getUtf8String(
+							$GLOBALS['LANG']->sL($GLOBALS['TCA'][$table]['ctrl']['title'])
+						),
+						'title' => htmlspecialchars(tx_recycler_helper::getUtf8String(
+							t3lib_BEfunc::getRecordTitle($table, $row)
+						)),
+						'path'	=> tx_recycler_helper::getRecordPath($row['pid']),
+					);
+				}
+			}
+		}
+
+		$jsonArray['total'] = $totalDeleted;
+		return json_encode($jsonArray);
+	}
+}
+
+if (defined('TYPO3_MODE') && isset($GLOBALS['TYPO3_CONF_VARS'][TYPO3_MODE]['XCLASS']['ext/recycler/classes/view/class.tx_recycler_view_deletedRecords.php'])) {
+	include_once($GLOBALS['TYPO3_CONF_VARS'][TYPO3_MODE]['XCLASS']['ext/recycler/classes/view/class.tx_recycler_view_deletedRecords.php']);
+}
+
 ?>

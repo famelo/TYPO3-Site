@@ -40,10 +40,6 @@ TYPO3.Workspaces.Configuration.GridFilters = new Ext.ux.grid.GridFilters({
 			dataIndex : 'workspace_Title'
 		},
 		{
-			type : 'numeric',
-			dataIndex : 'languageValue'
-		},
-		{
 			type : 'string',
 			dataIndex : 'label_Live'
 		},
@@ -57,22 +53,35 @@ TYPO3.Workspaces.Configuration.GridFilters = new Ext.ux.grid.GridFilters({
 		}
 	]
 });
+TYPO3.Workspaces.Configuration.StoreFieldArray = [
+	{name : 'table'},
+	{name : 'uid', type : 'int'},
+	{name : 't3ver_oid', type : 'int'},
+	{name : 'livepid', type : 'int'},
+	{name : 'stage', type: 'int'},
+	{name : 'change',type : 'int'},
+	{name : 'label_Live'},
+	{name : 'label_Workspace'},
+	{name : 'label_Stage'},
+	{name : 'workspace_Title'},
+	{name : 'actions'},
+	{name : 'icon_Workspace'},
+	{name : 'icon_Live'},
+	{name : 'path_Live'},
+	{name : 'path_Workspace'},
+	{name : 'state_Workspace'},
+	{name : 'workspace_Tstamp'},
+	{name : 'workspace_Formated_Tstamp'},
+	{name : 'allowedAction_nextStage'},
+	{name : 'allowedAction_prevStage'},
+	{name : 'allowedAction_swap'},
+	{name : 'allowedAction_delete'},
+	{name : 'allowedAction_edit'},
+	{name : 'allowedAction_editVersionedPage'},
+	{name : 'allowedAction_view'}
 
-TYPO3.Workspaces.Configuration.Integrity = new Ext.grid.Column({
-	width: 24,
-	hideable: true,
-	sortable: false,
-	header: '<span class="' + TYPO3.settings.Workspaces.icons.integrity + '">&nbsp;</span>',
-	renderer: function(value, meta, record) {
-		if (record.json.integrity.status !== 'success') {
-			var cls = TYPO3.settings.Workspaces.icons[record.json.integrity.status] + ' t3-visible';
-			var title = TYPO3.l10n.localize('status.' + record.json.integrity.status);
-			var message = record.json.integrity.messages;
+];
 
-			return '<span class="' + cls + '" ext:qtitle="' + title + '" ext:qtip="' + message + '">&nbsp;</span>';
-		}
-	}
-});
 TYPO3.Workspaces.Configuration.WsPath = {
 	id: 'path_Workspace',
 	dataIndex : 'path_Workspace',
@@ -80,7 +89,7 @@ TYPO3.Workspaces.Configuration.WsPath = {
 	hidden: true,
 	hideable: false,
 	sortable: true,
-	header : TYPO3.l10n.localize('column.wsPath'),
+	header : TYPO3.lang["column.wsPath"],
 	renderer: function(value, metaData, record, rowIndex, colIndex, store) {
 		var path = record.json.path_Workspace;
 		return path;
@@ -95,7 +104,7 @@ TYPO3.Workspaces.Configuration.LivePath = {
 	hidden: true,
 	hideable: true,
 	sortable: true,
-	header : TYPO3.l10n.localize('column.livePath'),
+	header : TYPO3.lang["column.livePath"],
 	renderer: function(value, metaData, record, rowIndex, colIndex, store) {
 		var path = record.json.path_Live;
 		return path;
@@ -109,7 +118,7 @@ TYPO3.Workspaces.Configuration.WsTitleWithIcon = {
 	width: 120,
 	hideable: true,
 	sortable: true,
-	header : TYPO3.l10n.localize('column.wsTitle'),
+	header : TYPO3.lang["column.wsTitle"],
 	renderer: function(value, metaData, record, rowIndex, colIndex, store) {
 		var dekoClass = 'item-state-' + record.json.state_Workspace;
 		value = "<span class=\"" + dekoClass + "\">" + value + "</span>";
@@ -123,30 +132,18 @@ TYPO3.Workspaces.Configuration.WsTitleWithIcon = {
 	filter : {type: 'string'}
 };
 
-TYPO3.Workspaces.Configuration.Language = {
-	id: 'language',
-	dataIndex: 'languageValue',
-	width: 30,
-	hideable: true,
-	sortable: true,
-	header: '<span class="' + TYPO3.settings.Workspaces.icons.language + '">&nbsp;</span>',
-	filter: { type: 'string '},
-	renderer: function(value, metaData, record) {
-		return '<span class="' + record.json.language.cls + '" title="' + record.json.language.title + '">&nbsp;</span>';
-	}
-};
-
 TYPO3.Workspaces.Configuration.TitleWithIcon = {
 	id: 'label_Live',
 	dataIndex : 'label_Live',
 	width: 120,
 	hideable: false,
 	sortable: true,
-	header : TYPO3.l10n.localize('column.liveTitle'),
+	header : TYPO3.lang["column.liveTitle"],
 	renderer: function(value, metaData, record, rowIndex, colIndex, store) {
-		var dekoClass = '';
 		if (record.json.state_Workspace == 'unhidden') {
-			dekoClass = 'item-state-hidden';
+			var dekoClass = 'item-state-hidden';
+		} else {
+			var dekoClass = '';
 		}
 
 		value = "<span class=\"" + dekoClass + "\">" + value + "</span>";
@@ -160,7 +157,7 @@ TYPO3.Workspaces.Configuration.ChangeDate = {
 	dataIndex : 'workspace_Tstamp',
 	width: 120,
 	sortable: true,
-	header : TYPO3.l10n.localize('column.changeDate'),
+	header : TYPO3.lang["column.changeDate"],
 	renderer: function(value, metaData, record, rowIndex, colIndex, store) {
 		return record.json.workspace_Formated_Tstamp;
 	},
@@ -176,7 +173,7 @@ TYPO3.Workspaces.Configuration.SendToPrevStageButton = {
 	items:[
 		{
 			iconCls: 't3-icon t3-icon-extensions t3-icon-extensions-workspaces t3-icon-workspaces-sendtoprevstage',
-			tooltip: TYPO3.l10n.localize('tooltip.sendToPrevStage'),
+			tooltip: TYPO3.lang["tooltip.sendToPrevStage"],
 			handler: function(grid, rowIndex, colIndex) {
 				var record = TYPO3.Workspaces.MainStore.getAt(rowIndex);
 				TYPO3.Workspaces.Actions.sendToPrevStageWindow(record.json.table, record.json.uid);
@@ -193,7 +190,7 @@ TYPO3.Workspaces.Configuration.SendToNextStageButton = {
 	items: [
 		{},{	// empty dummy important!!!!
 			iconCls: 't3-icon t3-icon-extensions t3-icon-extensions-workspaces t3-icon-workspaces-sendtonextstage',
-			tooltip: TYPO3.l10n.localize('tooltip.sendToNextStage'),
+			tooltip: TYPO3.lang["tooltip.sendToNextStage"],
 			handler: function(grid, rowIndex, colIndex) {
 				var record = TYPO3.Workspaces.MainStore.getAt(rowIndex);
 				TYPO3.Workspaces.Actions.sendToNextStageWindow(record.json.table, record.json.uid, record.json.t3ver_oid);
@@ -207,7 +204,7 @@ TYPO3.Workspaces.Configuration.Stage = {
 	dataIndex : 'label_Stage',
 	width: 80,
 	sortable: true,
-	header : TYPO3.l10n.localize('column.stage'),
+	header : TYPO3.lang["column.stage"],
 	hidden: false,
 	filter : {
 		type : 'string'
@@ -215,21 +212,15 @@ TYPO3.Workspaces.Configuration.Stage = {
 	renderer: function(value, metaData, record, rowIndex, colIndex, store) {
 		var returnCode = '';
 		if (record.json.allowedAction_prevStage && TYPO3.settings.Workspaces.allView !== '1') {
-			var tempTooltip = TYPO3.Workspaces.Configuration.SendToPrevStageButton.items[0].tooltip;
-			TYPO3.Workspaces.Configuration.SendToPrevStageButton.items[0].tooltip += ' &quot;'+ record.json.label_prevStage + '&quot;';
 			var prevButton = new Ext.grid.ActionColumn(TYPO3.Workspaces.Configuration.SendToPrevStageButton);
 			returnCode += prevButton.renderer(1, metaData, record, rowIndex, 1, store);
-			TYPO3.Workspaces.Configuration.SendToPrevStageButton.items[0].tooltip = tempTooltip;
 		} else {
 			returnCode += "<span class=\"t3-icon t3-icon-empty t3-icon-empty-empty\">&nbsp;</span>";
 		}
 		returnCode += record.json.label_Stage;
 		if (record.json.allowedAction_nextStage && TYPO3.settings.Workspaces.allView !== '1') {
-			var tempTooltip = TYPO3.Workspaces.Configuration.SendToNextStageButton.items[1].tooltip;
-			TYPO3.Workspaces.Configuration.SendToNextStageButton.items[1].tooltip += ' &quot;'+ record.json.label_nextStage + '&quot;';
 			var nextButton = new Ext.grid.ActionColumn(TYPO3.Workspaces.Configuration.SendToNextStageButton);
 			returnCode += nextButton.renderer(2, metaData, record, rowIndex, 2, store);
-			TYPO3.Workspaces.Configuration.SendToNextStageButton.items[1].tooltip = tempTooltip;
 		} else {
 			returnCode += "<span class=\"t3-icon t3-icon-empty t3-icon-empty-empty\">&nbsp;</span>";
 		}
@@ -250,15 +241,15 @@ TYPO3.Workspaces.Configuration.Stage = {
 
 TYPO3.Workspaces.Configuration.RowButtons = {
 	xtype: 'actioncolumn',
-	header: TYPO3.l10n.localize('column.actions'),
-	width: 80,
+	header: TYPO3.lang["column.actions"],
+	width: 70,
 	hideable: false,
 	hidden: (TYPO3.settings.Workspaces.allView === '1'),
 	menuDisabled: true,
 	items: [
 		{
 			iconCls:'t3-icon t3-icon-actions t3-icon-actions-version t3-icon-version-workspace-preview'
-			,tooltip: TYPO3.l10n.localize('tooltip.viewElementAction')
+			,tooltip: TYPO3.lang["tooltip.viewElementAction"]
 			,handler: function(grid, rowIndex, colIndex) {
 				var record = TYPO3.Workspaces.MainStore.getAt(rowIndex);
 				TYPO3.Workspaces.Actions.viewSingleRecord(record.json.table, record.json.uid);
@@ -273,7 +264,7 @@ TYPO3.Workspaces.Configuration.RowButtons = {
 		},
 		{
 			iconCls:'t3-icon t3-icon-actions t3-icon-actions-document t3-icon-document-open',
-			tooltip: TYPO3.l10n.localize('tooltip.editElementAction'),
+			tooltip: TYPO3.lang["tooltip.editElementAction"],
 			handler: function(grid, rowIndex, colIndex) {
 				var record = TYPO3.Workspaces.MainStore.getAt(rowIndex);
 				var newUrl = 'alt_doc.php?returnUrl=' + encodeURIComponent(document.location.href) + '&id=' + TYPO3.settings.Workspaces.id + '&edit[' + record.json.table + '][' + record.json.uid + ']=edit';
@@ -289,7 +280,7 @@ TYPO3.Workspaces.Configuration.RowButtons = {
 		},
 		{
 			iconCls:'t3-icon t3-icon-actions t3-icon-actions-system t3-icon-system-pagemodule-open',
-			tooltip: TYPO3.l10n.localize('tooltip.openPage'),
+			tooltip: TYPO3.lang["tooltip.openPage"],
 			handler: function(grid, rowIndex, colIndex) {
 				var record = TYPO3.Workspaces.MainStore.getAt(rowIndex);
 				if (record.json.table == 'pages') {
@@ -308,12 +299,12 @@ TYPO3.Workspaces.Configuration.RowButtons = {
 		},
 		{
 			iconCls:'t3-icon t3-icon-actions t3-icon-actions-version t3-icon-version-document-remove',
-			tooltip: TYPO3.l10n.localize('tooltip.discardVersion'),
+			tooltip: TYPO3.lang["tooltip.discardVersion"],
 			handler: function(grid, rowIndex, colIndex) {
 				var record = TYPO3.Workspaces.MainStore.getAt(rowIndex);
 				var configuration = {
-					title: TYPO3.l10n.localize('window.discard.title'),
-					msg: TYPO3.l10n.localize('window.discard.message'),
+					title: TYPO3.lang["window.discard.title"],
+					msg: TYPO3.lang["window.discard.message"],
 					fn: function(result) {
 						if (result == 'yes') {
 							TYPO3.Workspaces.Actions.deleteSingleRecord(record.json.table, record.json.uid);
@@ -330,18 +321,6 @@ TYPO3.Workspaces.Configuration.RowButtons = {
 					return '';
 				}
 			}
-		},
-		{
-			iconCls: 't3-icon t3-icon-actions t3-icon-actions-document t3-icon-document-history-open',
-			tooltip: TYPO3.l10n.localize('tooltip.showHistory'),
-			handler: function(grid, rowIndex, colIndex) {
-				var record = TYPO3.Workspaces.MainStore.getAt(rowIndex);
-				TYPO3.Workspaces.Helpers.getHistoryWindow({
-					table: record.json.table,
-					liveId: record.json.t3ver_oid,
-					versionId: record.json.uid
-				});
-			}
 		}
 	]
 };
@@ -357,21 +336,12 @@ TYPO3.Workspaces.Configuration.SwapButton = {
 	items: [
 		{
 			iconCls:'t3-icon t3-icon-actions t3-icon-actions-version t3-icon-version-swap-workspace'
-			,tooltip: TYPO3.l10n.localize('tooltip.swap')
+			,tooltip: TYPO3.lang["tooltip.swap"]
 			,handler: function(grid, rowIndex, colIndex) {
 				var record = TYPO3.Workspaces.MainStore.getAt(rowIndex);
-				var parameters = {
-					type: 'selection',
-					selection: [{
-						table: record.json.table,
-						versionId: record.json.uid,
-						liveId: record.json.t3ver_oid
-					}]
-				};
-
 				var configuration = {
-					title: TYPO3.l10n.localize('window.swap.title'),
-					msg: TYPO3.l10n.localize('window.swap.message'),
+					title: TYPO3.lang["window.swap.title"],
+					msg: TYPO3.lang["window.swap.message"],
 					fn: function(result) {
 						if (result == 'yes') {
 							TYPO3.Workspaces.Actions.swapSingleRecord(record.json.table, record.json.t3ver_oid, record.json.uid);
@@ -379,9 +349,7 @@ TYPO3.Workspaces.Configuration.SwapButton = {
 					}
 				};
 
-				TYPO3.Workspaces.Actions.checkIntegrity(parameters, function() {
-					top.TYPO3.Dialog.QuestionDialog(configuration);
-				});
+				top.TYPO3.Dialog.QuestionDialog(configuration);
 			},
 			getClass: function(v, meta, rec) {
 				if(!rec.json.allowedAction_swap) {

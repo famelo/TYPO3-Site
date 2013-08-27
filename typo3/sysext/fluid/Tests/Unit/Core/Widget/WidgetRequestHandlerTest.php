@@ -1,13 +1,12 @@
 <?php
-namespace TYPO3\CMS\Fluid\Tests\Unit\Core\Widget;
 
 /*                                                                        *
- * This script is backported from the FLOW3 package "TYPO3.Fluid".        *
+ * This script belongs to the FLOW3 package "Fluid".                      *
  *                                                                        *
  * It is free software; you can redistribute it and/or modify it under    *
- * the terms of the GNU Lesser General Public License, either version 3   *
- *  of the License, or (at your option) any later version.                *
- *                                                                        *
+ * the terms of the GNU Lesser General Public License as published by the *
+ * Free Software Foundation, either version 3 of the License, or (at your *
+ * option) any later version.                                             *
  *                                                                        *
  * This script is distributed in the hope that it will be useful, but     *
  * WITHOUT ANY WARRANTY; without even the implied warranty of MERCHAN-    *
@@ -20,13 +19,16 @@ namespace TYPO3\CMS\Fluid\Tests\Unit\Core\Widget;
  *                                                                        *
  * The TYPO3 project - inspiring people to share!                         *
  *                                                                        */
+
 /**
  * Testcase for WidgetRequestHandler
+ *
+ * @license http://www.gnu.org/licenses/lgpl.html GNU Lesser General Public License, version 3 or later
  */
-class WidgetRequestHandlerTest extends \TYPO3\CMS\Extbase\Tests\Unit\BaseTestCase {
+class Tx_Fluid_Tests_Unit_Core_Widget_WidgetRequestHandlerTest extends Tx_Extbase_Tests_Unit_BaseTestCase {
 
 	/**
-	 * @var \TYPO3\CMS\Fluid\Core\Widget\WidgetRequestHandler
+	 * @var Tx_Fluid_Core_Widget_WidgetRequestHandler
 	 */
 	protected $widgetRequestHandler;
 
@@ -36,11 +38,12 @@ class WidgetRequestHandlerTest extends \TYPO3\CMS\Extbase\Tests\Unit\BaseTestCas
 	protected $getBackup;
 
 	/**
-
+	 * @author Sebastian Kurfürst <sebastian@typo3.org>
+	 * @author Bastian Waidelich <bastian@typo3.org>
 	 */
 	public function setUp() {
 		$this->getBackup = $_GET;
-		$this->widgetRequestHandler = $this->getAccessibleMock('TYPO3\\CMS\\Fluid\\Core\\Widget\\WidgetRequestHandler', array('dummy'), array(), '', FALSE);
+		$this->widgetRequestHandler = $this->getAccessibleMock('Tx_Fluid_Core_Widget_WidgetRequestHandler', array('dummy'), array(), '', FALSE);
 	}
 
 	public function tearDown() {
@@ -49,6 +52,8 @@ class WidgetRequestHandlerTest extends \TYPO3\CMS\Extbase\Tests\Unit\BaseTestCas
 
 	/**
 	 * @test
+	 * @author Sebastian Kurfürst <sebastian@typo3.org>
+	 * @author Bastian Waidelich <bastian@typo3.org>
 	 */
 	public function canHandleRequestReturnsTrueIfCorrectGetParameterIsSet() {
 		$_GET['fluid-widget-id'] = 123;
@@ -57,6 +62,8 @@ class WidgetRequestHandlerTest extends \TYPO3\CMS\Extbase\Tests\Unit\BaseTestCas
 
 	/**
 	 * @test
+	 * @author Sebastian Kurfürst <sebastian@typo3.org>
+	 * @author Bastian Waidelich <bastian@typo3.org>
 	 */
 	public function canHandleRequestReturnsFalsefGetParameterIsNotSet() {
 		$_GET['some-other-id'] = 123;
@@ -65,11 +72,11 @@ class WidgetRequestHandlerTest extends \TYPO3\CMS\Extbase\Tests\Unit\BaseTestCas
 
 	/**
 	 * @test
+	 * @author Sebastian Kurfürst <sebastian@typo3.org>
 	 */
 	public function priorityIsHigherThanDefaultRequestHandler() {
-		$defaultWebRequestHandler = $this->getMock('TYPO3\\CMS\\Extbase\\Mvc\\Web\\AbstractRequestHandler', array('handleRequest'), array(), '', FALSE);
+		$defaultWebRequestHandler = $this->getMock('Tx_Extbase_MVC_Web_AbstractRequestHandler', array('handleRequest'), array(), '', FALSE);
 		$this->assertTrue($this->widgetRequestHandler->getPriority() > $defaultWebRequestHandler->getPriority());
 	}
 }
-
 ?>

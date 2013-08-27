@@ -1,15 +1,25 @@
 <?php
-namespace TYPO3\CMS\Fluid\ViewHelpers\Form;
 
 /*                                                                        *
- * This script is backported from the TYPO3 Flow package "TYPO3.Fluid".   *
+ * This script belongs to the FLOW3 package "Fluid".                      *
  *                                                                        *
  * It is free software; you can redistribute it and/or modify it under    *
- * the terms of the GNU Lesser General Public License, either version 3   *
- *  of the License, or (at your option) any later version.                *
+ * the terms of the GNU Lesser General Public License as published by the *
+ * Free Software Foundation, either version 3 of the License, or (at your *
+ * option) any later version.                                             *
+ *                                                                        *
+ * This script is distributed in the hope that it will be useful, but     *
+ * WITHOUT ANY WARRANTY; without even the implied warranty of MERCHAN-    *
+ * TABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Lesser       *
+ * General Public License for more details.                               *
+ *                                                                        *
+ * You should have received a copy of the GNU Lesser General Public       *
+ * License along with the script.                                         *
+ * If not, see http://www.gnu.org/licenses/lgpl.html                      *
  *                                                                        *
  * The TYPO3 project - inspiring people to share!                         *
  *                                                                        */
+
 /**
  * This view helper generates a <select> dropdown list for the use with a form.
  *
@@ -41,9 +51,6 @@ namespace TYPO3\CMS\Fluid\ViewHelpers\Form;
  * If the optionValueField variable is set, the getter named after that value is used to retrieve the option key.
  * If the optionLabelField variable is set, the getter named after that value is used to retrieve the option value.
  *
- * If the prependOptionLabel variable is set, an option item is added in first position, bearing an empty string or -
- * If provided, the value of the prependOptionValue variable as value.
- *
  * <code title="Domain objects">
  * <f:form.select name="users" options="{userArray}" optionValueField="id" optionLabelField="firstName" />
  * </code>
@@ -53,9 +60,10 @@ namespace TYPO3\CMS\Fluid\ViewHelpers\Form;
  *
  * The "value" property now expects a domain object, and tests for object equivalence.
  *
+ * @license http://www.gnu.org/licenses/lgpl.html GNU Lesser General Public License, version 3 or later
  * @api
  */
-class SelectViewHelper extends \TYPO3\CMS\Fluid\ViewHelpers\Form\AbstractFormFieldViewHelper {
+class Tx_Fluid_ViewHelpers_Form_SelectViewHelper extends Tx_Fluid_ViewHelpers_Form_AbstractFormFieldViewHelper {
 
 	/**
 	 * @var string
@@ -63,7 +71,7 @@ class SelectViewHelper extends \TYPO3\CMS\Fluid\ViewHelpers\Form\AbstractFormFie
 	protected $tagName = 'select';
 
 	/**
-	 * @var mixed
+	 * @var mixed the selected value
 	 */
 	protected $selectedValue = NULL;
 
@@ -71,6 +79,7 @@ class SelectViewHelper extends \TYPO3\CMS\Fluid\ViewHelpers\Form\AbstractFormFie
 	 * Initialize arguments.
 	 *
 	 * @return void
+	 * @author Sebastian Kurfürst <sebastian@typo3.org>
 	 * @api
 	 */
 	public function initializeArguments() {
@@ -85,40 +94,46 @@ class SelectViewHelper extends \TYPO3\CMS\Fluid\ViewHelpers\Form\AbstractFormFie
 		$this->registerArgument('sortByOptionLabel', 'boolean', 'If true, List will be sorted by label.', FALSE, FALSE);
 		$this->registerArgument('selectAllByDefault', 'boolean', 'If specified options are selected if none was set before.', FALSE, FALSE);
 		$this->registerArgument('errorClass', 'string', 'CSS class to set if there are errors for this view helper', FALSE, 'f3-form-error');
-		$this->registerArgument('prependOptionLabel', 'string', 'If specified, will provide an option at first position with the specified label.');
-		$this->registerArgument('prependOptionValue', 'string', 'If specified, will provide an option at first position with the specified value.');
 	}
 
 	/**
 	 * Render the tag.
 	 *
 	 * @return string rendered tag.
+	 * @author Sebastian Kurfürst <sebastian@typo3.org>
+	 * @author Bastian Waidelich <bastian@typo3.org>
 	 * @api
 	 */
 	public function render() {
 		$name = $this->getName();
-		if ($this->hasArgument('multiple')) {
+		if ($this->arguments->hasArgument('multiple')) {
 			$name .= '[]';
 		}
+
 		$this->tag->addAttribute('name', $name);
+
 		$options = $this->getOptions();
 		if (empty($options)) {
 			$options = array('' => '');
 		}
 		$this->tag->setContent($this->renderOptionTags($options));
+
 		$this->setErrorClassAttribute();
+
 		$content = '';
-		// register field name for token generation.
-		// in case it is a multi-select, we need to register the field name
-		// as often as there are elements in the box
-		if ($this->hasArgument('multiple') && $this->arguments['multiple'] !== '') {
+
+			// register field name for token generation.
+			// in case it is a multi-select, we need to register the field name
+			// as often as there are elements in the box
+		if ($this->arguments->hasArgument('multiple') && $this->arguments['multiple'] !== '') {
 			$content .= $this->renderHiddenFieldForEmptyValue();
-			for ($i = 0; $i < count($options); $i++) {
+			for ($i=0; $i<count($options); $i++) {
 				$this->registerFieldNameForFormTokenGeneration($name);
 			}
 		} else {
 			$this->registerFieldNameForFormTokenGeneration($name);
 		}
+
 		$content .= $this->tag->render();
 		return $content;
 	}
@@ -128,17 +143,14 @@ class SelectViewHelper extends \TYPO3\CMS\Fluid\ViewHelpers\Form\AbstractFormFie
 	 *
 	 * @param array $options the options for the form.
 	 * @return string rendered tags.
+	 * @author Bastian Waidelich <bastian@typo3.org>
 	 */
 	protected function renderOptionTags($options) {
 		$output = '';
-		if ($this->hasArgument('prependOptionLabel')) {
-			$value = $this->hasArgument('prependOptionValue') ? $this->arguments['prependOptionValue'] : '';
-			$label = $this->arguments['prependOptionLabel'];
-			$output .= $this->renderOptionTag($value, $label, FALSE) . chr(10);
-		}
+
 		foreach ($options as $value => $label) {
 			$isSelected = $this->isSelected($value);
-			$output .= $this->renderOptionTag($value, $label, $isSelected) . chr(10);
+			$output.= $this->renderOptionTag($value, $label, $isSelected) . chr(10);
 		}
 		return $output;
 	}
@@ -147,46 +159,48 @@ class SelectViewHelper extends \TYPO3\CMS\Fluid\ViewHelpers\Form\AbstractFormFie
 	 * Render the option tags.
 	 *
 	 * @return array an associative array of options, key will be the value of the option tag
+	 * @author Bastian Waidelich <bastian@typo3.org>
+	 * @author Karsten Dambekalns <karsten@typo3.org>
 	 */
 	protected function getOptions() {
-		if (!is_array($this->arguments['options']) && !$this->arguments['options'] instanceof \Traversable) {
+		if (!is_array($this->arguments['options']) && !($this->arguments['options'] instanceof Traversable)) {
 			return array();
 		}
 		$options = array();
 		$optionsArgument = $this->arguments['options'];
 		foreach ($optionsArgument as $key => $value) {
 			if (is_object($value)) {
-				if ($this->hasArgument('optionValueField')) {
-					$key = \TYPO3\CMS\Extbase\Reflection\ObjectAccess::getPropertyPath($value, $this->arguments['optionValueField']);
+
+				if ($this->arguments->hasArgument('optionValueField')) {
+					$key = Tx_Extbase_Reflection_ObjectAccess::getProperty($value, $this->arguments['optionValueField']);
 					if (is_object($key)) {
 						if (method_exists($key, '__toString')) {
-							$key = (string) $key;
+							$key = (string)$key;
 						} else {
-							throw new \TYPO3\CMS\Fluid\Core\ViewHelper\Exception('Identifying value for object of class "' . get_class($value) . '" was an object.', 1247827428);
+							throw new Tx_Fluid_Core_ViewHelper_Exception('Identifying value for object of class "' . get_class($value) . '" was an object.' , 1247827428);
 						}
 					}
-				// TODO: use $this->persistenceManager->isNewObject() once it is implemented
-				} elseif ($this->persistenceManager->getIdentifierByObject($value) !== NULL) {
-					$key = $this->persistenceManager->getIdentifierByObject($value);
+				} elseif ($this->persistenceManager->getBackend()->getIdentifierByObject($value) !== NULL) {
+					$key = $this->persistenceManager->getBackend()->getIdentifierByObject($value);
 				} elseif (method_exists($value, '__toString')) {
-					$key = (string) $value;
+					$key = (string)$value;
 				} else {
-					throw new \TYPO3\CMS\Fluid\Core\ViewHelper\Exception('No identifying value for object of class "' . get_class($value) . '" found.', 1247826696);
+					throw new Tx_Fluid_Core_ViewHelper_Exception('No identifying value for object of class "' . get_class($value) . '" found.' , 1247826696);
 				}
-				if ($this->hasArgument('optionLabelField')) {
-					$value = \TYPO3\CMS\Extbase\Reflection\ObjectAccess::getPropertyPath($value, $this->arguments['optionLabelField']);
+
+				if ($this->arguments->hasArgument('optionLabelField')) {
+					$value = Tx_Extbase_Reflection_ObjectAccess::getProperty($value, $this->arguments['optionLabelField']);
 					if (is_object($value)) {
 						if (method_exists($value, '__toString')) {
-							$value = (string) $value;
+							$value = (string)$value;
 						} else {
-							throw new \TYPO3\CMS\Fluid\Core\ViewHelper\Exception('Label value for object of class "' . get_class($value) . '" was an object without a __toString() method.', 1247827553);
+							throw new Tx_Fluid_Core_ViewHelper_Exception('Label value for object of class "' . get_class($value) . '" was an object without a __toString() method.' , 1247827553);
 						}
 					}
 				} elseif (method_exists($value, '__toString')) {
-					$value = (string) $value;
-				// TODO: use $this->persistenceManager->isNewObject() once it is implemented
-				} elseif ($this->persistenceManager->getIdentifierByObject($value) !== NULL) {
-					$value = $this->persistenceManager->getIdentifierByObject($value);
+					$value = (string)$value;
+				} elseif ($this->persistenceManager->getBackend()->getIdentifierByObject($value) !== NULL) {
+					$value = $this->persistenceManager->getBackend()->getIdentifierByObject($value);
 				}
 			}
 			$options[$key] = $value;
@@ -200,15 +214,16 @@ class SelectViewHelper extends \TYPO3\CMS\Fluid\ViewHelpers\Form\AbstractFormFie
 	/**
 	 * Render the option tags.
 	 *
-	 * @param mixed $value Value to check for
 	 * @return boolean TRUE if the value should be marked a s selected; FALSE otherwise
+	 * @author Bastian Waidelich <bastian@typo3.org>
+	 * @author Jochen Rau <jochen.rau@typoplanet.de>
 	 */
 	protected function isSelected($value) {
 		$selectedValue = $this->getSelectedValue();
-		if ($value === $selectedValue || (string) $value === $selectedValue) {
+		if ($value === $selectedValue || (string)$value === $selectedValue) {
 			return TRUE;
 		}
-		if ($this->hasArgument('multiple')) {
+		if ($this->arguments->hasArgument('multiple')) {
 			if (is_null($selectedValue) && $this->arguments['selectAllByDefault'] === TRUE) {
 				return TRUE;
 			} elseif (is_array($selectedValue) && in_array($value, $selectedValue)) {
@@ -222,40 +237,29 @@ class SelectViewHelper extends \TYPO3\CMS\Fluid\ViewHelpers\Form\AbstractFormFie
 	 * Retrieves the selected value(s)
 	 *
 	 * @return mixed value string or an array of strings
+	 * @author Bastian Waidelich <bastian@typo3.org>
 	 */
 	protected function getSelectedValue() {
 		$value = $this->getValue();
-		if (!is_array($value) && !$value instanceof \Traversable) {
-			return $this->getOptionValueScalar($value);
+		if (!$this->arguments->hasArgument('optionValueField')) {
+			return $value;
+		}
+		if (!is_array($value) && !($value instanceof Iterator)) {
+			if (is_object($value)) {
+				return Tx_Extbase_Reflection_ObjectAccess::getProperty($value, $this->arguments['optionValueField']);
+			} else {
+				return $value;
+			}
 		}
 		$selectedValues = array();
-		foreach ($value as $selectedValueElement) {
-			$selectedValues[] = $this->getOptionValueScalar($selectedValueElement);
+		foreach($value as $selectedValueElement) {
+			if (is_object($selectedValueElement)) {
+				$selectedValues[] = Tx_Extbase_Reflection_ObjectAccess::getProperty($selectedValueElement, $this->arguments['optionValueField']);
+			} else {
+				$selectedValues[] = $selectedValueElement;
+			}
 		}
 		return $selectedValues;
-	}
-
-	/**
-	 * Get the option value for an object
-	 *
-	 * @param mixed $valueElement
-	 * @return string
-	 */
-	protected function getOptionValueScalar($valueElement) {
-		if (is_object($valueElement)) {
-			if ($this->hasArgument('optionValueField')) {
-				return \TYPO3\CMS\Extbase\Reflection\ObjectAccess::getPropertyPath($valueElement, $this->arguments['optionValueField']);
-			} else {
-				// TODO: use $this->persistenceManager->isNewObject() once it is implemented
-				if ($this->persistenceManager->getIdentifierByObject($valueElement) !== NULL) {
-					return $this->persistenceManager->getIdentifierByObject($valueElement);
-				} else {
-					return (string) $valueElement;
-				}
-			}
-		} else {
-			return $valueElement;
-		}
 	}
 
 	/**
@@ -265,13 +269,15 @@ class SelectViewHelper extends \TYPO3\CMS\Fluid\ViewHelpers\Form\AbstractFormFie
 	 * @param string $label content of the option tag (will be escaped)
 	 * @param boolean $isSelected specifies wheter or not to add selected attribute
 	 * @return string the rendered option tag
+	 * @author Bastian Waidelich <bastian@typo3.org>
 	 */
 	protected function renderOptionTag($value, $label, $isSelected) {
 		$output = '<option value="' . htmlspecialchars($value) . '"';
 		if ($isSelected) {
-			$output .= ' selected="selected"';
+			$output.= ' selected="selected"';
 		}
-		$output .= '>' . htmlspecialchars($label) . '</option>';
+		$output.= '>' . htmlspecialchars($label) . '</option>';
+
 		return $output;
 	}
 }

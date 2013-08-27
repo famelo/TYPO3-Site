@@ -1,6 +1,7 @@
 /* - - - - - - - - - - - - - - - - - - - - -
 Trees
 
+$Id$
 - - - - - - - - - - - - - - - - - - - - - */
 
 table#typo3-tree {
@@ -121,12 +122,10 @@ ul.tree div.treeLinkItem span.dragIcon {
 
 #treeFilterBox {
 	display: none;
-	height: 25px;
+	height: 23px;
 	position: absolute;
-	top: 49px;
-	left: 0;
-	right: 0;
-	width: auto;
+	top: 22px;
+	width: 280px;
 	z-index: 3;
 }
 

@@ -1,74 +1,79 @@
 <?php
-namespace TYPO3\CMS\Extbase\Tests\Unit\Validation\Validator;
-
-/*                                                                        *
- * This script belongs to the Extbase framework.                          *
- *                                                                        *
- * It is free software; you can redistribute it and/or modify it under    *
- * the terms of the GNU Lesser General Public License as published by the *
- * Free Software Foundation, either version 3 of the License, or (at your *
- * option) any later version.                                             *
- *                                                                        *
- * This script is distributed in the hope that it will be useful, but     *
- * WITHOUT ANY WARRANTY; without even the implied warranty of MERCHAN-    *
- * TABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Lesser       *
- * General Public License for more details.                               *
- *                                                                        *
- * You should have received a copy of the GNU Lesser General Public       *
- * License along with the script.                                         *
- * If not, see http://www.gnu.org/licenses/lgpl.html                      *
- *                                                                        *
- * The TYPO3 project - inspiring people to share!                         *
- *                                                                        */
-require_once __DIR__ . '/AbstractValidatorTestcase.php';
+/***************************************************************
+*  Copyright notice
+*
+*  (c) 2009 Jochen Rau <jochen.rau@typoplanet.de>
+*  All rights reserved
+*
+*  This class is a backport of the corresponding class of FLOW3.
+*  All credits go to the v5 team.
+*
+*  This script is part of the TYPO3 project. The TYPO3 project is
+*  free software; you can redistribute it and/or modify
+*  it under the terms of the GNU General Public License as published by
+*  the Free Software Foundation; either version 2 of the License, or
+*  (at your option) any later version.
+*
+*  The GNU General Public License can be found at
+*  http://www.gnu.org/copyleft/gpl.html.
+*
+*  This script is distributed in the hope that it will be useful,
+*  but WITHOUT ANY WARRANTY; without even the implied warranty of
+*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+*  GNU General Public License for more details.
+*
+*  This copyright notice MUST APPEAR in all copies of the script!
+***************************************************************/
 
 /**
  * Testcase for the not empty validator
  *
- * @license http://www.gnu.org/licenses/lgpl.html GNU Lesser General Public License, version 3 or later
+ * @package Extbase
+ * @subpackage extbase
+ * @version $Id: NotEmptyValidator_testcase.php 2428 2010-07-20 10:18:51Z jocrau $
  */
-class NotEmptyValidatorTest extends \TYPO3\CMS\Extbase\Tests\Unit\Validation\Validator\AbstractValidatorTestcase {
-
-	protected $validatorClassName = 'TYPO3\\CMS\\Extbase\\Validation\\Validator\\NotEmptyValidator';
+class Tx_Extbase_Tests_Unit_Validation_Validator_NotEmptyValidatorTest extends Tx_Extbase_Tests_Unit_BaseTestCase {
 
 	/**
 	 * @test
-	 * @author Andreas Förthner <andreas.foerthner@netlogix.de>
 	 */
-	public function notEmptyValidatorReturnsNoErrorForASimpleString() {
-		$this->assertFalse($this->validator->validate('a not empty string')->hasErrors());
+	public function notEmptyValidatorReturnsTrueForASimpleString() {
+		$notEmptyValidator = new Tx_Extbase_Validation_Validator_NotEmptyValidator();
+		$this->assertTrue($notEmptyValidator->isValid('a not empty string'));
 	}
 
 	/**
 	 * @test
-	 * @author Andreas Förthner <andreas.foerthner@netlogix.de>
 	 */
-	public function notEmptyValidatorReturnsErrorForAnEmptyString() {
-		$this->assertTrue($this->validator->validate('')->hasErrors());
+	public function notEmptyValidatorReturnsFalseForAnEmptyString() {
+		$notEmptyValidator = $this->getMock('Tx_Extbase_Validation_Validator_NotEmptyValidator', array('addError'), array(), '', FALSE);
+		$this->assertFalse($notEmptyValidator->isValid(''));
 	}
 
 	/**
 	 * @test
-	 * @author Andreas Förthner <andreas.foerthner@netlogix.de>
 	 */
-	public function notEmptyValidatorReturnsErrorForANullValue() {
-		$this->assertTrue($this->validator->validate(NULL)->hasErrors());
+	public function notEmptyValidatorReturnsFalseForANullValue() {
+		$notEmptyValidator = $this->getMock('Tx_Extbase_Validation_Validator_NotEmptyValidator', array('addError'), array(), '', FALSE);
+		$this->assertFalse($notEmptyValidator->isValid(NULL));
 	}
 
 	/**
 	 * @test
-	 * @author Andreas Förthner <andreas.foerthner@netlogix.de>
 	 */
 	public function notEmptyValidatorCreatesTheCorrectErrorForAnEmptySubject() {
-		$this->assertEquals(1, count($this->validator->validate('')->getErrors()));
+		$notEmptyValidator = $this->getMock('Tx_Extbase_Validation_Validator_NotEmptyValidator', array('addError'), array(), '', FALSE);
+		$notEmptyValidator->expects($this->once())->method('addError')->with('The given subject was empty.', 1221560718);
+		$notEmptyValidator->isValid('');
 	}
 
 	/**
 	 * @test
-	 * @author Andreas Förthner <andreas.foerthner@netlogix.de>
 	 */
 	public function notEmptyValidatorCreatesTheCorrectErrorForANullValue() {
-		$this->assertEquals(1, count($this->validator->validate(NULL)->getErrors()));
+		$notEmptyValidator = $this->getMock('Tx_Extbase_Validation_Validator_NotEmptyValidator', array('addError'), array(), '', FALSE);
+		$notEmptyValidator->expects($this->once())->method('addError')->with('The given subject was NULL.', 1221560910);
+		$notEmptyValidator->isValid(NULL);
 	}
 
 	/**
@@ -76,8 +81,12 @@ class NotEmptyValidatorTest extends \TYPO3\CMS\Extbase\Tests\Unit\Validation\Val
 	 * @author Ingo Pfennigstorf <i.pfennigstorf@gmail.com>
 	 */
 	public function notEmptyValidatorWorksForEmptyArrays() {
-		$this->assertTrue($this->validator->validate(array())->hasErrors());
-		$this->assertFalse($this->validator->validate(array(1 => 2))->hasErrors());
+		$validator = new Tx_Extbase_Validation_Validator_NotEmptyValidator();
+
+		$validator->isValid(array());
+		$this->assertNotEmpty($validator->getErrors());
+		$validator->isValid(array(1 => 2));
+		$this->assertEmpty($validator->getErrors());
 	}
 
 	/**
@@ -85,7 +94,10 @@ class NotEmptyValidatorTest extends \TYPO3\CMS\Extbase\Tests\Unit\Validation\Val
 	 * @author Ingo Pfennigstorf <i.pfennigstorf@gmail.com>
 	 */
 	public function notEmptyValidatorWorksForEmptyCountableObjects() {
-		$this->assertTrue($this->validator->validate(new \SplObjectStorage())->hasErrors());
+		$validator = new Tx_Extbase_Validation_Validator_NotEmptyValidator();
+
+		$validator->isValid(new Tx_Extbase_Persistence_ObjectStorage());
+		$this->assertNotEmpty($validator->getErrors());
 	}
 
 	/**
@@ -93,9 +105,12 @@ class NotEmptyValidatorTest extends \TYPO3\CMS\Extbase\Tests\Unit\Validation\Val
 	 * @author Alexander Schnitzler <alex.schnitzler@typovision.de>
 	 */
 	public function notEmptyValidatorWorksForNotEmptyCountableObjects() {
-		$countableObject = new \SplObjectStorage();
-		$countableObject->attach(new \StdClass());
-		$this->assertFalse($this->validator->validate($countableObject)->hasErrors());
+		$validator = new Tx_Extbase_Validation_Validator_NotEmptyValidator();
+		$countableObject = new Tx_Extbase_Persistence_ObjectStorage();
+		$countableObject->attach(new stdClass());
+
+		$validator->isValid($countableObject);
+		$this->assertEmpty($validator->getErrors());
 	}
 }
 

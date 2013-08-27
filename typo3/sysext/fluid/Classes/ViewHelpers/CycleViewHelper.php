@@ -1,12 +1,21 @@
 <?php
-namespace TYPO3\CMS\Fluid\ViewHelpers;
 
 /*                                                                        *
- * This script is backported from the TYPO3 Flow package "TYPO3.Fluid".   *
+ * This script belongs to the FLOW3 package "Fluid".                      *
  *                                                                        *
  * It is free software; you can redistribute it and/or modify it under    *
- * the terms of the GNU Lesser General Public License, either version 3   *
- *  of the License, or (at your option) any later version.                *
+ * the terms of the GNU Lesser General Public License as published by the *
+ * Free Software Foundation, either version 3 of the License, or (at your *
+ * option) any later version.                                             *
+ *                                                                        *
+ * This script is distributed in the hope that it will be useful, but     *
+ * WITHOUT ANY WARRANTY; without even the implied warranty of MERCHAN-    *
+ * TABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Lesser       *
+ * General Public License for more details.                               *
+ *                                                                        *
+ * You should have received a copy of the GNU Lesser General Public       *
+ * License along with the script.                                         *
+ * If not, see http://www.gnu.org/licenses/lgpl.html                      *
  *                                                                        *
  * The TYPO3 project - inspiring people to share!                         *
  *                                                                        */
@@ -14,7 +23,6 @@ namespace TYPO3\CMS\Fluid\ViewHelpers;
 /**
  * This ViewHelper cycles through the specified values.
  * This can be often used to specify CSS classes for example.
- * **Note:** To achieve the "zebra class" effect in a loop you can also use the "iteration" argument of the **for** ViewHelper.
  *
  * = Examples =
  *
@@ -43,28 +51,26 @@ namespace TYPO3\CMS\Fluid\ViewHelpers;
  * </ul>
  * </output>
  *
+ * @license http://www.gnu.org/licenses/lgpl.html GNU Lesser General Public License, version 3 or later
  * @api
  */
-class CycleViewHelper extends \TYPO3\CMS\Fluid\Core\ViewHelper\AbstractViewHelper {
+class Tx_Fluid_ViewHelpers_CycleViewHelper extends Tx_Fluid_Core_ViewHelper_AbstractViewHelper {
 
 	/**
-	 * the values to be iterated through
-	 *
-	 * @var array|\TYPO3\CMS\Extbase\Persistence\ObjectStorage
+	 * @var array|Tx_Extbase_Persistence_ObjectStorage the values to be iterated through
 	 */
 	protected $values = NULL;
 
 	/**
-	 * current values index
-	 *
-	 * @var integer
+	 * @var integer current values index
 	 */
 	protected $currentCycleIndex = NULL;
 
 	/**
-	 * @param array $values The array or object implementing \ArrayAccess (for example \TYPO3\CMS\Extbase\Persistence\ObjectStorage) to iterated over
+	 * @param array $values The array or Tx_Extbase_Persistence_ObjectStorage to iterated over
 	 * @param string $as The name of the iteration variable
 	 * @return string Rendered result
+	 * @author Bastian Waidelich <bastian@typo3.org>
 	 * @api
 	 */
 	public function render($values, $as) {
@@ -91,14 +97,14 @@ class CycleViewHelper extends \TYPO3\CMS\Fluid\Core\ViewHelper\AbstractViewHelpe
 	/**
 	 * Sets this->values to the current values argument and resets $this->currentCycleIndex.
 	 *
-	 * @param array|\Traversable $values The array or \TYPO3\CMS\Extbase\Persistence\ObjectStorage to be stored in $this->values
+	 * @param array $values The array or Tx_Extbase_Persistence_ObjectStorage to be stored in $this->values
 	 * @return void
-	 * @throws \TYPO3\CMS\Fluid\Core\ViewHelper\Exception
+	 * @author Bastian Waidelich <bastian@typo3.org>
 	 */
 	protected function initializeValues($values) {
 		if (is_object($values)) {
-			if (!$values instanceof \Traversable) {
-				throw new \TYPO3\CMS\Fluid\Core\ViewHelper\Exception('CycleViewHelper only supports arrays and objects implementing \Traversable interface' , 1248728393);
+			if (!$values instanceof Traversable) {
+				throw new Tx_Fluid_Core_ViewHelper_Exception('CycleViewHelper only supports arrays and objects implementing Traversable interface' , 1248728393);
 			}
 			$this->values = iterator_to_array($values, FALSE);
 		} else {

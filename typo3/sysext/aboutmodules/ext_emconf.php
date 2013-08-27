@@ -1,13 +1,15 @@
 <?php
+
 /***************************************************************
  * Extension Manager/Repository config file for ext "aboutmodules".
  *
- * Auto generated 25-10-2011 13:10
+ * Auto generated 12-11-2012 20:31
  *
  * Manual updates:
  * Only the data in the array - everything else is removed by next
  * writing. "version" and "dependencies" must not be touched!
  ***************************************************************/
+
 $EM_CONF[$_EXTKEY] = array(
 	'title' => 'Help>About Modules',
 	'description' => 'Shows an overview of the installed and available modules including description and links.',
@@ -18,6 +20,7 @@ $EM_CONF[$_EXTKEY] = array(
 	'priority' => '',
 	'loadOrder' => '',
 	'module' => 'mod',
+	'doNotLoadInFE' => 1,
 	'state' => 'stable',
 	'internal' => 0,
 	'uploadfolder' => 0,
@@ -30,15 +33,20 @@ $EM_CONF[$_EXTKEY] = array(
 	'author_company' => 'Curby Soft Multimedia',
 	'CGLcompliance' => '',
 	'CGLcompliance_note' => '',
-	'version' => '6.1.0',
-	'_md5_values_when_last_written' => '',
+	'version' => '1.0.0',
+	'_md5_values_when_last_written' => 'a:5:{s:12:"ext_icon.gif";s:4:"6101";s:14:"ext_tables.php";s:4:"920d";s:20:"mod/aboutmodules.gif";s:4:"711d";s:12:"mod/conf.php";s:4:"d61c";s:21:"mod/locallang_mod.xml";s:4:"f533";}',
 	'constraints' => array(
 		'depends' => array(
-			'typo3' => '6.1.0-6.1.99',
+			'php' => '5.1.0-0.0.0',
+			'typo3' => '4.4.0-0.0.0',
 		),
-		'conflicts' => array(),
-		'suggests' => array()
+		'conflicts' => array(
+		),
+		'suggests' => array(
+		),
 	),
-	'suggests' => array()
+	'suggests' => array(
+	),
 );
+
 ?>

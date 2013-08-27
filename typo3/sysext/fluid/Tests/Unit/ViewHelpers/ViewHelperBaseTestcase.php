@@ -1,73 +1,77 @@
 <?php
-namespace TYPO3\CMS\Fluid\Tests\Unit\ViewHelpers;
 
 /*                                                                        *
- * This script is backported from the TYPO3 Flow package "TYPO3.Fluid".   *
+ * This script belongs to the FLOW3 package "Fluid".                      *
  *                                                                        *
  * It is free software; you can redistribute it and/or modify it under    *
- * the terms of the GNU General Public License, either version 3 of the   *
- * License, or (at your option) any later version.                        *
+ * the terms of the GNU General Public License as published by the Free   *
+ * Software Foundation, either version 3 of the License, or (at your      *
+ * option) any later version.                                             *
+ *                                                                        *
+ * This script is distributed in the hope that it will be useful, but     *
+ * WITHOUT ANY WARRANTY; without even the implied warranty of MERCHAN-    *
+ * TABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General      *
+ * Public License for more details.                                       *
+ *                                                                        *
+ * You should have received a copy of the GNU General Public License      *
+ * along with the script.                                                 *
+ * If not, see http://www.gnu.org/licenses/gpl.html                       *
  *                                                                        *
  * The TYPO3 project - inspiring people to share!                         *
  *                                                                        */
 
 /**
- * Base test class for testing view helpers
  */
-abstract class ViewHelperBaseTestcase extends \TYPO3\CMS\Extbase\Tests\Unit\BaseTestCase {
+abstract class Tx_Fluid_ViewHelpers_ViewHelperBaseTestcase extends Tx_Extbase_Tests_Unit_BaseTestCase {
 
 	/**
-	 * @var \TYPO3\CMS\Fluid\Core\ViewHelper\ViewHelperVariableContainer
+	 * @var Tx_Fluid_Core_ViewHelper_ViewHelperVariableContainer
 	 */
 	protected $viewHelperVariableContainer;
 
 	/**
-	 * @var \TYPO3\CMS\Fluid\Core\ViewHelper\TemplateVariableContainer
+	 * @var Tx_Fluid_Core_ViewHelper_TemplateVariableContainer
 	 */
 	protected $templateVariableContainer;
 
 	/**
-	 * @var \TYPO3\CMS\Extbase\Mvc\Web\Routing\UriBuilder
+	 * @var Tx_Extbase_MVC_Web_Routing_UriBuilder
 	 */
 	protected $uriBuilder;
 
 	/**
-	 * @var \TYPO3\CMS\Extbase\Mvc\Controller\ControllerContext
+	 * @var Tx_Extbase_MVC_Controller_ControllerContext
 	 */
 	protected $controllerContext;
 
 	/**
-	 * @var \TYPO3\CMS\Fluid\Core\ViewHelper\TagBuilder
+	 * @var Tx_Fluid_Core_ViewHelper_TagBuilder
 	 */
 	protected $tagBuilder;
 
 	/**
-	 * @var \TYPO3\CMS\Fluid\Core\ViewHelper\Arguments
+	 * @var Tx_Fluid_Core_ViewHelper_Arguments
 	 */
 	protected $arguments;
 
 	/**
-	 * @var \TYPO3\CMS\Extbase\Mvc\Web\Request
+	 * @var Tx_Extbase_MVC_Web_Request
 	 */
 	protected $request;
 
 	/**
-	 * @var \TYPO3\CMS\Fluid\Core\Rendering\RenderingContext
+	 * @var Tx_Fluid_Core_Rendering_RenderingContext
 	 */
 	protected $renderingContext;
 
 	/**
-	 * @var \TYPO3\CMS\Extbase\Mvc\Controller\MvcPropertyMappingConfigurationService
-	 */
-	protected $mvcPropertyMapperConfigurationService;
-
-	/**
 	 * @return void
+	 * @author Sebastian Kurfürst <sebastian@typo3.org>
 	 */
 	public function setUp() {
-		$this->viewHelperVariableContainer = $this->getMock('TYPO3\\CMS\\Fluid\\Core\\ViewHelper\\ViewHelperVariableContainer');
-		$this->templateVariableContainer = $this->getMock('TYPO3\\CMS\\Fluid\\Core\\ViewHelper\\TemplateVariableContainer');
-		$this->uriBuilder = $this->getMock('TYPO3\\CMS\\Extbase\\Mvc\\Web\\Routing\\UriBuilder');
+		$this->viewHelperVariableContainer = $this->getMock('Tx_Fluid_Core_ViewHelper_ViewHelperVariableContainer');
+		$this->templateVariableContainer = $this->getMock('Tx_Fluid_Core_ViewHelper_TemplateVariableContainer');
+		$this->uriBuilder = $this->getMock('Tx_Extbase_MVC_Web_Routing_UriBuilder');
 		$this->uriBuilder->expects($this->any())->method('reset')->will($this->returnValue($this->uriBuilder));
 		$this->uriBuilder->expects($this->any())->method('setArguments')->will($this->returnValue($this->uriBuilder));
 		$this->uriBuilder->expects($this->any())->method('setSection')->will($this->returnValue($this->uriBuilder));
@@ -80,30 +84,29 @@ abstract class ViewHelperBaseTestcase extends \TYPO3\CMS\Extbase\Tests\Unit\Base
 		$this->uriBuilder->expects($this->any())->method('setTargetPageType')->will($this->returnValue($this->uriBuilder));
 		$this->uriBuilder->expects($this->any())->method('setNoCache')->will($this->returnValue($this->uriBuilder));
 		$this->uriBuilder->expects($this->any())->method('setUseCacheHash')->will($this->returnValue($this->uriBuilder));
-		$this->request = $this->getMock('TYPO3\\CMS\\Extbase\\Mvc\\Web\\Request');
-		$this->controllerContext = $this->getMock('TYPO3\\CMS\\Extbase\\Mvc\\Controller\\ControllerContext', array(), array(), '', FALSE);
+		$this->request = $this->getMock('Tx_Extbase_MVC_Web_Request');
+		$this->controllerContext = $this->getMock('Tx_Extbase_MVC_Controller_ControllerContext', array(), array(), '', FALSE);
 		$this->controllerContext->expects($this->any())->method('getUriBuilder')->will($this->returnValue($this->uriBuilder));
 		$this->controllerContext->expects($this->any())->method('getRequest')->will($this->returnValue($this->request));
-		$this->tagBuilder = $this->getMock('TYPO3\\CMS\\Fluid\\Core\\ViewHelper\\TagBuilder');
-		$this->arguments = array();
-		$this->renderingContext = new \TYPO3\CMS\Fluid\Core\Rendering\RenderingContext();
-		$this->renderingContext->injectTemplateVariableContainer($this->templateVariableContainer);
-		$this->renderingContext->injectViewHelperVariableContainer($this->viewHelperVariableContainer);
-		$this->renderingContext->setControllerContext($this->controllerContext);
-		$this->mvcPropertyMapperConfigurationService = new \TYPO3\CMS\Extbase\Mvc\Controller\MvcPropertyMappingConfigurationService;
+		$this->tagBuilder = $this->getMock('Tx_Fluid_Core_ViewHelper_TagBuilder');
+		$this->arguments = $this->getMock('Tx_Fluid_Core_ViewHelper_Arguments', array(), array(), '', FALSE);
+		$this->renderingContext = $this->getMock('Tx_Fluid_Core_Rendering_RenderingContext');
 	}
 
 	/**
-	 * @param \TYPO3\CMS\Fluid\Core\ViewHelper\AbstractViewHelper $viewHelper
+	 * @param Tx_Fluid_Core_ViewHelper_AbstractViewHelper $viewHelper
 	 * @return void
+	 * @author Sebastian Kurfürst <sebastian@typo3.org>
 	 */
-	protected function injectDependenciesIntoViewHelper(\TYPO3\CMS\Fluid\Core\ViewHelper\AbstractViewHelper $viewHelper) {
+	protected function injectDependenciesIntoViewHelper(Tx_Fluid_Core_ViewHelper_AbstractViewHelper $viewHelper) {
+		$viewHelper->setViewHelperVariableContainer($this->viewHelperVariableContainer);
+		$viewHelper->setTemplateVariableContainer($this->templateVariableContainer);
+		$viewHelper->setControllerContext($this->controllerContext);
 		$viewHelper->setRenderingContext($this->renderingContext);
 		$viewHelper->setArguments($this->arguments);
-		if ($viewHelper instanceof \TYPO3\CMS\Fluid\Core\ViewHelper\AbstractTagBasedViewHelper) {
-			$viewHelper->injectTagBuilder($this->tagBuilder);
+		if ($viewHelper instanceof Tx_Fluid_Core_ViewHelper_AbstractTagBasedViewHelper) {
+			$viewHelper->_set('tag', $this->tagBuilder);
 		}
 	}
 }
-
 ?>

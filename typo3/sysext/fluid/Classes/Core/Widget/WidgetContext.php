@@ -1,13 +1,12 @@
 <?php
-namespace TYPO3\CMS\Fluid\Core\Widget;
 
 /*
- * This script is backported from the TYPO3 Flow package "TYPO3.Fluid".   *
+ * This script belongs to the FLOW3 package "Fluid".                      *
  *                                                                        *
  * It is free software; you can redistribute it and/or modify it under    *
- * the terms of the GNU Lesser General Public License, either version 3   *
- *  of the License, or (at your option) any later version.                *
- *                                                                        *
+ * the terms of the GNU Lesser General Public License as published by the *
+ * Free Software Foundation, either version 3 of the License, or (at your *
+ * option) any later version.                                             *
  *                                                                        *
  * This script is distributed in the hope that it will be useful, but     *
  * WITHOUT ANY WARRANTY; without even the implied warranty of MERCHAN-    *
@@ -20,6 +19,7 @@ namespace TYPO3\CMS\Fluid\Core\Widget;
  *                                                                        *
  * The TYPO3 project - inspiring people to share!                         *
  *                                                                        */
+
 /**
  * The WidgetContext stores all information a widget needs to know about the
  * environment.
@@ -30,8 +30,10 @@ namespace TYPO3\CMS\Fluid\Core\Widget;
  * to get knowledge over the current widget's configuration.
  *
  * It is a purely internal class which should not be used outside of Fluid.
+ *
+ * @license http://www.gnu.org/licenses/lgpl.html GNU Lesser General Public License, version 3 or later
  */
-class WidgetContext {
+class Tx_Fluid_Core_Widget_WidgetContext {
 
 	/**
 	 * Uniquely idenfies a Widget Instance on a certain page.
@@ -66,17 +68,16 @@ class WidgetContext {
 	 * The child nodes of the Widget ViewHelper.
 	 * Only available inside non-AJAX requests.
 	 *
-	 * @var \TYPO3\CMS\Fluid\Core\Parser\SyntaxTree\RootNode
+	 * @var Tx_Fluid_Core_Parser_SyntaxTree_RootNode
 	 * @transient
 	 */
-	protected $viewHelperChildNodes;
+	protected $viewHelperChildNodes; // TODO: rename to something more meaningful.
 
 	/**
 	 * The rendering context of the ViewHelperChildNodes.
 	 * Only available inside non-AJAX requests.
-	 * TODO: rename to something more meaningful.
 	 *
-	 * @var \TYPO3\CMS\Fluid\Core\Rendering\RenderingContextInterface
+	 * @var Tx_Fluid_Core_Rendering_RenderingContextInterface
 	 * @transient
 	 */
 	protected $viewHelperChildNodeRenderingContext;
@@ -103,6 +104,7 @@ class WidgetContext {
 
 	/**
 	 * @return string
+	 * @author Sebastian Kurfürst <sebastian@typo3.org>
 	 */
 	public function getWidgetIdentifier() {
 		return $this->widgetIdentifier;
@@ -111,6 +113,7 @@ class WidgetContext {
 	/**
 	 * @param string $widgetIdentifier
 	 * @return void
+	 * @author Sebastian Kurfürst <sebastian@typo3.org>
 	 */
 	public function setWidgetIdentifier($widgetIdentifier) {
 		$this->widgetIdentifier = $widgetIdentifier;
@@ -118,6 +121,7 @@ class WidgetContext {
 
 	/**
 	 * @return string
+	 * @author Sebastian Kurfürst <sebastian@typo3.org>
 	 */
 	public function getAjaxWidgetIdentifier() {
 		return $this->ajaxWidgetIdentifier;
@@ -126,6 +130,7 @@ class WidgetContext {
 	/**
 	 * @param string $ajaxWidgetIdentifier
 	 * @return void
+	 * @author Sebastian Kurfürst <sebastian@typo3.org>
 	 */
 	public function setAjaxWidgetIdentifier($ajaxWidgetIdentifier) {
 		$this->ajaxWidgetIdentifier = $ajaxWidgetIdentifier;
@@ -209,6 +214,7 @@ class WidgetContext {
 
 	/**
 	 * @return array
+	 * @author Sebastian Kurfürst <sebastian@typo3.org>
 	 */
 	public function getWidgetConfiguration() {
 		return $this->widgetConfiguration;
@@ -217,6 +223,7 @@ class WidgetContext {
 	/**
 	 * @param array $widgetConfiguration
 	 * @return void
+	 * @author Sebastian Kurfürst <sebastian@typo3.org>
 	 */
 	public function setWidgetConfiguration($widgetConfiguration) {
 		$this->widgetConfiguration = $widgetConfiguration;
@@ -224,6 +231,7 @@ class WidgetContext {
 
 	/**
 	 * @return string
+	 * @author Sebastian Kurfürst <sebastian@typo3.org>
 	 */
 	public function getControllerObjectName() {
 		return $this->controllerObjectName;
@@ -232,30 +240,34 @@ class WidgetContext {
 	/**
 	 * @param string $controllerObjectName
 	 * @return void
+	 * @author Sebastian Kurfürst <sebastian@typo3.org>
 	 */
 	public function setControllerObjectName($controllerObjectName) {
 		$this->controllerObjectName = $controllerObjectName;
 	}
 
 	/**
-	 * @param \TYPO3\CMS\Fluid\Core\Parser\SyntaxTree\RootNode $viewHelperChildNodes
-	 * @param \TYPO3\CMS\Fluid\Core\Rendering\RenderingContextInterface $viewHelperChildNodeRenderingContext
+	 * @param Tx_Fluid_Core_Parser_SyntaxTree_RootNode $viewHelperChildNodes
+	 * @param Tx_Fluid_Core_Rendering_RenderingContextInterface $viewHelperChildNodeRenderingContext
 	 * @return void
+	 * @author Sebastian Kurfürst <sebastian@typo3.org>
 	 */
-	public function setViewHelperChildNodes(\TYPO3\CMS\Fluid\Core\Parser\SyntaxTree\RootNode $viewHelperChildNodes, \TYPO3\CMS\Fluid\Core\Rendering\RenderingContextInterface $viewHelperChildNodeRenderingContext) {
+	public function setViewHelperChildNodes(Tx_Fluid_Core_Parser_SyntaxTree_RootNode $viewHelperChildNodes, Tx_Fluid_Core_Rendering_RenderingContextInterface $viewHelperChildNodeRenderingContext) {
 		$this->viewHelperChildNodes = $viewHelperChildNodes;
 		$this->viewHelperChildNodeRenderingContext = $viewHelperChildNodeRenderingContext;
 	}
 
 	/**
-	 * @return \TYPO3\CMS\Fluid\Core\Parser\SyntaxTree\RootNode
+	 * @return Tx_Fluid_Core_Parser_SyntaxTree_RootNode
+	 * @author Sebastian Kurfürst <sebastian@typo3.org>
 	 */
 	public function getViewHelperChildNodes() {
 		return $this->viewHelperChildNodes;
 	}
 
 	/**
-	 * @return \TYPO3\CMS\Fluid\Core\Rendering\RenderingContextInterface
+	 * @return Tx_Fluid_Core_Rendering_RenderingContextInterface
+	 * @author Sebastian Kurfürst <sebastian@typo3.org>
 	 */
 	public function getViewHelperChildNodeRenderingContext() {
 		return $this->viewHelperChildNodeRenderingContext;
@@ -268,5 +280,4 @@ class WidgetContext {
 		return array('widgetIdentifier', 'ajaxWidgetIdentifier', 'widgetConfiguration', 'controllerObjectName', 'parentPluginNamespace', 'parentExtensionName', 'parentPluginName', 'widgetViewHelperClassName');
 	}
 }
-
 ?>

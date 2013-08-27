@@ -1,13 +1,11 @@
 <?php
-namespace TYPO3\CMS\Fluid\ViewHelpers\Be;
-
 /*                                                                        *
- * This script is backported from the TYPO3 Flow package "TYPO3.Fluid".   *
+ * This script belongs to the FLOW3 package "Fluid".                      *
  *                                                                        *
  * It is free software; you can redistribute it and/or modify it under    *
- * the terms of the GNU Lesser General Public License, either version 3   *
- *  of the License, or (at your option) any later version.                *
- *                                                                        *
+ * the terms of the GNU Lesser General Public License as published by the *
+ * Free Software Foundation, either version 3 of the License, or (at your *
+ * option) any later version.                                             *
  *                                                                        *
  * This script is distributed in the hope that it will be useful, but     *
  * WITHOUT ANY WARRANTY; without even the implied warranty of MERCHAN-    *
@@ -20,6 +18,7 @@ namespace TYPO3\CMS\Fluid\ViewHelpers\Be;
  *                                                                        *
  * The TYPO3 project - inspiring people to share!                         *
  *                                                                        */
+
 /**
  * View helper which renders a record list as known from the TYPO3 list module
  * Note: This feature is experimental!
@@ -43,19 +42,25 @@ namespace TYPO3\CMS\Fluid\ViewHelpers\Be;
  * List of "Website user" records with a text property of "foo" stored on PID 1 and two levels down.
  * Clicking on a username will open the TYPO3 info popup for the respective record
  * </output>
+ *
+ * @author Bastian Waidelich <bastian@typo3.org>
+ * @license http://www.gnu.org/copyleft/gpl.html
  */
-class TableListViewHelper extends \TYPO3\CMS\Fluid\ViewHelpers\Be\AbstractBackendViewHelper {
+require_once (PATH_typo3 . 'class.db_list.inc');
+require_once (PATH_typo3 . 'class.db_list_extra.inc');
+
+class Tx_Fluid_ViewHelpers_Be_TableListViewHelper extends Tx_Fluid_ViewHelpers_Be_AbstractBackendViewHelper {
 
 	/**
-	 * @var \TYPO3\CMS\Extbase\Configuration\ConfigurationManagerInterface
+	 * @var Tx_Extbase_Configuration_ConfigurationManagerInterface
 	 */
 	protected $configurationManager;
 
 	/**
-	 * @param \TYPO3\CMS\Extbase\Configuration\ConfigurationManagerInterface $configurationManager
+	 * @param Tx_Extbase_Configuration_ConfigurationManagerInterface $configurationManager
 	 * @return void
 	 */
-	public function injectConfigurationManager(\TYPO3\CMS\Extbase\Configuration\ConfigurationManagerInterface $configurationManager) {
+	public function injectConfigurationManager(Tx_Extbase_Configuration_ConfigurationManagerInterface $configurationManager) {
 		$this->configurationManager = $configurationManager;
 	}
 
@@ -73,15 +78,15 @@ class TableListViewHelper extends \TYPO3\CMS\Fluid\ViewHelpers\Be\AbstractBacken
 	 * @param boolean $sortDescending if TRUE records will be sorted in descending order
 	 * @param boolean $readOnly if TRUE, the edit icons won't be shown. Otherwise edit icons will be shown, if the current BE user has edit rights for the specified table!
 	 * @param boolean $enableClickMenu enables context menu
-	 * @param string $clickTitleMode one of "edit", "show" (only pages, tt_content), "info
+	 * @param string $clickTitleMode one of "edit", "show" (only pages, tt_content), "info"
 	 * @param boolean $alternateBackgroundColors if set, rows will have alternate background colors
 	 * @return string the rendered record list
 	 * @see localRecordList
 	 */
 	public function render($tableName, array $fieldList = array(), $storagePid = NULL, $levels = 0, $filter = '', $recordsPerPage = 0, $sortField = '', $sortDescending = FALSE, $readOnly = FALSE, $enableClickMenu = TRUE, $clickTitleMode = NULL, $alternateBackgroundColors = FALSE) {
-		$pageinfo = \TYPO3\CMS\Backend\Utility\BackendUtility::readPageAccess(\TYPO3\CMS\Core\Utility\GeneralUtility::_GP('id'), $GLOBALS['BE_USER']->getPagePermsClause(1));
-		/** @var $dblist \TYPO3\CMS\Recordlist\RecordList\DatabaseRecordList */
-		$dblist = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Recordlist\\RecordList\\DatabaseRecordList');
+		$pageinfo = t3lib_BEfunc::readPageAccess(t3lib_div::_GP('id'), $GLOBALS['BE_USER']->getPagePermsClause(1));
+
+		$dblist = t3lib_div::makeInstance('localRecordList');
 		$dblist->backPath = $GLOBALS['BACK_PATH'];
 		$dblist->pageRow = $pageinfo;
 		if ($readOnly === FALSE) {
@@ -92,11 +97,13 @@ class TableListViewHelper extends \TYPO3\CMS\Fluid\ViewHelpers\Be\AbstractBacken
 		$dblist->clickTitleMode = $clickTitleMode;
 		$dblist->alternateBgColors = $alternateBackgroundColors;
 		$dblist->clickMenuEnabled = $enableClickMenu;
+
 		if ($storagePid === NULL) {
-			$frameworkConfiguration = $this->configurationManager->getConfiguration(\TYPO3\CMS\Extbase\Configuration\ConfigurationManagerInterface::CONFIGURATION_TYPE_FRAMEWORK);
+			$frameworkConfiguration = $this->configurationManager->getConfiguration(Tx_Extbase_Configuration_ConfigurationManagerInterface::CONFIGURATION_TYPE_FRAMEWORK);
 			$storagePid = $frameworkConfiguration['persistence']['storagePid'];
 		}
-		$dblist->start($storagePid, $tableName, (integer) \TYPO3\CMS\Core\Utility\GeneralUtility::_GP('pointer'), $filter, $levels, $recordsPerPage);
+
+		$dblist->start($storagePid, $tableName, (integer)t3lib_div::_GP('pointer'), $filter, $levels, $recordsPerPage);
 		$dblist->allFields = TRUE;
 		$dblist->dontShowClipControlPanels = TRUE;
 		$dblist->displayFields = FALSE;
@@ -104,10 +111,11 @@ class TableListViewHelper extends \TYPO3\CMS\Fluid\ViewHelpers\Be\AbstractBacken
 		$dblist->noControlPanels = TRUE;
 		$dblist->sortField = $sortField;
 		$dblist->sortRev = $sortDescending;
+
 		$dblist->script = $_SERVER['REQUEST_URI'];
 		$dblist->generateList();
+
 		return $dblist->HTMLcode;
 	}
 }
-
 ?>

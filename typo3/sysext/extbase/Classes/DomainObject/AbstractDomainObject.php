@@ -1,38 +1,37 @@
 <?php
-namespace TYPO3\CMS\Extbase\DomainObject;
-
 /***************************************************************
- *  Copyright notice
- *
- *  (c) 2010-2013 Extbase Team (http://forge.typo3.org/projects/typo3v4-mvc)
- *  Extbase is a backport of TYPO3 Flow. All credits go to the TYPO3 Flow team.
- *  All rights reserved
- *
- *  This script is part of the TYPO3 project. The TYPO3 project is
- *  free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
- *
- *  The GNU General Public License can be found at
- *  http://www.gnu.org/copyleft/gpl.html.
- *  A copy is found in the textfile GPL.txt and important notices to the license
- *  from the author is found in LICENSE.txt distributed with these scripts.
- *
- *
- *  This script is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  This copyright notice MUST APPEAR in all copies of the script!
- ***************************************************************/
+*  Copyright notice
+*
+*  (c) 2009 Jochen Rau <jochen.rau@typoplanet.de>
+*  All rights reserved
+*
+*  This script is part of the TYPO3 project. The TYPO3 project is
+*  free software; you can redistribute it and/or modify
+*  it under the terms of the GNU General Public License as published by
+*  the Free Software Foundation; either version 2 of the License, or
+*  (at your option) any later version.
+*
+*  The GNU General Public License can be found at
+*  http://www.gnu.org/copyleft/gpl.html.
+*
+*  This script is distributed in the hope that it will be useful,
+*  but WITHOUT ANY WARRANTY; without even the implied warranty of
+*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+*  GNU General Public License for more details.
+*
+*  This copyright notice MUST APPEAR in all copies of the script!
+***************************************************************/
+
 /**
  * A generic Domain Object.
  *
  * All Model domain objects need to inherit from either AbstractEntity or AbstractValueObject, as this provides important framework information.
+ *
+ * @package Extbase
+ * @subpackage DomainObject
+ * @version $ID:$
  */
-abstract class AbstractDomainObject implements \TYPO3\CMS\Extbase\DomainObject\DomainObjectInterface, \TYPO3\CMS\Extbase\Persistence\ObjectMonitoringInterface {
+abstract class Tx_Extbase_DomainObject_AbstractDomainObject implements Tx_Extbase_DomainObject_DomainObjectInterface, Tx_Extbase_Persistence_ObjectMonitoringInterface {
 
 	/**
 	 * @var int The uid of the record. The uid is only unique in the context of the database table.
@@ -56,13 +55,12 @@ abstract class AbstractDomainObject implements \TYPO3\CMS\Extbase\DomainObject\D
 
 	/**
 	 * TRUE if the object is a clone
-	 *
 	 * @var boolean
 	 */
 	private $_isClone = FALSE;
 
 	/**
-	 * @var array An array holding the clean property values. Set right after reconstitution of the object
+	 * @var An array holding the clean property values. Set right after reconstitution of the object
 	 */
 	private $_cleanProperties;
 
@@ -85,9 +83,9 @@ abstract class AbstractDomainObject implements \TYPO3\CMS\Extbase\DomainObject\D
 	 *
 	 * @return int the uid or NULL if none set yet.
 	 */
-	public function getUid() {
+	final public function getUid() {
 		if ($this->uid !== NULL) {
-			return (integer) $this->uid;
+			return (int)$this->uid;
 		} else {
 			return NULL;
 		}
@@ -96,14 +94,13 @@ abstract class AbstractDomainObject implements \TYPO3\CMS\Extbase\DomainObject\D
 	/**
 	 * Setter for the pid.
 	 *
-	 * @param integer|NULL $pid
 	 * @return void
 	 */
 	public function setPid($pid) {
 		if ($pid === NULL) {
 			$this->pid = NULL;
 		} else {
-			$this->pid = (integer) $pid;
+			$this->pid = (int)$pid;
 		}
 	}
 
@@ -116,20 +113,20 @@ abstract class AbstractDomainObject implements \TYPO3\CMS\Extbase\DomainObject\D
 		if ($this->pid === NULL) {
 			return NULL;
 		} else {
-			return (integer) $this->pid;
+			return (int)$this->pid;
 		}
 	}
-
+	
 	/**
 	 * Reconstitutes a property. Only for internal use.
 	 *
 	 * @param string $propertyName
-	 * @param mixed $propertyValue
-	 * @return boolean
+	 * @param string $value
+	 * @return void
 	 */
 	public function _setProperty($propertyName, $propertyValue) {
 		if ($this->_hasProperty($propertyName)) {
-			$this->{$propertyName} = $propertyValue;
+			$this->$propertyName = $propertyValue;
 			return TRUE;
 		}
 		return FALSE;
@@ -138,11 +135,10 @@ abstract class AbstractDomainObject implements \TYPO3\CMS\Extbase\DomainObject\D
 	/**
 	 * Returns the property value of the given property name. Only for internal use.
 	 *
-	 * @param string $propertyName
 	 * @return mixed The propertyValue
 	 */
 	public function _getProperty($propertyName) {
-		return $this->{$propertyName};
+		return $this->$propertyName;
 	}
 
 	/**
@@ -159,12 +155,12 @@ abstract class AbstractDomainObject implements \TYPO3\CMS\Extbase\DomainObject\D
 		}
 		return $properties;
 	}
-
+	
 	/**
 	 * Returns the property value of the given property name. Only for internal use.
 	 *
-	 * @param string $propertyName
-	 * @return boolean TRUE bool true if the property exists, FALSE if it doesn't exist or NULL in case of an error.
+	 * @return boolean TRUE bool true if the property exists, FALSE if it doesn't exist or
+	 * NULL in case of an error.
 	 */
 	public function _hasProperty($propertyName) {
 		return property_exists($this, $propertyName);
@@ -193,10 +189,7 @@ abstract class AbstractDomainObject implements \TYPO3\CMS\Extbase\DomainObject\D
 			$this->_cleanProperties = array();
 			$properties = get_object_vars($this);
 			foreach ($properties as $propertyName => $propertyValue) {
-				if (substr($propertyName, 0, 1) === '_') {
-					continue;
-				}
-				// Do not memorize "internal" properties
+				if (substr($propertyName, 0, 1) === '_') continue; // Do not memorize "internal" properties
 				$this->_memorizePropertyCleanState($propertyName);
 			}
 		}
@@ -210,19 +203,20 @@ abstract class AbstractDomainObject implements \TYPO3\CMS\Extbase\DomainObject\D
 	 * @return void
 	 */
 	public function _memorizePropertyCleanState($propertyName) {
-		$propertyValue = $this->{$propertyName};
+		$propertyValue = $this->$propertyName;
 		if (!is_array($this->_cleanProperties)) {
 			$this->_cleanProperties = array();
 		}
 		if (is_object($propertyValue)) {
-			$this->_cleanProperties[$propertyName] = clone $propertyValue;
+			$this->_cleanProperties[$propertyName] = clone($propertyValue);
+
 			// We need to make sure the clone and the original object
 			// are identical when compared with == (see _isDirty()).
 			// After the cloning, the Domain Object will have the property
 			// "isClone" set to TRUE, so we manually have to set it to FALSE
 			// again. Possible fix: Somehow get rid of the "isClone" property,
 			// which is currently needed in Fluid.
-			if ($propertyValue instanceof \TYPO3\CMS\Extbase\DomainObject\AbstractDomainObject) {
+			if ($propertyValue instanceof Tx_Extbase_DomainObject_AbstractDomainObject) {
 				$this->_cleanProperties[$propertyName]->_setClone(FALSE);
 			}
 		} else {
@@ -253,29 +247,21 @@ abstract class AbstractDomainObject implements \TYPO3\CMS\Extbase\DomainObject\D
 			return NULL;
 		}
 	}
-
+	
 	/**
 	 * Returns TRUE if the properties were modified after reconstitution
 	 *
 	 * @param string $propertyName An optional name of a property to be checked if its value is dirty
-	 * @throws \TYPO3\CMS\Extbase\Persistence\Generic\Exception\TooDirtyException
 	 * @return boolean
 	 */
 	public function _isDirty($propertyName = NULL) {
-		if ($this->uid !== NULL && $this->_getCleanProperty('uid') !== NULL && $this->uid != $this->_getCleanProperty('uid')) {
-			throw new \TYPO3\CMS\Extbase\Persistence\Generic\Exception\TooDirtyException('The uid "' . $this->uid . '" has been modified, that is simply too much.', 1222871239);
-		}
-
+		if ($this->uid !== NULL && is_array($this->_cleanProperties) && $this->uid != $this->_getCleanProperty('uid')) throw new Tx_Extbase_Persistence_Exception_TooDirty('The uid "' . $this->uid . '" has been modified, that is simply too much.', 1222871239);
 		if ($propertyName === NULL) {
 			foreach ($this->_getCleanProperties() as $propertyName => $cleanPropertyValue) {
-				if ($this->isPropertyDirty($cleanPropertyValue, $this->{$propertyName}) === TRUE) {
-					return TRUE;
-				}
+				if ($this->isPropertyDirty($cleanPropertyValue, $this->$propertyName) === TRUE) return TRUE;
 			}
 		} else {
-			if ($this->isPropertyDirty($this->_getCleanProperty($propertyName), $this->{$propertyName}) === TRUE) {
-				return TRUE;
-			}
+			if ($this->isPropertyDirty($this->_getCleanProperty($propertyName), $this->$propertyName) === TRUE) return TRUE;
 		}
 		return FALSE;
 	}
@@ -285,26 +271,27 @@ abstract class AbstractDomainObject implements \TYPO3\CMS\Extbase\DomainObject\D
 	 *
 	 * @param mixed $previousValue
 	 * @param mixed $currentValue
-	 * @return boolean
+	 * @return boolan
 	 */
 	protected function isPropertyDirty($previousValue, $currentValue) {
+		$result = FALSE;
 		// In case it is an object and it implements the ObjectMonitoringInterface, we call _isDirty() instead of a simple comparison of objects.
 		// We do this, because if the object itself contains a lazy loaded property, the comparison of the objects might fail even if the object didn't change
 		if (is_object($currentValue)) {
-			if ($currentValue instanceof \TYPO3\CMS\Extbase\DomainObject\DomainObjectInterface) {
-				$result = !is_object($previousValue) || get_class($previousValue) !== get_class($currentValue) || $currentValue->getUid() !== $previousValue->getUid();
-			} elseif ($currentValue instanceof \TYPO3\CMS\Extbase\Persistence\ObjectMonitoringInterface) {
-				$result = !is_object($previousValue) || $currentValue->_isDirty() || get_class($previousValue) !== get_class($currentValue);
+			if ($currentValue instanceof Tx_Extbase_DomainObject_DomainObjectInterface) {
+				$result = !is_object($previousValue) || (get_class($previousValue) !== get_class($currentValue)) || ($currentValue->getUid() !== $previousValue->getUid());
+			} elseif ($currentValue instanceof Tx_Extbase_Persistence_ObjectMonitoringInterface) {
+				$result = !is_object($previousValue) || $currentValue->_isDirty() || (get_class($previousValue) !== get_class($currentValue));
 			} else {
 				// For all other objects we do only a simple comparison (!=) as we want cloned objects to return the same values.
-				$result = $previousValue != $currentValue;
+				$result = ($previousValue != $currentValue);
 			}
 		} else {
-			$result = $previousValue !== $currentValue;
+			$result = ($previousValue !== $currentValue);
 		}
 		return $result;
 	}
-
+	
 	/**
 	 * Returns TRUE if the object has been clonesd, cloned, FALSE otherwise.
 	 *
@@ -323,7 +310,7 @@ abstract class AbstractDomainObject implements \TYPO3\CMS\Extbase\DomainObject\D
 	 * @param boolean $clone
 	 */
 	public function _setClone($clone) {
-		$this->_isClone = (boolean) $clone;
+		$this->_isClone = (boolean)$clone;
 	}
 
 	/**
@@ -341,8 +328,8 @@ abstract class AbstractDomainObject implements \TYPO3\CMS\Extbase\DomainObject\D
 	 * @return string
 	 */
 	public function __toString() {
-		return get_class($this) . ':' . (string) $this->uid;
+		return get_class($this) . ':' . (string)$this->uid;
 	}
-}
 
+}
 ?>

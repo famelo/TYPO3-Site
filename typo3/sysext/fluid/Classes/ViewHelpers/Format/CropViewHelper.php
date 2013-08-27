@@ -1,5 +1,4 @@
 <?php
-namespace TYPO3\CMS\Fluid\ViewHelpers\Format;
 
 /*                                                                        *
  * This script is part of the TYPO3 project - inspiring people to share!  *
@@ -13,6 +12,10 @@ namespace TYPO3\CMS\Fluid\ViewHelpers\Format;
  * TABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General      *
  * Public License for more details.                                       *
  *                                                                        */
+
+/**
+ */
+
 /**
  * Use this view helper to crop the text between its opening and closing tags.
  *
@@ -53,29 +56,31 @@ namespace TYPO3\CMS\Fluid\ViewHelpers\Format;
  * someLongText cropped after 10 characters...
  * (depending on the value of {someLongText})
  * </output>
+ *
+ * @license http://opensource.org/licenses/gpl-license.php GNU Public License, version 2
  */
-class CropViewHelper extends \TYPO3\CMS\Fluid\Core\ViewHelper\AbstractViewHelper {
+class Tx_Fluid_ViewHelpers_Format_CropViewHelper extends Tx_Fluid_Core_ViewHelper_AbstractViewHelper {
 
 	/**
-	 * @var \TYPO3\CMS\Frontend\ContentObject\ContentObjectRenderer
+	 * @var	tslib_cObj
 	 */
 	protected $contentObject;
 
 	/**
-	 * @var \TYPO3\CMS\Frontend\Controller\TypoScriptFrontendController contains a backup of the current $GLOBALS['TSFE'] if used in BE mode
+	 * @var	t3lib_fe contains a backup of the current $GLOBALS['TSFE'] if used in BE mode
 	 */
 	protected $tsfeBackup;
 
 	/**
-	 * @var \TYPO3\CMS\Extbase\Configuration\ConfigurationManagerInterface
+	 * @var Tx_Extbase_Configuration_ConfigurationManagerInterface
 	 */
 	protected $configurationManager;
 
 	/**
-	 * @param \TYPO3\CMS\Extbase\Configuration\ConfigurationManagerInterface $configurationManager
+	 * @param Tx_Extbase_Configuration_ConfigurationManagerInterface $configurationManager
 	 * @return void
 	 */
-	public function injectConfigurationManager(\TYPO3\CMS\Extbase\Configuration\ConfigurationManagerInterface $configurationManager) {
+	public function injectConfigurationManager(Tx_Extbase_Configuration_ConfigurationManagerInterface $configurationManager) {
 		$this->configurationManager = $configurationManager;
 		$this->contentObject = $this->configurationManager->getContentObject();
 	}
@@ -85,20 +90,26 @@ class CropViewHelper extends \TYPO3\CMS\Fluid\Core\ViewHelper\AbstractViewHelper
 	 *
 	 * @param integer $maxCharacters Place where to truncate the string
 	 * @param string $append What to append, if truncation happened
-	 * @param boolean $respectWordBoundaries If TRUE and division is in the middle of a word, the remains of that word is removed.
+	 * @param boolean $respectBoundaries If TRUE and division is in the middle of a word, the remains of that word is removed.
 	 * @param boolean $respectHtml If TRUE the cropped string will respect HTML tags and entities. Technically that means, that cropHTML() is called rather than crop()
 	 * @return string cropped text
+	 * @author Andreas Pattynama <andreas.pattynama@innocube.ch>
+	 * @author Sebastian Kurfürst <sebastian@typo3.org>
+	 * @author Bastian Waidelich <bastian@typo3.org>
+	 * @author Felix Oertel <oertel@networkteam.com>
 	 */
 	public function render($maxCharacters, $append = '...', $respectWordBoundaries = TRUE, $respectHtml = TRUE) {
 		$stringToTruncate = $this->renderChildren();
 		if (TYPO3_MODE === 'BE') {
 			$this->simulateFrontendEnvironment();
 		}
+
 		if ($respectHtml) {
 			$content = $this->contentObject->cropHTML($stringToTruncate, $maxCharacters . '|' . $append . '|' . $respectWordBoundaries);
 		} else {
 			$content = $this->contentObject->crop($stringToTruncate, $maxCharacters . '|' . $append . '|' . $respectWordBoundaries);
 		}
+
 		if (TYPO3_MODE === 'BE') {
 			$this->resetFrontendEnvironment();
 		}
@@ -110,19 +121,22 @@ class CropViewHelper extends \TYPO3\CMS\Fluid\Core\ViewHelper\AbstractViewHelper
 	 * This somewhat hacky work around is currently needed because the crop() and cropHTML() functions of tslib_cObj rely on those variables to be set
 	 *
 	 * @return void
+	 * @author Bastian Waidelich <bastian@typo3.org>
 	 */
 	protected function simulateFrontendEnvironment() {
 		$this->tsfeBackup = isset($GLOBALS['TSFE']) ? $GLOBALS['TSFE'] : NULL;
-		$GLOBALS['TSFE'] = new \stdClass();
-		// preparing csConvObj
+		$GLOBALS['TSFE'] = new stdClass();
+
+			// preparing csConvObj
 		if (!is_object($GLOBALS['TSFE']->csConvObj)) {
 			if (is_object($GLOBALS['LANG'])) {
 				$GLOBALS['TSFE']->csConvObj = $GLOBALS['LANG']->csConvObj;
 			} else {
-				$GLOBALS['TSFE']->csConvObj = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Charset\\CharsetConverter');
+				$GLOBALS['TSFE']->csConvObj = t3lib_div::makeInstance('t3lib_cs');
 			}
 		}
-		// preparing renderCharset
+
+			// preparing renderCharset
 		if (!is_object($GLOBALS['TSFE']->renderCharset)) {
 			if (is_object($GLOBALS['LANG'])) {
 				$GLOBALS['TSFE']->renderCharset = $GLOBALS['LANG']->charSet;
@@ -136,11 +150,13 @@ class CropViewHelper extends \TYPO3\CMS\Fluid\Core\ViewHelper\AbstractViewHelper
 	 * Resets $GLOBALS['TSFE'] if it was previously changed by simulateFrontendEnvironment()
 	 *
 	 * @return void
+	 * @author Bastian Waidelich <bastian@typo3.org>
 	 * @see simulateFrontendEnvironment()
 	 */
 	protected function resetFrontendEnvironment() {
 		$GLOBALS['TSFE'] = $this->tsfeBackup;
 	}
 }
+
 
 ?>

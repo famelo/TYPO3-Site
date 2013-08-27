@@ -1,13 +1,11 @@
 <?php
-namespace TYPO3\CMS\Fluid\ViewHelpers\Be\Buttons;
-
 /*                                                                        *
- * This script is backported from the TYPO3 Flow package "TYPO3.Fluid".   *
+ * This script belongs to the FLOW3 package "Fluid".                      *
  *                                                                        *
  * It is free software; you can redistribute it and/or modify it under    *
- * the terms of the GNU Lesser General Public License, either version 3   *
- *  of the License, or (at your option) any later version.                *
- *                                                                        *
+ * the terms of the GNU Lesser General Public License as published by the *
+ * Free Software Foundation, either version 3 of the License, or (at your *
+ * option) any later version.                                             *
  *                                                                        *
  * This script is distributed in the hope that it will be useful, but     *
  * WITHOUT ANY WARRANTY; without even the implied warranty of MERCHAN-    *
@@ -20,11 +18,12 @@ namespace TYPO3\CMS\Fluid\ViewHelpers\Be\Buttons;
  *                                                                        *
  * The TYPO3 project - inspiring people to share!                         *
  *                                                                        */
+
 /**
  * View helper which returns CSH (context sensitive help) button with icon
  * Note: The CSH button will only work, if the current BE user has
  * the "Context Sensitive Help mode" set to something else than
- * "Display no help information" in the Users settings
+ *  "Display no help information" in the Users settings
  * Note: This view helper is experimental!
  *
  * = Examples =
@@ -42,8 +41,13 @@ namespace TYPO3\CMS\Fluid\ViewHelpers\Be\Buttons;
  * <output>
  * CSH button as known from the TYPO3 backend with some custom settings.
  * </output>
+ *
+ * @author Steffen Kamper <info@sk-typo3.de>
+ * @author Bastian Waidelich <bastian@typo3.org>
+ * @license http://www.gnu.org/copyleft/gpl.html
  */
-class CshViewHelper extends \TYPO3\CMS\Fluid\ViewHelpers\Be\AbstractBackendViewHelper {
+class Tx_Fluid_ViewHelpers_Be_Buttons_CshViewHelper extends Tx_Fluid_ViewHelpers_Be_AbstractBackendViewHelper {
+
 
 	/**
 	 * Render context sensitive help (CSH) for the given table
@@ -53,6 +57,7 @@ class CshViewHelper extends \TYPO3\CMS\Fluid\ViewHelpers\Be\AbstractBackendViewH
 	 * @param boolean $iconOnly If set, the full text will never be shown (only icon)
 	 * @param string $styleAttributes Additional style-attribute content for wrapping table (full text mode only)
 	 * @return string the rendered CSH icon
+	 * @see t3lib_BEfunc::cshItem
 	 */
 	public function render($table = NULL, $field = '', $iconOnly = FALSE, $styleAttributes = '') {
 		if ($table === NULL) {
@@ -60,9 +65,9 @@ class CshViewHelper extends \TYPO3\CMS\Fluid\ViewHelpers\Be\AbstractBackendViewH
 			$moduleName = $currentRequest->getPluginName();
 			$table = '_MOD_' . $moduleName;
 		}
-		$cshButton = \TYPO3\CMS\Backend\Utility\BackendUtility::cshItem($table, $field, $GLOBALS['BACK_PATH'], '', $iconOnly, $styleAttributes);
+		$cshButton = t3lib_BEfunc::cshItem($table, $field, $GLOBALS['BACK_PATH'], '', $iconOnly, $styleAttributes);
+
 		return '<div class="docheader-csh">' . $cshButton . '</div>';
 	}
 }
-
 ?>

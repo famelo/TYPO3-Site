@@ -25,6 +25,8 @@
  * It relies on ExtJS core being loaded
  *
  * @author	Francois Suter <francois@typo3.org>
+ *
+ * $Id$
  */
 
 /**
@@ -43,7 +45,7 @@ var allCheckedStatus = false;
  * @return	void
  */
 function actOnChangedTaskClass(theSelector) {
-	var taskClass = theSelector.options[theSelector.selectedIndex].value.toLowerCase().replace(/\\/g, '-');
+	var taskClass = theSelector.options[theSelector.selectedIndex].value;
 		// Hide all extra fields
 		// Show only relevant extra fields
 	Ext.select('.extraFields').setDisplayed(false);
@@ -78,51 +80,6 @@ function actOnChangedTaskType(theSelector) {
 		Ext.fly('task_end_row').setDisplayed(true);
 		Ext.fly('task_frequency_row').setDisplayed(true);
 		Ext.fly('task_multiple_row').setDisplayed(true);
-	}
-}
-
-/**
- * This method reacts on field changes of all table field for
- * table garbage collection task
- *
- * @param theCheckbox: The selected checkbox
- * @return void
- */
-function actOnChangeSchedulerTableGarbageCollectionAllTables(theCheckbox) {
-	if (theCheckbox.checked) {
-		Ext.fly('task_tableGarbageCollection_table').set({disabled: 'disabled'});
-		Ext.fly('task_tableGarbageCollection_numberOfDays').set({disabled: 'disabled'});
-	} else {
-			// Get number of days for selected table
-		var numberOfDays = Ext.fly('task_tableGarbageCollection_numberOfDays').getValue();
-		if (numberOfDays < 1) {
-			var selectedTable = Ext.fly('task_tableGarbageCollection_table').getValue();
-			if (typeof(defaultNumberOfDays[selectedTable]) != 'undefined') {
-				numberOfDays = defaultNumberOfDays[selectedTable];
-			}
-		}
-
-		Ext.fly('task_tableGarbageCollection_table').dom.removeAttribute('disabled');
-		if (numberOfDays > 0) {
-			Ext.fly('task_tableGarbageCollection_numberOfDays').dom.removeAttribute('disabled');
-		}
-	}
-}
-
-/**
- * This methods set the 'number of days' field to the default expire period
- * of the selected table
- *
- * @param theSelector: select form item where the table selection was made
- * @return void
- */
-function actOnChangeSchedulerTableGarbageCollectionTable(theSelector) {
-	if (defaultNumberOfDays[theSelector.options[theSelector.selectedIndex].value] > 0) {
-		Ext.fly('task_tableGarbageCollection_numberOfDays').dom.removeAttribute('disabled');
-		Ext.fly('task_tableGarbageCollection_numberOfDays').set({value: defaultNumberOfDays[theSelector.options[theSelector.selectedIndex].value]});
-	} else {
-		Ext.fly('task_tableGarbageCollection_numberOfDays').set({disabled: 'disabled'});
-		Ext.fly('task_tableGarbageCollection_numberOfDays').set({value: 0});
 	}
 }
 
@@ -163,31 +120,6 @@ Ext.onReady(function(){
 				idParts = checkboxes.item(i).id.split('_');
 				Ext.select('#executionstatus_' + idParts[1]).item(0).set({src: TYPO3.settings.scheduler.runningIcon});
 			}
-		},
-			// Add a listener for click on a row to check/uncheck the checkbox
-		'.tx_scheduler_mod1 tr.db_list_normal@click' : function(e, t) {
-			if (t.tagName == 'SPAN' || t.tagName == 'A') {
-				return;
-			}
-
-			var checkboxes = Ext.select(t.up('tr').select('input.checkboxes'));
-			if (t.type != 'checkbox') {
-				if (checkboxes.item(0).dom.checked == true) {
-					checkboxes.item(0).dom.checked = false;
-				} else {
-					checkboxes.item(0).dom.checked = true;
-				}
-			}
-			if (Ext.query('input.checkboxes:checked').length == checkboxes.getCount()) {
-				allCheckedStatus = !allCheckedStatus;
-			}
-		},
-
-			// Add a listener for click on run single task
-		'.t3-icon-scheduler-run-task@click' : function(event, element) {
-			var checkbox = Ext.get(element).parent('tr').child('input[type="checkbox"]');
-			var idParts = checkbox.id.split('_');
-			Ext.select('#executionstatus_' + idParts[1]).item(0).set({src: TYPO3.settings.scheduler.runningIcon});
 		}
-	})
+	});
 });

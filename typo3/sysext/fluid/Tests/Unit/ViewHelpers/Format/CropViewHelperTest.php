@@ -1,13 +1,12 @@
 <?php
-namespace TYPO3\CMS\Fluid\Tests\Unit\ViewHelpers\Format;
 
 /*                                                                        *
- * This script is backported from the FLOW3 package "TYPO3.Fluid".        *
+ * This script belongs to the FLOW3 package "Fluid".                      *
  *                                                                        *
  * It is free software; you can redistribute it and/or modify it under    *
  * the terms of the GNU General Public License as published by the Free   *
  * Software Foundation, either version 3 of the License, or (at your      *
- *                                                                        *
+ * option) any later version.                                             *
  *                                                                        *
  * This script is distributed in the hope that it will be useful, but     *
  * WITHOUT ANY WARRANTY; without even the implied warranty of MERCHAN-    *
@@ -20,35 +19,40 @@ namespace TYPO3\CMS\Fluid\Tests\Unit\ViewHelpers\Format;
  *                                                                        *
  * The TYPO3 project - inspiring people to share!                         *
  *                                                                        */
-class CropViewHelperTest extends \TYPO3\CMS\Extbase\Tests\Unit\BaseTestCase {
+
+/**
+ */
+class Tx_Fluid_Tests_Unit_ViewHelpers_Format_CropViewHelperTest extends Tx_Extbase_Tests_Unit_BaseTestCase {
 
 	/**
-	 * @var \TYPO3\CMS\Fluid\ViewHelpers\Format\CropViewHelper
+	 * var Tx_Fluid_ViewHelpers_Format_CropViewHelper
 	 */
 	protected $viewHelper;
 
 	/**
-	 * @var \TYPO3\CMS\Frontend\ContentObject\ContentObjectRenderer
+	 * @var tslib_cObj
 	 */
 	protected $mockContentObject;
 
 	/**
-	 * @var \TYPO3\CMS\Extbase\Configuration\ConfigurationManagerInterface
+	 * @var Tx_Extbase_Configuration_ConfigurationManagerInterface
 	 */
 	protected $mockConfigurationManager;
 
 	public function setUp() {
 		parent::setUp();
-		$this->mockContentObject = $this->getMock('TYPO3\\CMS\\Frontend\\ContentObject\\ContentObjectRenderer', array(), array(), '', FALSE);
-		$this->mockConfigurationManager = $this->getMock('TYPO3\\CMS\\Extbase\\Configuration\\ConfigurationManagerInterface');
+
+		$this->mockContentObject = $this->getMock('tslib_cObj', array(), array(), '', FALSE);
+		$this->mockConfigurationManager = $this->getMock('Tx_Extbase_Configuration_ConfigurationManagerInterface');
 		$this->mockConfigurationManager->expects($this->any())->method('getContentObject')->will($this->returnValue($this->mockContentObject));
-		$this->viewHelper = $this->getMock('TYPO3\\CMS\\Fluid\\ViewHelpers\\Format\\CropViewHelper', array('renderChildren'));
+		$this->viewHelper = $this->getMock('Tx_Fluid_ViewHelpers_Format_CropViewHelper', array('renderChildren'));
 		$this->viewHelper->injectConfigurationManager($this->mockConfigurationManager);
 		$this->viewHelper->expects($this->once())->method('renderChildren')->will($this->returnValue('Some Content'));
 	}
 
 	/**
 	 * @test
+	 * @author Bastian Waidelich <bastian@typo3.org>
 	 */
 	public function viewHelperCallsCropHtmlByDefault() {
 		$this->mockContentObject->expects($this->once())->method('cropHTML')->with('Some Content', '123|...|1')->will($this->returnValue('Cropped Content'));
@@ -58,6 +62,7 @@ class CropViewHelperTest extends \TYPO3\CMS\Extbase\Tests\Unit\BaseTestCase {
 
 	/**
 	 * @test
+	 * @author Bastian Waidelich <bastian@typo3.org>
 	 */
 	public function viewHelperCallsCropHtmlByDefault2() {
 		$this->mockContentObject->expects($this->once())->method('cropHTML')->with('Some Content', '-321|custom suffix|1')->will($this->returnValue('Cropped Content'));
@@ -67,6 +72,7 @@ class CropViewHelperTest extends \TYPO3\CMS\Extbase\Tests\Unit\BaseTestCase {
 
 	/**
 	 * @test
+	 * @author Bastian Waidelich <bastian@typo3.org>
 	 */
 	public function respectWordBoundariesCanBeDisabled() {
 		$this->mockContentObject->expects($this->once())->method('cropHTML')->with('Some Content', '123|...|')->will($this->returnValue('Cropped Content'));
@@ -76,6 +82,7 @@ class CropViewHelperTest extends \TYPO3\CMS\Extbase\Tests\Unit\BaseTestCase {
 
 	/**
 	 * @test
+	 * @author Bastian Waidelich <bastian@typo3.org>
 	 */
 	public function respectHtmlCanBeDisabled() {
 		$this->mockContentObject->expects($this->once())->method('crop')->with('Some Content', '123|...|1')->will($this->returnValue('Cropped Content'));
@@ -83,5 +90,4 @@ class CropViewHelperTest extends \TYPO3\CMS\Extbase\Tests\Unit\BaseTestCase {
 		$this->assertEquals('Cropped Content', $actualResult);
 	}
 }
-
 ?>

@@ -2,7 +2,7 @@
 /***************************************************************
  * Copyright notice
  *
- * (c) 2010-2013 Stefan Galinski <stefan.galinski@gmail.com>
+ * (c) 2010-2011 Stefan Galinski <stefan.galinski@gmail.com>
  *
  * All rights reserved
  *
@@ -22,12 +22,15 @@
  *
  * This copyright notice MUST APPEAR in all copies of the script!
  ***************************************************************/
+
 if (!defined('PATH_typo3conf')) {
 	die('Could not access this script directly!');
 }
-$extDirectEidInstance = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Frontend\\Controller\\ExtDirectEidController');
+
+$extDirectEidInstance = t3lib_div::makeInstance('tslib_ExtDirectEid');
 if ($extDirectEidInstance->actionIsAllowed()) {
 	$extDirectEidInstance->routeAction();
 	$extDirectEidInstance->render();
 }
+
 ?>

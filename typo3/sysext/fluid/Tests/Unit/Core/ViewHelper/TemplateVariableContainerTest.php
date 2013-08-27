@@ -1,48 +1,61 @@
 <?php
-namespace TYPO3\CMS\Fluid\Tests\Unit\Core\ViewHelper;
 
 /*                                                                        *
- * This script is backported from the TYPO3 Flow package "TYPO3.Fluid".   *
+ * This script belongs to the FLOW3 package "Fluid".                      *
  *                                                                        *
  * It is free software; you can redistribute it and/or modify it under    *
- * the terms of the GNU Lesser General Public License, either version 3   *
- *  of the License, or (at your option) any later version.                *
+ * the terms of the GNU Lesser General Public License as published by the *
+ * Free Software Foundation, either version 3 of the License, or (at your *
+ * option) any later version.                                             *
+ *                                                                        *
+ * This script is distributed in the hope that it will be useful, but     *
+ * WITHOUT ANY WARRANTY; without even the implied warranty of MERCHAN-    *
+ * TABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Lesser       *
+ * General Public License for more details.                               *
+ *                                                                        *
+ * You should have received a copy of the GNU Lesser General Public       *
+ * License along with the script.                                         *
+ * If not, see http://www.gnu.org/licenses/lgpl.html                      *
  *                                                                        *
  * The TYPO3 project - inspiring people to share!                         *
  *                                                                        */
 
 /**
  * Testcase for TemplateVariableContainer
+ *
+ * @license http://www.gnu.org/licenses/lgpl.html GNU Lesser General Public License, version 3 or later
  */
-class TemplateVariableContainerTest extends \TYPO3\CMS\Extbase\Tests\Unit\BaseTestCase {
+class Tx_Fluid_Tests_Unit_Core_ViewHelper_TemplateVariableContainerTest extends Tx_Extbase_Tests_Unit_BaseTestCase {
 
 	/**
-	 * @var \TYPO3\CMS\Fluid\Core\ViewHelper\TemplateVariableContainer
+	 * @author Sebastian Kurfürst <sebastian@typo3.org>
 	 */
-	protected $variableContainer;
-
 	public function setUp() {
-		$this->variableContainer = new \TYPO3\CMS\Fluid\Core\ViewHelper\TemplateVariableContainer();
+		$this->variableContainer = new Tx_Fluid_Core_ViewHelper_TemplateVariableContainer();
 	}
-
+	/**
+	 * @author Sebastian Kurfürst <sebastian@typo3.org>
+	 */
 	public function tearDown() {
 		unset($this->variableContainer);
 	}
 
 	/**
 	 * @test
+	 * @author Sebastian Kurfürst <sebastian@typo3.org>
 	 */
 	public function addedObjectsCanBeRetrievedAgain() {
-		$object = 'StringObject';
-		$this->variableContainer->add('variable', $object);
+		$object = "StringObject";
+		$this->variableContainer->add("variable", $object);
 		$this->assertSame($this->variableContainer->get('variable'), $object, 'The retrieved object from the context is not the same as the stored object.');
 	}
 
 	/**
 	 * @test
+	 * @author Sebastian Kurfürst <sebastian@typo3.org>
 	 */
 	public function addedObjectsCanBeRetrievedAgainUsingArrayAccess() {
-		$object = 'StringObject';
+		$object = "StringObject";
 		$this->variableContainer['variable'] = $object;
 		$this->assertSame($this->variableContainer->get('variable'), $object);
 		$this->assertSame($this->variableContainer['variable'], $object);
@@ -50,26 +63,29 @@ class TemplateVariableContainerTest extends \TYPO3\CMS\Extbase\Tests\Unit\BaseTe
 
 	/**
 	 * @test
+	 * @author Sebastian Kurfürst <sebastian@typo3.org>
 	 */
 	public function addedObjectsExistInArray() {
-		$object = 'StringObject';
-		$this->variableContainer->add('variable', $object);
+		$object = "StringObject";
+		$this->variableContainer->add("variable", $object);
 		$this->assertTrue($this->variableContainer->exists('variable'));
 		$this->assertTrue(isset($this->variableContainer['variable']));
 	}
 
 	/**
 	 * @test
+	 * @author Sebastian Kurfürst <sebastian@typo3.org>
 	 */
 	public function addedObjectsExistInAllIdentifiers() {
-		$object = 'StringObject';
-		$this->variableContainer->add('variable', $object);
+		$object = "StringObject";
+		$this->variableContainer->add("variable", $object);
 		$this->assertEquals($this->variableContainer->getAllIdentifiers(), array('variable'), 'Added key is not visible in getAllIdentifiers');
 	}
 
 	/**
 	 * @test
-	 * @expectedException \TYPO3\CMS\Fluid\Core\ViewHelper\Exception\InvalidVariableException
+	 * @expectedException Tx_Fluid_Core_ViewHelper_Exception_InvalidVariableException
+	 * @author Sebastian Kurfürst <sebastian@typo3.org>
 	 */
 	public function duplicateIdentifiersThrowException() {
 		$this->variableContainer->add('variable', 'string1');
@@ -78,7 +94,8 @@ class TemplateVariableContainerTest extends \TYPO3\CMS\Extbase\Tests\Unit\BaseTe
 
 	/**
 	 * @test
-	 * @expectedException \TYPO3\CMS\Fluid\Core\ViewHelper\Exception\InvalidVariableException
+	 * @expectedException Tx_Fluid_Core_ViewHelper_Exception_InvalidVariableException
+	 * @author Bastian Waidelich <bastian@typo3.org>
 	 */
 	public function addingReservedIdentifiersThrowException() {
 		$this->variableContainer->add('TrUe', 'someValue');
@@ -86,7 +103,8 @@ class TemplateVariableContainerTest extends \TYPO3\CMS\Extbase\Tests\Unit\BaseTe
 
 	/**
 	 * @test
-	 * @expectedException \TYPO3\CMS\Fluid\Core\ViewHelper\Exception\InvalidVariableException
+	 * @expectedException Tx_Fluid_Core_ViewHelper_Exception_InvalidVariableException
+	 * @author Sebastian Kurfürst <sebastian@typo3.org>
 	 */
 	public function gettingNonexistentValueThrowsException() {
 		$this->variableContainer->get('nonexistent');
@@ -94,7 +112,8 @@ class TemplateVariableContainerTest extends \TYPO3\CMS\Extbase\Tests\Unit\BaseTe
 
 	/**
 	 * @test
-	 * @expectedException \TYPO3\CMS\Fluid\Core\ViewHelper\Exception\InvalidVariableException
+	 * @expectedException Tx_Fluid_Core_ViewHelper_Exception_InvalidVariableException
+	 * @author Sebastian Kurfürst <sebastian@typo3.org>
 	 */
 	public function deletingNonexistentValueThrowsException() {
 		$this->variableContainer->remove('nonexistent');
@@ -102,36 +121,16 @@ class TemplateVariableContainerTest extends \TYPO3\CMS\Extbase\Tests\Unit\BaseTe
 
 	/**
 	 * @test
-	 * @expectedException \TYPO3\CMS\Fluid\Core\ViewHelper\Exception\InvalidVariableException
+	 * @expectedException Tx_Fluid_Core_ViewHelper_Exception_InvalidVariableException
+	 * @author Sebastian Kurfürst <sebastian@typo3.org>
 	 */
 	public function removeReallyRemovesVariables() {
 		$this->variableContainer->add('variable', 'string1');
 		$this->variableContainer->remove('variable');
 		$this->variableContainer->get('variable');
 	}
-
-	/**
-	 * @test
-	 */
-	public function whenVariablesAreEmpty_getAll_shouldReturnEmptyArray() {
-		$this->assertSame(array(), $this->variableContainer->get('_all'));
-	}
-
-	/**
-	 * @test
-	 */
-	public function getAllShouldReturnAllVariables() {
-		$this->variableContainer->add('name', 'Simon');
-		$this->assertSame(array('name' => 'Simon'), $this->variableContainer->get('_all'));
-	}
-
-	/**
-	 * @test
-	 * @expectedException \TYPO3\CMS\Fluid\Core\ViewHelper\Exception\InvalidVariableException
-	 */
-	public function addingVariableNamedAllShouldThrowException() {
-		$this->variableContainer->add('_all', 'foo');
-	}
 }
+
+
 
 ?>

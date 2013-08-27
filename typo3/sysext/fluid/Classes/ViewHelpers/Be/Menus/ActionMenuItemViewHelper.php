@@ -1,13 +1,11 @@
 <?php
-namespace TYPO3\CMS\Fluid\ViewHelpers\Be\Menus;
-
 /*                                                                        *
- * This script is backported from the TYPO3 Flow package "TYPO3.Fluid".   *
+ * This script belongs to the FLOW3 package "Fluid".                      *
  *                                                                        *
  * It is free software; you can redistribute it and/or modify it under    *
- * the terms of the GNU Lesser General Public License, either version 3   *
- *  of the License, or (at your option) any later version.                *
- *                                                                        *
+ * the terms of the GNU Lesser General Public License as published by the *
+ * Free Software Foundation, either version 3 of the License, or (at your *
+ * option) any later version.                                             *
  *                                                                        *
  * This script is distributed in the hope that it will be useful, but     *
  * WITHOUT ANY WARRANTY; without even the implied warranty of MERCHAN-    *
@@ -20,6 +18,7 @@ namespace TYPO3\CMS\Fluid\ViewHelpers\Be\Menus;
  *                                                                        *
  * The TYPO3 project - inspiring people to share!                         *
  *                                                                        */
+
 /**
  * View helper which returns a option tag.
  * This view helper only works in conjunction with Tx_Fluid_ViewHelpers_Be_Menus_ActionMenuViewHelper
@@ -29,9 +28,9 @@ namespace TYPO3\CMS\Fluid\ViewHelpers\Be\Menus;
  *
  * <code title="Simple">
  * <f:be.menus.actionMenu>
- * <f:be.menus.actionMenuItem label="Overview" controller="Blog" action="index" />
- * <f:be.menus.actionMenuItem label="Create new Blog" controller="Blog" action="new" />
- * <f:be.menus.actionMenuItem label="List Posts" controller="Post" action="index" arguments="{blog: blog}" />
+ *   <f:be.menus.actionMenuItem label="Overview" controller="Blog" action="index" />
+ *   <f:be.menus.actionMenuItem label="Create new Blog" controller="Blog" action="new" />
+ *   <f:be.menus.actionMenuItem label="List Posts" controller="Post" action="index" arguments="{blog: blog}" />
  * </f:be.menus.actionMenu>
  * </code>
  * <output>
@@ -40,15 +39,19 @@ namespace TYPO3\CMS\Fluid\ViewHelpers\Be\Menus;
  *
  * <code title="Localized">
  * <f:be.menus.actionMenu>
- * <f:be.menus.actionMenuItem label="{f:translate(key='overview')}" controller="Blog" action="index" />
- * <f:be.menus.actionMenuItem label="{f:translate(key='create_blog')}" controller="Blog" action="new" />
+ *   <f:be.menus.actionMenuItem label="{f:translate(key='overview')}" controller="Blog" action="index" />
+ *   <f:be.menus.actionMenuItem label="{f:translate(key='create_blog')}" controller="Blog" action="new" />
  * </f:be.menus.actionMenu>
  * </code>
  * <output>
  * localized selectbox
  * <output>
+ *
+ * @author Steffen Kamper <info@sk-typo3.de>
+ * @author Bastian Waidelich <bastian@typo3.org>
+ * @license http://www.gnu.org/copyleft/gpl.html
  */
-class ActionMenuItemViewHelper extends \TYPO3\CMS\Fluid\Core\ViewHelper\AbstractTagBasedViewHelper {
+class Tx_Fluid_ViewHelpers_Be_Menus_ActionMenuItemViewHelper extends Tx_Fluid_Core_ViewHelper_AbstractTagBasedViewHelper {
 
 	/**
 	 * @var string
@@ -67,17 +70,21 @@ class ActionMenuItemViewHelper extends \TYPO3\CMS\Fluid\Core\ViewHelper\Abstract
 	 */
 	public function render($label, $controller, $action, array $arguments = array()) {
 		$uriBuilder = $this->controllerContext->getUriBuilder();
-		$uri = $uriBuilder->reset()->uriFor($action, $arguments, $controller);
+		$uri = $uriBuilder
+			->reset()
+			->uriFor($action, $arguments, $controller);
 		$this->tag->addAttribute('value', $uri);
+
 		$currentRequest = $this->controllerContext->getRequest();
 		$currentController = $currentRequest->getControllerName();
 		$currentAction = $currentRequest->getControllerActionName();
 		if ($action === $currentAction && $controller === $currentController) {
-			$this->tag->addAttribute('selected', 'selected');
+			$this->tag->addAttribute('selected', TRUE);
 		}
+
 		$this->tag->setContent($label);
+
 		return $this->tag->render();
 	}
 }
-
 ?>

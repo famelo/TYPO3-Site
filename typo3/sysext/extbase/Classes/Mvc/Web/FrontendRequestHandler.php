@@ -1,12 +1,12 @@
 <?php
-namespace TYPO3\CMS\Extbase\Mvc\Web;
-
 /***************************************************************
  *  Copyright notice
  *
- *  (c) 2010-2013 Extbase Team (http://forge.typo3.org/projects/typo3v4-mvc)
- *  Extbase is a backport of TYPO3 Flow. All credits go to the TYPO3 Flow team.
+ *  (c) 2010 Jochen Rau <jochen.rau@typoplanet.de>
  *  All rights reserved
+ *
+ *  This class is a backport of the corresponding class of FLOW3.
+ *  All credits go to the v5 team.
  *
  *  This script is part of the TYPO3 project. The TYPO3 project is
  *  free software; you can redistribute it and/or modify
@@ -16,9 +16,6 @@ namespace TYPO3\CMS\Extbase\Mvc\Web;
  *
  *  The GNU General Public License can be found at
  *  http://www.gnu.org/copyleft/gpl.html.
- *  A copy is found in the textfile GPL.txt and important notices to the license
- *  from the author is found in LICENSE.txt distributed with these scripts.
- *
  *
  *  This script is distributed in the hope that it will be useful,
  *  but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -27,61 +24,53 @@ namespace TYPO3\CMS\Extbase\Mvc\Web;
  *
  *  This copyright notice MUST APPEAR in all copies of the script!
  ***************************************************************/
+
 /**
  * A request handler which can handle web requests invoked by the frontend.
+ *
  */
-class FrontendRequestHandler extends \TYPO3\CMS\Extbase\Mvc\Web\AbstractRequestHandler {
+class Tx_Extbase_MVC_Web_FrontendRequestHandler extends Tx_Extbase_MVC_Web_AbstractRequestHandler {
 
 	/**
-	 * @var \TYPO3\CMS\Extbase\Configuration\ConfigurationManagerInterface
+	 * @var Tx_Extbase_Configuration_ConfigurationManagerInterface
 	 */
 	protected $configurationManager;
 
 	/**
-	 * @var \TYPO3\CMS\Extbase\Service\ExtensionService
-	 */
-	protected $extensionService;
-
-	/**
-	 * @param \TYPO3\CMS\Extbase\Configuration\ConfigurationManagerInterface $configurationManager
+	 * @param Tx_Extbase_Configuration_ConfigurationManagerInterface $configurationManager
 	 * @return void
 	 */
-	public function injectConfigurationManager(\TYPO3\CMS\Extbase\Configuration\ConfigurationManagerInterface $configurationManager) {
+	public function injectConfigurationManager(Tx_Extbase_Configuration_ConfigurationManagerInterface $configurationManager) {
 		$this->configurationManager = $configurationManager;
-	}
-
-	/**
-	 * @param \TYPO3\CMS\Extbase\Service\ExtensionService $extensionService
-	 * @return void
-	 */
-	public function injectExtensionService(\TYPO3\CMS\Extbase\Service\ExtensionService $extensionService) {
-		$this->extensionService = $extensionService;
 	}
 
 	/**
 	 * Handles the web request. The response will automatically be sent to the client.
 	 *
-	 * @return \TYPO3\CMS\Extbase\Mvc\ResponseInterface|NULL
+	 * @return Tx_Extbase_MVC_Web_Response
 	 */
 	public function handleRequest() {
 		$request = $this->requestBuilder->build();
-		/** @var $requestHashService \TYPO3\CMS\Extbase\Security\Channel\RequestHashService */
-		$requestHashService = $this->objectManager->get('TYPO3\\CMS\\Extbase\\Security\\Channel\\RequestHashService');
+
+		// Request hash service
+		$requestHashService = $this->objectManager->get('Tx_Extbase_Security_Channel_RequestHashService'); // singleton
 		$requestHashService->verifyRequest($request);
-		if ($this->extensionService->isActionCacheable(NULL, NULL, $request->getControllerName(), $request->getControllerActionName())) {
+
+		if ($this->isCacheable($request->getControllerName(), $request->getControllerActionName())) {
 			$request->setIsCached(TRUE);
 		} else {
 			$contentObject = $this->configurationManager->getContentObject();
-			if ($contentObject->getUserObjectType() === \TYPO3\CMS\Frontend\ContentObject\ContentObjectRenderer::OBJECTTYPE_USER) {
+			if ($contentObject->getUserObjectType() === tslib_cObj::OBJECTTYPE_USER) {
 				$contentObject->convertToUserIntObject();
-				// \TYPO3\CMS\Frontend\ContentObject\ContentObjectRenderer::convertToUserIntObject() will recreate the object, so we have to stop the request here
-				return NULL;
+				// tslib_cObj::convertToUserIntObject() will recreate the object, so we have to stop the request here
+				return;
 			}
 			$request->setIsCached(FALSE);
 		}
-		/** @var $response \TYPO3\CMS\Extbase\Mvc\ResponseInterface */
-		$response = $this->objectManager->get('TYPO3\\CMS\\Extbase\\Mvc\\Web\\Response');
+		$response = $this->objectManager->create('Tx_Extbase_MVC_Web_Response');
+
 		$this->dispatcher->dispatch($request, $response);
+
 		return $response;
 	}
 
@@ -91,8 +80,24 @@ class FrontendRequestHandler extends \TYPO3\CMS\Extbase\Mvc\Web\AbstractRequestH
 	 * @return boolean If the request is a web request, TRUE otherwise FALSE
 	 */
 	public function canHandleRequest() {
-		return $this->environmentService->isEnvironmentInFrontendMode();
+		return TYPO3_MODE === 'FE';
 	}
-}
 
+	/**
+	 * Determines whether the current action can be cached
+	 *
+	 * @param string $controllerName
+	 * @param string $actionName
+	 * @return boolean TRUE if the given action should be cached, otherwise FALSE
+	 */
+	protected function isCacheable($controllerName, $actionName) {
+		$frameworkConfiguration = $this->configurationManager->getConfiguration(Tx_Extbase_Configuration_ConfigurationManagerInterface::CONFIGURATION_TYPE_FRAMEWORK);
+		if (isset($frameworkConfiguration['controllerConfiguration'][$controllerName]['nonCacheableActions'])
+			&& in_array($actionName, $frameworkConfiguration['controllerConfiguration'][$controllerName]['nonCacheableActions'])) {
+				return FALSE;
+			}
+		return TRUE;
+	}
+
+}
 ?>

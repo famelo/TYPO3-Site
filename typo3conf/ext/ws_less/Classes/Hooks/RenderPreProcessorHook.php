@@ -24,7 +24,7 @@
 
 /**
  * Hook to preprocess less files
- * 
+ *
  * @author Sven Wappler <typo3YYYY@wapplersystems.de>
  * @author Jozef Spisiak <jozef@pixelant.se>
  *
@@ -32,13 +32,13 @@
 class tx_Wsless_Hooks_RenderPreProcessorHook {
 
 	protected $parser;
-	
-	
+
+
 	protected $defaultoutputdir = "typo3temp/ws_less/";
-	
+
 	/**
 	 * Main hook function
-	 * 
+	 *
 	 * @param array $params Array of CSS/javascript and other files
 	 * @param object $pagerendere Pagerenderer object
 	 * @return null
@@ -53,22 +53,22 @@ class tx_Wsless_Hooks_RenderPreProcessorHook {
 		// we need to rebuild the CSS array to keep order of CSS files
 		$cssFiles = array();
 		foreach ($params['cssFiles'] as $file => $conf) {
-			$pathinfo = pathinfo($conf['file']);
-			
+			$pathinfo = pathinfo(isset($conf['file']) ? $conf['file'] : $file);
+
 			if ($pathinfo['extension'] !== 'less') {
 				$cssFiles[$file] = $conf;
 				continue;
 			}
 
 			$outputdir = $defaultoutputdir;
-			
+
 			// search settings for less file
 			foreach ($GLOBALS['TSFE']->pSetup['includeCSS.'] as $key => $subconf) {
 				if ($GLOBALS['TSFE']->pSetup['includeCSS.'][$key] == $file) {
 					if (isset($GLOBALS['TSFE']->pSetup['includeCSS.'][$key . '.']['outputdir'])) $outputdir = trim($GLOBALS['TSFE']->pSetup['includeCSS.'][$key . '.']['outputdir']);
 				}
 			}
-			
+
 			$outputdir = (substr($outputdir, -1) == '/') ? $outputdir : $outputdir."/";
 
 			$lessFilename = t3lib_div::getFileAbsFileName($conf['file']);
@@ -104,7 +104,7 @@ class tx_Wsless_Hooks_RenderPreProcessorHook {
 		}
 		$params['cssFiles'] = $cssFiles;
 	}
-	
+
 	/**
 	 * Compiling Scss with less
 	 *

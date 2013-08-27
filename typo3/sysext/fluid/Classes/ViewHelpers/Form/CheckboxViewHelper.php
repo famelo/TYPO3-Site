@@ -1,15 +1,25 @@
 <?php
-namespace TYPO3\CMS\Fluid\ViewHelpers\Form;
 
 /*                                                                        *
- * This script is backported from the TYPO3 Flow package "TYPO3.Fluid".   *
+ * This script belongs to the FLOW3 package "Fluid".                      *
  *                                                                        *
  * It is free software; you can redistribute it and/or modify it under    *
- * the terms of the GNU Lesser General Public License, either version 3   *
- *  of the License, or (at your option) any later version.                *
+ * the terms of the GNU Lesser General Public License as published by the *
+ * Free Software Foundation, either version 3 of the License, or (at your *
+ * option) any later version.                                             *
+ *                                                                        *
+ * This script is distributed in the hope that it will be useful, but     *
+ * WITHOUT ANY WARRANTY; without even the implied warranty of MERCHAN-    *
+ * TABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Lesser       *
+ * General Public License for more details.                               *
+ *                                                                        *
+ * You should have received a copy of the GNU Lesser General Public       *
+ * License along with the script.                                         *
+ * If not, see http://www.gnu.org/licenses/lgpl.html                      *
  *                                                                        *
  * The TYPO3 project - inspiring people to share!                         *
  *                                                                        */
+
 /**
  * View Helper which creates a simple checkbox (<input type="checkbox">).
  *
@@ -38,9 +48,10 @@ namespace TYPO3\CMS\Fluid\ViewHelpers\Form;
  * (depending on property "interests")
  * </output>
  *
+ * @license http://www.gnu.org/licenses/lgpl.html GNU Lesser General Public License, version 3 or later
  * @api
  */
-class CheckboxViewHelper extends \TYPO3\CMS\Fluid\ViewHelpers\Form\AbstractFormFieldViewHelper {
+class Tx_Fluid_ViewHelpers_Form_CheckboxViewHelper extends Tx_Fluid_ViewHelpers_Form_AbstractFormFieldViewHelper {
 
 	/**
 	 * @var string
@@ -51,6 +62,7 @@ class CheckboxViewHelper extends \TYPO3\CMS\Fluid\ViewHelpers\Form\AbstractFormF
 	 * Initialize the arguments.
 	 *
 	 * @return void
+	 * @author Bastian Waidelich <bastian@typo3.org>
 	 * @api
 	 */
 	public function initializeArguments() {
@@ -65,8 +77,9 @@ class CheckboxViewHelper extends \TYPO3\CMS\Fluid\ViewHelpers\Form\AbstractFormF
 	 * Renders the checkbox.
 	 *
 	 * @param boolean $checked Specifies that the input element should be preselected
-	 * @throws \TYPO3\CMS\Fluid\Core\ViewHelper\Exception
+	 *
 	 * @return string
+	 * @author Bastian Waidelich <bastian@typo3.org>
 	 * @api
 	 */
 	public function render($checked = NULL) {
@@ -74,35 +87,27 @@ class CheckboxViewHelper extends \TYPO3\CMS\Fluid\ViewHelpers\Form\AbstractFormF
 
 		$nameAttribute = $this->getName();
 		$valueAttribute = $this->getValue();
-		if ($this->isObjectAccessorMode()) {
-			if ($this->hasMappingErrorOccured()) {
-				$propertyValue = $this->getLastSubmittedFormData();
+		if ($checked === NULL && $this->isObjectAccessorMode()) {
+			$propertyValue = $this->getPropertyValue();
+			if (is_bool($propertyValue)) {
+				$checked = $propertyValue === (boolean)$valueAttribute;
+			} elseif (is_array($propertyValue)) {
+				$checked = in_array($valueAttribute, $propertyValue);
+				$nameAttribute .= '[]';
 			} else {
-				$propertyValue = $this->getPropertyValue();
-			}
-
-			if ($propertyValue instanceof \Traversable) {
-				$propertyValue = iterator_to_array($propertyValue);
-			}
-			if (is_array($propertyValue)) {
-				if ($checked === NULL) {
-					$checked = in_array($valueAttribute, $propertyValue);
-				}
-				$nameAttribute .= '[]';
-			} elseif (($multiple = FALSE) === TRUE) {
-				// @todo: implement correct as in Flow.Fluid
-				$nameAttribute .= '[]';
-			} elseif ($checked === NULL && $propertyValue !== NULL) {
-				$checked = (boolean) $propertyValue === (boolean) $valueAttribute;
+				throw new Tx_Fluid_Core_ViewHelper_Exception('Checkbox viewhelpers can only be bound to properties of type boolean or array. Property "' . $this->arguments['property'] . '" is of type "' . (is_object($propertyValue) ? get_class($propertyValue) : gettype($propertyValue)) . '".' , 1248261038);
 			}
 		}
+
 		$this->registerFieldNameForFormTokenGeneration($nameAttribute);
 		$this->tag->addAttribute('name', $nameAttribute);
 		$this->tag->addAttribute('value', $valueAttribute);
 		if ($checked) {
 			$this->tag->addAttribute('checked', 'checked');
 		}
+
 		$this->setErrorClassAttribute();
+
 		$hiddenField = $this->renderHiddenFieldForEmptyValue();
 		return $hiddenField . $this->tag->render();
 	}

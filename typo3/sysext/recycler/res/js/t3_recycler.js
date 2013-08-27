@@ -28,6 +28,9 @@
  * @author	Julian Kleinhans <typo3@kj187.de>
  * @author  Erik Frister <erik_frister@otq-solutions.com>
  * @author  Steffen Kamper <steffen@typo3.org>
+ * @package	TYPO3
+ * @subpackage	tx_recycler
+ * @version $Id$
  */
 
 Ext.ns('Recycler');
@@ -38,11 +41,11 @@ Ext.ns('Recycler');
 Recycler.Expander = new Ext.grid.RowExpander({
 	tpl : new Ext.Template(
 		'<dl class="recycler-table-list-entry-details">' +
-			'<dt>' + TYPO3.l10n.localize('table') + ': </dt><dd>{table}</dd>' +
-			'<dt>' + TYPO3.l10n.localize('crdate') + ': </dt><dd>{crdate}</dd>' +
-			'<dt>' + TYPO3.l10n.localize('tstamp') + ': </dt><dd>{tstamp}</dd>' +
-			'<dt>' + TYPO3.l10n.localize('owner') + ': </dt><dd>{owner} (UID: {owner_uid})</dd>' +
-			'<dt>' + TYPO3.l10n.localize('path') + ': </dt><dd>{path}</dd>' +
+			'<dt>' + TYPO3.lang.table + ': </dt><dd>{table}</dd>' +
+			'<dt>' + TYPO3.lang.crdate + ': </dt><dd>{crdate}</dd>' +
+			'<dt>' + TYPO3.lang.tstamp + ': </dt><dd>{tstamp}</dd>' +
+			'<dt>' + TYPO3.lang.owner + ': </dt><dd>{owner} (UID: {owner_uid})</dd>' +
+			'<dt>' + TYPO3.lang.path + ': </dt><dd>{path}</dd>' +
 		'</dl>'
 	)
 });
@@ -146,7 +149,7 @@ Recycler.ConfirmWindow = Ext.extend(Ext.Window, {
 					text:  this.confirmQuestion
 				}, {
 					xtype: 'checkbox',
-					boxLabel: TYPO3.l10n.localize('boxLabel_undelete_recursive'),
+					boxLabel: TYPO3.lang.boxLabel_undelete_recursive,
 					name: 'recursiveCheckbox',
 					disabled: !this.showRecursiveCheckbox,
 					itemId: 'recursiveCheck',
@@ -155,7 +158,7 @@ Recycler.ConfirmWindow = Ext.extend(Ext.Window, {
 			],
 			buttons: [
 				{
-					text: TYPO3.l10n.localize('yes'),
+					text: TYPO3.lang.yes,
 					scope: this,
 					handler: function(button, event) {
 						var tcemainData = [];
@@ -191,7 +194,7 @@ Recycler.ConfirmWindow = Ext.extend(Ext.Window, {
 						this.close();
 					}
 				},{
-					text: TYPO3.l10n.localize('no'),
+					text: TYPO3.lang.no,
 					scope: this,
 					handler: function(button, event) {
 						this.close();
@@ -233,9 +236,9 @@ Recycler.Utility = {
 	function_delete: function(button, event) {
 		Recycler.Utility.rowAction(
 			'doDelete',
-			TYPO3.l10n.localize('cmd_doDelete_confirmText'),
-			TYPO3.l10n.localize('title_delete'),
-			TYPO3.l10n.localize('text_delete')
+			TYPO3.lang.cmd_doDelete_confirmText,
+			TYPO3.lang.title_delete,
+			TYPO3.lang.text_delete
 		);
 	},
 
@@ -246,9 +249,9 @@ Recycler.Utility = {
 	function_undelete: function(button, event) {
 		Recycler.Utility.rowAction(
 			'doUndelete',
-			TYPO3.l10n.localize('sure'),
-			TYPO3.l10n.localize('title_undelete'),
-			TYPO3.l10n.localize('text_undelete')
+			TYPO3.lang.sure,
+			TYPO3.lang.title_undelete,
+			TYPO3.lang.text_undelete
 		);
 	},
 
@@ -293,8 +296,8 @@ Recycler.Utility = {
 		} else {
 				// no row selected
 			Ext.MessageBox.show({
-				title: TYPO3.l10n.localize('error_NoSelectedRows_title'),
-				msg: TYPO3.l10n.localize('error_NoSelectedRows_msg'),
+				title: TYPO3.lang.error_NoSelectedRows_title,
+				msg: TYPO3.lang.error_NoSelectedRows_msg,
 				buttons: Ext.MessageBox.OK,
 				minWidth: 300,
 				minHeight: 200,
@@ -347,8 +350,8 @@ Recycler.GridContainer = Ext.extend(Ext.grid.GridPanel, {
 				Recycler.Expander,
 				{header: "UID", width: 10, sortable: true, dataIndex: 'uid'},
 				{header: "PID", width: 10, sortable: true, dataIndex: 'pid'},
-				{id: 'record', header: TYPO3.l10n.localize('records'), width: 60, sortable: true, dataIndex: 'record', renderer: Recycler.Utility.renderTopic},
-				{id: 'table', header: TYPO3.l10n.localize('table'), width: 20, sortable: true, dataIndex: 'tableTitle'}
+				{id: 'record', header: TYPO3.lang.records, width: 60, sortable: true, dataIndex: 'record', renderer: Recycler.Utility.renderTopic},
+				{id: 'table', header: TYPO3.lang.table, width: 20, sortable: true, dataIndex: 'tableTitle'}
 			]),
 			viewConfig: {
 				forceFit: true
@@ -366,8 +369,8 @@ Recycler.GridContainer = Ext.extend(Ext.grid.GridPanel, {
 					store: Recycler.MainStore,
 					pageSize: TYPO3.settings.Recycler.pagingSize,
 					displayInfo: true,
-					displayMsg: TYPO3.l10n.localize('pagingMessage'),
-					emptyMsg: TYPO3.l10n.localize('pagingEmpty')
+					displayMsg: TYPO3.lang.pagingMessage,
+					emptyMsg: TYPO3.lang.pagingEmpty
 				}, '-', {
 					/****************************************************
 					 * Delete button
@@ -375,8 +378,8 @@ Recycler.GridContainer = Ext.extend(Ext.grid.GridPanel, {
 					xtype: 'button',
 					width: 80,
 					id: 'deleteButton',
-					text: TYPO3.l10n.localize('deleteButton_text'),
-					tooltip: TYPO3.l10n.localize('deleteButton_tooltip'),
+					text: TYPO3.lang.deleteButton_text,
+					tooltip: TYPO3.lang.deleteButton_tooltip,
 					iconCls: 'delete',
 					disabled: TYPO3.settings.Recycler.deleteDisable,
 					handler: Recycler.Utility.function_delete
@@ -387,22 +390,22 @@ Recycler.GridContainer = Ext.extend(Ext.grid.GridPanel, {
 					xtype: 'button',
 					width: 80,
 					id: 'undeleteButton',
-					text: TYPO3.l10n.localize('undeleteButton_text'),
-					tooltip: TYPO3.l10n.localize('undeleteButton_tooltip'),
+					text: TYPO3.lang.undeleteButton_text,
+					tooltip: TYPO3.lang.undeleteButton_tooltip,
 					iconCls: 'undelete',
 					handler: Recycler.Utility.function_undelete
 				}
 			],
 
 			tbar: [
-				TYPO3.l10n.localize('search'), ' ',
+				TYPO3.lang.search, ' ',
 					new Ext.app.SearchField({
 					store: Recycler.MainStore,
 					width: 200
 				}),
 				'-', {
 					xtype: 'tbtext',
-					text: TYPO3.l10n.localize('depth') + ':'
+					text: TYPO3.lang.depth + ':'
 				},{
 
 					/****************************************************
@@ -419,22 +422,22 @@ Recycler.GridContainer = Ext.extend(Ext.grid.GridPanel, {
 					displayField: 'label',
 					id: 'depthSelector',
 					mode: 'local',
-					emptyText: TYPO3.l10n.localize('depth'),
+					emptyText: TYPO3.lang.depth,
 					selectOnFocus: true,
 					triggerAction: 'all',
 					editable: false,
 					forceSelection: true,
-					hidden: TYPO3.l10n.localize('showDepthMenu'),
+					hidden: TYPO3.lang.showDepthMenu,
 					store: new Ext.data.SimpleStore({
 						autoLoad: true,
 						fields: ['depth','label'],
 						data : [
-							['0', TYPO3.l10n.localize('depth_0')],
-							['1', TYPO3.l10n.localize('depth_1')],
-							['2', TYPO3.l10n.localize('depth_2')],
-							['3', TYPO3.l10n.localize('depth_3')],
-							['4', TYPO3.l10n.localize('depth_4')],
-							['999', TYPO3.l10n.localize('depth_infi')]
+							['0', TYPO3.lang.depth_0],
+							['1', TYPO3.lang.depth_1],
+							['2', TYPO3.lang.depth_2],
+							['3', TYPO3.lang.depth_3],
+							['4', TYPO3.lang.depth_4],
+							['999', TYPO3.lang.depth_infi]
 						]
 					}),
 					value: TYPO3.settings.Recycler.depthSelection,
@@ -459,7 +462,7 @@ Recycler.GridContainer = Ext.extend(Ext.grid.GridPanel, {
 					}
 				},'-',{
 					xtype: 'tbtext',
-					text: TYPO3.l10n.localize('tableMenu_label')
+					text: TYPO3.lang.tableMenu_label
 				},{
 
 					/****************************************************
@@ -476,14 +479,14 @@ Recycler.GridContainer = Ext.extend(Ext.grid.GridPanel, {
 					id: 'tableSelector',
 					width: 220,
 					mode: 'local',
-					emptyText: TYPO3.l10n.localize('tableMenu_emptyText'),
+					emptyText: TYPO3.lang.tableMenu_emptyText,
 					selectOnFocus: true,
 					triggerAction: 'all',
 					editable: false,
 					forceSelection: true,
 
 					store: Recycler.TableStore,
-					valueNotFoundText: String.format(TYPO3.l10n.localize('noValueFound'), TYPO3.settings.Recycler.tableSelection),
+					valueNotFoundText: String.format(TYPO3.lang.noValueFound, TYPO3.settings.Recycler.tableSelection),
 					tpl: '<tpl for="."><tpl if="records &gt; 0"><div ext:qtip="{table} ({records})" class="x-combo-list-item">{tableTitle} ({records}) </div></tpl><tpl if="records &lt; 1"><div ext:qtip="{table} ({records})" class="x-combo-list-item x-item-disabled">{tableTitle} ({records}) </div></tpl></tpl>',
 					listeners: {
 						'select': {

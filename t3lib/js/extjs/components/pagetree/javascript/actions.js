@@ -712,14 +712,6 @@ TYPO3.Components.PageTree.Actions = {
 		node.select();
 		if (tree.stateHash) {
 			tree.stateHash.lastSelectedNode = node.id;
-		} else {
-			TYPO3.Components.PageTree.Commands.addRootlineOfNodeToStateHash(
-				TYPO3.Backend.NavigationContainer.PageTree.mainTree.stateId,
-				node.attributes.nodeData.id, function(stateHash) {
-					TYPO3.Backend.NavigationContainer.PageTree.mainTree.stateHash = stateHash;
-					TYPO3.Backend.NavigationContainer.PageTree.mainTree.refreshTree();
-				}
-			);
 		}
 
 		fsMod.recentIds['web'] = node.attributes.nodeData.id;
@@ -758,6 +750,7 @@ TYPO3.Components.PageTree.Actions = {
 	 * @return {void}
 	 */
 	saveTitle: function(node, newText, oldText, treeEditor) {
+		this.singleClick(node.editNode, node.editNode.ownerTree);
 		if (newText === oldText || newText == '') {
 			treeEditor.updateNodeText(
 				node,
@@ -780,7 +773,6 @@ TYPO3.Components.PageTree.Actions = {
 						Ext.util.Format.htmlEncode(oldText)
 					);
 				}
-				this.singleClick(node.editNode, node.editNode.ownerTree);
 			},
 			this
 		);

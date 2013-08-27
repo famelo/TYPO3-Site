@@ -1,11 +1,8 @@
 <?php
-namespace TYPO3\CMS\Extbase\Domain\Model;
-
 /***************************************************************
  *  Copyright notice
  *
- *  (c) 2010-2013 Extbase Team (http://forge.typo3.org/projects/typo3v4-mvc)
- *  Extbase is a backport of TYPO3 Flow. All credits go to the TYPO3 Flow team.
+ *  (c) 2009 Jochen Rau <jochen.rau@typoplanet.de>
  *  All rights reserved
  *
  *  This script is part of the TYPO3 project. The TYPO3 project is
@@ -16,9 +13,6 @@ namespace TYPO3\CMS\Extbase\Domain\Model;
  *
  *  The GNU General Public License can be found at
  *  http://www.gnu.org/copyleft/gpl.html.
- *  A copy is found in the textfile GPL.txt and important notices to the license
- *  from the author is found in LICENSE.txt distributed with these scripts.
- *
  *
  *  This script is distributed in the hope that it will be useful,
  *  but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -27,41 +21,46 @@ namespace TYPO3\CMS\Extbase\Domain\Model;
  *
  *  This copyright notice MUST APPEAR in all copies of the script!
  ***************************************************************/
+
 /**
  * A Frontend User Group
  *
+ * @package Extbase
+ * @subpackage Domain\Model
+ * @version $Id$
+ * @scope prototype
+ * @entity
  * @api
  */
-class FrontendUserGroup extends \TYPO3\CMS\Extbase\DomainObject\AbstractEntity {
+class Tx_Extbase_Domain_Model_FrontendUserGroup extends Tx_Extbase_DomainObject_AbstractEntity {
 
 	/**
 	 * @var string
 	 */
-	protected $title = '';
+	protected $title;
 
 	/**
 	 * @var string
 	 */
-	protected $lockToDomain = '';
+	protected $lockToDomain;
 
 	/**
 	 * @var string
 	 */
-	protected $description = '';
+	protected $description;
 
 	/**
-	 * @var \TYPO3\CMS\Extbase\Persistence\ObjectStorage<\TYPO3\CMS\Extbase\Domain\Model\FrontendUserGroup>
+	 * @var Tx_Extbase_Persistence_ObjectStorage<Tx_Extbase_Domain_Model_FrontendUserGroup>
 	 */
 	protected $subgroup;
 
 	/**
 	 * Constructs a new Frontend User Group
 	 *
-	 * @param string $title
 	 */
-	public function __construct($title = '') {
+	public function __construct($title) {
 		$this->setTitle($title);
-		$this->subgroup = new \TYPO3\CMS\Extbase\Persistence\ObjectStorage();
+		$this->subgroup = new Tx_Extbase_Persistence_ObjectStorage();
 	}
 
 	/**
@@ -131,33 +130,33 @@ class FrontendUserGroup extends \TYPO3\CMS\Extbase\DomainObject\AbstractEntity {
 	 * Sets the subgroups. Keep in mind that the property is called "subgroup"
 	 * although it can hold several subgroups.
 	 *
-	 * @param \TYPO3\CMS\Extbase\Persistence\ObjectStorage $subgroup An object storage containing the subgroups to add
+	 * @param Tx_Extbase_Persistence_ObjectStorage<Tx_Extbase_Domain_Model_FrontendUserGroup> $subgroup An object storage containing the subgroups to add
 	 * @return void
 	 * @api
 	 */
-	public function setSubgroup(\TYPO3\CMS\Extbase\Persistence\ObjectStorage $subgroup) {
+	public function setSubgroup(Tx_Extbase_Persistence_ObjectStorage $subgroup) {
 		$this->subgroup = $subgroup;
 	}
 
 	/**
 	 * Adds a subgroup to the frontend user
 	 *
-	 * @param \TYPO3\CMS\Extbase\Domain\Model\FrontendUserGroup $subgroup
+	 * @param Tx_Extbase_Domain_Model_FrontendUserGroup $subgroup
 	 * @return void
 	 * @api
 	 */
-	public function addSubgroup(\TYPO3\CMS\Extbase\Domain\Model\FrontendUserGroup $subgroup) {
+	public function addSubgroup(Tx_Extbase_Domain_Model_FrontendUserGroup $subgroup) {
 		$this->subgroup->attach($subgroup);
 	}
 
 	/**
 	 * Removes a subgroup from the frontend user group
 	 *
-	 * @param \TYPO3\CMS\Extbase\Domain\Model\FrontendUserGroup $subgroup
+	 * @param Tx_Extbase_Domain_Model_FrontendUserGroup $subgroup
 	 * @return void
 	 * @api
 	 */
-	public function removeSubgroup(\TYPO3\CMS\Extbase\Domain\Model\FrontendUserGroup $subgroup) {
+	public function removeSubgroup(Tx_Extbase_Domain_Model_FrontendUserGroup $subgroup) {
 		$this->subgroup->detach($subgroup);
 	}
 
@@ -165,12 +164,12 @@ class FrontendUserGroup extends \TYPO3\CMS\Extbase\DomainObject\AbstractEntity {
 	 * Returns the subgroups. Keep in mind that the property is called "subgroup"
 	 * although it can hold several subgroups.
 	 *
-	 * @return \TYPO3\CMS\Extbase\Persistence\ObjectStorage An object storage containing the subgroups
+	 * @return Tx_Extbase_Persistence_ObjectStorage An object storage containing the subgroups
 	 * @api
 	 */
 	public function getSubgroup() {
 		return $this->subgroup;
 	}
-}
 
+}
 ?>

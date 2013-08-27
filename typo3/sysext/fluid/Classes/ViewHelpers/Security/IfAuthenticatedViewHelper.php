@@ -1,13 +1,12 @@
 <?php
-namespace TYPO3\CMS\Fluid\ViewHelpers\Security;
 
 /*                                                                        *
- * This script is backported from the TYPO3 Flow package "TYPO3.Fluid".   *
+ * This script belongs to the FLOW3 package "Fluid".                      *
  *                                                                        *
  * It is free software; you can redistribute it and/or modify it under    *
- * the terms of the GNU Lesser General Public License, either version 3   *
- *  of the License, or (at your option) any later version.                *
- *                                                                        *
+ * the terms of the GNU Lesser General Public License as published by the *
+ * Free Software Foundation, either version 3 of the License, or (at your *
+ * option) any later version.                                             *
  *                                                                        *
  * This script is distributed in the hope that it will be useful, but     *
  * WITHOUT ANY WARRANTY; without even the implied warranty of MERCHAN-    *
@@ -20,6 +19,7 @@ namespace TYPO3\CMS\Fluid\ViewHelpers\Security;
  *                                                                        *
  * The TYPO3 project - inspiring people to share!                         *
  *                                                                        */
+
 /**
  * This view helper implements an ifAuthenticated/else condition for FE users/groups.
  *
@@ -27,7 +27,7 @@ namespace TYPO3\CMS\Fluid\ViewHelpers\Security;
  *
  * <code title="Basic usage">
  * <f:security.ifAuthenticated>
- * This is being shown whenever a FE user is logged in
+ *   This is being shown whenever a FE user is logged in
  * </f:security.ifAuthenticated>
  * </code>
  * <output>
@@ -36,12 +36,12 @@ namespace TYPO3\CMS\Fluid\ViewHelpers\Security;
  *
  * <code title="IfAuthenticated / then / else">
  * <f:security.ifAuthenticated>
- * <f:then>
- * This is being shown in case you have access.
- * </f:then>
- * <f:else>
- * This is being displayed in case you do not have access.
- * </f:else>
+ *   <f:then>
+ *     This is being shown in case you have access.
+ *   </f:then>
+ *   <f:else>
+ *     This is being displayed in case you do not have access.
+ *   </f:else>
  * </f:security.ifAuthenticated>
  * </code>
  * <output>
@@ -49,9 +49,10 @@ namespace TYPO3\CMS\Fluid\ViewHelpers\Security;
  * Otherwise, everything inside the "else"-tag is displayed.
  * </output>
  *
+ * @license http://www.gnu.org/licenses/lgpl.html GNU Lesser General Public License, version 3 or later
  * @api
  */
-class IfAuthenticatedViewHelper extends \TYPO3\CMS\Fluid\Core\ViewHelper\AbstractConditionViewHelper {
+class Tx_Fluid_ViewHelpers_Security_IfAuthenticatedViewHelper extends Tx_Fluid_Core_ViewHelper_AbstractConditionViewHelper {
 
 	/**
 	 * Renders <f:then> child if any FE user is currently authenticated, otherwise renders <f:else> child.
@@ -66,5 +67,4 @@ class IfAuthenticatedViewHelper extends \TYPO3\CMS\Fluid\Core\ViewHelper\Abstrac
 		return $this->renderElseChild();
 	}
 }
-
 ?>

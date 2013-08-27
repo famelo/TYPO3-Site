@@ -1,17 +1,45 @@
 <?php
-if (!defined('TYPO3_MODE')) {
-	die('Access denied.');
-}
+if (!defined ('TYPO3_MODE')) die ('Access denied.');
+
 if (TYPO3_MODE == 'BE') {
-	// register Extbase dispatcher for modules
-	$TBE_MODULES['_dispatcher'][] = 'TYPO3\\CMS\\Extbase\\Core\\ModuleRunnerInterface';
+
+	// register the cache in BE so it will be cleared with "clear all caches"
+	try {
+		t3lib_cache::initializeCachingFramework();
+			// Reflection cache
+		if (!$GLOBALS['typo3CacheManager']->hasCache('tx_extbase_cache_reflection')) {
+			$GLOBALS['typo3CacheFactory']->create(
+				'tx_extbase_cache_reflection',
+				$GLOBALS['TYPO3_CONF_VARS']['SYS']['caching']['cacheConfigurations']['cache_extbase_reflection']['frontend'],
+				$GLOBALS['TYPO3_CONF_VARS']['SYS']['caching']['cacheConfigurations']['cache_extbase_reflection']['backend'],
+				$GLOBALS['TYPO3_CONF_VARS']['SYS']['caching']['cacheConfigurations']['cache_extbase_reflection']['options']
+			);
+		}
+			// Object container cache
+		if (!$GLOBALS['typo3CacheManager']->hasCache('tx_extbase_cache_object')) {
+			$GLOBALS['typo3CacheFactory']->create(
+				'tx_extbase_cache_object',
+				$GLOBALS['TYPO3_CONF_VARS']['SYS']['caching']['cacheConfigurations']['cache_extbase_object']['frontend'],
+				$GLOBALS['TYPO3_CONF_VARS']['SYS']['caching']['cacheConfigurations']['cache_extbase_object']['backend'],
+				$GLOBALS['TYPO3_CONF_VARS']['SYS']['caching']['cacheConfigurations']['cache_extbase_object']['options']
+			);
+		}
+	} catch(t3lib_cache_exception_NoSuchCache $exception) {
+
+	}
+
+	$TBE_MODULES['_dispatcher'][] = 'Tx_Extbase_Core_Bootstrap';
+
 }
-$GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['reports']['tx_reports']['status']['providers']['extbase'][] = 'TYPO3\\CMS\\Extbase\\Utility\\ExtbaseRequirementsCheckUtility';
+
+$GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['reports']['tx_reports']['status']['providers']['extbase'][] = 'tx_extbase_utility_extbaserequirementscheck';
+
+t3lib_div::loadTCA('fe_users');
 if (!isset($TCA['fe_users']['ctrl']['type'])) {
 	$tempColumns = array(
 		'tx_extbase_type' => array(
 			'exclude' => 1,
-			'label' => 'LLL:EXT:extbase/Resources/Private/Language/locallang_db.xml:fe_users.tx_extbase_type',
+			'label'   => 'LLL:EXT:extbase/Resources/Private/Language/locallang_db.xml:fe_users.tx_extbase_type',
 			'config' => array(
 				'type' => 'select',
 				'items' => array(
@@ -24,16 +52,18 @@ if (!isset($TCA['fe_users']['ctrl']['type'])) {
 			)
 		)
 	);
-	\TYPO3\CMS\Core\Utility\ExtensionManagementUtility::addTCAcolumns('fe_users', $tempColumns, 1);
-	\TYPO3\CMS\Core\Utility\ExtensionManagementUtility::addToAllTCAtypes('fe_users', 'tx_extbase_type');
+	t3lib_extMgm::addTCAcolumns('fe_users', $tempColumns, 1);
+	t3lib_extMgm::addToAllTCAtypes('fe_users', 'tx_extbase_type');
 	$TCA['fe_users']['ctrl']['type'] = 'tx_extbase_type';
 }
 $TCA['fe_users']['types']['Tx_Extbase_Domain_Model_FrontendUser'] = $TCA['fe_users']['types']['0'];
+
+t3lib_div::loadTCA('fe_groups');
 if (!isset($TCA['fe_groups']['ctrl']['type'])) {
 	$tempColumns = array(
 		'tx_extbase_type' => array(
 			'exclude' => 1,
-			'label' => 'LLL:EXT:extbase/Resources/Private/Language/locallang_db.xml:fe_groups.tx_extbase_type',
+			'label'   => 'LLL:EXT:extbase/Resources/Private/Language/locallang_db.xml:fe_groups.tx_extbase_type',
 			'config' => array(
 				'type' => 'select',
 				'items' => array(
@@ -46,15 +76,10 @@ if (!isset($TCA['fe_groups']['ctrl']['type'])) {
 			)
 		)
 	);
-	\TYPO3\CMS\Core\Utility\ExtensionManagementUtility::addTCAcolumns('fe_groups', $tempColumns, 1);
-	\TYPO3\CMS\Core\Utility\ExtensionManagementUtility::addToAllTCAtypes('fe_groups', 'tx_extbase_type');
+	t3lib_extMgm::addTCAcolumns('fe_groups', $tempColumns, 1);
+	t3lib_extMgm::addToAllTCAtypes('fe_groups', 'tx_extbase_type');
 	$TCA['fe_groups']['ctrl']['type'] = 'tx_extbase_type';
 }
 $TCA['fe_groups']['types']['Tx_Extbase_Domain_Model_FrontendUserGroup'] = $TCA['fe_groups']['types']['0'];
-$GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['scheduler']['tasks']['TYPO3\\CMS\\Extbase\\Scheduler\\Task'] = array(
-	'extension' => $_EXTKEY,
-	'title' => 'LLL:EXT:extbase/Resources/Private/Language/locallang_db.xml:task.name',
-	'description' => 'LLL:EXT:extbase/Resources/Private/Language/locallang_db.xml:task.description',
-	'additionalFields' => 'TYPO3\\CMS\\Extbase\\Scheduler\\FieldProvider'
-);
+
 ?>

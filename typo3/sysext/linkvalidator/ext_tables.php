@@ -1,19 +1,19 @@
 <?php
-if (!defined('TYPO3_MODE')) {
-	die('Access denied.');
+if (!defined ('TYPO3_MODE')) {
+	die ('Access denied.');
 }
-if (TYPO3_MODE === 'BE') {
-	// Add module
-	\TYPO3\CMS\Core\Utility\ExtensionManagementUtility::insertModuleFunction(
+
+if (TYPO3_MODE == 'BE') {
+		// add module
+	t3lib_extMgm::insertModuleFunction(
 		'web_info',
-		'TYPO3\\CMS\\Linkvalidator\\Report\\LinkValidatorReport',
-		\TYPO3\CMS\Core\Utility\ExtensionManagementUtility::extPath('linkvalidator') . 'Classes/Report/LinkValidatorReport.php',
-		'LLL:EXT:linkvalidator/Resources/Private/Language/locallang.xlf:mod_linkvalidator'
+		'tx_linkvalidator_ModFuncReport',
+		t3lib_extMgm::extPath('linkvalidator') . 'modfuncreport/class.tx_linkvalidator_modfuncreport.php',
+		'LLL:EXT:linkvalidator/locallang.xml:mod_linkvalidator'
 	);
 }
-// Initialize Context Sensitive Help (CSH)
-\TYPO3\CMS\Core\Utility\ExtensionManagementUtility::addLLrefForTCAdescr(
-	'linkvalidator',
-	'EXT:linkvalidator/Resources/Private/Language/Module/locallang_csh.xlf'
-);
+
+	// Initialize Context Sensitive Help (CSH)
+t3lib_extMgm::addLLrefForTCAdescr('linkvalidator', 'EXT:linkvalidator/modfuncreport/locallang_csh.xml');
+
 ?>

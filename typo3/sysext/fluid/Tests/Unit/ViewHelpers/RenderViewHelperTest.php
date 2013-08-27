@@ -1,38 +1,54 @@
 <?php
-namespace TYPO3\CMS\Fluid\Tests\Unit\ViewHelpers;
 
 /*                                                                        *
- * This script is backported from the TYPO3 Flow package "TYPO3.Fluid".   *
+ * This script belongs to the FLOW3 package "Fluid".                      *
  *                                                                        *
  * It is free software; you can redistribute it and/or modify it under    *
- * the terms of the GNU Lesser General Public License, either version 3   *
- *  of the License, or (at your option) any later version.                *
+ * the terms of the GNU Lesser General Public License as published by the *
+ * Free Software Foundation, either version 3 of the License, or (at your *
+ * option) any later version.                                             *
+ *                                                                        *
+ * This script is distributed in the hope that it will be useful, but     *
+ * WITHOUT ANY WARRANTY; without even the implied warranty of MERCHAN-    *
+ * TABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Lesser       *
+ * General Public License for more details.                               *
+ *                                                                        *
+ * You should have received a copy of the GNU Lesser General Public       *
+ * License along with the script.                                         *
+ * If not, see http://www.gnu.org/licenses/lgpl.html                      *
  *                                                                        *
  * The TYPO3 project - inspiring people to share!                         *
  *                                                                        */
 
-require_once(__DIR__ . '/ViewHelperBaseTestcase.php');
+require_once(dirname(__FILE__) . '/ViewHelperBaseTestcase.php');
 
 /**
  * Testcase for RenderViewHelper
+ *
+ * @license http://www.gnu.org/licenses/lgpl.html GNU Lesser General Public License, version 3 or later
  */
-class RenderViewHelperTest extends \TYPO3\CMS\Fluid\Tests\Unit\ViewHelpers\ViewHelperBaseTestcase {
+class Tx_Fluid_Tests_Unit_ViewHelpers_RenderViewHelperTest extends Tx_Fluid_ViewHelpers_ViewHelperBaseTestcase {
 
 	/**
-	 * @var \TYPO3\CMS\Fluid\ViewHelpers\RenderViewHelper
+	 * var Tx_Fluid_ViewHelpers_RenderViewHelper
 	 */
 	protected $viewHelper;
 
+	/**
+	 * var Tx_Fluid_Core_ViewHelper_Arguments
+	 */
+	protected $mockArguments;
+
 	public function setUp() {
 		parent::setUp();
-		$this->templateVariableContainer = new \TYPO3\CMS\Fluid\Core\ViewHelper\TemplateVariableContainer();
-		$this->renderingContext->injectTemplateVariableContainer($this->templateVariableContainer);
-		$this->viewHelper = $this->getAccessibleMock('TYPO3\\CMS\\Fluid\\ViewHelpers\\RenderViewHelper', array('dummy'));
+		$this->templateVariableContainer = new Tx_Fluid_Core_ViewHelper_TemplateVariableContainer();
+		$this->viewHelper = $this->getAccessibleMock('Tx_Fluid_ViewHelpers_RenderViewHelper', array('dummy'));
 		$this->injectDependenciesIntoViewHelper($this->viewHelper);
 	}
 
 	/**
 	 * @test
+	 * @author Sebastian Kurfürst <sebastian@typo3.org>
 	 */
 	public function loadSettingsIntoArgumentsSetsSettingsIfNoSettingsAreSpecified() {
 		$arguments = array(
@@ -50,6 +66,7 @@ class RenderViewHelperTest extends \TYPO3\CMS\Fluid\Tests\Unit\ViewHelpers\ViewH
 
 	/**
 	 * @test
+	 * @author Sebastian Kurfürst <sebastian@typo3.org>
 	 */
 	public function loadSettingsIntoArgumentsDoesNotOverrideGivenSettings() {
 		$arguments = array(
@@ -68,6 +85,7 @@ class RenderViewHelperTest extends \TYPO3\CMS\Fluid\Tests\Unit\ViewHelpers\ViewH
 
 	/**
 	 * @test
+	 * @author Sebastian Kurfürst <sebastian@typo3.org>
 	 */
 	public function loadSettingsIntoArgumentsDoesNotThrowExceptionIfSettingsAreNotInTemplateVariableContainer() {
 		$arguments = array(
@@ -80,6 +98,8 @@ class RenderViewHelperTest extends \TYPO3\CMS\Fluid\Tests\Unit\ViewHelpers\ViewH
 		$actual = $this->viewHelper->_call('loadSettingsIntoArguments', $arguments);
 		$this->assertEquals($expected, $actual);
 	}
+
+
 }
 
 ?>

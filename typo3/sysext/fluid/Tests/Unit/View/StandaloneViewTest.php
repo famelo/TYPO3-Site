@@ -1,13 +1,12 @@
 <?php
-namespace TYPO3\CMS\Fluid\Tests\Unit\View;
 
 /*                                                                        *
- * This script is backported from the FLOW3 package "TYPO3.Fluid".        *
+ * This script belongs to the FLOW3 package "Fluid".                      *
  *                                                                        *
  * It is free software; you can redistribute it and/or modify it under    *
- * the terms of the GNU Lesser General Public License, either version 3   *
- *  of the License, or (at your option) any later version.                *
- *                                                                        *
+ * the terms of the GNU Lesser General Public License as published by the *
+ * Free Software Foundation, either version 3 of the License, or (at your *
+ * option) any later version.                                             *
  *                                                                        *
  * This script is distributed in the hope that it will be useful, but     *
  * WITHOUT ANY WARRANTY; without even the implied warranty of MERCHAN-    *
@@ -20,80 +19,73 @@ namespace TYPO3\CMS\Fluid\Tests\Unit\View;
  *                                                                        *
  * The TYPO3 project - inspiring people to share!                         *
  *                                                                        */
+
 /**
  * Testcase for the StandaloneView
+ *
+ * @license http://www.gnu.org/licenses/lgpl.html GNU Lesser General Public License, version 3 or later
  */
-class StandaloneViewTest extends \TYPO3\CMS\Extbase\Tests\Unit\BaseTestCase {
+class Tx_Fluid_Tests_Unit_View_StandaloneViewTest extends Tx_Extbase_Tests_Unit_BaseTestCase {
 
 	/**
-	 * @var array A backup of registered singleton instances
-	 */
-	protected $singletonInstances = array();
-
-	/**
-	 * @var \TYPO3\CMS\Fluid\View\StandaloneView
+	 * @var Tx_Fluid_View_StandaloneView
 	 */
 	protected $view;
 
 	/**
-	 * @var \TYPO3\CMS\Fluid\Core\Rendering\RenderingContextInterface
+	 * @var Tx_Fluid_Core_Rendering_RenderingContextInterface
 	 */
 	protected $mockRenderingContext;
 
 	/**
-	 * @var \TYPO3\CMS\Fluid\Core\ViewHelper\ViewHelperVariableContainer
+	 * @var Tx_Fluid_Core_ViewHelper_ViewHelperVariableContainer
 	 */
 	protected $mockViewHelperVariableContainer;
 
 	/**
-	 * @var \TYPO3\CMS\Extbase\Mvc\Controller\ControllerContext
+	 * @var Tx_Extbase_MVC_Controller_ControllerContext
 	 */
 	protected $mockControllerContext;
 
 	/**
-	 * @var \TYPO3\CMS\Fluid\Core\Parser\TemplateParser
+	 * @var Tx_Fluid_Core_Parser_TemplateParser
 	 */
 	protected $mockTemplateParser;
 
 	/**
-	 * @var \TYPO3\CMS\Extbase\Object\ObjectManager
+	 * @var Tx_Extbase_Object_ObjectManager
 	 */
 	protected $mockObjectManager;
 
 	/**
-	 * @var \TYPO3\CMS\Extbase\Mvc\Web\Request
+	 * @var Tx_Extbase_MVC_Web_Request
 	 */
 	protected $mockRequest;
 
 	/**
-	 * @var \TYPO3\CMS\Extbase\Mvc\Web\Routing\UriBuilder
+	 * @var Tx_Extbase_MVC_Web_Routing_UriBuilder
 	 */
 	protected $mockUriBuilder;
 
 	/**
-	 * @var \TYPO3\CMS\Fluid\Core\Parser\ParsedTemplateInterface
+	 * @var Tx_Fluid_Core_Parser_ParsedTemplateInterface
 	 */
 	protected $mockParsedTemplate;
 
 	/**
-	 * @var \TYPO3\CMS\Extbase\Configuration\ConfigurationManagerInterface
+	 * @var Tx_Extbase_Configuration_ConfigurationManagerInterface
 	 */
 	protected $mockConfigurationManager;
 
 	/**
-	 * @var \TYPO3\CMS\Extbase\Mvc\Controller\FlashMessageContainer
+	 * @var Tx_Extbase_MVC_Controller_FlashMessages
 	 */
-	protected $mockFlashMessageContainer;
+	protected $mockFlashMessages;
 
 	/**
-	 * @var \TYPO3\CMS\Frontend\ContentObject\ContentObjectRenderer
+	 * @var tslib_cObj
 	 */
 	protected $mockContentObject;
-
-	/**
-	 * @var \TYPO3\CMS\Fluid\Core\Compiler\TemplateCompiler
-	 */
-	protected $mockTemplateCompiler;
 
 	/**
 	 * Sets up this test case
@@ -101,39 +93,45 @@ class StandaloneViewTest extends \TYPO3\CMS\Extbase\Tests\Unit\BaseTestCase {
 	 * @return void
 	 */
 	public function setUp() {
-		$this->view = $this->getAccessibleMock('TYPO3\\CMS\\Fluid\\View\\StandaloneView', array('dummy'), array(), '', FALSE);
-		$this->mockTemplateParser = $this->getMock('TYPO3\\CMS\\Fluid\\Core\\Parser\\TemplateParser');
-		$this->mockParsedTemplate = $this->getMock('TYPO3\\CMS\\Fluid\\Core\\Parser\\ParsedTemplateInterface');
+		$this->view = $this->getAccessibleMock('Tx_Fluid_View_StandaloneView', array('dummy'), array(), '', FALSE);
+
+		$this->mockTemplateParser = $this->getMock('Tx_Fluid_Core_Parser_TemplateParser');
+		$this->mockParsedTemplate = $this->getMock('Tx_Fluid_Core_Parser_ParsedTemplateInterface');
 		$this->mockTemplateParser->expects($this->any())->method('parse')->will($this->returnValue($this->mockParsedTemplate));
-		$this->mockConfigurationManager = $this->getMock('TYPO3\\CMS\\Extbase\\Configuration\\ConfigurationManagerInterface');
-		$this->mockObjectManager = $this->getMock('TYPO3\\CMS\\Extbase\\Object\\ObjectManager');
+
+		$this->mockConfigurationManager = $this->getMock('Tx_Extbase_Configuration_ConfigurationManagerInterface');
+
+		$this->mockObjectManager = $this->getMock('Tx_Extbase_Object_ObjectManager');
 		$this->mockObjectManager->expects($this->any())->method('get')->will($this->returnCallback(array($this, 'objectManagerCallback')));
-		$this->mockRequest = $this->getMock('TYPO3\\CMS\\Extbase\\Mvc\\Web\\Request');
-		$this->mockUriBuilder = $this->getMock('TYPO3\\CMS\\Extbase\\Mvc\\Web\\Routing\\UriBuilder');
-		$this->mockFlashMessageContainer = $this->getMock('TYPO3\\CMS\\Extbase\\Mvc\\Controller\\FlashMessageContainer');
-		$this->mockContentObject = $this->getMock('TYPO3\\CMS\\Frontend\\ContentObject\\ContentObjectRenderer');
-		$this->mockControllerContext = $this->getMock('TYPO3\\CMS\\Extbase\\Mvc\\Controller\\ControllerContext');
+		$this->mockObjectManager->expects($this->any())->method('create')->will($this->returnCallback(array($this, 'objectManagerCallback')));
+
+		$this->mockRequest = $this->getMock('Tx_Extbase_MVC_Web_Request');
+		$this->mockUriBuilder = $this->getMock('Tx_Extbase_MVC_Web_Routing_UriBuilder');
+		$this->mockFlashMessages = $this->getMock('Tx_Extbase_MVC_Controller_FlashMessages');
+		$this->mockContentObject = $this->getMock('tslib_cObj');
+
+		$this->mockControllerContext = $this->getMock('Tx_Extbase_MVC_Controller_ControllerContext');
 		$this->mockControllerContext->expects($this->any())->method('getRequest')->will($this->returnValue($this->mockRequest));
-		$this->mockViewHelperVariableContainer = $this->getMock('TYPO3\\CMS\\Fluid\\Core\\ViewHelper\\ViewHelperVariableContainer');
-		$this->mockRenderingContext = $this->getMock('TYPO3\\CMS\\Fluid\\Core\\Rendering\\RenderingContext');
+
+		$this->mockViewHelperVariableContainer = $this->getMock('Tx_Fluid_Core_ViewHelper_ViewHelperVariableContainer');
+
+		$this->mockRenderingContext = $this->getMock('Tx_Fluid_Core_Rendering_RenderingContextInterface');
 		$this->mockRenderingContext->expects($this->any())->method('getControllerContext')->will($this->returnValue($this->mockControllerContext));
 		$this->mockRenderingContext->expects($this->any())->method('getViewHelperVariableContainer')->will($this->returnValue($this->mockViewHelperVariableContainer));
+
 		$this->view->injectTemplateParser($this->mockTemplateParser);
 		$this->view->injectObjectManager($this->mockObjectManager);
 		$this->view->setRenderingContext($this->mockRenderingContext);
-		$this->mockTemplateCompiler = $this->getMock('TYPO3\\CMS\\Fluid\\Core\\Compiler\\TemplateCompiler');
-		$this->view->_set('templateCompiler', $this->mockTemplateCompiler);
-		$this->singletonInstances = \TYPO3\CMS\Core\Utility\GeneralUtility::getSingletonInstances();
-		\TYPO3\CMS\Core\Utility\GeneralUtility::setSingletonInstance('TYPO3\\CMS\\Extbase\\Object\\ObjectManager', $this->mockObjectManager);
-		\TYPO3\CMS\Core\Utility\GeneralUtility::addInstance('TYPO3\\CMS\\Frontend\\ContentObject\\ContentObjectRenderer', $this->mockContentObject);
+
+		t3lib_div::setSingletonInstance('Tx_Extbase_Object_ObjectManager', $this->mockObjectManager);
+		t3lib_div::addInstance('tslib_cObj', $this->mockContentObject);
 	}
 
 	/**
 	 * @return void
 	 */
 	public function tearDown() {
-		\TYPO3\CMS\Core\Utility\GeneralUtility::purgeInstances();
-		\TYPO3\CMS\Core\Utility\GeneralUtility::resetSingletonInstances($this->singletonInstances);
+		t3lib_div::purgeInstances();
 	}
 
 	/**
@@ -141,90 +139,107 @@ class StandaloneViewTest extends \TYPO3\CMS\Extbase\Tests\Unit\BaseTestCase {
 	 * @return object
 	 */
 	public function objectManagerCallback($className) {
-		switch ($className) {
-			case 'TYPO3\\CMS\\Extbase\\Configuration\\ConfigurationManagerInterface':
+		switch($className) {
+			case 'Tx_Extbase_Configuration_ConfigurationManagerInterface':
 				return $this->mockConfigurationManager;
-			case 'TYPO3\\CMS\\Fluid\\Core\\Parser\\TemplateParser':
+			case 'Tx_Fluid_Core_Parser_TemplateParser':
 				return $this->mockTemplateParser;
-			case 'TYPO3\\CMS\\Fluid\\Core\\Rendering\\RenderingContext':
+			case 'Tx_Fluid_Core_Rendering_RenderingContext':
 				return $this->mockRenderingContext;
-			case 'TYPO3\\CMS\\Extbase\\Mvc\\Web\\Request':
+			case 'Tx_Extbase_MVC_Web_Request':
 				return $this->mockRequest;
-			case 'TYPO3\\CMS\\Extbase\\Mvc\\Web\\Routing\\UriBuilder':
+			case 'Tx_Extbase_MVC_Web_Routing_UriBuilder':
 				return $this->mockUriBuilder;
-			case 'TYPO3\\CMS\\Extbase\\Mvc\\Controller\\ControllerContext':
+			case 'Tx_Extbase_MVC_Controller_ControllerContext':
 				return $this->mockControllerContext;
-			case 'TYPO3\\CMS\\Extbase\\Mvc\\Controller\\FlashMessageContainer':
-				return $this->mockFlashMessageContainer;
-			case 'TYPO3\\CMS\\Fluid\\Core\\Compiler\\TemplateCompiler':
-				return $this->mockTemplateCompiler;
+			case 'Tx_Extbase_MVC_Controller_FlashMessages':
+				return $this->mockFlashMessages;
 		}
 	}
 
 	/**
 	 * @test
+	 * @author Bastian Waidelich <bastian@typo3.org>
 	 */
 	public function constructorSetsSpecifiedContentObject() {
-		$mockContentObject = $this->getMock('TYPO3\\CMS\\Frontend\\ContentObject\\ContentObjectRenderer');
+		$mockContentObject = $this->getMock('tslib_cObj');
 		// FIXME should be compared with identicalTo() - but that does not seem to work
 		$this->mockConfigurationManager->expects($this->once())->method('setContentObject')->with($this->equalTo($this->mockContentObject));
-		new \TYPO3\CMS\Fluid\View\StandaloneView($mockContentObject);
+
+		new Tx_Fluid_View_StandaloneView($mockContentObject);
 	}
 
 	/**
 	 * @test
+	 * @author Bastian Waidelich <bastian@typo3.org>
 	 */
 	public function constructorCreatesContentObjectIfItIsNotSpecified() {
 		// FIXME should be compared with identicalTo() - but that does not seem to work
 		$this->mockConfigurationManager->expects($this->once())->method('setContentObject')->with($this->equalTo($this->mockContentObject));
-		new \TYPO3\CMS\Fluid\View\StandaloneView();
+
+		new Tx_Fluid_View_StandaloneView();
 	}
 
 	/**
 	 * @test
+	 * @author Bastian Waidelich <bastian@typo3.org>
 	 */
 	public function constructorSetsRequestUri() {
-		$expectedRequestUri = \TYPO3\CMS\Core\Utility\GeneralUtility::getIndpEnv('TYPO3_REQUEST_URL');
+		$expectedRequestUri = t3lib_div::getIndpEnv('TYPO3_REQUEST_URL');
 		$this->mockRequest->expects($this->once())->method('setRequestURI')->with($expectedRequestUri);
-		new \TYPO3\CMS\Fluid\View\StandaloneView();
+		new Tx_Fluid_View_StandaloneView();
 	}
 
 	/**
 	 * @test
+	 * @author Bastian Waidelich <bastian@typo3.org>
 	 */
 	public function constructorSetsBaseUri() {
-		$expectedBaseUri = \TYPO3\CMS\Core\Utility\GeneralUtility::getIndpEnv('TYPO3_SITE_URL');
+		$expectedBaseUri = t3lib_div::getIndpEnv('TYPO3_SITE_URL');
 		$this->mockRequest->expects($this->once())->method('setBaseURI')->with($expectedBaseUri);
-		new \TYPO3\CMS\Fluid\View\StandaloneView();
+		new Tx_Fluid_View_StandaloneView();
 	}
 
 	/**
 	 * @test
+	 * @author Bastian Waidelich <bastian@typo3.org>
 	 */
 	public function constructorInjectsRequestToUriBuilder() {
 		$this->mockUriBuilder->expects($this->once())->method('setRequest')->with($this->mockRequest);
-		new \TYPO3\CMS\Fluid\View\StandaloneView();
+		new Tx_Fluid_View_StandaloneView();
 	}
 
 	/**
 	 * @test
+	 * @author Bastian Waidelich <bastian@typo3.org>
 	 */
 	public function constructorInjectsRequestToControllerContext() {
 		$this->mockControllerContext->expects($this->once())->method('setRequest')->with($this->mockRequest);
-		new \TYPO3\CMS\Fluid\View\StandaloneView();
+		new Tx_Fluid_View_StandaloneView();
 	}
 
 	/**
 	 * @test
+	 * @author Bastian Waidelich <bastian@typo3.org>
 	 */
 	public function constructorInjectsUriBuilderToControllerContext() {
 		$this->mockControllerContext->expects($this->once())->method('setUriBuilder')->with($this->mockUriBuilder);
-		new \TYPO3\CMS\Fluid\View\StandaloneView();
+		new Tx_Fluid_View_StandaloneView();
 	}
 
 	/**
 	 * @test
-	 * @expectedException \TYPO3\CMS\Fluid\View\Exception\InvalidTemplateResourceException
+	 * @author Bastian Waidelich <bastian@typo3.org>
+	 */
+	public function constructorInjectsFlashMessageContainerToControllerContext() {
+		$this->mockControllerContext->expects($this->once())->method('setFlashMessageContainer')->with($this->mockFlashMessages);
+		new Tx_Fluid_View_StandaloneView();
+	}
+
+	/**
+	 * @test
+	 * @expectedException Tx_Fluid_View_Exception_InvalidTemplateResourceException
+	 * @author Bastian Waidelich <bastian@typo3.org>
 	 */
 	public function renderThrowsExceptionIfTemplateIsNotSpecified() {
 		$this->view->render();
@@ -232,6 +247,7 @@ class StandaloneViewTest extends \TYPO3\CMS\Extbase\Tests\Unit\BaseTestCase {
 
 	/**
 	 * @test
+	 * @author Bastian Waidelich <bastian@typo3.org>
 	 */
 	public function renderPassesSpecifiedTemplateSourceToTemplateParser() {
 		$this->view->setTemplateSource('The Template Source');
@@ -241,9 +257,10 @@ class StandaloneViewTest extends \TYPO3\CMS\Extbase\Tests\Unit\BaseTestCase {
 
 	/**
 	 * @test
+	 * @author Bastian Waidelich <bastian@typo3.org>
 	 */
 	public function renderLoadsSpecifiedTemplateFileAndPassesSourceToTemplateParser() {
-		$templatePathAndFilename = __DIR__ . '/Fixtures/StandaloneViewFixture.html';
+		$templatePathAndFilename = dirname(__FILE__) . '/Fixtures/StandaloneViewFixture.html';
 		$expectedResult = file_get_contents($templatePathAndFilename);
 		$this->view->setTemplatePathAndFilename($templatePathAndFilename);
 		$this->mockTemplateParser->expects($this->once())->method('parse')->with($expectedResult);
@@ -252,15 +269,17 @@ class StandaloneViewTest extends \TYPO3\CMS\Extbase\Tests\Unit\BaseTestCase {
 
 	/**
 	 * @test
-	 * @expectedException \TYPO3\CMS\Fluid\View\Exception\InvalidTemplateResourceException
+	 * @expectedException Tx_Fluid_View_Exception_InvalidTemplateResourceException
+	 * @author Bastian Waidelich <bastian@typo3.org>
 	 */
 	public function renderThrowsExceptionIfSpecifiedTemplateFileDoesNotExist() {
 		$this->view->setTemplatePathAndFilename('NonExistingTemplatePath');
-		@$this->view->render();
+		$this->view->render();
 	}
 
 	/**
 	 * @test
+	 * @author Bastian Waidelich <bastian@typo3.org>
 	 */
 	public function setFormatSetsRequestFormat() {
 		$this->mockRequest->expects($this->once())->method('setFormat')->with('xml');
@@ -269,7 +288,8 @@ class StandaloneViewTest extends \TYPO3\CMS\Extbase\Tests\Unit\BaseTestCase {
 
 	/**
 	 * @test
-	 * @expectedException \TYPO3\CMS\Fluid\View\Exception\InvalidTemplateResourceException
+	 * @expectedException Tx_Fluid_View_Exception_InvalidTemplateResourceException
+	 * @author Bastian Waidelich <bastian@typo3.org>
 	 */
 	public function getLayoutRootPathThrowsExceptionIfLayoutRootPathAndTemplatePathAreNotSpecified() {
 		$this->view->getLayoutRootPath();
@@ -277,6 +297,7 @@ class StandaloneViewTest extends \TYPO3\CMS\Extbase\Tests\Unit\BaseTestCase {
 
 	/**
 	 * @test
+	 * @author Bastian Waidelich <bastian@typo3.org>
 	 */
 	public function getLayoutRootPathReturnsSpecifiedLayoutRootPathByDefault() {
 		$templatePathAndFilename = 'some/template/RootPath/SomeTemplate.html';
@@ -284,11 +305,12 @@ class StandaloneViewTest extends \TYPO3\CMS\Extbase\Tests\Unit\BaseTestCase {
 		$this->view->setTemplatePathAndFilename($templatePathAndFilename);
 		$this->view->setLayoutRootPath($layoutRootPath);
 		$actualResult = $this->view->getLayoutRootPath();
-		$this->assertEquals($layoutRootPath, $actualResult);
+	    $this->assertEquals($layoutRootPath, $actualResult);
 	}
 
 	/**
 	 * @test
+	 * @author Bastian Waidelich <bastian@typo3.org>
 	 */
 	public function getLayoutRootPathReturnsDefaultPathIfNoLayoutRootPathIsSpecified() {
 		$templatePathAndFilename = 'some/template/RootPath/SomeTemplate.html';
@@ -300,7 +322,8 @@ class StandaloneViewTest extends \TYPO3\CMS\Extbase\Tests\Unit\BaseTestCase {
 
 	/**
 	 * @test
-	 * @expectedException \TYPO3\CMS\Fluid\View\Exception\InvalidTemplateResourceException
+	 * @expectedException Tx_Fluid_View_Exception_InvalidTemplateResourceException
+	 * @author Bastian Waidelich <bastian@typo3.org>
 	 */
 	public function getLayoutSourceThrowsExceptionIfLayoutRootPathDoesNotExist() {
 		$this->view->setLayoutRootPath('some/non/existing/Path');
@@ -309,19 +332,21 @@ class StandaloneViewTest extends \TYPO3\CMS\Extbase\Tests\Unit\BaseTestCase {
 
 	/**
 	 * @test
-	 * @expectedException \TYPO3\CMS\Fluid\View\Exception\InvalidTemplateResourceException
+	 * @expectedException Tx_Fluid_View_Exception_InvalidTemplateResourceException
+	 * @author Bastian Waidelich <bastian@typo3.org>
 	 */
 	public function getLayoutSourceThrowsExceptionIfLayoutFileDoesNotExist() {
-		$layoutRootPath = __DIR__ . '/Fixtures';
+		$layoutRootPath = dirname(__FILE__) . '/Fixtures';
 		$this->view->setLayoutRootPath($layoutRootPath);
 		$this->view->_call('getLayoutSource', 'NonExistingLayout');
 	}
 
 	/**
 	 * @test
+	 * @author Bastian Waidelich <bastian@typo3.org>
 	 */
 	public function getLayoutSourceReturnsContentOfLayoutFileForTheDefaultFormat() {
-		$layoutRootPath = __DIR__ . '/Fixtures';
+		$layoutRootPath = dirname(__FILE__) . '/Fixtures';
 		$this->view->setLayoutRootPath($layoutRootPath);
 		$this->mockRequest->expects($this->once())->method('getFormat')->will($this->returnValue('html'));
 		$expectedResult = file_get_contents($layoutRootPath . '/LayoutFixture.html');
@@ -331,9 +356,10 @@ class StandaloneViewTest extends \TYPO3\CMS\Extbase\Tests\Unit\BaseTestCase {
 
 	/**
 	 * @test
+	 * @author Bastian Waidelich <bastian@typo3.org>
 	 */
 	public function getLayoutSourceReturnsContentOfLayoutFileForTheSpecifiedFormat() {
-		$layoutRootPath = __DIR__ . '/Fixtures';
+		$layoutRootPath = dirname(__FILE__) . '/Fixtures';
 		$this->view->setLayoutRootPath($layoutRootPath);
 		$this->mockRequest->expects($this->once())->method('getFormat')->will($this->returnValue('xml'));
 		$expectedResult = file_get_contents($layoutRootPath . '/LayoutFixture.xml');
@@ -343,9 +369,10 @@ class StandaloneViewTest extends \TYPO3\CMS\Extbase\Tests\Unit\BaseTestCase {
 
 	/**
 	 * @test
+	 * @author Bastian Waidelich <bastian@typo3.org>
 	 */
 	public function getLayoutSourceReturnsContentOfDefaultLayoutFileIfNoLayoutExistsForTheSpecifiedFormat() {
-		$layoutRootPath = __DIR__ . '/Fixtures';
+		$layoutRootPath = dirname(__FILE__) . '/Fixtures';
 		$this->view->setLayoutRootPath($layoutRootPath);
 		$this->mockRequest->expects($this->once())->method('getFormat')->will($this->returnValue('foo'));
 		$expectedResult = file_get_contents($layoutRootPath . '/LayoutFixture');
@@ -355,7 +382,8 @@ class StandaloneViewTest extends \TYPO3\CMS\Extbase\Tests\Unit\BaseTestCase {
 
 	/**
 	 * @test
-	 * @expectedException \TYPO3\CMS\Fluid\View\Exception\InvalidTemplateResourceException
+	 * @expectedException Tx_Fluid_View_Exception_InvalidTemplateResourceException
+	 * @author Bastian Waidelich <bastian@typo3.org>
 	 */
 	public function getPartialRootPathThrowsExceptionIfPartialRootPathAndTemplatePathAreNotSpecified() {
 		$this->view->getPartialRootPath();
@@ -363,6 +391,7 @@ class StandaloneViewTest extends \TYPO3\CMS\Extbase\Tests\Unit\BaseTestCase {
 
 	/**
 	 * @test
+	 * @author Bastian Waidelich <bastian@typo3.org>
 	 */
 	public function getPartialRootPathReturnsSpecifiedPartialRootPathByDefault() {
 		$templatePathAndFilename = 'some/template/RootPath/SomeTemplate.html';
@@ -370,11 +399,12 @@ class StandaloneViewTest extends \TYPO3\CMS\Extbase\Tests\Unit\BaseTestCase {
 		$this->view->setTemplatePathAndFilename($templatePathAndFilename);
 		$this->view->setPartialRootPath($partialRootPath);
 		$actualResult = $this->view->getPartialRootPath();
-		$this->assertEquals($partialRootPath, $actualResult);
+	    $this->assertEquals($partialRootPath, $actualResult);
 	}
 
 	/**
 	 * @test
+	 * @author Bastian Waidelich <bastian@typo3.org>
 	 */
 	public function getPartialRootPathReturnsDefaultPathIfNoPartialRootPathIsSpecified() {
 		$templatePathAndFilename = 'some/template/RootPath/SomeTemplate.html';
@@ -386,28 +416,31 @@ class StandaloneViewTest extends \TYPO3\CMS\Extbase\Tests\Unit\BaseTestCase {
 
 	/**
 	 * @test
-	 * @expectedException \TYPO3\CMS\Fluid\View\Exception\InvalidTemplateResourceException
+	 * @expectedException Tx_Fluid_View_Exception_InvalidTemplateResourceException
+	 * @author Bastian Waidelich <bastian@typo3.org>
 	 */
 	public function getPartialSourceThrowsExceptionIfPartialRootPathDoesNotExist() {
 		$this->view->setPartialRootPath('some/non/existing/Path');
-		$this->view->_call('getPartialSource', 'SomePartial');
+		$this->view->_call('getPartialSource');
 	}
 
 	/**
 	 * @test
-	 * @expectedException \TYPO3\CMS\Fluid\View\Exception\InvalidTemplateResourceException
+	 * @expectedException Tx_Fluid_View_Exception_InvalidTemplateResourceException
+	 * @author Bastian Waidelich <bastian@typo3.org>
 	 */
 	public function getPartialSourceThrowsExceptionIfPartialFileDoesNotExist() {
-		$partialRootPath = __DIR__ . '/Fixtures';
+		$partialRootPath = dirname(__FILE__) . '/Fixtures';
 		$this->view->setPartialRootPath($partialRootPath);
 		$this->view->_call('getPartialSource', 'NonExistingPartial');
 	}
 
 	/**
 	 * @test
+	 * @author Bastian Waidelich <bastian@typo3.org>
 	 */
 	public function getPartialSourceReturnsContentOfPartialFileForTheDefaultFormat() {
-		$partialRootPath = __DIR__ . '/Fixtures';
+		$partialRootPath = dirname(__FILE__) . '/Fixtures';
 		$this->view->setPartialRootPath($partialRootPath);
 		$this->mockRequest->expects($this->once())->method('getFormat')->will($this->returnValue('html'));
 		$expectedResult = file_get_contents($partialRootPath . '/LayoutFixture.html');
@@ -417,9 +450,10 @@ class StandaloneViewTest extends \TYPO3\CMS\Extbase\Tests\Unit\BaseTestCase {
 
 	/**
 	 * @test
+	 * @author Bastian Waidelich <bastian@typo3.org>
 	 */
 	public function getPartialSourceReturnsContentOfPartialFileForTheSpecifiedFormat() {
-		$partialRootPath = __DIR__ . '/Fixtures';
+		$partialRootPath = dirname(__FILE__) . '/Fixtures';
 		$this->view->setPartialRootPath($partialRootPath);
 		$this->mockRequest->expects($this->once())->method('getFormat')->will($this->returnValue('xml'));
 		$expectedResult = file_get_contents($partialRootPath . '/LayoutFixture.xml');
@@ -429,9 +463,10 @@ class StandaloneViewTest extends \TYPO3\CMS\Extbase\Tests\Unit\BaseTestCase {
 
 	/**
 	 * @test
+	 * @author Bastian Waidelich <bastian@typo3.org>
 	 */
 	public function getPartialSourceReturnsContentOfDefaultPartialFileIfNoPartialExistsForTheSpecifiedFormat() {
-		$partialRootPath = __DIR__ . '/Fixtures';
+		$partialRootPath = dirname(__FILE__) . '/Fixtures';
 		$this->view->setPartialRootPath($partialRootPath);
 		$this->mockRequest->expects($this->once())->method('getFormat')->will($this->returnValue('foo'));
 		$expectedResult = file_get_contents($partialRootPath . '/LayoutFixture');
@@ -439,5 +474,4 @@ class StandaloneViewTest extends \TYPO3\CMS\Extbase\Tests\Unit\BaseTestCase {
 		$this->assertEquals($expectedResult, $actualResult);
 	}
 }
-
 ?>

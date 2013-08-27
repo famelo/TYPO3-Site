@@ -1,12 +1,21 @@
 <?php
-namespace TYPO3\CMS\Fluid\Core\ViewHelper;
 
 /*                                                                        *
- * This script is backported from the TYPO3 Flow package "TYPO3.Fluid".   *
+ * This script belongs to the FLOW3 package "Fluid".                      *
  *                                                                        *
  * It is free software; you can redistribute it and/or modify it under    *
- * the terms of the GNU Lesser General Public License, either version 3   *
- *  of the License, or (at your option) any later version.                *
+ * the terms of the GNU Lesser General Public License as published by the *
+ * Free Software Foundation, either version 3 of the License, or (at your *
+ * option) any later version.                                             *
+ *                                                                        *
+ * This script is distributed in the hope that it will be useful, but     *
+ * WITHOUT ANY WARRANTY; without even the implied warranty of MERCHAN-    *
+ * TABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Lesser       *
+ * General Public License for more details.                               *
+ *                                                                        *
+ * You should have received a copy of the GNU Lesser General Public       *
+ * License along with the script.                                         *
+ * If not, see http://www.gnu.org/licenses/lgpl.html                      *
  *                                                                        *
  * The TYPO3 project - inspiring people to share!                         *
  *                                                                        */
@@ -16,21 +25,21 @@ namespace TYPO3\CMS\Fluid\Core\ViewHelper;
  * Sould be used as the base class for all view helpers which output simple tags, as it provides some
  * convenience methods to register default attributes, ...
  *
+ * @license http://www.gnu.org/licenses/lgpl.html GNU Lesser General Public License, version 3 or later
  * @api
  */
-abstract class AbstractTagBasedViewHelper extends \TYPO3\CMS\Fluid\Core\ViewHelper\AbstractViewHelper {
+abstract class Tx_Fluid_Core_ViewHelper_AbstractTagBasedViewHelper extends Tx_Fluid_Core_ViewHelper_AbstractViewHelper {
 
 	/**
 	 * Names of all registered tag attributes
-	 *
 	 * @var array
 	 */
-	static private $tagAttributes = array();
+	protected $tagAttributes = array();
 
 	/**
 	 * Tag builder instance
 	 *
-	 * @var \TYPO3\CMS\Fluid\Core\ViewHelper\TagBuilder
+	 * @var Tx_Fluid_Core_ViewHelper_TagBuilder
 	 * @api
 	 */
 	protected $tag = NULL;
@@ -44,18 +53,18 @@ abstract class AbstractTagBasedViewHelper extends \TYPO3\CMS\Fluid\Core\ViewHelp
 	protected $tagName = 'div';
 
 	/**
-	 * Inject a TagBuilder
-	 *
-	 * @param \TYPO3\CMS\Fluid\Core\ViewHelper\TagBuilder $tagBuilder Tag builder
+	 * @param Tx_Extbase_Object_ObjectManagerInterface $objectManager
 	 * @return void
 	 */
-	public function injectTagBuilder(\TYPO3\CMS\Fluid\Core\ViewHelper\TagBuilder $tagBuilder) {
-		$this->tag = $tagBuilder;
+	public function injectObjectManager(Tx_Extbase_Object_ObjectManagerInterface $objectManager) {
+		$this->objectManager = $objectManager;
+		$this->tag = $this->objectManager->create('Tx_Fluid_Core_ViewHelper_TagBuilder');
 	}
 
 	/**
 	 * Constructor
 	 *
+	 * @author Sebastian Kurfürst <sebastian@typo3.org>
 	 * @api
 	 */
 	public function __construct() {
@@ -70,21 +79,19 @@ abstract class AbstractTagBasedViewHelper extends \TYPO3\CMS\Fluid\Core\ViewHelp
 	 * Will be invoked just before the render method.
 	 *
 	 * @return void
+	 * @author Bastian Waidelich <bastian@typo3.org>
 	 * @api
 	 */
 	public function initialize() {
 		parent::initialize();
 		$this->tag->reset();
 		$this->tag->setTagName($this->tagName);
-		if ($this->hasArgument('additionalAttributes') && is_array($this->arguments['additionalAttributes'])) {
+		if (is_array($this->arguments['additionalAttributes'])) {
 			$this->tag->addAttributes($this->arguments['additionalAttributes']);
 		}
-
-		if (isset(self::$tagAttributes[get_class($this)])) {
-			foreach (self::$tagAttributes[get_class($this)] as $attributeName) {
-				if ($this->hasArgument($attributeName) && $this->arguments[$attributeName] !== '') {
-					$this->tag->addAttribute($attributeName, $this->arguments[$attributeName]);
-				}
+		foreach ($this->tagAttributes as $attributeName) {
+			if ($this->arguments->hasArgument($attributeName) && $this->arguments[$attributeName] !== '') {
+				$this->tag->addAttribute($attributeName, $this->arguments[$attributeName]);
 			}
 		}
 	}
@@ -96,13 +103,13 @@ abstract class AbstractTagBasedViewHelper extends \TYPO3\CMS\Fluid\Core\ViewHelp
 	 * @param string $type Type of the tag attribute
 	 * @param string $description Description of tag attribute
 	 * @param boolean $required set to TRUE if tag attribute is required. Defaults to FALSE.
-	 * @param string $default Default value
 	 * @return void
+	 * @author Sebastian Kurfürst <sebastian@typo3.org>
 	 * @api
 	 */
-	protected function registerTagAttribute($name, $type, $description, $required = FALSE, $default = NULL) {
-		$this->registerArgument($name, $type, $description, $required, $default);
-		self::$tagAttributes[get_class($this)][$name] = $name;
+	protected function registerTagAttribute($name, $type, $description, $required = FALSE) {
+		$this->registerArgument($name, $type, $description, $required, NULL);
+		$this->tagAttributes[] = $name;
 	}
 
 	/**
@@ -110,6 +117,7 @@ abstract class AbstractTagBasedViewHelper extends \TYPO3\CMS\Fluid\Core\ViewHelp
 	 * Should be used inside registerArguments();
 	 *
 	 * @return void
+	 * @author Sebastian Kurfürst <sebastian@typo3.org>
 	 * @api
 	 */
 	protected function registerUniversalTagAttributes() {
@@ -124,5 +132,4 @@ abstract class AbstractTagBasedViewHelper extends \TYPO3\CMS\Fluid\Core\ViewHelp
 		$this->registerTagAttribute('onclick', 'string', 'JavaScript evaluated for the onclick event');
 	}
 }
-
 ?>

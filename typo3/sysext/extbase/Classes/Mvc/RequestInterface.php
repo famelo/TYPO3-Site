@@ -1,38 +1,38 @@
 <?php
-namespace TYPO3\CMS\Extbase\Mvc;
-
 /***************************************************************
- *  Copyright notice
- *
- *  (c) 2010-2013 Extbase Team (http://forge.typo3.org/projects/typo3v4-mvc)
- *  Extbase is a backport of TYPO3 Flow. All credits go to the TYPO3 Flow team.
- *  All rights reserved
- *
- *  This script is part of the TYPO3 project. The TYPO3 project is
- *  free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
- *
- *  The GNU General Public License can be found at
- *  http://www.gnu.org/copyleft/gpl.html.
- *  A copy is found in the textfile GPL.txt and important notices to the license
- *  from the author is found in LICENSE.txt distributed with these scripts.
- *
- *
- *  This script is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  This copyright notice MUST APPEAR in all copies of the script!
- ***************************************************************/
+*  Copyright notice
+*
+*  (c) 2009 Jochen Rau <jochen.rau@typoplanet.de>
+*  All rights reserved
+*
+*  This class is a backport of the corresponding class of FLOW3.
+*  All credits go to the v5 team.
+*
+*  This script is part of the TYPO3 project. The TYPO3 project is
+*  free software; you can redistribute it and/or modify
+*  it under the terms of the GNU General Public License as published by
+*  the Free Software Foundation; either version 2 of the License, or
+*  (at your option) any later version.
+*
+*  The GNU General Public License can be found at
+*  http://www.gnu.org/copyleft/gpl.html.
+*
+*  This script is distributed in the hope that it will be useful,
+*  but WITHOUT ANY WARRANTY; without even the implied warranty of
+*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+*  GNU General Public License for more details.
+*
+*  This copyright notice MUST APPEAR in all copies of the script!
+***************************************************************/
+
 /**
  * Contract for a request.
  *
+ * @version $Id$
+ * @scope prototype
  * @api
  */
-interface RequestInterface {
+interface Tx_Extbase_MVC_RequestInterface {
 
 	/**
 	 * Sets the dispatched flag
@@ -60,10 +60,68 @@ interface RequestInterface {
 	 * controller name
 	 *
 	 * @return string The controller's Object Name
-	 * @throws \TYPO3\CMS\Extbase\Mvc\Exception\NoSuchControllerException if the controller does not exist
+	 * @throws Tx_Extbase_MVC_Exception_NoSuchController if the controller does not exist
 	 * @api
 	 */
 	public function getControllerObjectName();
+
+	/**
+	 * Sets the extension name of the controller.
+	 *
+	 * @param string $extensionName The extension name.
+	 * @return void
+	 * @throws Tx_Extbase_MVC_Exception_InvalidPackageKey if the package key is not valid
+	 * @api
+	 */
+	public function setControllerExtensionName($extensionName);
+
+	/**
+	 * Returns the extension name of the specified controller.
+	 *
+	 * @return string The package key
+	 * @api
+	 */
+	public function getControllerExtensionName();
+
+	/**
+	 * Sets the name of the controller which is supposed to handle the request.
+	 * Note: This is not the object name of the controller!
+	 *
+	 * @param string $controllerName Name of the controller
+	 * @return void
+	 * @api
+	 */
+	public function setControllerName($controllerName);
+
+	/**
+	 * Returns the object name of the controller supposed to handle this request, if one
+	 * was set already (if not, the name of the default controller is returned)
+	 *
+	 * @return string Object name of the controller
+	 * @api
+	 */
+	public function getControllerName();
+
+	/**
+	 * Sets the name of the action contained in this request.
+	 *
+	 * Note that the action name must start with a lower case letter.
+	 *
+	 * @param string $actionName: Name of the action to execute by the controller
+	 * @return void
+	 * @throws Tx_Extbase_MVC_Exception_InvalidActionName if the action name is not valid
+	 * @api
+	 */
+	public function setControllerActionName($actionName);
+
+	/**
+	 * Returns the name of the action the controller is supposed to execute.
+	 *
+	 * @return string Action name
+	 * @author Robert Lemke <robert@typo3.org>
+	 * @api
+	 */
+	public function getControllerActionName();
 
 	/**
 	 * Sets the value of the specified argument
@@ -90,7 +148,7 @@ interface RequestInterface {
 	 *
 	 * @param string $argumentName Name of the argument
 	 * @return string Value of the argument
-	 * @throws \TYPO3\CMS\Extbase\Mvc\Exception\NoSuchArgumentException if such an argument does not exist
+	 * @throws Tx_Extbase_MVC_Exception_NoSuchArgument if such an argument does not exist
 	 * @api
 	 */
 	public function getArgument($argumentName);
@@ -111,6 +169,40 @@ interface RequestInterface {
 	 * @api
 	 */
 	public function getArguments();
-}
 
+	/**
+	 * Sets the requested representation format
+	 *
+	 * @param string $format The desired format, something like "html", "xml", "png", "json" or the like.
+	 * @return void
+	 * @api
+	 */
+	public function setFormat($format);
+
+	/**
+	 * Returns the requested representation format
+	 *
+	 * @return string The desired format, something like "html", "xml", "png", "json" or the like.
+	 * @api
+	 */
+	public function getFormat();
+
+	/**
+	 * Set the request errors that occured during the request
+	 *
+	 * @param array $errors An array of Tx_Extbase_Error_Error objects
+	 * @return void
+	 * @api
+	 */
+	public function setErrors(array $errors);
+
+	/**
+	 * Get the request errors that occured during the request
+	 *
+	 * @return array An array of Tx_Extbase_Error_Error objects
+	 * @api
+	 */
+	public function getErrors();
+
+}
 ?>

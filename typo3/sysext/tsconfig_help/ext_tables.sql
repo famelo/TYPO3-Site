@@ -12,3 +12,4 @@ CREATE TABLE static_tsconfig_help (
   PRIMARY KEY (uid),
   KEY guide (guide,md5hash)
 );
+

@@ -1,5 +1,4 @@
 <?php
-namespace TYPO3\CMS\Fluid\ViewHelpers\Uri;
 
 /*                                                                        *
  * This script is part of the TYPO3 project - inspiring people to share!  *
@@ -13,6 +12,7 @@ namespace TYPO3\CMS\Fluid\ViewHelpers\Uri;
  * TABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General      *
  * Public License for more details.                                       *
  *                                                                        */
+
 /**
  * Email URI view helper.
  * Generates an email URI incorporating TYPO3s spamProtectEmailAddresses-settings.
@@ -26,12 +26,14 @@ namespace TYPO3\CMS\Fluid\ViewHelpers\Uri;
  * javascript:linkTo_UnCryptMailto('ocknvq,hqqBdct0vnf');
  * (depending on your spamProtectEmailAddresses-settings)
  * </output>
+ *
  */
-class EmailViewHelper extends \TYPO3\CMS\Fluid\Core\ViewHelper\AbstractViewHelper {
+class Tx_Fluid_ViewHelpers_Uri_EmailViewHelper extends Tx_Fluid_Core_ViewHelper_AbstractViewHelper {
 
 	/**
 	 * @param string $email The email address to be turned into a URI
 	 * @return string Rendered email link
+	 * @author Bastian Waidelich <bastian@typo3.org>
 	 */
 	public function render($email) {
 		if (TYPO3_MODE === 'FE') {
@@ -42,5 +44,6 @@ class EmailViewHelper extends \TYPO3\CMS\Fluid\Core\ViewHelper\AbstractViewHelpe
 		}
 	}
 }
+
 
 ?>

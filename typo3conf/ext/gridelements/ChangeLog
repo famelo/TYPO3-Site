@@ -1,43 +1,8 @@
-2.0.2 2013-06-17 Jo Hasenau <info@cybercraft.de>
-    Fixed: Wrong dependency setting in ext_emconf.php
-    Fixed: Remove superfluous JS comma that breaks IE8
-    Fixed: Problems due to restructuring and namespaces
-    Fixed: JavaScript error for read-only content elements
-    Fixed: Issue #48484 JavaScript error thrown in IE8
-
-2.0.1 2013-05-22 Jo Hasenau <info@cybercraft.de>
-    Fixed: Issue #48410 New content element doesn't limit allowed types
-    Fixed: Issue #48371 Fatal error in page view when running on master / 6.2-to-be
-    Fixed: Issue #48136 Can't move Element to Position Zero
-    Fixed: Issue #48134 Click Menu does not work when GE 2.0 is installed
-
-2.0.0 2013-05-12 Jo Hasenau <info@cybercraft.de>
-    Done: Task #44373 TYPO3 6.x compatibility
-    Fixed: Issue #48081	Select the Gridelement Layout "invalid value" gridelements 2-0
-    Fixed: Issue #47612	Folder "itemsprocfuncs" should be UpperCamelCase
-    Fixed: Issue #47574	Fatal Error: Argument 6 passed to ProcessCmdmap::processCmdmap() is None
-    Fixed: Issue #47544	Error "Calculated absolute path to t3lib directory does not exist." when opening the grid wizard
-    Fixed: Issue #47508	PHP fatal on creating new content element because of wrong folder name
-    Fixed: Issue #47506	PHP fatal in list module when ext:version is not loaded
-    Fixed: Issue #47497	Folder "itemsprocfuncs" should be camel cased
-    Fixed: Issue #47218	PHP Error Message
-    Fixed: Issue #46861	No Icons in Backend for CEs after installing gridelements
-    Fixed: Issue #46827	Old XCLASS method used
-    Fixed: Issue #46721	Fatal error on backend_layout update
-    Fixed: Issue #46678	Missing toolbar icons on mouseover
-    Fixed: Issue #46459	Fit namespaces of TYPO3 6.0
-    Fixed: Issue #46394	JS D'n'D errors
-    Fixed: Issue #46227	Layout wizard not working
-    Fixed: Issue #44534	The content element wizard always show ALL CEs
-    Fixed: Issue #44533	Modified TYPO3-Icons
-    Fixed: Issue #44530	Problem with Drag and Drop
-    Fixed: Issue #44529	missing icons and wrong color
-
 1.4.1 2013-05-09 Jo Hasenau <info@cybercraft.de>
 	Fixed: Issue #44243 Content not shown in FE without default language of it
 	Fixed: Issue #32784 New CE wizard - be_group
 	Fixed: Issue #47418 copy Element out of a gridelement "No valid ajaxID parameter given"
-	Fixed: Issue #46397 Kopieren nicht mÃ¶glich
+	Fixed: Issue #46397 Kopieren nicht möglich
 	Fixed: Issue #46868 Allowed params is not respected if the colPos is the same
 	Fixed: Issue #46944 Allowed = * not working in BE-Layout
 	Fixed: Issue #46331 Paste icon is showed when files are in clipboard

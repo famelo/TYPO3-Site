@@ -1,5 +1,4 @@
 <?php
-namespace TYPO3\CMS\Fluid;
 
 /*                                                                        *
  * This script is part of the TYPO3 project - inspiring people to share!  *
@@ -13,23 +12,14 @@ namespace TYPO3\CMS\Fluid;
  * TABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General      *
  * Public License for more details.                                       *
  *                                                                        */
-class Fluid {
 
-	const LEGACY_NAMESPACE_SEPARATOR = '_';
-	const NAMESPACE_SEPARATOR = '\\';
+/**
+ */
+class Tx_Fluid_Fluid {
+	const NAMESPACE_SEPARATOR = '_';
 
-	/**
-	 * Can be used to enable the verbose mode of Fluid.
-	 *
-	 * This enables the following things:
-	 * - ViewHelper argument descriptions are being parsed from the PHPDoc
-	 *
-	 * This is NO PUBLIC API and the way this mode is enabled might change without
-	 * notice in the future.
-	 *
-	 * @var boolean
-	 */
-	static public $debugMode = FALSE;
+	public static $debugMode = FALSE;
 }
+
 
 ?>

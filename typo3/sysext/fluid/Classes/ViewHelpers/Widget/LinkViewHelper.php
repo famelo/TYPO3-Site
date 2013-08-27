@@ -1,13 +1,12 @@
 <?php
-namespace TYPO3\CMS\Fluid\ViewHelpers\Widget;
 
 /*                                                                        *
- * This script is backported from the TYPO3 Flow package "TYPO3.Fluid".   *
+ * This script belongs to the FLOW3 package "Fluid".                      *
  *                                                                        *
  * It is free software; you can redistribute it and/or modify it under    *
- * the terms of the GNU Lesser General Public License, either version 3   *
- *  of the License, or (at your option) any later version.                *
- *                                                                        *
+ * the terms of the GNU Lesser General Public License as published by the *
+ * Free Software Foundation, either version 3 of the License, or (at your *
+ * option) any later version.                                             *
  *                                                                        *
  * This script is distributed in the hope that it will be useful, but     *
  * WITHOUT ANY WARRANTY; without even the implied warranty of MERCHAN-    *
@@ -20,6 +19,7 @@ namespace TYPO3\CMS\Fluid\ViewHelpers\Widget;
  *                                                                        *
  * The TYPO3 project - inspiring people to share!                         *
  *                                                                        */
+
 /**
  * A view helper for creating Links to extbase actions within widets.
  *
@@ -32,10 +32,10 @@ namespace TYPO3\CMS\Fluid\ViewHelpers\Widget;
  * <a href="index.php?id=123&tx_myextension_plugin[widgetIdentifier][action]=show&tx_myextension_plugin[widgetIdentifier][controller]=Standard&cHash=xyz">link</a>
  * (depending on the current page, widget and your TS configuration)
  * </output>
- *
+ * @license http://www.gnu.org/licenses/lgpl.html GNU Lesser General Public License, version 3 or later
  * @api
  */
-class LinkViewHelper extends \TYPO3\CMS\Fluid\Core\ViewHelper\AbstractTagBasedViewHelper {
+class Tx_Fluid_ViewHelpers_Widget_LinkViewHelper extends Tx_Fluid_Core_ViewHelper_AbstractTagBasedViewHelper {
 
 	/**
 	 * @var string
@@ -46,6 +46,7 @@ class LinkViewHelper extends \TYPO3\CMS\Fluid\Core\ViewHelper\AbstractTagBasedVi
 	 * Initialize arguments
 	 *
 	 * @return void
+	 * @author Sebastian Kurfürst <sebastian@typo3.org>
 	 * @api
 	 */
 	public function initializeArguments() {
@@ -62,9 +63,11 @@ class LinkViewHelper extends \TYPO3\CMS\Fluid\Core\ViewHelper\AbstractTagBasedVi
 	 * @param string $action Target action
 	 * @param array $arguments Arguments
 	 * @param string $section The anchor to be added to the URI
-	 * @param string $format The requested format, e.g. ".html
+	 * @param string $format The requested format, e.g. ".html"
 	 * @param boolean $ajax TRUE if the URI should be to an AJAX widget, FALSE otherwise.
 	 * @return string The rendered link
+	 * @author Sebastian Kurfürst <sebastian@typo3.org>
+	 * @author Bastian Waidelich <bastian@typo3.org>
 	 * @api
 	 */
 	public function render($action = NULL, $arguments = array(), $section = '', $format = '', $ajax = FALSE) {
@@ -75,6 +78,7 @@ class LinkViewHelper extends \TYPO3\CMS\Fluid\Core\ViewHelper\AbstractTagBasedVi
 		}
 		$this->tag->addAttribute('href', $uri);
 		$this->tag->setContent($this->renderChildren());
+
 		return $this->tag->render();
 	}
 
@@ -82,10 +86,12 @@ class LinkViewHelper extends \TYPO3\CMS\Fluid\Core\ViewHelper\AbstractTagBasedVi
 	 * Get the URI for an AJAX Request.
 	 *
 	 * @return string the AJAX URI
+	 * @author Sebastian Kurfürst <sebastian@typo3.org>
 	 */
 	protected function getAjaxUri() {
 		$action = $this->arguments['action'];
 		$arguments = $this->arguments['arguments'];
+
 		if ($action === NULL) {
 			$action = $this->controllerContext->getRequest()->getControllerActionName();
 		}
@@ -94,6 +100,7 @@ class LinkViewHelper extends \TYPO3\CMS\Fluid\Core\ViewHelper\AbstractTagBasedVi
 		$arguments['type'] = 7076;
 		$arguments['fluid-widget-id'] = $this->controllerContext->getRequest()->getWidgetContext()->getAjaxWidgetIdentifier();
 		$arguments['action'] = $action;
+
 		return '?' . http_build_query($arguments, NULL, '&');
 	}
 
@@ -101,18 +108,27 @@ class LinkViewHelper extends \TYPO3\CMS\Fluid\Core\ViewHelper\AbstractTagBasedVi
 	 * Get the URI for a non-AJAX Request.
 	 *
 	 * @return string the Widget URI
+	 * @author Sebastian Kurfürst <sebastian@typo3.org>
 	 */
 	protected function getWidgetUri() {
 		$uriBuilder = $this->controllerContext->getUriBuilder();
+
 		$argumentPrefix = $this->controllerContext->getRequest()->getArgumentPrefix();
-		$arguments = $this->hasArgument('arguments') ? $this->arguments['arguments'] : array();
-		if ($this->hasArgument('action')) {
+		$arguments = $this->arguments->hasArgument('arguments') ? $this->arguments['arguments'] : array();
+		if ($this->arguments->hasArgument('action')) {
 			$arguments['action'] = $this->arguments['action'];
 		}
-		if ($this->hasArgument('format') && $this->arguments['format'] !== '') {
+		if ($this->arguments->hasArgument('format') && $this->arguments['format'] !== '') {
 			$arguments['format'] = $this->arguments['format'];
 		}
-		return $uriBuilder->reset()->setArguments(array($argumentPrefix => $arguments))->setSection($this->arguments['section'])->setAddQueryString(TRUE)->setArgumentsToBeExcludedFromQueryString(array($argumentPrefix, 'cHash'))->setFormat($this->arguments['format'])->build();
+		return $uriBuilder
+			->reset()
+			->setArguments(array($argumentPrefix => $arguments))
+			->setSection($this->arguments['section'])
+			->setAddQueryString(TRUE)
+			->setArgumentsToBeExcludedFromQueryString(array($argumentPrefix, 'cHash'))
+			->setFormat($this->arguments['format'])
+			->build();
 	}
 }
 

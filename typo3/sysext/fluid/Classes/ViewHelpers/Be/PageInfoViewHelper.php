@@ -1,16 +1,11 @@
 <?php
-namespace TYPO3\CMS\Fluid\ViewHelpers\Be;
-
-use \TYPO3\CMS\Backend\Utility\BackendUtility;
-use \TYPO3\CMS\Backend\Utility\IconUtility;
-
 /*                                                                        *
- * This script is backported from the TYPO3 Flow package "TYPO3.Fluid".   *
+ * This script belongs to the FLOW3 package "Fluid".                      *
  *                                                                        *
  * It is free software; you can redistribute it and/or modify it under    *
- * the terms of the GNU Lesser General Public License, either version 3   *
- *  of the License, or (at your option) any later version.                *
- *                                                                        *
+ * the terms of the GNU Lesser General Public License as published by the *
+ * Free Software Foundation, either version 3 of the License, or (at your *
+ * option) any later version.                                             *
  *                                                                        *
  * This script is distributed in the hope that it will be useful, but     *
  * WITHOUT ANY WARRANTY; without even the implied warranty of MERCHAN-    *
@@ -23,6 +18,7 @@ use \TYPO3\CMS\Backend\Utility\IconUtility;
  *                                                                        *
  * The TYPO3 project - inspiring people to share!                         *
  *                                                                        */
+
 /**
  * View helper which return page info icon as known from TYPO3 backend modules
  * Note: This view helper is experimental!
@@ -35,8 +31,13 @@ use \TYPO3\CMS\Backend\Utility\IconUtility;
  * <output>
  * Page info icon with context menu
  * </output>
+ *
+ * @author Steffen Kamper <info@sk-typo3.de>
+ * @author Bastian Waidelich <bastian@typo3.org>
+ * @license http://www.gnu.org/copyleft/gpl.html
  */
-class PageInfoViewHelper extends \TYPO3\CMS\Fluid\ViewHelpers\Be\AbstractBackendViewHelper {
+class Tx_Fluid_ViewHelpers_Be_PageInfoViewHelper extends Tx_Fluid_ViewHelpers_Be_AbstractBackendViewHelper {
+
 
 	/**
 	 * Render javascript in header
@@ -46,29 +47,28 @@ class PageInfoViewHelper extends \TYPO3\CMS\Fluid\ViewHelpers\Be\AbstractBackend
 	 */
 	public function render() {
 		$doc = $this->getDocInstance();
-		$id = \TYPO3\CMS\Core\Utility\GeneralUtility::_GP('id');
-		$pageRecord = BackendUtility::readPageAccess($id, $GLOBALS['BE_USER']->getPagePermsClause(1));
-		// Add icon with clickmenu, etc:
-		if ($pageRecord['uid']) {
-			// If there IS a real page
-			$alttext = BackendUtility::getRecordIconAltText($pageRecord, 'pages');
-			$iconImg = IconUtility::getSpriteIconForRecord('pages', $pageRecord, array('title' => htmlspecialchars($alttext)));
-			// Make Icon:
+		$id = t3lib_div::_GP('id');
+		$pageRecord = t3lib_BEfunc::readPageAccess($id, $GLOBALS['BE_USER']->getPagePermsClause(1));
+
+				// Add icon with clickmenu, etc:
+		if ($pageRecord['uid'])	{	// If there IS a real page
+			$alttext = t3lib_BEfunc::getRecordIconAltText($pageRecord, 'pages');
+			$iconImg = t3lib_iconWorks::getSpriteIconForRecord('pages', $pageRecord, array('title' => htmlspecialchars($alttext)));
+				// Make Icon:
 			$theIcon = $doc->wrapClickMenuOnIcon($iconImg, 'pages', $pageRecord['uid']);
-		} else {
-			// On root-level of page tree
-			// Make Icon
-			$iconImg = '<img' . IconUtility::skinImg($GLOBALS['BACK_PATH'], 'gfx/i/_icon_website.gif') . ' alt="' . htmlspecialchars($GLOBALS['TYPO3_CONF_VARS']['SYS']['sitename']) . '" />';
-			if ($GLOBALS['BE_USER']->user['admin']) {
+		} else {	// On root-level of page tree
+				// Make Icon
+			$iconImg = '<img' . t3lib_iconWorks::skinImg($this->backPath, 'gfx/i/_icon_website.gif') . ' alt="' . htmlspecialchars($GLOBALS['TYPO3_CONF_VARS']['SYS']['sitename']) . '" />';
+			if($BE_USER->user['admin']) {
 				$theIcon = $doc->wrapClickMenuOnIcon($iconImg, 'pages', 0);
 			} else {
 				$theIcon = $iconImg;
 			}
 		}
-		// Setting icon with clickmenu + uid
+
+			// Setting icon with clickmenu + uid
 		$pageInfo = $theIcon . '<em>[pid: ' . $pageRecord['uid'] . ']</em>';
 		return $pageInfo;
 	}
 }
-
 ?>

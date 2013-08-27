@@ -1,13 +1,15 @@
 <?php
+
 /***************************************************************
  * Extension Manager/Repository config file for ext "feedit".
  *
- * Auto generated 10-10-2011 14:47
+ * Auto generated 12-11-2012 20:32
  *
  * Manual updates:
  * Only the data in the array - everything else is removed by next
  * writing. "version" and "dependencies" must not be touched!
  ***************************************************************/
+
 $EM_CONF[$_EXTKEY] = array(
 	'title' => 'Frontend Editing',
 	'description' => '',
@@ -19,7 +21,7 @@ $EM_CONF[$_EXTKEY] = array(
 	'conflicts' => '',
 	'priority' => '',
 	'module' => '',
-	'state' => 'stable',
+	'state' => 'beta',
 	'internal' => '',
 	'uploadfolder' => 0,
 	'createDirs' => '',
@@ -27,15 +29,20 @@ $EM_CONF[$_EXTKEY] = array(
 	'clearCacheOnLoad' => 0,
 	'lockType' => 'system',
 	'author_company' => 'Web-Empowered Church',
-	'version' => '6.1.0',
+	'version' => '0.1.0',
 	'constraints' => array(
 		'depends' => array(
-			'typo3' => '6.1.0-6.1.99',
+			'typo3' => '4.4.0-0.0.0',
+			'php' => '5.2.0-0.0.0',
 		),
-		'conflicts' => array(),
-		'suggests' => array()
+		'conflicts' => array(
+		),
+		'suggests' => array(
+		),
 	),
-	'_md5_values_when_last_written' => '',
-	'suggests' => array()
+	'_md5_values_when_last_written' => 'a:3:{s:12:"ext_icon.gif";s:4:"9f86";s:17:"ext_localconf.php";s:4:"0933";s:34:"view/class.tx_feedit_editpanel.php";s:4:"2620";}',
+	'suggests' => array(
+	),
 );
+
 ?>

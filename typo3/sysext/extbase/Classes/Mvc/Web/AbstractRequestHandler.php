@@ -1,12 +1,12 @@
 <?php
-namespace TYPO3\CMS\Extbase\Mvc\Web;
-
 /***************************************************************
  *  Copyright notice
  *
- *  (c) 2010-2013 Extbase Team (http://forge.typo3.org/projects/typo3v4-mvc)
- *  Extbase is a backport of TYPO3 Flow. All credits go to the TYPO3 Flow team.
+ *  (c) 2010 Jochen Rau <jochen.rau@typoplanet.de>
  *  All rights reserved
+ *
+ *  This class is a backport of the corresponding class of FLOW3.
+ *  All credits go to the v5 team.
  *
  *  This script is part of the TYPO3 project. The TYPO3 project is
  *  free software; you can redistribute it and/or modify
@@ -16,9 +16,6 @@ namespace TYPO3\CMS\Extbase\Mvc\Web;
  *
  *  The GNU General Public License can be found at
  *  http://www.gnu.org/copyleft/gpl.html.
- *  A copy is found in the textfile GPL.txt and important notices to the license
- *  from the author is found in LICENSE.txt distributed with these scripts.
- *
  *
  *  This script is distributed in the hope that it will be useful,
  *  but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -27,61 +24,63 @@ namespace TYPO3\CMS\Extbase\Mvc\Web;
  *
  *  This copyright notice MUST APPEAR in all copies of the script!
  ***************************************************************/
+
 /**
  * A request handler which can handle web requests.
+ *
  */
-abstract class AbstractRequestHandler implements \TYPO3\CMS\Extbase\Mvc\RequestHandlerInterface {
+abstract class Tx_Extbase_MVC_Web_AbstractRequestHandler implements Tx_Extbase_MVC_RequestHandlerInterface {
 
 	/**
-	 * @var \TYPO3\CMS\Extbase\Object\ObjectManagerInterface
+	 * @var Tx_Extbase_Object_ObjectManagerInterface
 	 */
 	protected $objectManager;
 
 	/**
-	 * @var \TYPO3\CMS\Extbase\Mvc\Dispatcher
+	 * @var Tx_Extbase_MVC_Dispatcher
 	 */
 	protected $dispatcher;
 
 	/**
-	 * @var \TYPO3\CMS\Extbase\Mvc\Web\RequestBuilder
+	 * @var Tx_Extbase_MVC_Web_RequestBuilder
 	 */
 	protected $requestBuilder;
 
 	/**
-	 * @var \TYPO3\CMS\Extbase\Service\EnvironmentService
+	 * @var Tx_Extbase_MVC_Controller_FlashMessages
 	 */
-	protected $environmentService;
+	protected $flashMessages;
 
 	/**
-	 * @param \TYPO3\CMS\Extbase\Object\ObjectManagerInterface $objectManager
+	 * @param Tx_Extbase_Object_ObjectManagerInterface $objectManager
 	 * @return void
 	 */
-	public function injectObjectManager(\TYPO3\CMS\Extbase\Object\ObjectManagerInterface $objectManager) {
+	public function injectObjectManager(Tx_Extbase_Object_ObjectManagerInterface $objectManager) {
 		$this->objectManager = $objectManager;
 	}
 
 	/**
-	 * @param \TYPO3\CMS\Extbase\Mvc\Dispatcher $dispatcher
+	 * @param Tx_Extbase_Object_ObjectManagerInterface $objectManager
 	 * @return void
 	 */
-	public function injectDispatcher(\TYPO3\CMS\Extbase\Mvc\Dispatcher $dispatcher) {
+	public function injectFlashMessages(Tx_Extbase_MVC_Controller_FlashMessages $flashMessages) {
+		$this->flashMessages = $flashMessages;
+	}
+
+	/**
+	 * @param Tx_Extbase_MVC_Dispatcher $dispatcher
+	 * @return void
+	 */
+	public function injectDispatcher(Tx_Extbase_MVC_Dispatcher $dispatcher) {
 		$this->dispatcher = $dispatcher;
 	}
 
 	/**
-	 * @param \TYPO3\CMS\Extbase\Mvc\Web\RequestBuilder $requestBuilder
+	 * @param Tx_Extbase_MVC_Web_RequestBuilder $requestBuilder
 	 * @return void
 	 */
-	public function injectRequestBuilder(\TYPO3\CMS\Extbase\Mvc\Web\RequestBuilder $requestBuilder) {
+	public function injectRequestBuilder(Tx_Extbase_MVC_Web_RequestBuilder $requestBuilder) {
 		$this->requestBuilder = $requestBuilder;
-	}
-
-	/**
-	 * @param \TYPO3\CMS\Extbase\Service\EnvironmentService $environmentService
-	 * @return void
-	 */
-	public function injectEnvironmentService(\TYPO3\CMS\Extbase\Service\EnvironmentService $environmentService) {
-		$this->environmentService = $environmentService;
 	}
 
 	/**
@@ -102,6 +101,6 @@ abstract class AbstractRequestHandler implements \TYPO3\CMS\Extbase\Mvc\RequestH
 	public function getPriority() {
 		return 100;
 	}
-}
 
+}
 ?>

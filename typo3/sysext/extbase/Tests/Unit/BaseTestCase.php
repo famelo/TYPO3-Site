@@ -1,41 +1,54 @@
 <?php
-namespace TYPO3\CMS\Extbase\Tests\Unit;
-
 /***************************************************************
- *  Copyright notice
- *
- *  This class is a backport of the corresponding class of TYPO3 Flow.
- *  All credits go to the TYPO3 Flow team.
- *  All rights reserved
- *
- *  This script is part of the TYPO3 project. The TYPO3 project is
- *  free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
- *
- *  The GNU General Public License can be found at
- *  http://www.gnu.org/copyleft/gpl.html.
- *  A copy is found in the textfile GPL.txt and important notices to the license
- *  from the author is found in LICENSE.txt distributed with these scripts.
- *
- *
- *  This script is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  This copyright notice MUST APPEAR in all copies of the script!
- ***************************************************************/
+*  Copyright notice
+*
+*  (c) 2009 Jochen Rau <jochen.rau@typoplanet.de>
+*  All rights reserved
+*
+*  This class is a backport of the corresponding class of FLOW3.
+*  All credits go to the v5 team.
+*
+*  This script is part of the TYPO3 project. The TYPO3 project is
+*  free software; you can redistribute it and/or modify
+*  it under the terms of the GNU General Public License as published by
+*  the Free Software Foundation; either version 2 of the License, or
+*  (at your option) any later version.
+*
+*  The GNU General Public License can be found at
+*  http://www.gnu.org/copyleft/gpl.html.
+*
+*  This script is distributed in the hope that it will be useful,
+*  but WITHOUT ANY WARRANTY; without even the implied warranty of
+*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+*  GNU General Public License for more details.
+*
+*  This copyright notice MUST APPEAR in all copies of the script!
+***************************************************************/
+
 /**
  * Base testcase for the Extbase extension.
  */
-abstract class BaseTestCase extends \TYPO3\CMS\Core\Tests\UnitTestCase {
+abstract class Tx_Extbase_Tests_Unit_BaseTestCase extends tx_phpunit_testcase {
 
 	/**
-	 * @var \TYPO3\CMS\Extbase\Object\ObjectManagerInterface The object manager
+	 * @var Tx_Extbase_Object_ObjectManagerInterface The object manager
 	 */
 	protected $objectManager;
+
+    /**
+     * Constructs a test case with the given name.
+     *
+     * @param  string $name
+     * @param  array  $data
+     * @param  string $dataName
+	 */
+	public function __construct($name = NULL, array $data = array(), $dataName = '') {
+		parent::__construct($name, $data, $dataName);
+		if (!class_exists('Tx_Extbase_Utility_ClassLoader')) {
+			require(t3lib_extmgm::extPath('extbase') . 'Classes/Utility/ClassLoader.php');
+		}
+		spl_autoload_register(array('Tx_Extbase_Utility_ClassLoader', 'loadClass'));
+	}
 
 	/**
 	 * Injects an untainted clone of the object manager and all its referencing
@@ -44,45 +57,75 @@ abstract class BaseTestCase extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	 * @return void
 	 */
 	public function runBare() {
-		$objectManager = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Extbase\\Object\\ObjectManager');
-		$this->objectManager = clone $objectManager;
+		$objectManager = t3lib_div::makeInstance('Tx_Extbase_Object_ObjectManager');
+		$this->objectManager =  clone $objectManager;
 		parent::runBare();
 	}
 
 	/**
-	 * Injects $dependency into property $name of $target
+	 * Returns a mock object which allows for calling protected methods and access
+	 * of protected properties.
 	 *
-	 * This is a convenience method for setting a protected or private property in
-	 * a test subject for the purpose of injecting a dependency.
-	 *
-	 * @param object $target The instance which needs the dependency
-	 * @param string $name Name of the property to be injected
-	 * @param object $dependency The dependency to inject – usually an object but can also be any other type
-	 * @return void
-	 * @throws \RuntimeException
-	 * @throws \InvalidArgumentException
+	 * @param string $className Full qualified name of the original class
+	 * @param array $methods
+	 * @param array $arguments
+	 * @param string $mockClassName
+	 * @param boolean $callOriginalConstructor
+	 * @param boolean $callOriginalClone
+	 * @param boolean $callAutoload
+	 * @return object
+	 * @author Robert Lemke <robert@typo3.org>
+	 * @api
 	 */
-	protected function inject($target, $name, $dependency) {
-		if (!is_object($target)) {
-			throw new \InvalidArgumentException('Wrong type for argument $target, must be object.');
-		}
-
-		$objectReflection = new \ReflectionObject($target);
-		$methodNamePart = strtoupper($name[0]) . substr($name, 1);
-		if ($objectReflection->hasMethod('set' . $methodNamePart)) {
-			$methodName = 'set' . $methodNamePart;
-			$target->$methodName($dependency);
-		} elseif ($objectReflection->hasMethod('inject' . $methodNamePart)) {
-			$methodName = 'inject' . $methodNamePart;
-			$target->$methodName($dependency);
-		} elseif ($objectReflection->hasProperty($name)) {
-			$property = $objectReflection->getProperty($name);
-			$property->setAccessible(TRUE);
-			$property->setValue($target, $dependency);
-		} else {
-			throw new \RuntimeException('Could not inject ' . $name . ' into object of type ' . get_class($target));
-		}
+	protected function getAccessibleMock($originalClassName, $methods = array(), array $arguments = array(), $mockClassName = '', $callOriginalConstructor = TRUE, $callOriginalClone = TRUE, $callAutoload = TRUE) {
+		return $this->getMock($this->buildAccessibleProxy($originalClassName), $methods, $arguments, $mockClassName, $callOriginalConstructor, $callOriginalClone, $callAutoload);
 	}
-}
 
+
+	/**
+	 * Creates a proxy class of the specified class which allows
+	 * for calling even protected methods and access of protected properties.
+	 *
+	 * @param $className Full qualified name of the original class
+	 * @return string Full qualified name of the built class
+	 */
+	protected function buildAccessibleProxy($className) {
+		$accessibleClassName = uniqid('AccessibleTestProxy');
+		$class = new ReflectionClass($className);
+		$abstractModifier = $class->isAbstract() ? 'abstract ' : '';
+		eval('
+			' . $abstractModifier . 'class ' . $accessibleClassName . ' extends ' . $className . ' {
+				public function _call($methodName) {
+					$args = func_get_args();
+					return call_user_func_array(array($this, $methodName), array_slice($args, 1));
+				}
+				public function _callRef($methodName, &$arg1 = NULL, &$arg2 = NULL, &$arg3 = NULL, &$arg4 = NULL, &$arg5= NULL, &$arg6 = NULL, &$arg7 = NULL, &$arg8 = NULL, &$arg9 = NULL) {
+					switch (func_num_args()) {
+						case 0 : return $this->$methodName();
+						case 1 : return $this->$methodName($arg1);
+						case 2 : return $this->$methodName($arg1, $arg2);
+						case 3 : return $this->$methodName($arg1, $arg2, $arg3);
+						case 4 : return $this->$methodName($arg1, $arg2, $arg3, $arg4);
+						case 5 : return $this->$methodName($arg1, $arg2, $arg3, $arg4, $arg5);
+						case 6 : return $this->$methodName($arg1, $arg2, $arg3, $arg4, $arg5, $arg6);
+						case 7 : return $this->$methodName($arg1, $arg2, $arg3, $arg4, $arg5, $arg6, $arg7);
+						case 8 : return $this->$methodName($arg1, $arg2, $arg3, $arg4, $arg5, $arg6, $arg7, $arg8);
+						case 9 : return $this->$methodName($arg1, $arg2, $arg3, $arg4, $arg5, $arg6, $arg7, $arg8, $arg9);
+					}
+				}
+				public function _set($propertyName, $value) {
+					$this->$propertyName = $value;
+				}
+				public function _setRef($propertyName, &$value) {
+					$this->$propertyName = $value;
+				}
+				public function _get($propertyName) {
+					return $this->$propertyName;
+				}
+			}
+		');
+		return $accessibleClassName;
+	}
+
+}
 ?>

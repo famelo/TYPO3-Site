@@ -1,57 +1,43 @@
 <?php
-namespace TYPO3\CMS\Fluid\Tests\Unit\View;
 
 /*                                                                        *
- * This script is backported from the TYPO3 Flow package "TYPO3.Fluid".   *
+ * This script belongs to the FLOW3 package "Fluid".                      *
  *                                                                        *
  * It is free software; you can redistribute it and/or modify it under    *
- * the terms of the GNU Lesser General Public License, either version 3   *
- *  of the License, or (at your option) any later version.                *
+ * the terms of the GNU Lesser General Public License as published by the *
+ * Free Software Foundation, either version 3 of the License, or (at your *
+ * option) any later version.                                             *
+ *                                                                        *
+ * This script is distributed in the hope that it will be useful, but     *
+ * WITHOUT ANY WARRANTY; without even the implied warranty of MERCHAN-    *
+ * TABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Lesser       *
+ * General Public License for more details.                               *
+ *                                                                        *
+ * You should have received a copy of the GNU Lesser General Public       *
+ * License along with the script.                                         *
+ * If not, see http://www.gnu.org/licenses/lgpl.html                      *
  *                                                                        *
  * The TYPO3 project - inspiring people to share!                         *
  *                                                                        */
 
-include_once(__DIR__ . '/Fixtures/TransparentSyntaxTreeNode.php');
-include_once(__DIR__ . '/Fixtures/TemplateViewFixture.php');
+include_once(dirname(__FILE__) . '/Fixtures/TransparentSyntaxTreeNode.php');
+include_once(dirname(__FILE__) . '/Fixtures/TemplateViewFixture.php');
 
 /**
  * Testcase for the TemplateView
+ *
+ * @license http://www.gnu.org/licenses/lgpl.html GNU Lesser General Public License, version 3 or later
  */
-class TemplateViewTest extends \TYPO3\CMS\Extbase\Tests\Unit\BaseTestCase {
+class Tx_Fluid_Tests_Unit_View_TemplateViewTest extends Tx_Extbase_Tests_Unit_BaseTestCase {
 
 	/**
 	 * @test
-	 */
-	public function expandGenericPathPatternWorksWithOldNamingSchemeOfSubPackage() {
-		$mockControllerContext = $this->setupMockControllerContextForPathResolving('MyPackage', 'ViewHelpers_Widget', 'Paginate', 'html');
-		$templateView = $this->getAccessibleMock('TYPO3\\CMS\\Fluid\\View\\TemplateView', array('getTemplateRootPath', 'getPartialRootPath', 'getLayoutRootPath'), array(), '', FALSE);
-		$templateView->_set('controllerContext', $mockControllerContext);
-		$templateView->expects($this->any())->method('getTemplateRootPath')->will($this->returnValue('Resources/Private/'));
-		$expected = array('Resources/Private/Templates/ViewHelpers/Widget/Paginate/@action.html');
-		$actual = $templateView->_call('expandGenericPathPattern', '@templateRoot/Templates/@subpackage/@controller/@action.@format', FALSE, FALSE);
-		$this->assertEquals($expected, $actual);
-	}
-
-	/**
-	 * @test
-	 */
-	public function expandGenericPathPatternWorksWithNewNamingSchemeOfSubPackage() {
-		$mockControllerContext = $this->setupMockControllerContextForPathResolving('MyPackage', 'ViewHelpers\\Widget', 'Paginate', 'html');
-		$templateView = $this->getAccessibleMock('TYPO3\\CMS\\Fluid\\View\\TemplateView', array('getTemplateRootPath', 'getPartialRootPath', 'getLayoutRootPath'), array(), '', FALSE);
-		$templateView->_set('controllerContext', $mockControllerContext);
-		$templateView->expects($this->any())->method('getTemplateRootPath')->will($this->returnValue('Resources/Private/'));
-		$expected = array('Resources/Private/Templates/ViewHelpers/Widget/Paginate/@action.html');
-		$actual = $templateView->_call('expandGenericPathPattern', '@templateRoot/Templates/@subpackage/@controller/@action.@format', FALSE, FALSE);
-		$this->assertEquals($expected, $actual);
-	}
-
-	/**
-	 * @test
+	 * @author Sebastian Kurfürst <sebastian@typo3.org>
 	 */
 	public function expandGenericPathPatternWorksWithBubblingDisabledAndFormatNotOptional() {
 		$mockControllerContext = $this->setupMockControllerContextForPathResolving('MyPackage', NULL, 'My', 'html');
 
-		$templateView = $this->getAccessibleMock('TYPO3\\CMS\\Fluid\\View\\TemplateView', array('getTemplateRootPath', 'getPartialRootPath', 'getLayoutRootPath'), array(), '', FALSE);
+		$templateView = $this->getAccessibleMock('Tx_Fluid_View_TemplateView', array('getTemplateRootPath', 'getPartialRootPath', 'getLayoutRootPath'), array(), '', FALSE);
 		$templateView->_set('controllerContext', $mockControllerContext);
 		$templateView->expects($this->any())->method('getTemplateRootPath')->will($this->returnValue('Resources/Private/'));
 
@@ -63,11 +49,12 @@ class TemplateViewTest extends \TYPO3\CMS\Extbase\Tests\Unit\BaseTestCase {
 
 	/**
 	 * @test
+	 * @author Sebastian Kurfürst <sebastian@typo3.org>
 	 */
-	public function expandGenericPathPatternWorksWithSubpackageAndBubblingDisabledAndFormatNotOptional() {
+	public function expandGenericPathPatternWorksWithSubpackageAndBubblingDisabledAndFormatNotOptional() { $this->markTestIncomplete("Not implemented in v4");
 		$mockControllerContext = $this->setupMockControllerContextForPathResolving('MyPackage', 'MySubPackage', 'My', 'html');
 
-		$templateView = $this->getAccessibleMock('TYPO3\\CMS\\Fluid\\View\\TemplateView', array('getTemplateRootPath', 'getPartialRootPath', 'getLayoutRootPath'), array(), '', FALSE);
+		$templateView = $this->getAccessibleMock('Tx_Fluid_View_TemplateView', array('getTemplateRootPath', 'getPartialRootPath', 'getLayoutRootPath'), array(), '', FALSE);
 		$templateView->_set('controllerContext', $mockControllerContext);
 		$templateView->expects($this->any())->method('getTemplateRootPath')->will($this->returnValue('Resources/Private/'));
 		$actual = $templateView->_call('expandGenericPathPattern', '@templateRoot/Templates/@subpackage/@controller/@action.@format', FALSE, FALSE);
@@ -80,11 +67,12 @@ class TemplateViewTest extends \TYPO3\CMS\Extbase\Tests\Unit\BaseTestCase {
 
 	/**
 	 * @test
+	 * @author Sebastian Kurfürst <sebastian@typo3.org>
 	 */
-	public function expandGenericPathPatternWorksWithSubpackageAndBubblingDisabledAndFormatOptional() {
+	public function expandGenericPathPatternWorksWithSubpackageAndBubblingDisabledAndFormatOptional() { $this->markTestIncomplete("Not implemented in v4");
 		$mockControllerContext = $this->setupMockControllerContextForPathResolving('MyPackage', 'MySubPackage', 'My', 'html');
 
-		$templateView = $this->getAccessibleMock('TYPO3\\CMS\\Fluid\\View\\TemplateView', array('getTemplateRootPath', 'getPartialRootPath', 'getLayoutRootPath'), array(), '', FALSE);
+		$templateView = $this->getAccessibleMock('Tx_Fluid_View_TemplateView', array('getTemplateRootPath', 'getPartialRootPath', 'getLayoutRootPath'), array(), '', FALSE);
 		$templateView->_set('controllerContext', $mockControllerContext);
 		$templateView->expects($this->any())->method('getTemplateRootPath')->will($this->returnValue('Resources/Private/'));
 		$actual = $templateView->_call('expandGenericPathPattern', '@templateRoot/Templates/@subpackage/@controller/@action.@format', FALSE, TRUE);
@@ -98,11 +86,12 @@ class TemplateViewTest extends \TYPO3\CMS\Extbase\Tests\Unit\BaseTestCase {
 
 	/**
 	 * @test
+	 * @author Sebastian Kurfürst <sebastian@typo3.org>
 	 */
-	public function expandGenericPathPatternWorksWithSubpackageAndBubblingEnabledAndFormatOptional() {
+	public function expandGenericPathPatternWorksWithSubpackageAndBubblingEnabledAndFormatOptional() { $this->markTestIncomplete("Not implemented in v4");
 		$mockControllerContext = $this->setupMockControllerContextForPathResolving('MyPackage', 'MySubPackage', 'My', 'html');
 
-		$templateView = $this->getAccessibleMock('TYPO3\\CMS\\Fluid\\View\\TemplateView', array('getTemplateRootPath', 'getPartialRootPath', 'getLayoutRootPath'), array(), '', FALSE);
+		$templateView = $this->getAccessibleMock('Tx_Fluid_View_TemplateView', array('getTemplateRootPath', 'getPartialRootPath', 'getLayoutRootPath'), array(), '', FALSE);
 		$templateView->_set('controllerContext', $mockControllerContext);
 		$templateView->expects($this->any())->method('getTemplateRootPath')->will($this->returnValue('Resources/Private/'));
 		$actual = $templateView->_call('expandGenericPathPattern', '@templateRoot/Templates/@subpackage/@controller/@action.@format', TRUE, TRUE);
@@ -113,7 +102,7 @@ class TemplateViewTest extends \TYPO3\CMS\Extbase\Tests\Unit\BaseTestCase {
 			'Resources/Private/Templates/MySubPackage/@action.html',
 			'Resources/Private/Templates/MySubPackage/@action',
 			'Resources/Private/Templates/@action.html',
-			'Resources/Private/Templates/@action'
+			'Resources/Private/Templates/@action',
 		);
 		$this->assertEquals($expected, $actual);
 	}
@@ -121,22 +110,25 @@ class TemplateViewTest extends \TYPO3\CMS\Extbase\Tests\Unit\BaseTestCase {
 	/**
 	 * Helper to build mock controller context needed to test expandGenericPathPattern.
 	 *
-	 * @param string $packageKey
-	 * @param string $subPackageKey
-	 * @param string $controllerClassName
-	 * @param string $format
-	 * @return \PHPUnit_Framework_MockObject_MockObject
+	 * @param $packageKey
+	 * @param $subPackageKey
+	 * @param $controllerClassName
+	 * @param $format
+	 *
+	 * @author Sebastian Kurfürst <sebastian@typo3.org>
+	 * @author Robert Lemke <robert@typo3.org>
 	 */
 	protected function setupMockControllerContextForPathResolving($packageKey, $subPackageKey, $controllerName, $format) {
-		$controllerObjectName = "TYPO3\\$packageKey\\" . ($subPackageKey != $subPackageKey . '\\' ? : '') . 'Controller\\' . $controllerName . 'Controller';
-		$mockRequest = $this->getMock('TYPO3\\CMS\\Extbase\\Mvc\\Web\\Request');
+     	$controllerObjectName = 'Tx_' . $packageKey . '_' . ($subPackageKey !== '' ? '_' . $subPackageKey . '_' : '') . 'Controller_' . $controllerName . 'Controller';
+
+		$mockRequest = $this->getMock('Tx_Extbase_MVC_Request');
 		$mockRequest->expects($this->any())->method('getControllerPackageKey')->will($this->returnValue($packageKey));
 		$mockRequest->expects($this->any())->method('getControllerSubPackageKey')->will($this->returnValue($subPackageKey));
 		$mockRequest->expects($this->any())->method('getControllerName')->will($this->returnValue($controllerName));
 		$mockRequest->expects($this->any())->method('getControllerObjectName')->will($this->returnValue($controllerObjectName));
 		$mockRequest->expects($this->any())->method('getFormat')->will($this->returnValue($format));
 
-		$mockControllerContext = $this->getMock('TYPO3\\CMS\\Extbase\\Mvc\\Controller\\ControllerContext', array('getRequest'), array(), '', FALSE);
+		$mockControllerContext = $this->getMock('Tx_Extbase_MVC_Controller_ControllerContext', array('getRequest'), array(), '', FALSE);
 		$mockControllerContext->expects($this->any())->method('getRequest')->will($this->returnValue($mockRequest));
 
 		return $mockControllerContext;
@@ -144,9 +136,10 @@ class TemplateViewTest extends \TYPO3\CMS\Extbase\Tests\Unit\BaseTestCase {
 
 	/**
 	 * @test
+	 * @author Sebastian Kurfürst <sebastian@typo3.org>
 	 */
 	public function getTemplateRootPathReturnsUserSpecifiedTemplatePath() {
-		$templateView = $this->getAccessibleMock('TYPO3\\CMS\\Fluid\\View\\TemplateView', array('dummy'), array(), '', FALSE);
+		$templateView = $this->getAccessibleMock('Tx_Fluid_View_TemplateView', array('dummy'), array(), '', FALSE);
 		$templateView->setTemplateRootPath('/foo/bar');
 		$expected = '/foo/bar';
 		$actual = $templateView->_call('getTemplateRootPath');
@@ -155,9 +148,10 @@ class TemplateViewTest extends \TYPO3\CMS\Extbase\Tests\Unit\BaseTestCase {
 
 	/**
 	 * @test
+	 * @author Bastian Waidelich <bastian@typo3.org>
 	 */
 	public function getPartialRootPathReturnsUserSpecifiedPartialPath() {
-		$templateView = $this->getAccessibleMock('TYPO3\\CMS\\Fluid\\View\\TemplateView', array('dummy'), array(), '', FALSE);
+		$templateView = $this->getAccessibleMock('Tx_Fluid_View_TemplateView', array('dummy'), array(), '', FALSE);
 		$templateView->setPartialRootPath('/foo/bar');
 		$expected = '/foo/bar';
 		$actual = $templateView->_call('getPartialRootPath');
@@ -166,9 +160,10 @@ class TemplateViewTest extends \TYPO3\CMS\Extbase\Tests\Unit\BaseTestCase {
 
 	/**
 	 * @test
+	 * @author Bastian Waidelich <bastian@typo3.org>
 	 */
 	public function getLayoutRootPathReturnsUserSpecifiedPartialPath() {
-		$templateView = $this->getAccessibleMock('TYPO3\\CMS\\Fluid\\View\\TemplateView', array('dummy'), array(), '', FALSE);
+		$templateView = $this->getAccessibleMock('Tx_Fluid_View_TemplateView', array('dummy'), array(), '', FALSE);
 		$templateView->setLayoutRootPath('/foo/bar');
 		$expected = '/foo/bar';
 		$actual = $templateView->_call('getLayoutRootPath');
@@ -177,33 +172,35 @@ class TemplateViewTest extends \TYPO3\CMS\Extbase\Tests\Unit\BaseTestCase {
 
 	/**
 	 * @test
+	 * @author Sebastian Kurfürst <sebastian@typo3.org>
 	 */
 	public function pathToPartialIsResolvedCorrectly() {
 		$this->markTestSkipped('Needs to be finished');
-		\vfsStreamWrapper::register();
+		vfsStreamWrapper::register();
 		mkdir('vfs://MyTemplates');
-		\file_put_contents('vfs://MyTemplates/MyCoolAction.html', 'contentsOfMyCoolAction');
-		$mockRootDirectory = \vfsStreamDirectory::create('ExamplePackagePath/Resources/Private/Partials');
+		file_put_contents('vfs://MyTemplates/MyCoolAction.html', 'contentsOfMyCoolAction');
+		$mockRootDirectory = vfsStreamDirectory::create('ExamplePackagePath/Resources/Private/Partials');
 		$mockRootDirectory->getChild('Resources/Private/Partials')->addChild('Partials');
-		\vfsStreamWrapper::setRoot($mockRootDirectory);
+		vfsStreamWrapper::setRoot($mockRootDirectory);
 
-		$this->getAccessibleMock('TYPO3\\CMS\\Fluid\\Core\\Parser\\TemplateParser', array(''), array(), '', FALSE);
+		$this->getAccessibleMock('Tx_Fluid_Core_Parser_TemplateParser', array(''), array(), '', FALSE);
 	}
 
 	/**
 	 * @test
+	 * @author Robert Lemke <robert@typo3.org>
 	 */
-	public function resolveTemplatePathAndFilenameChecksDifferentPathPatternsAndReturnsTheFirstPathWhichExists() {
-		\vfsStreamWrapper::register();
+	public function resolveTemplatePathAndFilenameChecksDifferentPathPatternsAndReturnsTheFirstPathWhichExists() { $this->markTestIncomplete("Not implemented in v4");
+		vfsStreamWrapper::register();
 		mkdir('vfs://MyTemplates');
-		\file_put_contents('vfs://MyTemplates/MyCoolAction.html', 'contentsOfMyCoolAction');
+		file_put_contents('vfs://MyTemplates/MyCoolAction.html', 'contentsOfMyCoolAction');
 
 		$paths = array(
-			'vfs://NonExistantDir/UnknowFile.html',
-			'vfs://MyTemplates/@action.html'
+			 'vfs://NonExistantDir/UnknowFile.html',
+			 'vfs://MyTemplates/@action.html'
 		);
 
-		$templateView = $this->getAccessibleMock('TYPO3\\CMS\\Fluid\\View\\TemplateView', array('expandGenericPathPattern'), array(), '', FALSE);
+		$templateView = $this->getAccessibleMock('Tx_Fluid_View_TemplateView', array('expandGenericPathPattern'), array(), '', FALSE);
 		$templateView->expects($this->once())->method('expandGenericPathPattern')->with('@templateRoot/@subpackage/@controller/@action.@format', FALSE, FALSE)->will($this->returnValue($paths));
 
 		$templateView->setTemplateRootPath('MyTemplates');
@@ -216,17 +213,18 @@ class TemplateViewTest extends \TYPO3\CMS\Extbase\Tests\Unit\BaseTestCase {
 
 	/**
 	 * @test
+	 * @author Robert Lemke <robert@typo3.org>
 	 */
-	public function resolveTemplatePathAndFilenameReturnsTheExplicitlyConfiguredTemplatePathAndFilename() {
-		\vfsStreamWrapper::register();
+	public function resolveTemplatePathAndFilenameReturnsTheExplicitlyConfiguredTemplatePathAndFilename() { $this->markTestIncomplete("Not implemented in v4");
+		vfsStreamWrapper::register();
 		mkdir('vfs://MyTemplates');
-		\file_put_contents('vfs://MyTemplates/MyCoolAction.html', 'contentsOfMyCoolAction');
+		file_put_contents('vfs://MyTemplates/MyCoolAction.html', 'contentsOfMyCoolAction');
 
-		$templateView = $this->getAccessibleMock('TYPO3\\CMS\\Fluid\\View\\TemplateView', array('dummy'), array(), '', FALSE);
+		$templateView = $this->getAccessibleMock('Tx_Fluid_View_TemplateView', array('dummy'), array(), '', FALSE);
 		$templateView->_set('templatePathAndFilename', 'vfs://MyTemplates/MyCoolAction.html');
 
 		$this->assertSame('contentsOfMyCoolAction', $templateView->_call('getTemplateSource'));
-	}
+  	}
 }
 
 ?>

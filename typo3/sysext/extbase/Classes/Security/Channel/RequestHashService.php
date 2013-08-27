@@ -1,32 +1,30 @@
 <?php
-namespace TYPO3\CMS\Extbase\Security\Channel;
-
 /***************************************************************
- *  Copyright notice
- *
- *  (c) 2010-2013 Extbase Team (http://forge.typo3.org/projects/typo3v4-mvc)
- *  Extbase is a backport of TYPO3 Flow. All credits go to the TYPO3 Flow team.
- *  All rights reserved
- *
- *  This script is part of the TYPO3 project. The TYPO3 project is
- *  free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
- *
- *  The GNU General Public License can be found at
- *  http://www.gnu.org/copyleft/gpl.html.
- *  A copy is found in the textfile GPL.txt and important notices to the license
- *  from the author is found in LICENSE.txt distributed with these scripts.
- *
- *
- *  This script is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  This copyright notice MUST APPEAR in all copies of the script!
- ***************************************************************/
+*  Copyright notice
+*
+*  (c) 2009 Sebastian Kurfürst <sebastian@typo3.org>
+*  All rights reserved
+*
+*  This class is a backport of the corresponding class of FLOW3.
+*  All credits go to the v5 team.
+*
+*  This script is part of the TYPO3 project. The TYPO3 project is
+*  free software; you can redistribute it and/or modify
+*  it under the terms of the GNU General Public License as published by
+*  the Free Software Foundation; either version 2 of the License, or
+*  (at your option) any later version.
+*
+*  The GNU General Public License can be found at
+*  http://www.gnu.org/copyleft/gpl.html.
+*
+*  This script is distributed in the hope that it will be useful,
+*  but WITHOUT ANY WARRANTY; without even the implied warranty of
+*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+*  GNU General Public License for more details.
+*
+*  This copyright notice MUST APPEAR in all copies of the script!
+***************************************************************/
+
 /**
  * This is a Service which can generate a request hash and check whether the currently given arguments
  * fit to the request hash.
@@ -43,20 +41,21 @@ namespace TYPO3\CMS\Extbase\Security\Channel;
  *
  * Note: It is crucially important that a private key is computed into the hash value! This is done inside the HashService.
  *
+ * @version $Id$
  * @license http://www.gnu.org/licenses/lgpl.html GNU Lesser General Public License, version 3 or later
  */
-class RequestHashService implements \TYPO3\CMS\Core\SingletonInterface {
+class Tx_Extbase_Security_Channel_RequestHashService implements t3lib_singleton {
 
 	/**
-	 * @var \TYPO3\CMS\Extbase\Security\Cryptography\HashService
+	 * @var Tx_Extbase_Security_Cryptography_HashService
 	 */
 	protected $hashService;
 
 	/**
-	 * @param \TYPO3\CMS\Extbase\Security\Cryptography\HashService $hashService
+	 * @param Tx_Extbase_Security_Cryptography_HashService $hashService 
 	 * @return void
 	 */
-	public function injectHashService(\TYPO3\CMS\Extbase\Security\Cryptography\HashService $hashService) {
+	public function injectHashService(Tx_Extbase_Security_Cryptography_HashService $hashService) {
 		$this->hashService = $hashService;
 	}
 
@@ -64,28 +63,26 @@ class RequestHashService implements \TYPO3\CMS\Core\SingletonInterface {
 	 * Generate a request hash for a list of form fields
 	 *
 	 * @param array $formFieldNames Array of form fields
-	 * @param string $fieldNamePrefix
-	 * @throws \TYPO3\CMS\Extbase\Security\Exception\InvalidArgumentForRequestHashGenerationException
 	 * @return string request hash
+	 * @author Sebastian Kurfürst <sebastian@typo3.org>
 	 * @todo might need to become public API lateron, as we need to call it from Fluid
 	 */
 	public function generateRequestHash($formFieldNames, $fieldNamePrefix = '') {
 		$formFieldArray = array();
 		foreach ($formFieldNames as $formField) {
 			$formFieldParts = explode('[', $formField);
-			$currentPosition = &$formFieldArray;
-			for ($i = 0; $i < count($formFieldParts); $i++) {
+			$currentPosition =& $formFieldArray;
+			for ($i=0; $i < count($formFieldParts); $i++) {
 				$formFieldPart = $formFieldParts[$i];
-				if (substr($formFieldPart, -1) == ']') {
-					$formFieldPart = substr($formFieldPart, 0, -1);
-				}
-				// Strip off closing ] if needed
+				if (substr($formFieldPart, -1) == ']') $formFieldPart = substr($formFieldPart, 0, -1); // Strip off closing ] if needed
+
 				if (!is_array($currentPosition)) {
-					throw new \TYPO3\CMS\Extbase\Security\Exception\InvalidArgumentForRequestHashGenerationException('The form field name "' . $formField . '" collides with a previous form field name which declared the field as string. (String overridden by Array)', 1255072196);
+					throw new Tx_Extbase_Security_Exception_InvalidArgumentForRequestHashGeneration('The form field name "' . $formField . '" collides with a previous form field name which declared the field as string. (String overridden by Array)', 1255072196);
 				}
+
 				if ($i == count($formFieldParts) - 1) {
 					if (isset($currentPosition[$formFieldPart]) && is_array($currentPosition[$formFieldPart])) {
-						throw new \TYPO3\CMS\Extbase\Security\Exception\InvalidArgumentForRequestHashGenerationException('The form field name "' . $formField . '" collides with a previous form field name which declared the field as array. (Array overridden by String)', 1255072587);
+						throw new Tx_Extbase_Security_Exception_InvalidArgumentForRequestHashGeneration('The form field name "' . $formField . '" collides with a previous form field name which declared the field as array. (Array overridden by String)', 1255072587);
 					}
 					// Last iteration - add a string
 					if ($formFieldPart === '') {
@@ -95,17 +92,18 @@ class RequestHashService implements \TYPO3\CMS\Core\SingletonInterface {
 					}
 				} else {
 					if ($formFieldPart === '') {
-						throw new \TYPO3\CMS\Extbase\Security\Exception\InvalidArgumentForRequestHashGenerationException('The form field name "' . $formField . '" is invalid. Reason: "[]" used not as last argument.', 1255072832);
+						throw new Tx_Extbase_Security_Exception_InvalidArgumentForRequestHashGeneration('The form field name "' . $formField . '" is invalid. Reason: "[]" used not as last argument.', 1255072832);
 					}
 					if (!isset($currentPosition[$formFieldPart])) {
 						$currentPosition[$formFieldPart] = array();
 					}
-					$currentPosition = &$currentPosition[$formFieldPart];
+					$currentPosition =& $currentPosition[$formFieldPart];
 				}
 			}
 		}
 		if ($fieldNamePrefix !== '') {
-			$formFieldArray = isset($formFieldArray[$fieldNamePrefix]) ? $formFieldArray[$fieldNamePrefix] : array();
+
+			$formFieldArray = (isset($formFieldArray[$fieldNamePrefix]) ? $formFieldArray[$fieldNamePrefix] : array() );
 		}
 		return $this->serializeAndHashFormFieldArray($formFieldArray);
 	}
@@ -115,34 +113,33 @@ class RequestHashService implements \TYPO3\CMS\Core\SingletonInterface {
 	 *
 	 * @param array $formFieldArray form field array to be serialized and hashed
 	 * @return string Hash
+	 * @author Sebastian Kurfürst <sebastian@typo3.org>
 	 */
 	protected function serializeAndHashFormFieldArray($formFieldArray) {
 		$serializedFormFieldArray = serialize($formFieldArray);
-		return $serializedFormFieldArray . $this->hashService->generateHmac($serializedFormFieldArray);
+		return $serializedFormFieldArray . $this->hashService->generateHash($serializedFormFieldArray);
 	}
 
 	/**
 	 * Verify the request. Checks if there is an __hmac argument, and if yes, tries to validate and verify it.
 	 *
 	 * In the end, $request->setHmacVerified is set depending on the value.
-	 *
-	 * @param \TYPO3\CMS\Extbase\Mvc\Web\Request $request The request to verify
-	 * @throws \TYPO3\CMS\Extbase\Security\Exception\SyntacticallyWrongRequestHashException
+	 * @param \F3\FLOW3\MVC\Web\Request $request The request to verify
 	 * @return void
+	 * @author Sebastian Kurfürst <sebastian@typo3.org>
 	 */
-	public function verifyRequest(\TYPO3\CMS\Extbase\Mvc\Web\Request $request) {
-		if (!$request->getInternalArgument('__hmac')) {
+	public function verifyRequest(Tx_Extbase_MVC_Web_Request $request) {
+		if (!$request->hasArgument('__hmac')) {
 			$request->setHmacVerified(FALSE);
 			return;
 		}
-		$hmac = $request->getInternalArgument('__hmac');
+		$hmac = $request->getArgument('__hmac');
 		if (strlen($hmac) < 40) {
-			throw new \TYPO3\CMS\Extbase\Security\Exception\SyntacticallyWrongRequestHashException('Request hash too short. This is a probably manipulation attempt!', 1255089361);
+			throw new Tx_Extbase_Security_Exception_SyntacticallyWrongRequestHash('Request hash too short. This is a probably manipulation attempt!', 1255089361);
 		}
-		$serializedFieldNames = substr($hmac, 0, -40);
-		// TODO: Constant for hash length needs to be introduced
+		$serializedFieldNames = substr($hmac, 0, -40); // TODO: Constant for hash length needs to be introduced
 		$hash = substr($hmac, -40);
-		if ($this->hashService->validateHmac($serializedFieldNames, $hash)) {
+		if ($this->hashService->validateHash($serializedFieldNames, $hash)) {
 			$requestArguments = $request->getArguments();
 			// Unset framework arguments
 			unset($requestArguments['__referrer']);
@@ -155,13 +152,14 @@ class RequestHashService implements \TYPO3\CMS\Core\SingletonInterface {
 		} else {
 			$request->setHmacVerified(FALSE);
 		}
+
 	}
 
 	/**
 	 * Check if every element in $requestArguments is in $allowedFields as well.
 	 *
 	 * @param array $requestArguments
-	 * @param array $allowedFields
+	 * @param array $allowedFiels
 	 * @return boolean TRUE if ALL fields inside requestArguments are in $allowedFields, FALSE otherwise.
 	 */
 	protected function checkFieldNameInclusion(array $requestArguments, array $allowedFields) {
@@ -174,7 +172,17 @@ class RequestHashService implements \TYPO3\CMS\Core\SingletonInterface {
 					return FALSE;
 				}
 			} elseif (!is_array($requestArguments[$argumentName]) && !is_array($allowedFields[$argumentName])) {
+				// do nothing, as this is allowed
 			} elseif (!is_array($requestArguments[$argumentName]) && $requestArguments[$argumentName] === '' && is_array($allowedFields[$argumentName])) {
+				// do nothing, as this is allowed.
+				// This case is needed for making an array of checkboxes work, in case they are fully unchecked.
+				// Example: if the following checkbox names are defined:
+				//     foo[a]
+				//     foo[b]
+				// then, Fluid automatically renders a hidden field "foo" with the value '' (empty string) in front of it,
+				// to determine the case if the user un-checks all checkboxes.
+				// in this case, the property mapping already does the right thing, but without this condition here,
+				// the request hash checking would fail because of the strong type checks.
 			} else {
 				// different types - error
 				return FALSE;

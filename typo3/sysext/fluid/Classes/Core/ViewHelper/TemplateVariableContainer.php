@@ -1,12 +1,21 @@
 <?php
-namespace TYPO3\CMS\Fluid\Core\ViewHelper;
 
 /*                                                                        *
- * This script is backported from the TYPO3 Flow package "TYPO3.Fluid".   *
+ * This script belongs to the FLOW3 package "Fluid".                      *
  *                                                                        *
  * It is free software; you can redistribute it and/or modify it under    *
- * the terms of the GNU Lesser General Public License, either version 3   *
- *  of the License, or (at your option) any later version.                *
+ * the terms of the GNU Lesser General Public License as published by the *
+ * Free Software Foundation, either version 3 of the License, or (at your *
+ * option) any later version.                                             *
+ *                                                                        *
+ * This script is distributed in the hope that it will be useful, but     *
+ * WITHOUT ANY WARRANTY; without even the implied warranty of MERCHAN-    *
+ * TABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Lesser       *
+ * General Public License for more details.                               *
+ *                                                                        *
+ * You should have received a copy of the GNU Lesser General Public       *
+ * License along with the script.                                         *
+ * If not, see http://www.gnu.org/licenses/lgpl.html                      *
  *                                                                        *
  * The TYPO3 project - inspiring people to share!                         *
  *                                                                        */
@@ -18,20 +27,19 @@ namespace TYPO3\CMS\Fluid\Core\ViewHelper;
  * 1) Holds the current variables in the template
  * 2) Holds variables being set during Parsing (set in view helpers implementing the PostParse facet)
  *
+ * @license http://www.gnu.org/licenses/lgpl.html GNU Lesser General Public License, version 3 or later
  * @api
  */
-class TemplateVariableContainer implements \ArrayAccess {
+class Tx_Fluid_Core_ViewHelper_TemplateVariableContainer implements ArrayAccess {
 
 	/**
 	 * List of reserved words that can't be used as variable identifiers in Fluid templates
-	 *
 	 * @var array
 	 */
-	static protected $reservedVariableNames = array('true', 'false', 'on', 'off', 'yes', 'no', '_all');
+	static protected $reservedVariableNames = array('true', 'false', 'on', 'off', 'yes', 'no');
 
 	/**
 	 * Variables stored in context
-	 *
 	 * @var array
 	 */
 	protected $variables = array();
@@ -40,6 +48,7 @@ class TemplateVariableContainer implements \ArrayAccess {
 	 * Constructor. Can take an array, and initializes the variables with it.
 	 *
 	 * @param array $variableArray
+	 * @author Sebastian Kurfürst <sebastian@typo3.org>
 	 * @api
 	 */
 	public function __construct(array $variableArray = array()) {
@@ -52,36 +61,26 @@ class TemplateVariableContainer implements \ArrayAccess {
 	 * @param string $identifier Identifier of the variable to add
 	 * @param mixed $value The variable's value
 	 * @return void
-	 * @throws Exception\InvalidVariableException
+	 * @author Sebastian Kurfürst <sebastian@typo3.org>
+	 * @author Bastian Waidelich <bastian@typo3.org>
 	 * @api
 	 */
 	public function add($identifier, $value) {
-		if (array_key_exists($identifier, $this->variables)) {
-			throw new \TYPO3\CMS\Fluid\Core\ViewHelper\Exception\InvalidVariableException('Duplicate variable declaration, "' . $identifier . '" already set!', 1224479063);
-		}
-		if (in_array(strtolower($identifier), self::$reservedVariableNames)) {
-			throw new \TYPO3\CMS\Fluid\Core\ViewHelper\Exception\InvalidVariableException('"' . $identifier . '" is a reserved variable name and cannot be used as variable identifier.', 1256730379);
-		}
+		if (array_key_exists($identifier, $this->variables)) throw new Tx_Fluid_Core_ViewHelper_Exception_InvalidVariableException('Duplicate variable declarations!', 1224479063);
+		if (in_array(strtolower($identifier), self::$reservedVariableNames)) throw new Tx_Fluid_Core_ViewHelper_Exception_InvalidVariableException('"' . $identifier . '" is a reserved variable name and can\'t be used as variable identifier.', 1256730379);
 		$this->variables[$identifier] = $value;
 	}
 
 	/**
 	 * Get a variable from the context. Throws exception if variable is not found in context.
 	 *
-	 * If "_all" is given as identifier, all variables are returned in an array.
-	 *
 	 * @param string $identifier
-	 * @return mixed The variable value identified by $identifier
-	 * @throws Exception\InvalidVariableException
+	 * @return variable The variable identified by $identifier
+	 * @author Sebastian Kurfürst <sebastian@typo3.org>
 	 * @api
 	 */
 	public function get($identifier) {
-		if ($identifier === '_all') {
-			return $this->variables;
-		}
-		if (!array_key_exists($identifier, $this->variables)) {
-			throw new \TYPO3\CMS\Fluid\Core\ViewHelper\Exception\InvalidVariableException('Tried to get a variable "' . $identifier . '" which is not stored in the context!', 1224479370);
-		}
+		if (!array_key_exists($identifier, $this->variables)) throw new Tx_Fluid_Core_ViewHelper_Exception_InvalidVariableException('Tried to get a variable "' . $identifier . '" which is not stored in the context!', 1224479370);
 		return $this->variables[$identifier];
 	}
 
@@ -90,13 +89,11 @@ class TemplateVariableContainer implements \ArrayAccess {
 	 *
 	 * @param string $identifier The identifier to remove
 	 * @return void
-	 * @throws Exception\InvalidVariableException
+	 * @author Sebastian Kurfürst <sebastian@typo3.org>
 	 * @api
 	 */
 	public function remove($identifier) {
-		if (!array_key_exists($identifier, $this->variables)) {
-			throw new \TYPO3\CMS\Fluid\Core\ViewHelper\Exception\InvalidVariableException('Tried to remove a variable "' . $identifier . '" which is not stored in the context!', 1224479372);
-		}
+		if (!array_key_exists($identifier, $this->variables)) throw new Tx_Fluid_Core_ViewHelper_Exception_InvalidVariableException('Tried to remove a variable "' . $identifier . '" which is not stored in the context!', 1224479372);
 		unset($this->variables[$identifier]);
 	}
 
@@ -104,6 +101,7 @@ class TemplateVariableContainer implements \ArrayAccess {
 	 * Returns an array of all identifiers available in the context.
 	 *
 	 * @return array Array of identifier strings
+	 * @author Sebastian Kurfürst <sebastian@typo3.org>
 	 */
 	public function getAllIdentifiers() {
 		return array_keys($this->variables);
@@ -113,6 +111,7 @@ class TemplateVariableContainer implements \ArrayAccess {
 	 * Returns the variables array.
 	 *
 	 * @return array Identifiers and values of all variables
+	 * @author Robert Lemke <robert@typo3.org>
 	 */
 	public function getAll() {
 		return $this->variables;
@@ -123,13 +122,10 @@ class TemplateVariableContainer implements \ArrayAccess {
 	 *
 	 * @param string $identifier
 	 * @return boolean TRUE if $identifier exists, FALSE otherwise
+	 * @author Sebastian Kurfürst <sebastian@typo3.org>
 	 * @api
 	 */
 	public function exists($identifier) {
-		if ($identifier === '_all') {
-			return TRUE;
-		}
-
 		return array_key_exists($identifier, $this->variables);
 	}
 
@@ -137,6 +133,7 @@ class TemplateVariableContainer implements \ArrayAccess {
 	 * Clean up for serializing.
 	 *
 	 * @return array
+	 * @author Sebastian Kurfürst <sebastian@typo3.org>
 	 */
 	public function __sleep() {
 		return array('variables');
@@ -148,9 +145,10 @@ class TemplateVariableContainer implements \ArrayAccess {
 	 * @param string $identifier Identifier of the variable to add
 	 * @param mixed $value The variable's value
 	 * @return void
+	 * @author Sebastian Kurfürst <sebastian@typo3.org>
 	 */
 	public function offsetSet($identifier, $value) {
-		$this->add($identifier, $value);
+		return $this->add($identifier, $value);
 	}
 
 	/**
@@ -158,9 +156,10 @@ class TemplateVariableContainer implements \ArrayAccess {
 	 *
 	 * @param string $identifier The identifier to remove
 	 * @return void
+	 * @author Sebastian Kurfürst <sebastian@typo3.org>
 	 */
 	public function offsetUnset($identifier) {
-		$this->remove($identifier);
+		return $this->remove($identifier);
 	}
 
 	/**
@@ -168,6 +167,7 @@ class TemplateVariableContainer implements \ArrayAccess {
 	 *
 	 * @param string $identifier
 	 * @return boolean TRUE if $identifier exists, FALSE otherwise
+	 * @author Sebastian Kurfürst <sebastian@typo3.org>
 	 */
 	public function offsetExists($identifier) {
 		return $this->exists($identifier);
@@ -177,11 +177,11 @@ class TemplateVariableContainer implements \ArrayAccess {
 	 * Get a variable from the context. Throws exception if variable is not found in context.
 	 *
 	 * @param string $identifier
-	 * @return mixed The variable identified by $identifier
+	 * @return variable The variable identified by $identifier
+	 * @author Sebastian Kurfürst <sebastian@typo3.org>
 	 */
 	public function offsetGet($identifier) {
 		return $this->get($identifier);
 	}
 }
-
 ?>

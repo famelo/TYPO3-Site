@@ -1,13 +1,11 @@
 <?php
-namespace TYPO3\CMS\Fluid\ViewHelpers\Be\Buttons;
-
 /*                                                                        *
- * This script is backported from the TYPO3 Flow package "TYPO3.Fluid".   *
+ * This script belongs to the FLOW3 package "Fluid".                      *
  *                                                                        *
  * It is free software; you can redistribute it and/or modify it under    *
- * the terms of the GNU Lesser General Public License, either version 3   *
- *  of the License, or (at your option) any later version.                *
- *                                                                        *
+ * the terms of the GNU Lesser General Public License as published by the *
+ * Free Software Foundation, either version 3 of the License, or (at your *
+ * option) any later version.                                             *
  *                                                                        *
  * This script is distributed in the hope that it will be useful, but     *
  * WITHOUT ANY WARRANTY; without even the implied warranty of MERCHAN-    *
@@ -20,6 +18,7 @@ namespace TYPO3\CMS\Fluid\ViewHelpers\Be\Buttons;
  *                                                                        *
  * The TYPO3 project - inspiring people to share!                         *
  *                                                                        */
+
 /**
  * View helper which returns shortcut button with icon
  * Note: This view helper is experimental!
@@ -43,8 +42,13 @@ namespace TYPO3\CMS\Fluid\ViewHelpers\Be\Buttons;
  * Note:
  * Normally you won't need to set getVars & setVars parameters in Extbase modules
  * </output>
+ *
+ * @author Steffen Kamper <info@sk-typo3.de>
+ * @author Bastian Waidelich <bastian@typo3.org>
+ * @license http://www.gnu.org/copyleft/gpl.html
  */
-class ShortcutViewHelper extends \TYPO3\CMS\Fluid\ViewHelpers\Be\AbstractBackendViewHelper {
+class Tx_Fluid_ViewHelpers_Be_Buttons_ShortcutViewHelper extends Tx_Fluid_ViewHelpers_Be_AbstractBackendViewHelper {
+
 
 	/**
 	 * Renders a shortcut button as known from the TYPO3 backend
@@ -59,14 +63,15 @@ class ShortcutViewHelper extends \TYPO3\CMS\Fluid\ViewHelpers\Be\AbstractBackend
 		$currentRequest = $this->controllerContext->getRequest();
 		$extensionName = $currentRequest->getControllerExtensionName();
 		$moduleName = $currentRequest->getPluginName();
+
 		if (count($getVars) === 0) {
 			$modulePrefix = strtolower('tx_' . $extensionName . '_' . $moduleName);
 			$getVars = array('id', 'M', $modulePrefix);
 		}
 		$getList = implode(',', $getVars);
 		$setList = implode(',', $setVars);
+
 		return $doc->makeShortcutIcon($getList, $setList, $moduleName);
 	}
 }
-
 ?>

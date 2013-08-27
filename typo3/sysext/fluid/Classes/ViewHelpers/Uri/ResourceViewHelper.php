@@ -1,5 +1,4 @@
 <?php
-namespace TYPO3\CMS\Fluid\ViewHelpers\Uri;
 
 /*                                                                        *
  * This script is part of the TYPO3 project - inspiring people to share!  *
@@ -13,6 +12,7 @@ namespace TYPO3\CMS\Fluid\ViewHelpers\Uri;
  * TABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General      *
  * Public License for more details.                                       *
  *                                                                        */
+
 /**
  * A view helper for creating URIs to resources.
  *
@@ -25,8 +25,10 @@ namespace TYPO3\CMS\Fluid\ViewHelpers\Uri;
  * <link href="Resources/Packages/MyPackage/stylesheet.css" rel="stylesheet" />
  * (depending on current package)
  * </output>
+ *
+ * @license http://www.gnu.org/licenses/lgpl.html GNU Lesser General Public License, version 3 or later
  */
-class ResourceViewHelper extends \TYPO3\CMS\Fluid\Core\ViewHelper\AbstractViewHelper {
+class Tx_Fluid_ViewHelpers_Uri_ResourceViewHelper extends Tx_Fluid_Core_ViewHelper_AbstractViewHelper {
 
 	/**
 	 * Render the URI to the resource. The filename is used from child content.
@@ -41,17 +43,19 @@ class ResourceViewHelper extends \TYPO3\CMS\Fluid\Core\ViewHelper\AbstractViewHe
 		if ($extensionName === NULL) {
 			$extensionName = $this->controllerContext->getRequest()->getControllerExtensionName();
 		}
-		$uri = 'EXT:' . \TYPO3\CMS\Core\Utility\GeneralUtility::camelCaseToLowerCaseUnderscored($extensionName) . '/Resources/Public/' . $path;
-		$uri = \TYPO3\CMS\Core\Utility\GeneralUtility::getFileAbsFileName($uri);
+		$uri = 'EXT:' . t3lib_div::camelCaseToLowerCaseUnderscored($extensionName) . '/Resources/Public/' . $path;
+		$uri = t3lib_div::getFileAbsFileName($uri);
 		$uri = substr($uri, strlen(PATH_site));
+
 		if (TYPO3_MODE === 'BE' && $absolute === FALSE && $uri !== FALSE) {
 			$uri = '../' . $uri;
 		}
+
 		if ($absolute === TRUE) {
 			$uri = $this->controllerContext->getRequest()->getBaseURI() . $uri;
 		}
+
 		return $uri;
 	}
 }
-
 ?>

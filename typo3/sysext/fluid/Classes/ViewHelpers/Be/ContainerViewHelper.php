@@ -1,13 +1,11 @@
 <?php
-namespace TYPO3\CMS\Fluid\ViewHelpers\Be;
-
 /*                                                                        *
- * This script is backported from the TYPO3 Flow package "TYPO3.Fluid".   *
+ * This script belongs to the FLOW3 package "Fluid".                      *
  *                                                                        *
  * It is free software; you can redistribute it and/or modify it under    *
- * the terms of the GNU Lesser General Public License, either version 3   *
- *  of the License, or (at your option) any later version.                *
- *                                                                        *
+ * the terms of the GNU Lesser General Public License as published by the *
+ * Free Software Foundation, either version 3 of the License, or (at your *
+ * option) any later version.                                             *
  *                                                                        *
  * This script is distributed in the hope that it will be useful, but     *
  * WITHOUT ANY WARRANTY; without even the implied warranty of MERCHAN-    *
@@ -20,6 +18,7 @@ namespace TYPO3\CMS\Fluid\ViewHelpers\Be;
  *                                                                        *
  * The TYPO3 project - inspiring people to share!                         *
  *                                                                        */
+
 /**
  * View helper which allows you to create extbase based modules in the style of TYPO3 default modules.
  * Note: This feature is experimental!
@@ -35,14 +34,17 @@ namespace TYPO3\CMS\Fluid\ViewHelpers\Be;
  * </output>
  *
  * <code title="All options">
- * <f:be.container pageTitle="foo" enableJumpToUrl="false" enableClickMenu="false" loadPrototype="false" loadScriptaculous="false" scriptaculousModule="someModule,someOtherModule" loadExtJs="true" loadExtJsTheme="false" extJsAdapter="jQuery" enableExtJsDebug="true" addCssFile="{f:uri.resource(path:'styles/backend.css')}" addJsFile="{f:uri.resource(path:'scripts/main.js')}">your module content</f:be.container>
+ * <f:be.container pageTitle="foo" enableJumpToUrl="false" enableClickMenu="false" loadPrototype="false" loadScriptaculous="false" scriptaculousModule="someModule,someOtherModule" loadExtJs="true" loadExtJsTheme="false" extJsAdapter="jQuery" enableExtJsDebug="true" addCssFile="{f:uri.resource(path:'styles/backend.css')}" addJsFile="{f:uri.resource('scripts/main.js')}">your module content</f:be.container>
  * </code>
  * <output>
  * "your module content" wrapped with propper head & body tags.
  * Custom CSS file EXT:your_extension/Resources/Public/styles/backend.css and JavaScript file EXT:your_extension/Resources/Public/scripts/main.js will be loaded
  * </output>
+ *
+ * @author Bastian Waidelich <bastian@typo3.org>
+ * @license http://www.gnu.org/copyleft/gpl.html
  */
-class ContainerViewHelper extends \TYPO3\CMS\Fluid\ViewHelpers\Be\AbstractBackendViewHelper {
+class Tx_Fluid_ViewHelpers_Be_ContainerViewHelper extends Tx_Fluid_ViewHelpers_Be_AbstractBackendViewHelper {
 
 	/**
 	 * Render start page with template.php and pageTitle
@@ -61,10 +63,12 @@ class ContainerViewHelper extends \TYPO3\CMS\Fluid\ViewHelpers\Be\AbstractBacken
 	 * @param string $addJsFile Custom JavaScript file to be loaded
 	 * @return string
 	 * @see template
+	 * @see t3lib_PageRenderer
 	 */
 	public function render($pageTitle = '', $enableJumpToUrl = TRUE, $enableClickMenu = TRUE, $loadPrototype = TRUE, $loadScriptaculous = FALSE, $scriptaculousModule = '', $loadExtJs = FALSE, $loadExtJsTheme = TRUE, $extJsAdapter = '', $enableExtJsDebug = FALSE, $addCssFile = NULL, $addJsFile = NULL) {
 		$doc = $this->getDocInstance();
 		$pageRenderer = $doc->getPageRenderer();
+
 		if ($enableJumpToUrl) {
 			$doc->JScode .= '
 				<script language="javascript" type="text/javascript">
@@ -86,7 +90,7 @@ class ContainerViewHelper extends \TYPO3\CMS\Fluid\ViewHelpers\Be\AbstractBacken
 			$pageRenderer->loadScriptaculous($scriptaculousModule);
 		}
 		if ($loadExtJs) {
-			$pageRenderer->loadExtJS(TRUE, $loadExtJsTheme, $extJsAdapter);
+			$pageRenderer->loadExtJS(true, $loadExtJsTheme, $extJsAdapter);
 			if ($enableExtJsDebug) {
 				$pageRenderer->enableExtJsDebug();
 			}
@@ -97,11 +101,11 @@ class ContainerViewHelper extends \TYPO3\CMS\Fluid\ViewHelpers\Be\AbstractBacken
 		if ($addJsFile !== NULL) {
 			$pageRenderer->addJsFile($addJsFile);
 		}
+
 		$output = $this->renderChildren();
 		$output = $doc->startPage($pageTitle) . $output;
 		$output .= $doc->endPage();
 		return $output;
 	}
 }
-
 ?>

@@ -1,6 +1,7 @@
 /* - - - - - - - - - - - - - - - - - - - - -
 Tools > Extension Manager
 
+$Id$
 - - - - - - - - - - - - - - - - - - - - - */
 
 body#typo3-mod-tools-em-index-php .em-listbg1 {
@@ -29,6 +30,18 @@ body#typo3-mod-tools-em-index-php tr.unsupported-ext td {
 
 body#typo3-mod-tools-em-index-php tr.unsupported-ext td a {
 	color: #ff0000;
+}
+
+body#typo3-mod-tools-em-index-php tr.outdated-ext {
+	background-color: #e7e9ff;
+}
+
+body#typo3-mod-tools-em-index-php tr.outdated-ext td {
+	color: #0c08ff;
+}
+
+body#typo3-mod-tools-em-index-php tr.outdated-ext td a {
+	color: #0c08ff;
 }
 
 body#typo3-mod-tools-em-index-php tr td.extstate {

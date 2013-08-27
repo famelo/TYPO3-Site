@@ -1,149 +1,111 @@
 <?php
-namespace TYPO3\CMS\Extbase\Mvc\Controller;
-
 /***************************************************************
- *  Copyright notice
- *
- *  (c) 2010-2013 Extbase Team (http://forge.typo3.org/projects/typo3v4-mvc)
- *  Extbase is a backport of TYPO3 Flow. All credits go to the TYPO3 Flow team.
- *  All rights reserved
- *
- *  This script is part of the TYPO3 project. The TYPO3 project is
- *  free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
- *
- *  The GNU General Public License can be found at
- *  http://www.gnu.org/copyleft/gpl.html.
- *  A copy is found in the textfile GPL.txt and important notices to the license
- *  from the author is found in LICENSE.txt distributed with these scripts.
- *
- *
- *  This script is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  This copyright notice MUST APPEAR in all copies of the script!
- ***************************************************************/
+*  Copyright notice
+*
+*  (c) 2009 Jochen Rau <jochen.rau@typoplanet.de>
+*  All rights reserved
+*
+*  This class is a backport of the corresponding class of FLOW3.
+*  All credits go to the v5 team.
+*
+*  This script is part of the TYPO3 project. The TYPO3 project is
+*  free software; you can redistribute it and/or modify
+*  it under the terms of the GNU General Public License as published by
+*  the Free Software Foundation; either version 2 of the License, or
+*  (at your option) any later version.
+*
+*  The GNU General Public License can be found at
+*  http://www.gnu.org/copyleft/gpl.html.
+*
+*  This script is distributed in the hope that it will be useful,
+*  but WITHOUT ANY WARRANTY; without even the implied warranty of
+*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+*  GNU General Public License for more details.
+*
+*  This copyright notice MUST APPEAR in all copies of the script!
+***************************************************************/
+
 /**
  * A controller argument
  *
+ * @package Extbase
+ * @subpackage MVC\Controller
+ * @version $ID:$
+ * @scope prototype
  * @api
  */
-class Argument {
+class Tx_Extbase_MVC_Controller_Argument {
 
 	/**
-	 * @var \TYPO3\CMS\Extbase\Object\ObjectManagerInterface
+	 * @var Tx_Extbase_Object_ObjectManagerInterface
 	 */
 	protected $objectManager;
 
 	/**
-	 * @var \TYPO3\CMS\Extbase\Persistence\Generic\QueryFactory
+	 * @var Tx_Extbase_Persistence_QueryFactory
 	 */
 	protected $queryFactory;
 
 	/**
-	 * @var \TYPO3\CMS\Extbase\Configuration\ConfigurationManagerInterface
-	 */
-	protected $configurationManager;
-
-	/**
-	 * This is the old property mapper, which has been completely rewritten for 1.4.
-	 *
-	 * @var \TYPO3\CMS\Extbase\Property\Mapper
-	 */
-	protected $deprecatedPropertyMapper;
-
-	/**
-	 * The new, completely rewritten property mapper since Extbase 1.4.
-	 *
-	 * @var \TYPO3\CMS\Extbase\Property\PropertyMapper
+	 * @var Tx_Extbase_Property_Mapper
 	 */
 	protected $propertyMapper;
 
 	/**
-	 * @var \TYPO3\CMS\Extbase\Mvc\Controller\MvcPropertyMappingConfiguration
-	 */
-	protected $propertyMappingConfiguration;
-
-	/**
-	 * @var \TYPO3\CMS\Extbase\Reflection\ReflectionService
+	 * @var Tx_Extbase_Reflection_Service
 	 */
 	protected $reflectionService;
 
 	/**
-	 * @var \TYPO3\CMS\Extbase\Service\TypeHandlingService
-	 */
-	protected $typeHandlingService;
-
-	/**
 	 * Name of this argument
-	 *
 	 * @var string
 	 */
 	protected $name = '';
 
 	/**
 	 * Short name of this argument
-	 *
 	 * @var string
 	 */
 	protected $shortName = NULL;
 
 	/**
 	 * Data type of this argument's value
-	 *
 	 * @var string
 	 */
 	protected $dataType = NULL;
 
 	/**
 	 * If the data type is an object, the class schema of the data type class is resolved
-	 *
-	 * @var \TYPO3\CMS\Extbase\Reflection\ClassSchema
+	 * @var Tx_Extbase_Reflection_ClassSchema
 	 */
 	protected $dataTypeClassSchema;
 
 	/**
 	 * TRUE if this argument is required
-	 *
 	 * @var boolean
 	 */
 	protected $isRequired = FALSE;
 
 	/**
 	 * Actual value of this argument
-	 *
 	 * @var object
 	 */
 	protected $value = NULL;
 
 	/**
 	 * Default value. Used if argument is optional.
-	 *
 	 * @var mixed
 	 */
 	protected $defaultValue = NULL;
 
 	/**
 	 * A custom validator, used supplementary to the base validation
-	 *
-	 * @var \TYPO3\CMS\Extbase\Validation\Validator\ValidatorInterface
+	 * @var Tx_Extbase_Validation_Validator_ValidatorInterface
 	 */
 	protected $validator = NULL;
 
 	/**
-	 * The validation results. This can be asked if the argument has errors.
-	 *
-	 * @var \TYPO3\CMS\Extbase\Error\Result
-	 */
-	protected $validationResults = NULL;
-
-	/**
 	 * Uid for the argument, if it has one
-	 *
 	 * @var string
 	 */
 	protected $uid = NULL;
@@ -157,31 +119,21 @@ class Argument {
 	 * The origin of the argument value. This is only meaningful after argument mapping.
 	 *
 	 * One of the ORIGIN_* constants above
-	 *
 	 * @var integer
 	 */
 	protected $origin = 0;
-
-	/**
-	 * @var \TYPO3\CMS\Extbase\Persistence\PersistenceManagerInterface
-	 */
-	protected $persistenceManager;
 
 	/**
 	 * Constructs this controller argument
 	 *
 	 * @param string $name Name of this argument
 	 * @param string $dataType The data type of this argument
-	 * @throws \InvalidArgumentException if $name is not a string or empty
+	 * @throws InvalidArgumentException if $name is not a string or empty
 	 * @api
 	 */
 	public function __construct($name, $dataType) {
-		if (!is_string($name)) {
-			throw new \InvalidArgumentException('$name must be of type string, ' . gettype($name) . ' given.', 1187951688);
-		}
-		if (strlen($name) === 0) {
-			throw new \InvalidArgumentException('$name must be a non-empty string, ' . strlen($name) . ' characters given.', 1232551853);
-		}
+		if (!is_string($name)) throw new InvalidArgumentException('$name must be of type string, ' . gettype($name) . ' given.', 1187951688);
+		if (strlen($name) === 0) throw new InvalidArgumentException('$name must be a non-empty string, ' . strlen($name) . ' characters given.', 1232551853);
 		$this->name = $name;
 		$this->dataType = $dataType;
 	}
@@ -189,82 +141,48 @@ class Argument {
 	/**
 	 * Injects the object manager
 	 *
-	 * @param \TYPO3\CMS\Extbase\Object\ObjectManagerInterface $objectManager
+	 * @param Tx_Extbase_Object_ObjectManagerInterface $objectManager
 	 * @return void
 	 */
-	public function injectObjectManager(\TYPO3\CMS\Extbase\Object\ObjectManagerInterface $objectManager) {
+	public function injectObjectManager(Tx_Extbase_Object_ObjectManagerInterface $objectManager) {
 		$this->objectManager = $objectManager;
 	}
 
 	/**
-	 * @param \TYPO3\CMS\Extbase\Property\Mapper $deprecatedPropertyMapper
+	 * @param Tx_Extbase_Property_Mapper $propertyMapper
 	 * @return void
 	 */
-	public function injectDeprecatedPropertyMapper(\TYPO3\CMS\Extbase\Property\Mapper $deprecatedPropertyMapper) {
-		$this->deprecatedPropertyMapper = $deprecatedPropertyMapper;
-	}
-
-	/**
-	 * @param \TYPO3\CMS\Extbase\Property\PropertyMapper $propertyMapper
-	 * @return void
-	 */
-	public function injectPropertyMapper(\TYPO3\CMS\Extbase\Property\PropertyMapper $propertyMapper) {
+	public function injectPropertyMapper(Tx_Extbase_Property_Mapper $propertyMapper) {
 		$this->propertyMapper = $propertyMapper;
 	}
 
 	/**
-	 * @param \TYPO3\CMS\Extbase\Reflection\ReflectionService $reflectionService
+	 * @param Tx_Extbase_Reflection_Service $reflectionService
 	 * @return void
 	 */
-	public function injectReflectionService(\TYPO3\CMS\Extbase\Reflection\ReflectionService $reflectionService) {
+	public function injectReflectionService(Tx_Extbase_Reflection_Service $reflectionService) {
 		$this->reflectionService = $reflectionService;
-		// Check for classnames (which have at least one underscore or backslash)
-		$this->dataTypeClassSchema = strpbrk($this->dataType, '_\\') !== FALSE ? $this->reflectionService->getClassSchema($this->dataType) : NULL;
+		$this->dataTypeClassSchema = (strstr($this->dataType, '_') !== FALSE) ? $this->reflectionService->getClassSchema($this->dataType) : NULL;
 	}
 
 	/**
 	 * Injects the Persistence Manager
 	 *
-	 * @param \TYPO3\CMS\Extbase\Persistence\PersistenceManagerInterface $persistenceManager
+	 * @param Tx_Extbase_Persistence_ManagerInterface
 	 * @return void
 	 */
-	public function injectPersistenceManager(\TYPO3\CMS\Extbase\Persistence\PersistenceManagerInterface $persistenceManager) {
+	public function injectPersistenceManager(Tx_Extbase_Persistence_ManagerInterface $persistenceManager) {
 		$this->persistenceManager = $persistenceManager;
 	}
 
 	/**
 	 * Injects a QueryFactory instance
 	 *
-	 * @param \TYPO3\CMS\Extbase\Persistence\Generic\QueryFactoryInterface $queryFactory
+	 * @param Tx_Extbase_Persistence_QueryFactoryInterface $queryFactory
 	 * @return void
 	 */
-	public function injectQueryFactory(\TYPO3\CMS\Extbase\Persistence\Generic\QueryFactoryInterface $queryFactory) {
+	public function injectQueryFactory(Tx_Extbase_Persistence_QueryFactoryInterface $queryFactory) {
 		$this->queryFactory = $queryFactory;
-	}
-
-	/**
-	 * @param \TYPO3\CMS\Extbase\Configuration\ConfigurationManagerInterface $configurationManager
-	 * @return void
-	 */
-	public function injectConfigurationManager(\TYPO3\CMS\Extbase\Configuration\ConfigurationManagerInterface $configurationManager) {
-		$this->configurationManager = $configurationManager;
-	}
-
-	/**
-	 * @param \TYPO3\CMS\Extbase\Service\TypeHandlingService $typeHandlingService
-	 * @return void
-	 */
-	public function injectTypeHandlingService(\TYPO3\CMS\Extbase\Service\TypeHandlingService $typeHandlingService) {
-		$this->typeHandlingService = $typeHandlingService;
-		$this->dataType = $this->typeHandlingService->normalizeType($this->dataType);
-	}
-
-	/**
-	 * @param \TYPO3\CMS\Extbase\Mvc\Controller\MvcPropertyMappingConfiguration $mvcPropertyMappingConfiguration
-	 * @return void
-	 */
-	public function injectPropertyMappingConfiguration(\TYPO3\CMS\Extbase\Mvc\Controller\MvcPropertyMappingConfiguration $mvcPropertyMappingConfiguration) {
-		$this->propertyMappingConfiguration = $mvcPropertyMappingConfiguration;
 	}
 
 	/**
@@ -281,14 +199,12 @@ class Argument {
 	 * Sets the short name of this argument.
 	 *
 	 * @param string $shortName A "short name" - a single character
-	 * @throws \InvalidArgumentException if $shortName is not a character
-	 * @return \TYPO3\CMS\Extbase\Mvc\Controller\Argument $this
+	 * @return Tx_Extbase_MVC_Controller_Argument $this
+	 * @throws InvalidArgumentException if $shortName is not a character
 	 * @api
 	 */
 	public function setShortName($shortName) {
-		if ($shortName !== NULL && (!is_string($shortName) || strlen($shortName) !== 1)) {
-			throw new \InvalidArgumentException('$shortName must be a single character or NULL', 1195824959);
-		}
+		if ($shortName !== NULL && (!is_string($shortName) || strlen($shortName) !== 1)) throw new InvalidArgumentException('$shortName must be a single character or NULL', 1195824959);
 		$this->shortName = $shortName;
 		return $this;
 	}
@@ -307,7 +223,7 @@ class Argument {
 	 * Sets the data type of this argument's value
 	 *
 	 * @param string $dataType The data type. Can be either a built-in type such as "Text" or "Integer" or a fully qualified object name
-	 * @return \TYPO3\CMS\Extbase\Mvc\Controller\Argument $this
+	 * @return Tx_Extbase_MVC_Controller_Argument $this
 	 * @api
 	 */
 	public function setDataType($dataType) {
@@ -330,11 +246,11 @@ class Argument {
 	 * Marks this argument to be required
 	 *
 	 * @param boolean $required TRUE if this argument should be required
-	 * @return \TYPO3\CMS\Extbase\Mvc\Controller\Argument $this
+	 * @return Tx_Extbase_MVC_Controller_Argument $this
 	 * @api
 	 */
 	public function setRequired($required) {
-		$this->isRequired = (boolean) $required;
+		$this->isRequired = (boolean)$required;
 		return $this;
 	}
 
@@ -352,12 +268,11 @@ class Argument {
 	 * Sets the default value of the argument
 	 *
 	 * @param mixed $defaultValue Default value
-	 * @return \TYPO3\CMS\Extbase\Mvc\Controller\Argument $this
+	 * @return void
 	 * @api
 	 */
 	public function setDefaultValue($defaultValue) {
 		$this->defaultValue = $defaultValue;
-		return $this;
 	}
 
 	/**
@@ -373,11 +288,11 @@ class Argument {
 	/**
 	 * Sets a custom validator which is used supplementary to the base validation
 	 *
-	 * @param \TYPO3\CMS\Extbase\Validation\Validator\ValidatorInterface $validator The actual validator object
-	 * @return \TYPO3\CMS\Extbase\Mvc\Controller\Argument Returns $this (used for fluent interface)
+	 * @param Tx_Extbase_Validation_Validator_ValidatorInterface $validator The actual validator object
+	 * @return Tx_Extbase_MVC_Controller_Argument Returns $this (used for fluent interface)
 	 * @api
 	 */
-	public function setValidator(\TYPO3\CMS\Extbase\Validation\Validator\ValidatorInterface $validator) {
+	public function setValidator(Tx_Extbase_Validation_Validator_ValidatorInterface $validator) {
 		$this->validator = $validator;
 		return $this;
 	}
@@ -385,14 +300,13 @@ class Argument {
 	/**
 	 * Create and set a validator chain
 	 *
-	 * @param array $objectNames Object names of the validators
-	 * @return \TYPO3\CMS\Extbase\Mvc\Controller\Argument Returns $this (used for fluent interface)
+	 * @param array Object names of the validators
+	 * @return Tx_Extbase_MVC_Controller_Argument Returns $this (used for fluent interface)
 	 * @api
-	 * @deprecated since Extbase 1.4.0, will be removed two versions after Extbase 6.1
 	 */
 	public function setNewValidatorConjunction(array $objectNames) {
 		if ($this->validator === NULL) {
-			$this->validator = $this->objectManager->get('TYPO3\\CMS\\Extbase\\Validation\\Validator\\ConjunctionValidator');
+			$this->validator = $this->objectManager->create('Tx_Extbase_Validation_Validator_ConjunctionValidator');
 		}
 		foreach ($objectNames as $objectName) {
 			if (!class_exists($objectName)) {
@@ -406,7 +320,7 @@ class Argument {
 	/**
 	 * Returns the set validator
 	 *
-	 * @return \TYPO3\CMS\Extbase\Validation\Validator\ValidatorInterface The set validator, NULL if none was set
+	 * @return Tx_Extbase_Validation_Validator_ValidatorInterface The set validator, NULL if none was set
 	 * @api
 	 */
 	public function getValidator() {
@@ -417,7 +331,7 @@ class Argument {
 	 * Get the origin of the argument value. This is only meaningful after argument mapping.
 	 *
 	 * @return integer one of the ORIGIN_* constants
-	 * @deprecated since Extbase 1.4.0, will be removed two versions after Extbase 6.1
+	 * @author Sebastian Kurfürst <sebastian@typo3.org>
 	 */
 	public function getOrigin() {
 		return $this->origin;
@@ -426,36 +340,17 @@ class Argument {
 	/**
 	 * Sets the value of this argument.
 	 *
-	 * @param mixed $rawValue The value of this argument
-	 * @return \TYPO3\CMS\Extbase\Mvc\Controller\Argument
-	 * @throws \TYPO3\CMS\Extbase\Mvc\Exception\InvalidArgumentValueException if the argument is not a valid object of type $dataType
+	 * @param mixed $value: The value of this argument
+	 * @return Tx_Extbase_MVC_Controller_Argument $this
+	 * @throws Tx_Extbase_MVC_Exception_InvalidArgumentValue if the argument is not a valid object of type $dataType
 	 */
-	public function setValue($rawValue) {
-		if ($this->configurationManager->isFeatureEnabled('rewrittenPropertyMapper')) {
-			if ($rawValue === NULL) {
-				$this->value = NULL;
-				return $this;
-			}
-			if (is_object($rawValue) && $rawValue instanceof $this->dataType) {
-				$this->value = $rawValue;
-				return $this;
-			}
-			$this->value = $this->propertyMapper->convert($rawValue, $this->dataType, $this->propertyMappingConfiguration);
-			$this->validationResults = $this->propertyMapper->getMessages();
-			if ($this->validator !== NULL) {
-				// TODO: Validation API has also changed!!!
-				$validationMessages = $this->validator->validate($this->value);
-				$this->validationResults->merge($validationMessages);
-			}
-			return $this;
+	public function setValue($value) {
+		if ($value === NULL || (is_object($value) && $value instanceof $this->dataType)) {
+			$this->value = $value;
 		} else {
-			if ($rawValue === NULL || is_object($rawValue) && $rawValue instanceof $this->dataType) {
-				$this->value = $rawValue;
-			} else {
-				$this->value = $this->transformValue($rawValue);
-			}
-			return $this;
+			$this->value = $this->transformValue($value);
 		}
+		return $this;
 	}
 
 	/**
@@ -466,9 +361,7 @@ class Argument {
 	 * Additionally, it maps arrays to objects in case it is a normal object.
 	 *
 	 * @param mixed $value The value of an argument
-	 * @throws \TYPO3\CMS\Extbase\Mvc\Exception\InvalidArgumentValueException
 	 * @return mixed
-	 * @deprecated since Extbase 1.4.0, will be removed two versions after Extbase 6.1
 	 */
 	protected function transformValue($value) {
 		if (!class_exists($this->dataType)) {
@@ -482,17 +375,25 @@ class Argument {
 				$transformedValue = $this->findObjectByUid($value);
 			} elseif (is_array($value)) {
 				$this->origin = self::ORIGIN_PERSISTENCE_AND_MODIFIED;
-				$transformedValue = $this->deprecatedPropertyMapper->map(array_keys($value), $value, $this->dataType);
+				$transformedValue = $this->propertyMapper->map(array_keys($value), $value, $this->dataType);
 			}
 		} else {
 			if (!is_array($value)) {
-				throw new \TYPO3\CMS\Extbase\Mvc\Exception\InvalidArgumentValueException('The value was a simple type, so we could not map it to an object. Maybe the @entity or @valueobject annotations are missing?', 1251730701);
+				throw new Tx_Extbase_MVC_Exception_InvalidArgumentValue('The value was a simple type, so we could not map it to an object. Maybe the @entity or @valueobject annotations are missing?', 1251730701);
 			}
 			$this->origin = self::ORIGIN_NEWLY_CREATED;
-			$transformedValue = $this->deprecatedPropertyMapper->map(array_keys($value), $value, $this->dataType);
+			$transformedValue = $this->propertyMapper->map(array_keys($value), $value, $this->dataType);
 		}
-		if (!$transformedValue instanceof $this->dataType && ($transformedValue !== NULL || $this->isRequired())) {
-			throw new \TYPO3\CMS\Extbase\Mvc\Exception\InvalidArgumentValueException('The value must be of type "' . $this->dataType . '", but was of type "' . (is_object($transformedValue) ? get_class($transformedValue) : gettype($transformedValue)) . '".' . ($this->deprecatedPropertyMapper->getMappingResults()->hasErrors() ? '<p>' . implode('<br />', $this->deprecatedPropertyMapper->getMappingResults()->getErrors()) . '</p>' : ''), 1251730701);
+
+		if (!($transformedValue instanceof $this->dataType) && ($transformedValue !== NULL || $this->isRequired())) {
+			throw new Tx_Extbase_MVC_Exception_InvalidArgumentValue(
+				'The value must be of type "' . $this->dataType . '", but was of type "'
+					. (is_object($transformedValue) ? get_class($transformedValue) : gettype($transformedValue)) . '".'
+						// add mappingResult errors to exception
+					. ($this->propertyMapper->getMappingResults()->hasErrors()
+						? '<p>' . implode('<br />', $this->propertyMapper->getMappingResults()->getErrors()) . '</p>'
+						: ''),
+				1251730701);
 		}
 		return $transformedValue;
 	}
@@ -500,14 +401,17 @@ class Argument {
 	/**
 	 * Finds an object from the repository by searching for its technical UID.
 	 *
-	 * @param integer $uid The object's uid
+	 * @param int $uid The object's uid
 	 * @return object Either the object matching the uid or, if none or more than one object was found, NULL
 	 */
 	protected function findObjectByUid($uid) {
 		$query = $this->queryFactory->create($this->dataType);
 		$query->getQuerySettings()->setRespectSysLanguage(FALSE);
 		$query->getQuerySettings()->setRespectStoragePage(FALSE);
-		return $query->matching($query->equals('uid', $uid))->execute()->getFirst();
+		return $query->matching(
+			$query->equals('uid', $uid))
+			->execute()
+			->getFirst();
 	}
 
 	/**
@@ -528,36 +432,9 @@ class Argument {
 	 * Checks if this argument has a value set.
 	 *
 	 * @return boolean TRUE if a value was set, otherwise FALSE
-	 * @deprecated since Extbase 1.4.0, will be removed two versions after Extbase 6.1
 	 */
 	public function isValue() {
 		return $this->value !== NULL;
-	}
-
-	/**
-	 * Return the Property Mapping Configuration used for this argument; can be used by the initialize*action to modify the Property Mapping.
-	 *
-	 * @return \TYPO3\CMS\Extbase\Mvc\Controller\MvcPropertyMappingConfiguration
-	 * @api
-	 */
-	public function getPropertyMappingConfiguration() {
-		return $this->propertyMappingConfiguration;
-	}
-
-	/**
-	 * @return boolean TRUE if the argument is valid, FALSE otherwise
-	 * @api
-	 */
-	public function isValid() {
-		return !$this->validationResults->hasErrors();
-	}
-
-	/**
-	 * @return array<\TYPO3\CMS\Extbase\Error\Result> Validation errors which have occured.
-	 * @api
-	 */
-	public function getValidationResults() {
-		return $this->validationResults;
 	}
 
 	/**
@@ -567,8 +444,7 @@ class Argument {
 	 * @api
 	 */
 	public function __toString() {
-		return (string) $this->value;
+		return (string)$this->value;
 	}
 }
-
 ?>

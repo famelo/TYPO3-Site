@@ -1,13 +1,12 @@
 <?php
-namespace TYPO3\CMS\Fluid\Tests\Unit\Core\Widget;
 
 /*                                                                        *
- * This script is backported from the FLOW3 package "TYPO3.Fluid".        *
+ * This script belongs to the FLOW3 package "Fluid".                      *
  *                                                                        *
  * It is free software; you can redistribute it and/or modify it under    *
- * the terms of the GNU Lesser General Public License, either version 3   *
- *  of the License, or (at your option) any later version.                *
- *                                                                        *
+ * the terms of the GNU Lesser General Public License as published by the *
+ * Free Software Foundation, either version 3 of the License, or (at your *
+ * option) any later version.                                             *
  *                                                                        *
  * This script is distributed in the hope that it will be useful, but     *
  * WITHOUT ANY WARRANTY; without even the implied warranty of MERCHAN-    *
@@ -20,25 +19,29 @@ namespace TYPO3\CMS\Fluid\Tests\Unit\Core\Widget;
  *                                                                        *
  * The TYPO3 project - inspiring people to share!                         *
  *                                                                        */
+
 /**
  * Testcase for WidgetContext
+ *
+ * @license http://www.gnu.org/licenses/lgpl.html GNU Lesser General Public License, version 3 or later
  */
-class WidgetContextTest extends \TYPO3\CMS\Extbase\Tests\Unit\BaseTestCase {
+class Tx_Fluid_Tests_Unit_Core_Widget_WidgetContextTest extends Tx_Extbase_Tests_Unit_BaseTestCase {
 
 	/**
-	 * @var \TYPO3\CMS\Fluid\Core\Widget\WidgetContext
+	 * @var Tx_Fluid_Core_Widget_WidgetContext
 	 */
 	protected $widgetContext;
 
 	/**
-
+	 * @author Sebastian Kurfürst <sebastian@typo3.org>
 	 */
 	public function setUp() {
-		$this->widgetContext = new \TYPO3\CMS\Fluid\Core\Widget\WidgetContext();
+		$this->widgetContext = new Tx_Fluid_Core_Widget_WidgetContext();
 	}
 
 	/**
 	 * @test
+	 * @author Sebastian Kurfürst <sebastian@typo3.org>
 	 */
 	public function widgetIdentifierCanBeReadAgain() {
 		$this->widgetContext->setWidgetIdentifier('myWidgetIdentifier');
@@ -47,6 +50,7 @@ class WidgetContextTest extends \TYPO3\CMS\Extbase\Tests\Unit\BaseTestCase {
 
 	/**
 	 * @test
+	 * @author Sebastian Kurfürst <sebastian@typo3.org>
 	 */
 	public function ajaxWidgetIdentifierCanBeReadAgain() {
 		$this->widgetContext->setAjaxWidgetIdentifier(42);
@@ -55,6 +59,7 @@ class WidgetContextTest extends \TYPO3\CMS\Extbase\Tests\Unit\BaseTestCase {
 
 	/**
 	 * @test
+	 * @author Sebastian Kurfürst <sebastian@typo3.org>
 	 */
 	public function widgetConfigurationCanBeReadAgain() {
 		$this->widgetContext->setWidgetConfiguration(array('key' => 'value'));
@@ -63,6 +68,7 @@ class WidgetContextTest extends \TYPO3\CMS\Extbase\Tests\Unit\BaseTestCase {
 
 	/**
 	 * @test
+	 * @author Sebastian Kurfürst <sebastian@typo3.org>
 	 */
 	public function controllerObjectNameCanBeReadAgain() {
 		$this->widgetContext->setControllerObjectName('Tx_Fluid_Object_Name');
@@ -71,14 +77,15 @@ class WidgetContextTest extends \TYPO3\CMS\Extbase\Tests\Unit\BaseTestCase {
 
 	/**
 	 * @test
+	 * @author Sebastian Kurfürst <sebastian@typo3.org>
 	 */
 	public function viewHelperChildNodesCanBeReadAgain() {
-		$viewHelperChildNodes = $this->getMock('TYPO3\\CMS\\Fluid\\Core\\Parser\\SyntaxTree\\RootNode');
-		$renderingContext = $this->getMock('TYPO3\\CMS\\Fluid\\Core\\Rendering\\RenderingContextInterface');
+		$viewHelperChildNodes = $this->getMock('Tx_Fluid_Core_Parser_SyntaxTree_RootNode');
+		$renderingContext = $this->getMock('Tx_Fluid_Core_Rendering_RenderingContextInterface');
+
 		$this->widgetContext->setViewHelperChildNodes($viewHelperChildNodes, $renderingContext);
 		$this->assertSame($viewHelperChildNodes, $this->widgetContext->getViewHelperChildNodes());
 		$this->assertSame($renderingContext, $this->widgetContext->getViewHelperChildNodeRenderingContext());
 	}
 }
-
 ?>

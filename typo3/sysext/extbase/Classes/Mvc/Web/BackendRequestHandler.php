@@ -1,12 +1,12 @@
 <?php
-namespace TYPO3\CMS\Extbase\Mvc\Web;
-
 /***************************************************************
  *  Copyright notice
  *
- *  (c) 2010-2013 Extbase Team (http://forge.typo3.org/projects/typo3v4-mvc)
- *  Extbase is a backport of TYPO3 Flow. All credits go to the TYPO3 Flow team.
+ *  (c) 2010 Jochen Rau <jochen.rau@typoplanet.de>
  *  All rights reserved
+ *
+ *  This class is a backport of the corresponding class of FLOW3.
+ *  All credits go to the v5 team.
  *
  *  This script is part of the TYPO3 project. The TYPO3 project is
  *  free software; you can redistribute it and/or modify
@@ -16,9 +16,6 @@ namespace TYPO3\CMS\Extbase\Mvc\Web;
  *
  *  The GNU General Public License can be found at
  *  http://www.gnu.org/copyleft/gpl.html.
- *  A copy is found in the textfile GPL.txt and important notices to the license
- *  from the author is found in LICENSE.txt distributed with these scripts.
- *
  *
  *  This script is distributed in the hope that it will be useful,
  *  but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -27,24 +24,29 @@ namespace TYPO3\CMS\Extbase\Mvc\Web;
  *
  *  This copyright notice MUST APPEAR in all copies of the script!
  ***************************************************************/
+
 /**
  * A request handler which can handle web requests invoked by the backend.
+ *
  */
-class BackendRequestHandler extends \TYPO3\CMS\Extbase\Mvc\Web\AbstractRequestHandler {
+class Tx_Extbase_MVC_Web_BackendRequestHandler extends Tx_Extbase_MVC_Web_AbstractRequestHandler {
 
 	/**
 	 * Handles the web request. The response will automatically be sent to the client.
 	 *
-	 * @return \TYPO3\CMS\Extbase\Mvc\Web\Response
+	 * @return void
 	 */
 	public function handleRequest() {
 		$request = $this->requestBuilder->build();
-		/** @var $requestHashService \TYPO3\CMS\Extbase\Security\Channel\RequestHashService */
-		$requestHashService = $this->objectManager->get('TYPO3\\CMS\\Extbase\\Security\\Channel\\RequestHashService');
+
+			// Request hash service
+		$requestHashService = $this->objectManager->get('Tx_Extbase_Security_Channel_RequestHashService'); // singleton
 		$requestHashService->verifyRequest($request);
-		/** @var $response \TYPO3\CMS\Extbase\Mvc\ResponseInterface */
-		$response = $this->objectManager->get('TYPO3\\CMS\\Extbase\\Mvc\\Web\\Response');
+
+		$response = $this->objectManager->create('Tx_Extbase_MVC_Web_Response');
+
 		$this->dispatcher->dispatch($request, $response);
+
 		return $response;
 	}
 
@@ -54,8 +56,8 @@ class BackendRequestHandler extends \TYPO3\CMS\Extbase\Mvc\Web\AbstractRequestHa
 	 * @return boolean If we are in backend mode TRUE otherwise FALSE
 	 */
 	public function canHandleRequest() {
-		return $this->environmentService->isEnvironmentInBackendMode() && !$this->environmentService->isEnvironmentInCliMode();
+		return TYPO3_MODE === 'BE';
 	}
-}
 
+}
 ?>

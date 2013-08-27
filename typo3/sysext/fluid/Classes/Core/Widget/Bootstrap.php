@@ -1,13 +1,12 @@
 <?php
-namespace TYPO3\CMS\Fluid\Core\Widget;
 
 /*
- * This script is backported from the TYPO3 Flow package "TYPO3.Fluid".   *
+ * This script belongs to the FLOW3 package "Fluid".                      *
  *                                                                        *
  * It is free software; you can redistribute it and/or modify it under    *
- * the terms of the GNU Lesser General Public License, either version 3   *
- *  of the License, or (at your option) any later version.                *
- *                                                                        *
+ * the terms of the GNU Lesser General Public License as published by the *
+ * Free Software Foundation, either version 3 of the License, or (at your *
+ * option) any later version.                                             *
  *                                                                        *
  * This script is distributed in the hope that it will be useful, but     *
  * WITHOUT ANY WARRANTY; without even the implied warranty of MERCHAN-    *
@@ -20,28 +19,26 @@ namespace TYPO3\CMS\Fluid\Core\Widget;
  *                                                                        *
  * The TYPO3 project - inspiring people to share!                         *
  *                                                                        */
+
 /**
  * This is the bootstrap for Ajax Widget responses
+ *
+ * @license http://www.gnu.org/licenses/lgpl.html GNU Lesser General Public License, version 3 or later
  */
-class Bootstrap {
+class Tx_Fluid_Core_Widget_Bootstrap {
 
 	/**
 	 * Back reference to the parent content object
 	 * This has to be public as it is set directly from TYPO3
 	 *
-	 * @var \TYPO3\CMS\Frontend\ContentObject\ContentObjectRenderer
+	 * @var tslib_cObj
 	 */
 	public $cObj;
 
 	/**
-	 * @var \TYPO3\CMS\Extbase\Object\ObjectManagerInterface
+	 * @var Tx_Extbase_Object_ObjectManagerInterface
 	 */
 	protected $objectManager;
-
-	/**
-	 * @var \TYPO3\CMS\Extbase\Configuration\ConfigurationManagerInterface
-	 */
-	protected $configurationManager;
 
 	/**
 	 * @param string $content The content
@@ -49,29 +46,46 @@ class Bootstrap {
 	 * @return string $content The processed content
 	 */
 	public function run($content, $configuration) {
-		$this->objectManager = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Extbase\\Object\\ObjectManager');
+		$this->initializeClassLoader();
+		$this->objectManager = t3lib_div::makeInstance('Tx_Extbase_Object_ObjectManager');
 		$this->initializeConfiguration($configuration);
 		$this->configureObjectManager();
-		$ajaxWidgetContextHolder = $this->objectManager->get('TYPO3\\CMS\\Fluid\\Core\\Widget\\AjaxWidgetContextHolder');
-		$widgetIdentifier = \TYPO3\CMS\Core\Utility\GeneralUtility::_GET('fluid-widget-id');
+		$ajaxWidgetContextHolder = $this->objectManager->get('Tx_Fluid_Core_Widget_AjaxWidgetContextHolder');
+
+		$widgetIdentifier = t3lib_div::_GET('fluid-widget-id');
 		$widgetContext = $ajaxWidgetContextHolder->get($widgetIdentifier);
 		$configuration['extensionName'] = $widgetContext->getParentExtensionName();
 		$configuration['pluginName'] = $widgetContext->getParentPluginName();
-		$extbaseBootstrap = $this->objectManager->get('TYPO3\\CMS\\Extbase\\Core\\Bootstrap');
+
+		$extbaseBootstrap = $this->objectManager->get('Tx_Extbase_Core_Bootstrap');
 		$extbaseBootstrap->cObj = $this->cObj;
 		return $extbaseBootstrap->run($content, $configuration);
 	}
 
 	/**
+	 * Initializes the autoload mechanism of Extbase. This is supplement to the core autoloader.
+	 *
+	 * @return void
+	 * @see initialize()
+	 */
+	protected function initializeClassLoader() {
+		if (!class_exists('Tx_Extbase_Utility_ClassLoader', FALSE)) {
+			require(t3lib_extmgm::extPath('extbase') . 'Classes/Utility/ClassLoader.php');
+		}
+
+		$classLoader = new Tx_Extbase_Utility_ClassLoader();
+		spl_autoload_register(array($classLoader, 'loadClass'));
+	}
+
+	/**
 	 * Initializes the Object framework.
 	 *
-	 * @param array $configuration
 	 * @return void
 	 * @see initialize()
 	 */
 	public function initializeConfiguration($configuration) {
-		$this->configurationManager = $this->objectManager->get('TYPO3\\CMS\\Extbase\\Configuration\\ConfigurationManagerInterface');
-		$contentObject = isset($this->cObj) ? $this->cObj : \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Frontend\\ContentObject\\ContentObjectRenderer');
+		$this->configurationManager = $this->objectManager->get('Tx_Extbase_Configuration_ConfigurationManagerInterface');
+		$contentObject = isset($this->cObj) ? $this->cObj : t3lib_div::makeInstance('tslib_cObj');
 		$this->configurationManager->setContentObject($contentObject);
 		$this->configurationManager->setConfiguration($configuration);
 	}
@@ -85,11 +99,11 @@ class Bootstrap {
 	 * @todo this is duplicated code (see Tx_Extbase_Core_Bootstrap::configureObjectManager())
 	 */
 	public function configureObjectManager() {
-		$typoScriptSetup = $this->configurationManager->getConfiguration(\TYPO3\CMS\Extbase\Configuration\ConfigurationManagerInterface::CONFIGURATION_TYPE_FULL_TYPOSCRIPT);
+		$typoScriptSetup = $this->configurationManager->getConfiguration(Tx_Extbase_Configuration_ConfigurationManagerInterface::CONFIGURATION_TYPE_FULL_TYPOSCRIPT);
 		if (!is_array($typoScriptSetup['config.']['tx_extbase.']['objects.'])) {
 			return;
 		}
-		$objectContainer = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Extbase\\Object\\Container\\Container');
+		$objectContainer = t3lib_div::makeInstance('Tx_Extbase_Object_Container_Container');
 		foreach ($typoScriptSetup['config.']['tx_extbase.']['objects.'] as $classNameWithDot => $classConfiguration) {
 			if (isset($classConfiguration['className'])) {
 				$originalClassName = rtrim($classNameWithDot, '.');

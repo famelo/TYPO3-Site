@@ -1,17 +1,29 @@
 <?php
-namespace TYPO3\CMS\Fluid\Tests\Unit\ViewHelpers\Format;
 
 /*                                                                        *
- * This script is backported from the TYPO3 Flow package "TYPO3.Fluid".   *
+ * This script belongs to the FLOW3 package "Fluid".                      *
  *                                                                        *
  * It is free software; you can redistribute it and/or modify it under    *
- * the terms of the GNU General Public License, either version 3 of the   *
- * License, or (at your option) any later version.                        *
+ * the terms of the GNU General Public License as published by the Free   *
+ * Software Foundation, either version 3 of the License, or (at your      *
+ * option) any later version.                                             *
+ *                                                                        *
+ * This script is distributed in the hope that it will be useful, but     *
+ * WITHOUT ANY WARRANTY; without even the implied warranty of MERCHAN-    *
+ * TABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General      *
+ * Public License for more details.                                       *
+ *                                                                        *
+ * You should have received a copy of the GNU General Public License      *
+ * along with the script.                                                 *
+ * If not, see http://www.gnu.org/licenses/gpl.html                       *
  *                                                                        *
  * The TYPO3 project - inspiring people to share!                         *
  *                                                                        */
 
-class DateViewHelperTest extends \TYPO3\CMS\Extbase\Tests\Unit\BaseTestCase {
+/**
+ *
+ */
+class Tx_Fluid_Tests_Unit_ViewHelpers_Format_DateViewHelperTest extends Tx_Extbase_Tests_Unit_BaseTestCase {
 
 	/**
 	 * @var array Backup of current locale, it is manipulated in tests
@@ -44,36 +56,40 @@ class DateViewHelperTest extends \TYPO3\CMS\Extbase\Tests\Unit\BaseTestCase {
 
 	/**
 	 * @test
+	 * @author Bastian Waidelich <bastian@typo3.org>
 	 */
 	public function viewHelperFormatsDateCorrectly() {
-		$viewHelper = new \TYPO3\CMS\Fluid\ViewHelpers\Format\DateViewHelper();
-		$actualResult = $viewHelper->render(new \DateTime('1980-12-13'));
+		$viewHelper = new Tx_Fluid_ViewHelpers_Format_DateViewHelper();
+		$actualResult = $viewHelper->render(new DateTime('1980-12-13'));
 		$this->assertEquals('1980-12-13', $actualResult);
 	}
 
 	/**
 	 * @test
+	 * @author Bastian Waidelich <bastian@typo3.org>
 	 */
 	public function viewHelperFormatsDateStringCorrectly() {
-		$viewHelper = new \TYPO3\CMS\Fluid\ViewHelpers\Format\DateViewHelper();
+		$viewHelper = new Tx_Fluid_ViewHelpers_Format_DateViewHelper();
 		$actualResult = $viewHelper->render('1980-12-13');
 		$this->assertEquals('1980-12-13', $actualResult);
 	}
 
 	/**
 	 * @test
+	 * @author Bastian Waidelich <bastian@typo3.org>
 	 */
 	public function viewHelperRespectsCustomFormat() {
-		$viewHelper = new \TYPO3\CMS\Fluid\ViewHelpers\Format\DateViewHelper();
-		$actualResult = $viewHelper->render(new \DateTime('1980-02-01'), 'd.m.Y');
+		$viewHelper = new Tx_Fluid_ViewHelpers_Format_DateViewHelper();
+		$actualResult = $viewHelper->render(new DateTime('1980-02-01'), 'd.m.Y');
 		$this->assertEquals('01.02.1980', $actualResult);
 	}
 
 	/**
 	 * @test
+	 * @author Bastian Waidelich <bastian@typo3.org>
 	 */
 	public function viewHelperReturnsEmptyStringIfNULLIsGiven() {
-		$viewHelper = $this->getMock('TYPO3\\CMS\\Fluid\\ViewHelpers\\Format\\DateViewHelper', array('renderChildren'));
+		$viewHelper = $this->getMock('Tx_Fluid_ViewHelpers_Format_DateViewHelper', array('renderChildren'));
 		$viewHelper->expects($this->once())->method('renderChildren')->will($this->returnValue(NULL));
 		$actualResult = $viewHelper->render();
 		$this->assertEquals('', $actualResult);
@@ -81,28 +97,31 @@ class DateViewHelperTest extends \TYPO3\CMS\Extbase\Tests\Unit\BaseTestCase {
 
 	/**
 	 * @test
-	 * @expectedException \TYPO3\CMS\Fluid\Core\ViewHelper\Exception
+	 * @expectedException Tx_Fluid_Core_ViewHelper_Exception
+	 * @author Bastian Waidelich <bastian@typo3.org>
 	 */
 	public function viewHelperThrowsExceptionIfDateStringCantBeParsed() {
-		$viewHelper = new \TYPO3\CMS\Fluid\ViewHelpers\Format\DateViewHelper();
+		$viewHelper = new Tx_Fluid_ViewHelpers_Format_DateViewHelper();
 		$viewHelper->render('foo');
 	}
 
 	/**
 	 * @test
+	 * @author Bastian Waidelich <bastian@typo3.org>
 	 */
 	public function viewHelperUsesChildNodesIfDateAttributeIsNotSpecified() {
-		$viewHelper = $this->getMock('TYPO3\\CMS\\Fluid\\ViewHelpers\\Format\\DateViewHelper', array('renderChildren'));
-		$viewHelper->expects($this->once())->method('renderChildren')->will($this->returnValue(new \DateTime('1980-12-13')));
+		$viewHelper = $this->getMock('Tx_Fluid_ViewHelpers_Format_DateViewHelper', array('renderChildren'));
+		$viewHelper->expects($this->once())->method('renderChildren')->will($this->returnValue(new DateTime('1980-12-13')));
 		$actualResult = $viewHelper->render();
 		$this->assertEquals('1980-12-13', $actualResult);
 	}
 
 	/**
 	 * @test
+	 * @author Bastian Waidelich <bastian@typo3.org>
 	 */
 	public function dateArgumentHasPriorityOverChildNodes() {
-		$viewHelper = $this->getMock('TYPO3\\CMS\\Fluid\\ViewHelpers\\Format\\DateViewHelper', array('renderChildren'));
+		$viewHelper = $this->getMock('Tx_Fluid_ViewHelpers_Format_DateViewHelper', array('renderChildren'));
 		$viewHelper->expects($this->never())->method('renderChildren');
 		$actualResult = $viewHelper->render('1980-12-12');
 		$this->assertEquals('1980-12-12', $actualResult);
@@ -131,8 +150,7 @@ class DateViewHelperTest extends \TYPO3\CMS\Extbase\Tests\Unit\BaseTestCase {
 	 * @dataProvider viewHelperRespectsDefaultTimezoneForIntegerTimestampDataProvider
 	 */
 	public function viewHelperRespectsDefaultTimezoneForIntegerTimestamp($timezone, $expected) {
-		$viewHelper = $this->getMock('TYPO3\\CMS\\Fluid\\ViewHelpers\\Format\\DateViewHelper', array('renderChildren'));
-
+		$viewHelper = $this->getMock('Tx_Fluid_ViewHelpers_Format_DateViewHelper', array('renderChildren'));
 		$date = 1359891658; // 2013-02-03 11:40 UTC
 		$format = 'Y-m-d H:i';
 
@@ -141,87 +159,59 @@ class DateViewHelperTest extends \TYPO3\CMS\Extbase\Tests\Unit\BaseTestCase {
 	}
 
 	/**
-	 * Data provider for viewHelperRespectsDefaultTimezoneForStringTimestamp
-	 *
-	 * @return array
-	 */
-	public function viewHelperRespectsDefaultTimezoneForStringTimestampDataProvider() {
-		return array(
-			'Europe/Berlin UTC' => array(
-				'Europe/Berlin',
-				'@1359891658',
-				'2013-02-03 12:40'
-			),
-			'Europe/Berlin Moscow' => array(
-				'Europe/Berlin',
-				'03/Oct/2000:14:55:36 +0400',
-				'2000-10-03 12:55'
-			),
-			'Asia/Riyadh UTC' => array(
-				'Asia/Riyadh',
-				'@1359891658',
-				'2013-02-03 14:40'
-			),
-			'Asia/Riyadh Moscow' => array(
-				'Asia/Riyadh',
-				'03/Oct/2000:14:55:36 +0400',
-				'2000-10-03 13:55'
-			),
-		);
-	}
-
-	/**
-	 * @dataProvider viewHelperRespectsDefaultTimezoneForStringTimestampDataProvider
-	 *
 	 * @test
+	 * @TODO: Split the single sets to a data provider
 	 */
-	public function viewHelperRespectsDefaultTimezoneForStringTimestamp($timeZone, $date, $expected) {
-		$viewHelper = $this->getMock('TYPO3\\CMS\\Fluid\\ViewHelpers\\Format\\DateViewHelper', array('renderChildren'));
+	public function viewHelperRespectsDefaultTimezoneForStringTimestamp() {
+		$viewHelper = $this->getMock('Tx_Fluid_ViewHelpers_Format_DateViewHelper', array('renderChildren'));
+
 		$format = 'Y-m-d H:i';
 
-		date_default_timezone_set($timeZone);
+		date_default_timezone_set('Europe/Berlin');
+		$date = '@1359891658'; // 2013-02-03 11:40 UTC
+		$expected = '2013-02-03 12:40';
+		$this->assertEquals($expected, $viewHelper->render($date, $format));
+
+		$date = '03/Oct/2000:14:55:36 +0400'; // Moscow
+		$expected = '2000-10-03 12:55';
+		$this->assertEquals($expected, $viewHelper->render($date, $format));
+
+		date_default_timezone_set('Asia/Riyadh');
+		$date = '@1359891658'; // 2013-02-03 11:40 UTC
+		$expected = '2013-02-03 14:40';
+		$this->assertEquals($expected, $viewHelper->render($date, $format));
+
+		$date = '03/Oct/2000:14:55:36 +0400'; // Moscow
+		$expected = '2000-10-03 13:55';
 		$this->assertEquals($expected, $viewHelper->render($date, $format));
 	}
 
 	/**
-	 * Data provider for dateViewHelperFormatsDateLocalizedDataProvider
-	 *
-	 * @return array
-	 */
-	public function dateViewHelperFormatsDateLocalizedDataProvider() {
-		return array(
-			'de_DE.UTF-8' => array(
-				'de_DE.UTF-8',
-				'03. Februar 2013'
-			),
-			'en_ZW.utf8' => array(
-				'en_ZW.utf8',
-				'03. February 2013'
-			)
-		);
-	}
-
-	/**
-	 * @dataProvider dateViewHelperFormatsDateLocalizedDataProvider
-	 *
 	 * @test
+	 * @TODO: Split the single sets to a data provider
 	 */
-	public function dateViewHelperFormatsDateLocalized($locale, $expected) {
-		$viewHelper = $this->getMock('TYPO3\\CMS\\Fluid\\ViewHelpers\\Format\\DateViewHelper', array('renderChildren'));
+	public function dateViewHelperFormatsDateLocalized() {
+		$viewHelper = $this->getMock('Tx_Fluid_ViewHelpers_Format_DateViewHelper', array('renderChildren'));
 		$format = '%d. %B %Y';
-		// 2013-02-03 11:40 UTC
-		$timestamp = '@1359891658';
+		$timestamp = '@1359891658'; // 2013-02-03 11:40 UTC
 
+		$locale = 'de_DE.UTF-8';
 		if (!setlocale(LC_COLLATE, $locale)) {
 			$this->markTestSkipped('Locale ' . $locale . ' is not available.');
 		}
 		$this->setLocale($locale);
+		$expected = '03. Februar 2013';
+		$this->assertEquals($expected, $viewHelper->render($timestamp, $format));
+
+		$locale = 'en_ZW.utf8';
+		if (!setlocale(LC_COLLATE, $locale)) {
+			$this->markTestSkipped('Locale ' . $locale . ' is not available.');
+		}
+		$this->setLocale($locale);
+		$expected = '03. February 2013';
 		$this->assertEquals($expected, $viewHelper->render($timestamp, $format));
 	}
 
-	/**
-	 * @param string $locale
-	 */
 	protected function setLocale($locale) {
 		setlocale(LC_CTYPE, $locale);
 		setlocale(LC_MONETARY, $locale);

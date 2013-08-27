@@ -1,12 +1,21 @@
 <?php
-namespace TYPO3\CMS\Fluid\ViewHelpers;
 
 /*                                                                        *
- * This script is backported from the TYPO3 Flow package "TYPO3.Fluid".   *
+ * This script belongs to the FLOW3 package "Fluid".                      *
  *                                                                        *
  * It is free software; you can redistribute it and/or modify it under    *
- * the terms of the GNU Lesser General Public License, either version 3   *
- *  of the License, or (at your option) any later version.                *
+ * the terms of the GNU Lesser General Public License as published by the *
+ * Free Software Foundation, either version 3 of the License, or (at your *
+ * option) any later version.                                             *
+ *                                                                        *
+ * This script is distributed in the hope that it will be useful, but     *
+ * WITHOUT ANY WARRANTY; without even the implied warranty of MERCHAN-    *
+ * TABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Lesser       *
+ * General Public License for more details.                               *
+ *                                                                        *
+ * You should have received a copy of the GNU Lesser General Public       *
+ * License along with the script.                                         *
+ * If not, see http://www.gnu.org/licenses/lgpl.html                      *
  *                                                                        *
  * The TYPO3 project - inspiring people to share!                         *
  *                                                                        */
@@ -56,76 +65,69 @@ namespace TYPO3\CMS\Fluid\ViewHelpers;
  * </ul>
  * </output>
  *
+ * @license http://www.gnu.org/licenses/lgpl.html GNU Lesser General Public License, version 3 or later
  * @api
  */
-class ForViewHelper extends \TYPO3\CMS\Fluid\Core\ViewHelper\AbstractViewHelper implements \TYPO3\CMS\Fluid\Core\ViewHelper\Facets\CompilableInterface {
+class Tx_Fluid_ViewHelpers_ForViewHelper extends Tx_Fluid_Core_ViewHelper_AbstractViewHelper {
 
 	/**
 	 * Iterates through elements of $each and renders child nodes
 	 *
-	 * @param array $each The array or \TYPO3\CMS\Extbase\Persistence\ObjectStorage to iterated over
+	 * @param array $each The array or Tx_Extbase_Persistence_ObjectStorage to iterated over
 	 * @param string $as The name of the iteration variable
 	 * @param string $key The name of the variable to store the current array key
 	 * @param boolean $reverse If enabled, the iterator will start with the last element and proceed reversely
 	 * @param string $iteration The name of the variable to store iteration information (index, cycle, isFirst, isLast, isEven, isOdd)
 	 * @return string Rendered string
+	 * @author Sebastian Kurfürst <sebastian@typo3.org>
+	 * @author Bastian Waidelich <bastian@typo3.org>
+	 * @author Robert Lemke <robert@typo3.org>
 	 * @api
 	 */
 	public function render($each, $as, $key = '', $reverse = FALSE, $iteration = NULL) {
-		return self::renderStatic($this->arguments, $this->buildRenderChildrenClosure(), $this->renderingContext);
-	}
-
-	/**
-	 * @param array $arguments
-	 * @param \Closure $renderChildrenClosure
-	 * @param \TYPO3\CMS\Fluid\Core\Rendering\RenderingContextInterface $renderingContext
-	 * @return string
-	 * @throws \TYPO3\CMS\Fluid\Core\ViewHelper\Exception
-	 */
-	static public function renderStatic(array $arguments, \Closure $renderChildrenClosure, \TYPO3\CMS\Fluid\Core\Rendering\RenderingContextInterface $renderingContext) {
-		$templateVariableContainer = $renderingContext->getTemplateVariableContainer();
-		if ($arguments['each'] === NULL) {
+		$output = '';
+		if ($each === NULL) {
 			return '';
 		}
-		if (is_object($arguments['each']) && !$arguments['each'] instanceof \Traversable) {
-			throw new \TYPO3\CMS\Fluid\Core\ViewHelper\Exception('ForViewHelper only supports arrays and objects implementing \Traversable interface', 1248728393);
+		if (is_object($each) && !$each instanceof Traversable) {
+			throw new Tx_Fluid_Core_ViewHelper_Exception('ForViewHelper only supports arrays and objects implementing Traversable interface' , 1248728393);
 		}
 
-		if ($arguments['reverse'] === TRUE) {
-			// array_reverse only supports arrays
-			if (is_object($arguments['each'])) {
-				$arguments['each'] = iterator_to_array($arguments['each']);
+		if ($reverse === TRUE) {
+				// array_reverse only supports arrays
+			if (is_object($each)) {
+				$each = iterator_to_array($each);
 			}
-			$arguments['each'] = array_reverse($arguments['each']);
+			$each = array_reverse($each);
 		}
 		$iterationData = array(
 			'index' => 0,
 			'cycle' => 1,
-			'total' => count($arguments['each'])
+			'total' => count($each)
 		);
 
 		$output = '';
-		foreach ($arguments['each'] as $keyValue => $singleElement) {
-			$templateVariableContainer->add($arguments['as'], $singleElement);
-			if ($arguments['key'] !== '') {
-				$templateVariableContainer->add($arguments['key'], $keyValue);
+		foreach ($each as $keyValue => $singleElement) {
+			$this->templateVariableContainer->add($as, $singleElement);
+			if ($key !== '') {
+				$this->templateVariableContainer->add($key, $keyValue);
 			}
-			if ($arguments['iteration'] !== NULL) {
+			if ($iteration !== NULL) {
 				$iterationData['isFirst'] = $iterationData['cycle'] === 1;
 				$iterationData['isLast'] = $iterationData['cycle'] === $iterationData['total'];
 				$iterationData['isEven'] = $iterationData['cycle'] % 2 === 0;
 				$iterationData['isOdd'] = !$iterationData['isEven'];
-				$templateVariableContainer->add($arguments['iteration'], $iterationData);
-				$iterationData['index']++;
-				$iterationData['cycle']++;
+				$this->templateVariableContainer->add($iteration, $iterationData);
+				$iterationData['index'] ++;
+				$iterationData['cycle'] ++;
 			}
-			$output .= $renderChildrenClosure();
-			$templateVariableContainer->remove($arguments['as']);
-			if ($arguments['key'] !== '') {
-				$templateVariableContainer->remove($arguments['key']);
+			$output .= $this->renderChildren();
+			$this->templateVariableContainer->remove($as);
+			if ($key !== '') {
+				$this->templateVariableContainer->remove($key);
 			}
-			if ($arguments['iteration'] !== NULL) {
-				$templateVariableContainer->remove($arguments['iteration']);
+			if ($iteration !== NULL) {
+				$this->templateVariableContainer->remove($iteration);
 			}
 		}
 		return $output;

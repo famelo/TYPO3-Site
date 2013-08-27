@@ -1,13 +1,11 @@
 <?php
-namespace TYPO3\CMS\Fluid\ViewHelpers\Be;
-
 /*                                                                        *
- * This script is backported from the TYPO3 Flow package "TYPO3.Fluid".   *
+ * This script belongs to the FLOW3 package "Fluid".                      *
  *                                                                        *
  * It is free software; you can redistribute it and/or modify it under    *
- * the terms of the GNU Lesser General Public License, either version 3   *
- *  of the License, or (at your option) any later version.                *
- *                                                                        *
+ * the terms of the GNU Lesser General Public License as published by the *
+ * Free Software Foundation, either version 3 of the License, or (at your *
+ * option) any later version.                                             *
  *                                                                        *
  * This script is distributed in the hope that it will be useful, but     *
  * WITHOUT ANY WARRANTY; without even the implied warranty of MERCHAN-    *
@@ -20,6 +18,7 @@ namespace TYPO3\CMS\Fluid\ViewHelpers\Be;
  *                                                                        *
  * The TYPO3 project - inspiring people to share!                         *
  *                                                                        */
+
 /**
  * View helper which returns the current page path as known from TYPO3 backend modules
  * Note: This view helper is experimental!
@@ -32,8 +31,13 @@ namespace TYPO3\CMS\Fluid\ViewHelpers\Be;
  * <output>
  * Current page path, prefixed with "Path:" and wrapped in a span with the class "typo3-docheader-pagePath"
  * </output>
+ *
+ * @author Steffen Kamper <info@sk-typo3.de>
+ * @author Bastian Waidelich <bastian@typo3.org>
+ * @license http://www.gnu.org/copyleft/gpl.html
  */
-class PagePathViewHelper extends \TYPO3\CMS\Fluid\ViewHelpers\Be\AbstractBackendViewHelper {
+class Tx_Fluid_ViewHelpers_Be_PagePathViewHelper extends Tx_Fluid_ViewHelpers_Be_AbstractBackendViewHelper {
+
 
 	/**
 	 * Renders the current page path
@@ -42,19 +46,22 @@ class PagePathViewHelper extends \TYPO3\CMS\Fluid\ViewHelpers\Be\AbstractBackend
 	 * @see template::getPagePath() Note: can't call this method as it's protected!
 	 */
 	public function render() {
-		$id = \TYPO3\CMS\Core\Utility\GeneralUtility::_GP('id');
-		$pageRecord = \TYPO3\CMS\Backend\Utility\BackendUtility::readPageAccess($id, $GLOBALS['BE_USER']->getPagePermsClause(1));
-		// Is this a real page
-		if ($pageRecord['uid']) {
+		$doc = $this->getDocInstance();
+		$id = t3lib_div::_GP('id');
+		$pageRecord = t3lib_BEfunc::readPageAccess($id, $GLOBALS['BE_USER']->getPagePermsClause(1));
+
+			// Is this a real page
+		if ($pageRecord['uid'])	{
 			$title = $pageRecord['_thePathFull'];
 		} else {
 			$title = $GLOBALS['TYPO3_CONF_VARS']['SYS']['sitename'];
 		}
-		// Setting the path of the page
+			// Setting the path of the page
 		$pagePath = $GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.php:labels.path', 1) . ': <span class="typo3-docheader-pagePath">';
-		// crop the title to title limit (or 50, if not defined)
-		$cropLength = empty($GLOBALS['BE_USER']->uc['titleLen']) ? 50 : $GLOBALS['BE_USER']->uc['titleLen'];
-		$croppedTitle = \TYPO3\CMS\Core\Utility\GeneralUtility::fixed_lgd_cs($title, -$cropLength);
+
+			// crop the title to title limit (or 50, if not defined)
+		$cropLength = (empty($GLOBALS['BE_USER']->uc['titleLen'])) ? 50 : $GLOBALS['BE_USER']->uc['titleLen'];
+		$croppedTitle = t3lib_div::fixed_lgd_cs($title, -$cropLength);
 		if ($croppedTitle !== $title) {
 			$pagePath .= '<abbr title="' . htmlspecialchars($title) . '">' . htmlspecialchars($croppedTitle) . '</abbr>';
 		} else {
@@ -64,5 +71,4 @@ class PagePathViewHelper extends \TYPO3\CMS\Fluid\ViewHelpers\Be\AbstractBackend
 		return $pagePath;
 	}
 }
-
 ?>

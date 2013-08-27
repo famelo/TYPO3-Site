@@ -1,5 +1,4 @@
 <?php
-namespace TYPO3\CMS\Fluid\ViewHelpers\Uri;
 
 /*                                                                        *
  * This script is part of the TYPO3 project - inspiring people to share!  *
@@ -13,6 +12,7 @@ namespace TYPO3\CMS\Fluid\ViewHelpers\Uri;
  * TABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General      *
  * Public License for more details.                                       *
  *                                                                        */
+
 /**
  * A view helper for creating URIs to TYPO3 pages.
  *
@@ -41,11 +41,13 @@ namespace TYPO3\CMS\Fluid\ViewHelpers\Uri;
  * index.php?id=1&extension_key[foo]=bar
  * (depending on your TS configuration)
  * </output>
+ *
+ * @license http://www.gnu.org/licenses/lgpl.html GNU Lesser General Public License, version 3 or later
  */
-class PageViewHelper extends \TYPO3\CMS\Fluid\Core\ViewHelper\AbstractViewHelper {
+class Tx_Fluid_ViewHelpers_Uri_PageViewHelper extends Tx_Fluid_Core_ViewHelper_AbstractViewHelper {
 
 	/**
-	 * @param integer|NULL $pageUid target PID
+	 * @param integer $page target PID
 	 * @param array $additionalParams query parameters to be attached to the resulting URI
 	 * @param integer $pageType type of the target page. See typolink.parameter
 	 * @param boolean $noCache set this to disable caching for the target page. You should not need this.
@@ -56,12 +58,24 @@ class PageViewHelper extends \TYPO3\CMS\Fluid\Core\ViewHelper\AbstractViewHelper
 	 * @param boolean $addQueryString If set, the current query parameters will be kept in the URI
 	 * @param array $argumentsToBeExcludedFromQueryString arguments to be removed from the URI. Only active if $addQueryString = TRUE
 	 * @return string Rendered page URI
+	 * @author Bastian Waidelich <bastian@typo3.org>
 	 */
 	public function render($pageUid = NULL, array $additionalParams = array(), $pageType = 0, $noCache = FALSE, $noCacheHash = FALSE, $section = '', $linkAccessRestrictedPages = FALSE, $absolute = FALSE, $addQueryString = FALSE, array $argumentsToBeExcludedFromQueryString = array()) {
 		$uriBuilder = $this->controllerContext->getUriBuilder();
-		$uri = $uriBuilder->setTargetPageUid($pageUid)->setTargetPageType($pageType)->setNoCache($noCache)->setUseCacheHash(!$noCacheHash)->setSection($section)->setLinkAccessRestrictedPages($linkAccessRestrictedPages)->setArguments($additionalParams)->setCreateAbsoluteUri($absolute)->setAddQueryString($addQueryString)->setArgumentsToBeExcludedFromQueryString($argumentsToBeExcludedFromQueryString)->build();
+		$uri = $uriBuilder
+			->setTargetPageUid($pageUid)
+			->setTargetPageType($pageType)
+			->setNoCache($noCache)
+			->setUseCacheHash(!$noCacheHash)
+			->setSection($section)
+			->setLinkAccessRestrictedPages($linkAccessRestrictedPages)
+			->setArguments($additionalParams)
+			->setCreateAbsoluteUri($absolute)
+			->setAddQueryString($addQueryString)
+			->setArgumentsToBeExcludedFromQueryString($argumentsToBeExcludedFromQueryString)
+			->build();
+
 		return $uri;
 	}
 }
-
 ?>

@@ -163,9 +163,6 @@ T3editor.prototype = {
 		},
 
 		saveFunction: function(event) {
-			if (!T3editor.ajaxSavetype || T3editor.ajaxSavetype == '') {
-				return;
-			}
 			this.modalOverlay.show();
 			this.updateTextarea(event);
 
@@ -325,7 +322,7 @@ if (!Prototype.Browser.MobileSafari) {
 				Event.observe(document, 't3editor:save',
 					function(event) {
 						var params = Object.extend({
-							ajaxID: "T3Editor::saveCode",
+							ajaxID: "tx_t3editor::saveCode",
 							t3editor_savetype: T3editor.ajaxSavetype
 						}, event.memo.parameters);
 
@@ -345,3 +342,4 @@ if (!Prototype.Browser.MobileSafari) {
 		}
 	);
 }
+

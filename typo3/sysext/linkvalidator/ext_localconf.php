@@ -1,25 +1,24 @@
 <?php
-if (!defined('TYPO3_MODE')) {
-	die('Access denied.');
+if (!defined ('TYPO3_MODE')) {
+	die ('Access denied.');
 }
 
-\TYPO3\CMS\Core\Utility\ExtensionManagementUtility::addPageTSConfig(
-	'<INCLUDE_TYPOSCRIPT: source="FILE:EXT:linkvalidator/Configuration/TsConfig/Page/pagetsconfig.txt">'
-);
+t3lib_extMgm::addPageTSConfig('<INCLUDE_TYPOSCRIPT: source="FILE:EXT:linkvalidator/res/pagetsconfig.txt">');
 
-$GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['scheduler']['tasks']['TYPO3\\CMS\\Linkvalidator\\Task\\ValidatorTask'] = array(
-	'extension' => $_EXTKEY,
-	'title' => 'LLL:EXT:' . $_EXTKEY . '/Resources/Private/Language/locallang.xlf:tasks.validate.name',
-	'description' => 'LLL:EXT:' . $_EXTKEY . '/Resources/Private/Language/locallang.xlf:tasks.validate.description',
-	'additionalFields' => 'TYPO3\\CMS\\Linkvalidator\\Task\\ValidatorTaskAdditionalFieldProvider'
+$GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['scheduler']['tasks']['tx_linkvalidator_tasks_Validator'] = array(
+	'extension'        => $_EXTKEY,
+	'title'            => 'LLL:EXT:' . $_EXTKEY . '/locallang.xml:tasks.validate.name',
+	'description'      => 'LLL:EXT:' . $_EXTKEY . '/locallang.xml:tasks.validate.description',
+	'additionalFields' => 'tx_linkvalidator_tasks_ValidatorAdditionalFieldProvider'
 );
 
 if (!is_array($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['linkvalidator']['checkLinks'])) {
 	$GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['linkvalidator']['checkLinks'] = array();
 }
 
-$GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['linkvalidator']['checkLinks']['db'] = 'TYPO3\\CMS\\Linkvalidator\\Linktype\\InternalLinktype';
-$GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['linkvalidator']['checkLinks']['file'] = 'TYPO3\\CMS\\Linkvalidator\\Linktype\\FileLinktype';
-$GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['linkvalidator']['checkLinks']['external'] = 'TYPO3\\CMS\\Linkvalidator\\Linktype\\ExternalLinktype';
-$GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['linkvalidator']['checkLinks']['linkhandler'] = 'TYPO3\\CMS\\Linkvalidator\\Linktype\\LinkHandler';
+$GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['linkvalidator']['checkLinks']['db'] = 'tx_linkvalidator_linktype_Internal';
+$GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['linkvalidator']['checkLinks']['file'] = 'tx_linkvalidator_linktype_File';
+$GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['linkvalidator']['checkLinks']['external'] = 'tx_linkvalidator_linktype_External';
+$GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['linkvalidator']['checkLinks']['linkhandler'] = 'tx_linkvalidator_linktype_LinkHandler';
+
 ?>

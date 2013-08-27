@@ -3,6 +3,8 @@
 #
 # Removes obsolete type values and fields from "Content Element" table "tt_content"
 # Configures processing for the Rich Text Editor according to the rendering principles.
+#
+# TYPO3 SVN ID: $Id$
 # ***************************************************************************************
 
 TCEFORM.tt_content {
@@ -13,7 +15,7 @@ TCEFORM.tt_content {
 	text_size.disabled=1
 	image_frames.disabled = 1
 
-	CType.removeItems = swfobject,qtobject,multimedia
+	CType.removeItems = rte,script,splash,swfobject,qtobject,multimedia
 }
 
 

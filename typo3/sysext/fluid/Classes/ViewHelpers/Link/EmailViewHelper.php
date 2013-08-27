@@ -1,5 +1,4 @@
 <?php
-namespace TYPO3\CMS\Fluid\ViewHelpers\Link;
 
 /*                                                                        *
  * This script is part of the TYPO3 project - inspiring people to share!  *
@@ -13,6 +12,10 @@ namespace TYPO3\CMS\Fluid\ViewHelpers\Link;
  * TABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General      *
  * Public License for more details.                                       *
  *                                                                        */
+
+/**
+ */
+
 /**
  * Email link view helper.
  * Generates an email link incorporating TYPO3s spamProtectEmailAddresses-settings.
@@ -33,8 +36,9 @@ namespace TYPO3\CMS\Fluid\ViewHelpers\Link;
  * <output>
  * <a href="javascript:linkTo_UnCryptMailto('ocknvq,hqqBdct0vnf');">some custom content</a>
  * </output>
+ *
  */
-class EmailViewHelper extends \TYPO3\CMS\Fluid\Core\ViewHelper\AbstractTagBasedViewHelper {
+class Tx_Fluid_ViewHelpers_Link_EmailViewHelper extends Tx_Fluid_Core_ViewHelper_AbstractTagBasedViewHelper {
 
 	/**
 	 * @var string
@@ -45,6 +49,7 @@ class EmailViewHelper extends \TYPO3\CMS\Fluid\Core\ViewHelper\AbstractTagBasedV
 	 * Arguments initialization
 	 *
 	 * @return void
+	 * @author Bastian Waidelich <bastian@typo3.org>
 	 */
 	public function initializeArguments() {
 		$this->registerUniversalTagAttributes();
@@ -57,6 +62,7 @@ class EmailViewHelper extends \TYPO3\CMS\Fluid\Core\ViewHelper\AbstractTagBasedV
 	/**
 	 * @param string $email The email address to be turned into a link.
 	 * @return string Rendered email link
+	 * @author Bastian Waidelich <bastian@typo3.org>
 	 */
 	public function render($email) {
 		if (TYPO3_MODE === 'FE') {
@@ -76,5 +82,6 @@ class EmailViewHelper extends \TYPO3\CMS\Fluid\Core\ViewHelper\AbstractTagBasedV
 		return $this->tag->render();
 	}
 }
+
 
 ?>

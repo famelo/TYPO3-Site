@@ -8,83 +8,90 @@
  * file that was distributed with this source code.
  */
 
+//@require 'Swift/Transport/LoadBalancedTransport.php';
+//@require 'Swift/Mime/Message.php';
+
 /**
  * Contains a list of redundant Transports so when one fails, the next is used.
- *
- * @package    Swift
+ * @package Swift
  * @subpackage Transport
- * @author     Chris Corbyn
+ * @author Chris Corbyn
  */
-class Swift_Transport_FailoverTransport extends Swift_Transport_LoadBalancedTransport
+class Swift_Transport_FailoverTransport
+  extends Swift_Transport_LoadBalancedTransport
 {
-    /**
-     * Registered transport currently used.
-     *
-     * @var Swift_Transport
-     */
-    private $_currentTransport;
 
-    /**
-     * Creates a new FailoverTransport.
-     */
-    public function __construct()
+  /**
+   * Registered transport curently used.
+   * @var Swift_Transport
+   * @access private
+   */
+  private $_currentTransport;
+
+  /**
+   * Creates a new FailoverTransport.
+   */
+  public function __construct()
+  {
+    parent::__construct();
+  }
+
+  /**
+   * Send the given Message.
+   * Recipient/sender data will be retreived from the Message API.
+   * The return value is the number of recipients who were accepted for delivery.
+   * @param Swift_Mime_Message $message
+   * @param string[] &$failedRecipients to collect failures by-reference
+   * @return int
+   */
+  public function send(Swift_Mime_Message $message, &$failedRecipients = null)
+  {
+    $maxTransports = count($this->_transports);
+    $sent = 0;
+
+    for ($i = 0; $i < $maxTransports
+      && $transport = $this->_getNextTransport(); ++$i)
     {
-        parent::__construct();
-    }
-
-    /**
-     * Send the given Message.
-     *
-     * Recipient/sender data will be retrieved from the Message API.
-     * The return value is the number of recipients who were accepted for delivery.
-     *
-     * @param Swift_Mime_Message $message
-     * @param string[]           $failedRecipients An array of failures by-reference
-     *
-     * @return int
-     */
-    public function send(Swift_Mime_Message $message, &$failedRecipients = null)
-    {
-        $maxTransports = count($this->_transports);
-        $sent = 0;
-
-        for ($i = 0; $i < $maxTransports
-            && $transport = $this->_getNextTransport(); ++$i)
+      try
+      {
+        if (!$transport->isStarted())
         {
-            try {
-                if (!$transport->isStarted()) {
-                    $transport->start();
-                }
-
-                return $transport->send($message, $failedRecipients);
-            } catch (Swift_TransportException $e) {
-                $this->_killCurrentTransport();
-            }
+          $transport->start();
         }
 
-        if (count($this->_transports) == 0) {
-            throw new Swift_TransportException(
-                'All Transports in FailoverTransport failed, or no Transports available'
-                );
-        }
-
-        return $sent;
+        return $transport->send($message, $failedRecipients);
+      }
+      catch (Swift_TransportException $e)
+      {
+        $this->_killCurrentTransport();
+      }
     }
 
-    // -- Protected methods
-
-    protected function _getNextTransport()
+    if (count($this->_transports) == 0)
     {
-        if (!isset($this->_currentTransport)) {
-            $this->_currentTransport = parent::_getNextTransport();
-        }
-
-        return $this->_currentTransport;
+      throw new Swift_TransportException(
+        'All Transports in FailoverTransport failed, or no Transports available'
+        );
     }
 
-    protected function _killCurrentTransport()
+    return $sent;
+  }
+
+  // -- Protected methods
+
+  protected function _getNextTransport()
+  {
+    if (!isset($this->_currentTransport))
     {
-        $this->_currentTransport = null;
-        parent::_killCurrentTransport();
+      $this->_currentTransport = parent::_getNextTransport();
     }
+    return $this->_currentTransport;
+  }
+
+  protected function _killCurrentTransport()
+  {
+    $this->_currentTransport = null;
+    parent::_killCurrentTransport();
+  }
+
 }

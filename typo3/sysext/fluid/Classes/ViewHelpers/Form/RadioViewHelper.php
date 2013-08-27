@@ -1,12 +1,21 @@
 <?php
-namespace TYPO3\CMS\Fluid\ViewHelpers\Form;
 
 /*                                                                        *
- * This script is backported from the TYPO3 Flow package "TYPO3.Fluid".   *
+ * This script belongs to the FLOW3 package "Fluid".                      *
  *                                                                        *
  * It is free software; you can redistribute it and/or modify it under    *
- * the terms of the GNU Lesser General Public License, either version 3   *
- *  of the License, or (at your option) any later version.                *
+ * the terms of the GNU Lesser General Public License as published by the *
+ * Free Software Foundation, either version 3 of the License, or (at your *
+ * option) any later version.                                             *
+ *                                                                        *
+ * This script is distributed in the hope that it will be useful, but     *
+ * WITHOUT ANY WARRANTY; without even the implied warranty of MERCHAN-    *
+ * TABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Lesser       *
+ * General Public License for more details.                               *
+ *                                                                        *
+ * You should have received a copy of the GNU Lesser General Public       *
+ * License along with the script.                                         *
+ * If not, see http://www.gnu.org/licenses/lgpl.html                      *
  *                                                                        *
  * The TYPO3 project - inspiring people to share!                         *
  *                                                                        */
@@ -41,9 +50,10 @@ namespace TYPO3\CMS\Fluid\ViewHelpers\Form;
  * (depending on property "newsletter")
  * </output>
  *
+ * @license http://www.gnu.org/licenses/lgpl.html GNU Lesser General Public License, version 3 or later
  * @api
  */
-class RadioViewHelper extends \TYPO3\CMS\Fluid\ViewHelpers\Form\AbstractFormFieldViewHelper {
+class Tx_Fluid_ViewHelpers_Form_RadioViewHelper extends Tx_Fluid_ViewHelpers_Form_AbstractFormFieldViewHelper {
 
 	/**
 	 * @var string
@@ -54,6 +64,7 @@ class RadioViewHelper extends \TYPO3\CMS\Fluid\ViewHelpers\Form\AbstractFormFiel
 	 * Initialize the arguments.
 	 *
 	 * @return void
+	 * @author Bastian Waidelich <bastian@typo3.org>
 	 * @api
 	 */
 	public function initializeArguments() {
@@ -68,7 +79,9 @@ class RadioViewHelper extends \TYPO3\CMS\Fluid\ViewHelpers\Form\AbstractFormFiel
 	 * Renders the checkbox.
 	 *
 	 * @param boolean $checked Specifies that the input element should be preselected
+	 *
 	 * @return string
+	 * @author Bastian Waidelich <bastian@typo3.org>
 	 * @api
 	 */
 	public function render($checked = NULL) {
@@ -77,13 +90,8 @@ class RadioViewHelper extends \TYPO3\CMS\Fluid\ViewHelpers\Form\AbstractFormFiel
 		$nameAttribute = $this->getName();
 		$valueAttribute = $this->getValue();
 		if ($checked === NULL && $this->isObjectAccessorMode()) {
-			if ($this->hasMappingErrorOccured()) {
-				$propertyValue = $this->getLastSubmittedFormData();
-			} else {
-				$propertyValue = $this->getPropertyValue();
-			}
-
-			// no type-safe comparison by intention
+			$propertyValue = $this->getPropertyValue();
+			// no type-safe comparisation by intention
 			$checked = $propertyValue == $valueAttribute;
 		}
 

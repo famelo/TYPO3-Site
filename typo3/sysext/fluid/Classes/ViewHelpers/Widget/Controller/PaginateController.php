@@ -1,13 +1,12 @@
 <?php
-namespace TYPO3\CMS\Fluid\ViewHelpers\Widget\Controller;
 
 /*                                                                        *
- * This script is backported from the TYPO3 Flow package "TYPO3.Fluid".   *
+ * This script belongs to the FLOW3 package "Fluid".                      *
  *                                                                        *
  * It is free software; you can redistribute it and/or modify it under    *
- * the terms of the GNU Lesser General Public License, either version 3   *
- *  of the License, or (at your option) any later version.                *
- *                                                                        *
+ * the terms of the GNU Lesser General Public License as published by the *
+ * Free Software Foundation, either version 3 of the License, or (at your *
+ * option) any later version.                                             *
  *                                                                        *
  * This script is distributed in the hope that it will be useful, but     *
  * WITHOUT ANY WARRANTY; without even the implied warranty of MERCHAN-    *
@@ -20,15 +19,19 @@ namespace TYPO3\CMS\Fluid\ViewHelpers\Widget\Controller;
  *                                                                        *
  * The TYPO3 project - inspiring people to share!                         *
  *                                                                        */
-class PaginateController extends \TYPO3\CMS\Fluid\Core\Widget\AbstractWidgetController {
+
+/**
+ * @license http://www.gnu.org/licenses/lgpl.html GNU Lesser General Public License, version 3 or later
+ */
+class Tx_Fluid_ViewHelpers_Widget_Controller_PaginateController extends Tx_Fluid_Core_Widget_AbstractWidgetController {
 
 	/**
 	 * @var array
 	 */
-	protected $configuration = array('itemsPerPage' => 10, 'insertAbove' => FALSE, 'insertBelow' => TRUE, 'maximumNumberOfLinks' => 99);
+	protected $configuration = array('itemsPerPage' => 10, 'insertAbove' => FALSE, 'insertBelow' => TRUE);
 
 	/**
-	 * @var \TYPO3\CMS\Extbase\Persistence\QueryResultInterface
+	 * @var Tx_Extbase_Persistence_QueryResultInterface
 	 */
 	protected $objects;
 
@@ -40,11 +43,6 @@ class PaginateController extends \TYPO3\CMS\Fluid\Core\Widget\AbstractWidgetCont
 	/**
 	 * @var integer
 	 */
-	protected $maximumNumberOfLinks = 99;
-
-	/**
-	 * @var integer
-	 */
 	protected $numberOfPages = 1;
 
 	/**
@@ -52,9 +50,8 @@ class PaginateController extends \TYPO3\CMS\Fluid\Core\Widget\AbstractWidgetCont
 	 */
 	public function initializeAction() {
 		$this->objects = $this->widgetConfiguration['objects'];
-		$this->configuration = \TYPO3\CMS\Core\Utility\GeneralUtility::array_merge_recursive_overrule($this->configuration, $this->widgetConfiguration['configuration'], TRUE);
-		$this->numberOfPages = ceil(count($this->objects) / (integer) $this->configuration['itemsPerPage']);
-		$this->maximumNumberOfLinks = (integer) $this->configuration['maximumNumberOfLinks'];
+		$this->configuration = t3lib_div::array_merge_recursive_overrule($this->configuration, $this->widgetConfiguration['configuration'], TRUE);
+		$this->numberOfPages = ceil(count($this->objects) / (integer)$this->configuration['itemsPerPage']);
 	}
 
 	/**
@@ -62,24 +59,26 @@ class PaginateController extends \TYPO3\CMS\Fluid\Core\Widget\AbstractWidgetCont
 	 * @return void
 	 */
 	public function indexAction($currentPage = 1) {
-		// set current page
-		$this->currentPage = (integer) $currentPage;
+			// set current page
+		$this->currentPage = (integer)$currentPage;
 		if ($this->currentPage < 1) {
 			$this->currentPage = 1;
 		}
+
 		if ($this->currentPage > $this->numberOfPages) {
-			// set $modifiedObjects to NULL if the page does not exist
+				// set $modifiedObjects to NULL if the page does not exist
 			$modifiedObjects = NULL;
 		} else {
-			// modify query
-			$itemsPerPage = (integer) $this->configuration['itemsPerPage'];
+				// modify query
+			$itemsPerPage = (integer)$this->configuration['itemsPerPage'];
 			$query = $this->objects->getQuery();
 			$query->setLimit($itemsPerPage);
 			if ($this->currentPage > 1) {
-				$query->setOffset((integer) ($itemsPerPage * ($this->currentPage - 1)));
+				$query->setOffset((integer)($itemsPerPage * ($this->currentPage - 1)));
 			}
 			$modifiedObjects = $query->execute();
 		}
+
 		$this->view->assign('contentArguments', array(
 			$this->widgetConfiguration['as'] => $modifiedObjects
 		));
@@ -88,48 +87,19 @@ class PaginateController extends \TYPO3\CMS\Fluid\Core\Widget\AbstractWidgetCont
 	}
 
 	/**
-	 * If a certain number of links should be displayed, adjust before and after
-	 * amounts accordingly.
-	 *
-	 * @return void
-	 */
-	protected function calculateDisplayRange() {
-		$maximumNumberOfLinks = $this->maximumNumberOfLinks;
-		if ($maximumNumberOfLinks > $this->numberOfPages) {
-			$maximumNumberOfLinks = $this->numberOfPages;
-		}
-		$delta = floor($maximumNumberOfLinks / 2);
-		$this->displayRangeStart = $this->currentPage - $delta;
-		$this->displayRangeEnd = $this->currentPage + $delta + ($maximumNumberOfLinks % 2 === 0 ? 1 : 0);
-		if ($this->displayRangeStart < 1) {
-			$this->displayRangeEnd -= $this->displayRangeStart - 1;
-		}
-		if ($this->displayRangeEnd > $this->numberOfPages) {
-			$this->displayRangeStart -= $this->displayRangeEnd - $this->numberOfPages;
-		}
-		$this->displayRangeStart = (integer) max($this->displayRangeStart, 1);
-		$this->displayRangeEnd = (integer) min($this->displayRangeEnd, $this->numberOfPages);
-	}
-
-	/**
 	 * Returns an array with the keys "pages", "current", "numberOfPages", "nextPage" & "previousPage"
 	 *
 	 * @return array
 	 */
 	protected function buildPagination() {
-		$this->calculateDisplayRange();
 		$pages = array();
-		for ($i = $this->displayRangeStart; $i <= $this->displayRangeEnd; $i++) {
-			$pages[] = array('number' => $i, 'isCurrent' => $i === $this->currentPage);
+		for ($i = 1; $i <= $this->numberOfPages; $i++) {
+			$pages[] = array('number' => $i, 'isCurrent' => ($i === $this->currentPage));
 		}
 		$pagination = array(
 			'pages' => $pages,
 			'current' => $this->currentPage,
 			'numberOfPages' => $this->numberOfPages,
-			'displayRangeStart' => $this->displayRangeStart,
-			'displayRangeEnd' => $this->displayRangeEnd,
-			'hasLessPages' => $this->displayRangeStart > 2,
-			'hasMorePages' => $this->displayRangeEnd + 1 < $this->numberOfPages
 		);
 		if ($this->currentPage < $this->numberOfPages) {
 			$pagination['nextPage'] = $this->currentPage + 1;

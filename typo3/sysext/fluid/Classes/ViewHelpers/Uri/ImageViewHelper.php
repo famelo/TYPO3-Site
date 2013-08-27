@@ -1,5 +1,4 @@
 <?php
-namespace TYPO3\CMS\Fluid\ViewHelpers\Uri;
 
 /*                                                                        *
  * This script is part of the TYPO3 project - inspiring people to share!  *
@@ -13,7 +12,8 @@ namespace TYPO3\CMS\Fluid\ViewHelpers\Uri;
  * TABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General      *
  * Public License for more details.                                       *
  *                                                                        */
-/**
+
+/*
  * Resizes a given image (if required) and returns its relative path.
  *
  * = Examples =
@@ -42,43 +42,31 @@ namespace TYPO3\CMS\Fluid\ViewHelpers\Uri;
  * Could not get image resource for "NonExistingImage.png".
  * </output>
  */
-class ImageViewHelper extends \TYPO3\CMS\Fluid\Core\ViewHelper\AbstractViewHelper {
+class Tx_Fluid_ViewHelpers_Uri_ImageViewHelper extends Tx_Fluid_Core_ViewHelper_AbstractViewHelper {
 
 	/**
-	 * @var \TYPO3\CMS\Frontend\ContentObject\ContentObjectRenderer
+	 * @var tslib_cObj
 	 */
 	protected $contentObject;
 
 	/**
-	 * @var \TYPO3\CMS\Extbase\Configuration\ConfigurationManagerInterface
+	 * @var Tx_Extbase_Configuration_ConfigurationManagerInterface
 	 */
 	protected $configurationManager;
 
 	/**
-	 * Contains a backup of the current $GLOBALS['TSFE'] if used in BE mode
-	 *
-	 * @var \TYPO3\CMS\Frontend\Controller\TypoScriptFrontendController
-	 */
-	protected $tsfeBackup;
-
-	/**
-	 * @var string
-	 */
-	protected $workingDirectoryBackup;
-
-	/**
-	 * @param \TYPO3\CMS\Extbase\Configuration\ConfigurationManagerInterface $configurationManager
+	 * @param Tx_Extbase_Configuration_ConfigurationManagerInterface $configurationManager
 	 * @return void
 	 */
-	public function injectConfigurationManager(\TYPO3\CMS\Extbase\Configuration\ConfigurationManagerInterface $configurationManager) {
+	public function injectConfigurationManager(Tx_Extbase_Configuration_ConfigurationManagerInterface $configurationManager) {
 		$this->configurationManager = $configurationManager;
 		$this->contentObject = $this->configurationManager->getContentObject();
 	}
 
 	/**
 	 * Resizes the image (if required) and returns its path. If the image was not resized, the path will be equal to $src
-	 *
 	 * @see http://typo3.org/documentation/document-library/references/doc_core_tsref/4.2.0/view/1/5/#id4164427
+	 *
 	 * @param string $src
 	 * @param string $width width of the image. This can be a numeric value representing the fixed width of the image in pixels. But you can also perform simple calculations by adding "m" or "c" to the value. See imgResource.width for possible options.
 	 * @param string $height height of the image. This can be a numeric value representing the fixed height of the image in pixels. But you can also perform simple calculations by adding "m" or "c" to the value. See imgResource.width for possible options.
@@ -86,11 +74,11 @@ class ImageViewHelper extends \TYPO3\CMS\Fluid\Core\ViewHelper\AbstractViewHelpe
 	 * @param integer $minHeight minimum height of the image
 	 * @param integer $maxWidth maximum width of the image
 	 * @param integer $maxHeight maximum height of the image
-	 * @param boolean $treatIdAsReference given src argument is a sys_file_reference record
-	 * @throws \TYPO3\CMS\Fluid\Core\ViewHelper\Exception
 	 * @return string path to the image
+	 * @author Bastian Waidelich <bastian@typo3.org>
+	 * @author Christian Baer <chr.baer@googlemail.com>
 	 */
-	public function render($src, $width = NULL, $height = NULL, $minWidth = NULL, $minHeight = NULL, $maxWidth = NULL, $maxHeight = NULL, $treatIdAsReference = FALSE) {
+	public function render($src, $width = NULL, $height = NULL, $minWidth = NULL, $minHeight = NULL, $maxWidth = NULL, $maxHeight = NULL) {
 		if (TYPO3_MODE === 'BE') {
 			$this->simulateFrontendEnvironment();
 		}
@@ -100,8 +88,7 @@ class ImageViewHelper extends \TYPO3\CMS\Fluid\Core\ViewHelper\AbstractViewHelpe
 			'minW' => $minWidth,
 			'minH' => $minHeight,
 			'maxW' => $maxWidth,
-			'maxH' => $maxHeight,
-			'treatIdAsReference' => $treatIdAsReference
+			'maxH' => $maxHeight
 		);
 		if (TYPO3_MODE === 'BE' && substr($src, 0, 3) === '../') {
 			$src = substr($src, 3);
@@ -109,15 +96,17 @@ class ImageViewHelper extends \TYPO3\CMS\Fluid\Core\ViewHelper\AbstractViewHelpe
 		$imageInfo = $this->contentObject->getImgResource($src, $setup);
 		$GLOBALS['TSFE']->lastImageInfo = $imageInfo;
 		if (!is_array($imageInfo)) {
-			throw new \TYPO3\CMS\Fluid\Core\ViewHelper\Exception('Could not get image resource for "' . htmlspecialchars($src) . '".', 1277367645);
+			throw new Tx_Fluid_Core_ViewHelper_Exception('Could not get image resource for "' . htmlspecialchars($src) . '".' , 1277367645);
 		}
-		$imageInfo[3] = \TYPO3\CMS\Core\Utility\GeneralUtility::png_to_gif_by_imagemagick($imageInfo[3]);
+		$imageInfo[3] = t3lib_div::png_to_gif_by_imagemagick($imageInfo[3]);
 		$GLOBALS['TSFE']->imagesOnPage[] = $imageInfo[3];
-		$imageSource = $GLOBALS['TSFE']->absRefPrefix . \TYPO3\CMS\Core\Utility\GeneralUtility::rawUrlEncodeFP($imageInfo[3]);
+
+		$imageSource = $GLOBALS['TSFE']->absRefPrefix . t3lib_div::rawUrlEncodeFP($imageInfo[3]);
 		if (TYPO3_MODE === 'BE') {
 			$imageSource = '../' . $imageSource;
 			$this->resetFrontendEnvironment();
 		}
+
 		return $imageSource;
 	}
 
@@ -126,15 +115,17 @@ class ImageViewHelper extends \TYPO3\CMS\Fluid\Core\ViewHelper\AbstractViewHelpe
 	 * This somewhat hacky work around is currently needed because the getImgResource() function of tslib_cObj relies on those variables to be set
 	 *
 	 * @return void
+	 * @author Bastian Waidelich <bastian@typo3.org>
 	 */
 	protected function simulateFrontendEnvironment() {
 		$this->tsfeBackup = isset($GLOBALS['TSFE']) ? $GLOBALS['TSFE'] : NULL;
-		// Set the working directory to the site root
+			// set the working directory to the site root
 		$this->workingDirectoryBackup = getcwd();
 		chdir(PATH_site);
-		$typoScriptSetup = $this->configurationManager->getConfiguration(\TYPO3\CMS\Extbase\Configuration\ConfigurationManagerInterface::CONFIGURATION_TYPE_FULL_TYPOSCRIPT);
-		$GLOBALS['TSFE'] = new \stdClass();
-		$template = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\TypoScript\\TemplateService');
+
+		$typoScriptSetup = $this->configurationManager->getConfiguration(Tx_Extbase_Configuration_ConfigurationManagerInterface::CONFIGURATION_TYPE_FULL_TYPOSCRIPT);
+		$GLOBALS['TSFE'] = new stdClass();
+		$template = t3lib_div::makeInstance('t3lib_TStemplate');
 		$template->tt_track = 0;
 		$template->init();
 		$template->getFileName_backPath = PATH_site;
@@ -147,12 +138,12 @@ class ImageViewHelper extends \TYPO3\CMS\Fluid\Core\ViewHelper\AbstractViewHelpe
 	 * Resets $GLOBALS['TSFE'] if it was previously changed by simulateFrontendEnvironment()
 	 *
 	 * @return void
+	 * @author Bastian Waidelich <bastian@typo3.org>
 	 * @see simulateFrontendEnvironment()
 	 */
 	protected function resetFrontendEnvironment() {
 		$GLOBALS['TSFE'] = $this->tsfeBackup;
 		chdir($this->workingDirectoryBackup);
 	}
-}
 
-?>
+}

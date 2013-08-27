@@ -1,21 +1,28 @@
 <?php
-namespace TYPO3\CMS\Fluid\ViewHelpers;
 
 /*                                                                        *
- * This script is backported from the TYPO3 Flow package "TYPO3.Fluid".   *
+ * This script belongs to the FLOW3 package "Fluid".                      *
  *                                                                        *
  * It is free software; you can redistribute it and/or modify it under    *
- * the terms of the GNU Lesser General Public License, either version 3   *
- *  of the License, or (at your option) any later version.                *
+ * the terms of the GNU Lesser General Public License as published by the *
+ * Free Software Foundation, either version 3 of the License, or (at your *
+ * option) any later version.                                             *
+ *                                                                        *
+ * This script is distributed in the hope that it will be useful, but     *
+ * WITHOUT ANY WARRANTY; without even the implied warranty of MERCHAN-    *
+ * TABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Lesser       *
+ * General Public License for more details.                               *
+ *                                                                        *
+ * You should have received a copy of the GNU Lesser General Public       *
+ * License along with the script.                                         *
+ * If not, see http://www.gnu.org/licenses/lgpl.html                      *
  *                                                                        *
  * The TYPO3 project - inspiring people to share!                         *
  *                                                                        */
 
 /**
  * Grouped loop view helper.
- * Loops through the specified values.
- *
- * The groupBy argument also supports property paths.
+ * Loops through the specified values
  *
  * = Examples =
  *
@@ -26,9 +33,9 @@ namespace TYPO3\CMS\Fluid\ViewHelpers;
  *   </f:for>
  * </f:groupedFor>
  * </code>
- * <output>
+ *
+ * Output:
  * apple cherry strawberry banana
- * </output>
  *
  * <code title="Two dimensional list">
  * <ul>
@@ -59,7 +66,7 @@ namespace TYPO3\CMS\Fluid\ViewHelpers;
  *       <li>3: strawberry</li>
  *     </ul>
  *   </li>
- *   <li>yellow fruits
+  *   <li>yellow fruits
  *     <ul>
  *       <li>2: banana</li>
  *     </ul>
@@ -67,19 +74,20 @@ namespace TYPO3\CMS\Fluid\ViewHelpers;
  * </ul>
  * </output>
  *
+ * @license http://www.gnu.org/licenses/lgpl.html GNU Lesser General Public License, version 3 or later
  * @api
  */
-class GroupedForViewHelper extends \TYPO3\CMS\Fluid\Core\ViewHelper\AbstractViewHelper {
+class Tx_Fluid_ViewHelpers_GroupedForViewHelper extends Tx_Fluid_Core_ViewHelper_AbstractViewHelper {
 
 	/**
 	 * Iterates through elements of $each and renders child nodes
 	 *
-	 * @param array $each The array or \TYPO3\CMS\Extbase\Persistence\ObjectStorage to iterated over
+	 * @param array $each The array or Tx_Extbase_Persistence_ObjectStorage to iterated over
 	 * @param string $as The name of the iteration variable
 	 * @param string $groupBy Group by this property
 	 * @param string $groupKey The name of the variable to store the current group
 	 * @return string Rendered string
-	 * @throws \TYPO3\CMS\Fluid\Core\ViewHelper\Exception
+	 * @author Bastian Waidelich <bastian@typo3.org>
 	 * @api
 	 */
 	public function render($each, $as, $groupBy, $groupKey = 'groupKey') {
@@ -88,8 +96,8 @@ class GroupedForViewHelper extends \TYPO3\CMS\Fluid\Core\ViewHelper\AbstractView
 			return '';
 		}
 		if (is_object($each)) {
-			if (!$each instanceof \Traversable) {
-				throw new \TYPO3\CMS\Fluid\Core\ViewHelper\Exception('GroupedForViewHelper only supports arrays and objects implementing \Traversable interface', 1253108907);
+			if (!$each instanceof Traversable) {
+				throw new Tx_Fluid_Core_ViewHelper_Exception('GroupedForViewHelper only supports arrays and objects implementing Traversable interface' , 1253108907);
 			}
 			$each = iterator_to_array($each);
 		}
@@ -112,7 +120,7 @@ class GroupedForViewHelper extends \TYPO3\CMS\Fluid\Core\ViewHelper\AbstractView
 	 * @param array $elements The array / traversable object to be grouped
 	 * @param string $groupBy Group by this property
 	 * @return array The grouped array in the form array('keys' => array('key1' => [key1value], 'key2' => [key2value], ...), 'values' => array('key1' => array([key1value] => [element1]), ...), ...)
-	 * @throws \TYPO3\CMS\Fluid\Core\ViewHelper\Exception
+	 * @author Bastian Waidelich <bastian@typo3.org>
 	 */
 	protected function groupElements(array $elements, $groupBy) {
 		$groups = array('keys' => array(), 'values' => array());
@@ -120,9 +128,9 @@ class GroupedForViewHelper extends \TYPO3\CMS\Fluid\Core\ViewHelper\AbstractView
 			if (is_array($value)) {
 				$currentGroupIndex = isset($value[$groupBy]) ? $value[$groupBy] : NULL;
 			} elseif (is_object($value)) {
-				$currentGroupIndex = \TYPO3\CMS\Extbase\Reflection\ObjectAccess::getPropertyPath($value, $groupBy);
+				$currentGroupIndex = Tx_Extbase_Reflection_ObjectAccess::getProperty($value, $groupBy);
 			} else {
-				throw new \TYPO3\CMS\Fluid\Core\ViewHelper\Exception('GroupedForViewHelper only supports multi-dimensional arrays and objects', 1253120365);
+				throw new Tx_Fluid_Core_ViewHelper_Exception('GroupedForViewHelper only supports multi-dimensional arrays and objects' , 1253120365);
 			}
 			$currentGroupKeyValue = $currentGroupIndex;
 			if (is_object($currentGroupIndex)) {

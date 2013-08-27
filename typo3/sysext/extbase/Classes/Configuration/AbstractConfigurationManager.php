@@ -1,36 +1,35 @@
 <?php
-namespace TYPO3\CMS\Extbase\Configuration;
-
 /***************************************************************
- *  Copyright notice
- *
- *  (c) 2010-2013 Extbase Team (http://forge.typo3.org/projects/typo3v4-mvc)
- *  Extbase is a backport of TYPO3 Flow. All credits go to the TYPO3 Flow team.
- *  All rights reserved
- *
- *  This script is part of the TYPO3 project. The TYPO3 project is
- *  free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
- *
- *  The GNU General Public License can be found at
- *  http://www.gnu.org/copyleft/gpl.html.
- *  A copy is found in the textfile GPL.txt and important notices to the license
- *  from the author is found in LICENSE.txt distributed with these scripts.
- *
- *
- *  This script is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  This copyright notice MUST APPEAR in all copies of the script!
- ***************************************************************/
+*  Copyright notice
+*
+*  (c) 2009 Jochen Rau <jochen.rau@typoplanet.de>
+*  All rights reserved
+*
+*  This script is part of the TYPO3 project. The TYPO3 project is
+*  free software; you can redistribute it and/or modify
+*  it under the terms of the GNU General Public License as published by
+*  the Free Software Foundation; either version 2 of the License, or
+*  (at your option) any later version.
+*
+*  The GNU General Public License can be found at
+*  http://www.gnu.org/copyleft/gpl.html.
+*
+*  This script is distributed in the hope that it will be useful,
+*  but WITHOUT ANY WARRANTY; without even the implied warranty of
+*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+*  GNU General Public License for more details.
+*
+*  This copyright notice MUST APPEAR in all copies of the script!
+***************************************************************/
+
 /**
  * Abstract base class for a general purpose configuration manager
+ *
+ * @package Extbase
+ * @subpackage Configuration
+ * @version $ID:$
  */
-abstract class AbstractConfigurationManager implements \TYPO3\CMS\Core\SingletonInterface {
+abstract class Tx_Extbase_Configuration_AbstractConfigurationManager implements t3lib_Singleton {
 
 	/**
 	 * Default backend storage PID
@@ -39,36 +38,28 @@ abstract class AbstractConfigurationManager implements \TYPO3\CMS\Core\Singleton
 
 	/**
 	 * Storage of the raw TypoScript configuration
-	 *
 	 * @var array
 	 */
 	protected $configuration = array();
 
 	/**
-	 * @var \TYPO3\CMS\Frontend\ContentObject\ContentObjectRenderer
+	 * @var tslib_cObj
 	 */
 	protected $contentObject;
 
 	/**
-	 * @var \TYPO3\CMS\Extbase\Object\ObjectManagerInterface
+	 * @var Tx_Extbase_Object_ObjectManagerInterface
 	 */
 	protected $objectManager;
 
 	/**
-	 * @var \TYPO3\CMS\Extbase\Service\TypoScriptService
-	 */
-	protected $typoScriptService;
-
-	/**
 	 * name of the extension this Configuration Manager instance belongs to
-	 *
 	 * @var string
 	 */
 	protected $extensionName;
 
 	/**
 	 * name of the plugin this Configuration Manager instance belongs to
-	 *
 	 * @var string
 	 */
 	protected $pluginName;
@@ -81,50 +72,26 @@ abstract class AbstractConfigurationManager implements \TYPO3\CMS\Core\Singleton
 	protected $configurationCache = array();
 
 	/**
-	 * @var \TYPO3\CMS\Extbase\Service\EnvironmentService
-	 */
-	protected $environmentService;
-
-	/**
-	 * @param \TYPO3\CMS\Extbase\Object\ObjectManagerInterface $objectManager
+	 * @param Tx_Extbase_Object_ManagerInterface $objectManager
 	 * @return void
 	 */
-	public function injectObjectManager(\TYPO3\CMS\Extbase\Object\ObjectManagerInterface $objectManager) {
+	public function injectObjectManager(Tx_Extbase_Object_ObjectManagerInterface $objectManager) {
 		$this->objectManager = $objectManager;
 	}
 
 	/**
-	 * @param \TYPO3\CMS\Extbase\Service\TypoScriptService $typoScriptService
+	 * @param tslib_cObj $contentObject
 	 * @return void
 	 */
-	public function injectTypoScriptService(\TYPO3\CMS\Extbase\Service\TypoScriptService $typoScriptService) {
-		$this->typoScriptService = $typoScriptService;
-	}
-
-	/**
-	 * @param \TYPO3\CMS\Extbase\Service\EnvironmentService $environmentService
-	 * @return void
-	 */
-	public function injectEnvironmentService(\TYPO3\CMS\Extbase\Service\EnvironmentService $environmentService) {
-		$this->environmentService = $environmentService;
-	}
-
-	/**
-	 * @param \TYPO3\CMS\Frontend\ContentObject\ContentObjectRenderer $contentObject
-	 * @return void
-	 */
-	public function setContentObject(\TYPO3\CMS\Frontend\ContentObject\ContentObjectRenderer $contentObject = NULL) {
+	public function setContentObject(tslib_cObj $contentObject = NULL) {
 		$this->contentObject = $contentObject;
 	}
 
 	/**
-	 * @return \TYPO3\CMS\Frontend\ContentObject\ContentObjectRenderer|NULL
+	 * @return tslib_cObj
 	 */
 	public function getContentObject() {
-		if ($this->contentObject !== NULL) {
-			return $this->contentObject;
-		}
-		return NULL;
+		return $this->contentObject;
 	}
 
 	/**
@@ -137,9 +104,10 @@ abstract class AbstractConfigurationManager implements \TYPO3\CMS\Core\Singleton
 	public function setConfiguration(array $configuration = array()) {
 		// reset 1st level cache
 		$this->configurationCache = array();
-		$this->extensionName = isset($configuration['extensionName']) ? $configuration['extensionName'] : NULL;
-		$this->pluginName = isset($configuration['pluginName']) ? $configuration['pluginName'] : NULL;
-		$this->configuration = $this->typoScriptService->convertTypoScriptArrayToPlainArray($configuration);
+
+		$this->extensionName = $configuration['extensionName'];
+		$this->pluginName = $configuration['pluginName'];
+		$this->configuration = Tx_Extbase_Utility_TypoScript::convertTypoScriptArrayToPlainArray($configuration);
 	}
 
 	/**
@@ -154,18 +122,27 @@ abstract class AbstractConfigurationManager implements \TYPO3\CMS\Core\Singleton
 	 */
 	public function getConfiguration($extensionName = NULL, $pluginName = NULL) {
 		// 1st level cache
-		$configurationCacheKey = strtolower(($extensionName ?: $this->extensionName) . '_' . ($pluginName ?: $this->pluginName));
+		if ($extensionName !== NULL) {
+			if ($pluginName === NULL) {
+				throw new Tx_Extbase_Configuration_Exception('You\'ll have to specify either both, extensionName and pluginName, or neither.', 1289852422);
+			}
+			$configurationCacheKey = strtolower($extensionName . '_' . $pluginName);
+		} else {
+			$configurationCacheKey = strtolower($this->extensionName . '_' . $this->pluginName);
+		}
 		if (isset($this->configurationCache[$configurationCacheKey])) {
 			return $this->configurationCache[$configurationCacheKey];
 		}
+
 		$frameworkConfiguration = $this->getExtbaseConfiguration();
 		if (!isset($frameworkConfiguration['persistence']['storagePid'])) {
-			$frameworkConfiguration['persistence']['storagePid'] = $this->getDefaultBackendStoragePid();
+			$frameworkConfiguration['persistence']['storagePid'] = self::DEFAULT_BACKEND_STORAGE_PID;
 		}
+
 		// only merge $this->configuration and override switchableControllerActions when retrieving configuration of the current plugin
-		if ($extensionName === NULL || $extensionName === $this->extensionName && $pluginName === $this->pluginName) {
+		if ($extensionName === NULL || ($extensionName === $this->extensionName && $pluginName === $this->pluginName)) {
 			$pluginConfiguration = $this->getPluginConfiguration($this->extensionName, $this->pluginName);
-			$pluginConfiguration = \TYPO3\CMS\Core\Utility\GeneralUtility::array_merge_recursive_overrule($pluginConfiguration, $this->configuration);
+			$pluginConfiguration = t3lib_div::array_merge_recursive_overrule($pluginConfiguration, $this->configuration);
 			$pluginConfiguration['controllerConfiguration'] = $this->getSwitchableControllerActions($this->extensionName, $this->pluginName);
 			if (isset($this->configuration['switchableControllerActions'])) {
 				$this->overrideSwitchableControllerActions($pluginConfiguration, $this->configuration['switchableControllerActions']);
@@ -174,33 +151,26 @@ abstract class AbstractConfigurationManager implements \TYPO3\CMS\Core\Singleton
 			$pluginConfiguration = $this->getPluginConfiguration($extensionName, $pluginName);
 			$pluginConfiguration['controllerConfiguration'] = $this->getSwitchableControllerActions($extensionName, $pluginName);
 		}
-		$frameworkConfiguration = \TYPO3\CMS\Core\Utility\GeneralUtility::array_merge_recursive_overrule($frameworkConfiguration, $pluginConfiguration);
+		$frameworkConfiguration = t3lib_div::array_merge_recursive_overrule($frameworkConfiguration, $pluginConfiguration);
+
 		// only load context specific configuration when retrieving configuration of the current plugin
-		if ($extensionName === NULL || $extensionName === $this->extensionName && $pluginName === $this->pluginName) {
+		if ($extensionName === NULL || ($extensionName === $this->extensionName && $pluginName === $this->pluginName)) {
 			$frameworkConfiguration = $this->getContextSpecificFrameworkConfiguration($frameworkConfiguration);
 		}
 
-		if (!empty($frameworkConfiguration['persistence']['storagePid'])) {
-			if (is_array($frameworkConfiguration['persistence']['storagePid'])) {
-					/**
-					* We simulate the frontend to enable the use of cObjects in
-					* stdWrap. Than we convert the configuration to normal TypoScript
-					* and apply the stdWrap to the storagePid
-					*/
-				if (!$this->environmentService->isEnvironmentInFrontendMode()) {
-					\TYPO3\CMS\Extbase\Utility\FrontendSimulatorUtility::simulateFrontendEnvironment($this->getContentObject());
-				}
-				$conf = $this->typoScriptService->convertPlainArrayToTypoScriptArray($frameworkConfiguration['persistence']);
-				$frameworkConfiguration['persistence']['storagePid'] = $GLOBALS['TSFE']->cObj->stdWrap($conf['storagePid'], $conf['storagePid.']);
-				if (!$this->environmentService->isEnvironmentInFrontendMode()) {
-					\TYPO3\CMS\Extbase\Utility\FrontendSimulatorUtility::resetFrontendEnvironment();
-				}
-			}
-
-			if (!empty($frameworkConfiguration['persistence']['recursive'])) {
-				$frameworkConfiguration['persistence']['storagePid'] = $this->getRecursiveStoragePids($frameworkConfiguration['persistence']['storagePid'], (int) $frameworkConfiguration['persistence']['recursive']);
-			}
+		if (!empty($frameworkConfiguration['persistence']['storagePid']) &&
+			is_array($frameworkConfiguration['persistence']['storagePid'])) {
+				/**
+				 * We simulate the frontend to enable the use of cObjects in
+				 * stdWrap. Than we convert the configuration to normal TypoScript
+				 * and apply the stdWrap to the storagePid
+				 */
+			Tx_Extbase_Utility_FrontendSimulator::simulateFrontendEnvironment($this->getContentObject());
+			$conf = Tx_Extbase_Utility_TypoScript::convertPlainArrayToTypoScriptArray($frameworkConfiguration['persistence']);
+			$frameworkConfiguration['persistence']['storagePid'] = $GLOBALS['TSFE']->cObj->stdWrap($conf['storagePid'], $conf['storagePid.']);
+			Tx_Extbase_Utility_FrontendSimulator::resetFrontendEnvironment();
 		}
+
 		// 1st level cache
 		$this->configurationCache[$configurationCacheKey] = $frameworkConfiguration;
 		return $frameworkConfiguration;
@@ -215,23 +185,14 @@ abstract class AbstractConfigurationManager implements \TYPO3\CMS\Core\Singleton
 		$setup = $this->getTypoScriptSetup();
 		$extbaseConfiguration = array();
 		if (isset($setup['config.']['tx_extbase.'])) {
-			$extbaseConfiguration = $this->typoScriptService->convertTypoScriptArrayToPlainArray($setup['config.']['tx_extbase.']);
+			$extbaseConfiguration = Tx_Extbase_Utility_TypoScript::convertTypoScriptArrayToPlainArray($setup['config.']['tx_extbase.']);
 		}
 		return $extbaseConfiguration;
 	}
 
 	/**
-	 * Returns the default backend storage pid
-	 *
-	 * @return string
-	 */
-	public function getDefaultBackendStoragePid() {
-		return self::DEFAULT_BACKEND_STORAGE_PID;
-	}
-
-	/**
-	 * @param array &$frameworkConfiguration
-	 * @param array $switchableControllerActions
+	 * @param array $frameworkConfiguration
+	 * @param array $overriddenSwitchableControllerActions in the format array('Controller1' => array('action1', 'action2'), 'Controller2' => ...)
 	 * @return void
 	 */
 	protected function overrideSwitchableControllerActions(array &$frameworkConfiguration, array $switchableControllerActions) {
@@ -242,11 +203,13 @@ abstract class AbstractConfigurationManager implements \TYPO3\CMS\Core\Singleton
 			}
 			$overriddenSwitchableControllerActions[$controllerName] = array('actions' => $actions);
 			$nonCacheableActions = $frameworkConfiguration['controllerConfiguration'][$controllerName]['nonCacheableActions'];
+
 			if (!is_array($nonCacheableActions)) {
 				// There are no non-cacheable actions, thus we can directly continue
 				// with the next controller name.
 				continue;
 			}
+
 			$overriddenNonCacheableActions = array_intersect($nonCacheableActions, $actions);
 			if (!empty($overriddenNonCacheableActions)) {
 				$overriddenSwitchableControllerActions[$controllerName]['nonCacheableActions'] = $overriddenNonCacheableActions;
@@ -273,7 +236,7 @@ abstract class AbstractConfigurationManager implements \TYPO3\CMS\Core\Singleton
 	 *
 	 * @return array the TypoScript setup
 	 */
-	abstract public function getTypoScriptSetup();
+	abstract protected function getTypoScriptSetup();
 
 	/**
 	 * Returns the TypoScript configuration found in plugin.tx_yourextension_yourplugin / module.tx_yourextension_yourmodule
@@ -283,13 +246,13 @@ abstract class AbstractConfigurationManager implements \TYPO3\CMS\Core\Singleton
 	 * @param string $pluginName in FE mode this is the specified plugin name, in BE mode this is the full module signature
 	 * @return array
 	 */
-	abstract protected function getPluginConfiguration($extensionName, $pluginName = NULL);
+	abstract protected function getPluginConfiguration($extensionName, $pluginName);
 
 	/**
 	 * Returns the configured controller/action pairs of the specified plugin/module in the format
 	 * array(
-	 * 'Controller1' => array('action1', 'action2'),
-	 * 'Controller2' => array('action3', 'action4')
+	 *  'Controller1' => array('action1', 'action2'),
+	 *  'Controller2' => array('action3', 'action4')
 	 * )
 	 *
 	 * @param string $extensionName
@@ -297,17 +260,5 @@ abstract class AbstractConfigurationManager implements \TYPO3\CMS\Core\Singleton
 	 * @return array
 	 */
 	abstract protected function getSwitchableControllerActions($extensionName, $pluginName);
-
-	/**
-	 * The implementation of the methods to return a list of storagePid that are below a certain
-	 * storage pid.
-	 *
-	 * @param string $storagePid Storage PID to start at; multiple PIDs possible as comma-separated list
-	 * @param integer $recursionDepth Maximum number of levels to search, 0 to disable recursive lookup
-	 * @return string storage PIDs
-	 */
-	abstract protected function getRecursiveStoragePids($storagePid, $recursionDepth = 0);
-
 }
-
 ?>

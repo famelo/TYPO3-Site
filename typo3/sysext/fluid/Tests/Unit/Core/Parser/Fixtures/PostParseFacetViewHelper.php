@@ -1,12 +1,21 @@
 <?php
-namespace TYPO3\CMS\Fluid\Core\Parser\Fixtures;
 
 /*                                                                        *
- * This script is backported from the TYPO3 Flow package "TYPO3.Fluid".   *
+ * This script belongs to the FLOW3 package "Fluid".                      *
  *                                                                        *
  * It is free software; you can redistribute it and/or modify it under    *
- * the terms of the GNU Lesser General Public License, either version 3   *
- *  of the License, or (at your option) any later version.                *
+ * the terms of the GNU Lesser General Public License as published by the *
+ * Free Software Foundation, either version 3 of the License, or (at your *
+ * option) any later version.                                             *
+ *                                                                        *
+ * This script is distributed in the hope that it will be useful, but     *
+ * WITHOUT ANY WARRANTY; without even the implied warranty of MERCHAN-    *
+ * TABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Lesser       *
+ * General Public License for more details.                               *
+ *                                                                        *
+ * You should have received a copy of the GNU Lesser General Public       *
+ * License along with the script.                                         *
+ * If not, see http://www.gnu.org/licenses/lgpl.html                      *
  *                                                                        *
  * The TYPO3 project - inspiring people to share!                         *
  *                                                                        */
@@ -14,14 +23,14 @@ namespace TYPO3\CMS\Fluid\Core\Parser\Fixtures;
 /**
  * Enter description here...
  */
-class PostParseFacetViewHelper extends \TYPO3\CMS\Fluid\Core\ViewHelper\AbstractViewHelper implements \TYPO3\CMS\Fluid\Core\ViewHelper\Facets\PostParseInterface {
+class Tx_Fluid_Core_Parser_Fixtures_PostParseFacetViewHelper extends Tx_Fluid_Core_ViewHelper_AbstractViewHelper implements Tx_Fluid_Core_ViewHelper_Facets_PostParseInterface {
 
-	static public $wasCalled = FALSE;
+	public static $wasCalled = FALSE;
 
 	public function __construct() {
 	}
 
-	static public function postParseEvent(\TYPO3\CMS\Fluid\Core\Parser\SyntaxTree\ViewHelperNode $viewHelperNode, array $arguments, \TYPO3\CMS\Fluid\Core\ViewHelper\TemplateVariableContainer $variableContainer) {
+	static public function postParseEvent(Tx_Fluid_Core_Parser_SyntaxTree_ViewHelperNode $viewHelperNode, array $arguments, Tx_Fluid_Core_ViewHelper_TemplateVariableContainer $variableContainer) {
 		self::$wasCalled = TRUE;
 	}
 
