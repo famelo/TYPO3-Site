@@ -30,7 +30,7 @@
   ],
   "submodules": [
     {
-      "module": "famelo/TYPO3",
+      "module": "famelo/TYPO3:typo3-4.5",
       "path": "typo3conf/ext/{{template_name}}",
       "variables": {
         "name": "{{template_name}}"
