@@ -38,7 +38,8 @@
     }
   ],
   "postProcessCommands": [
-    { "command": "rm typo3conf/LocalConfiguration.php" },
+    { "command": "rm typo3conf/localconf.php" },
+    { "command": "cp typo3conf/default_localconf.php typo3conf/localconf.php" },
     { "command": "touch typo3conf/ENABLE_INSTALL_TOOL" },
     { "command": "git submodule update --init" }
   ]

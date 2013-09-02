@@ -1,8 +1,12 @@
 <?php
-
-$configuartion = include('typo3conf/LocalConfiguration.php');
-$db = $configuartion['DB'];
-
+define('TYPO3_MODE', 'MySQL Dump');
+$configuartion = include('typo3conf/localconf.php');
+$db = array(
+	'username' => $typo_db_username,
+	'password' => $typo_db_password,
+	'host' => $typo_db_host,
+	'database' => $typo_db
+);
 $mysqli = new mysqli($db['host'], $db['username'], $db['password'], $db['database']);
 
 if ($mysqli->connect_errno) {
