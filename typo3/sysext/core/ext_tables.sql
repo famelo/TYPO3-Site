@@ -284,7 +284,6 @@ CREATE TABLE sys_file (
 	tstamp int(11) DEFAULT '0' NOT NULL,
 	crdate int(11) DEFAULT '0' NOT NULL,
 	cruser_id int(11) DEFAULT '0' NOT NULL,
-	deleted tinyint(4) DEFAULT '0' NOT NULL,
 
 	# Versioning fields
 	t3ver_oid int(11) DEFAULT '0' NOT NULL,
@@ -316,7 +315,7 @@ CREATE TABLE sys_file (
 	alternative text,
 
 	PRIMARY KEY (uid),
-	KEY parent (pid,deleted),
+	KEY parent (pid),
 	KEY t3ver_oid (t3ver_oid,t3ver_wsid),
 	KEY sel01 (storage,identifier(20)),
 	KEY sha1 (sha1(40))

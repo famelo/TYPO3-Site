@@ -729,7 +729,7 @@ class FormEngine {
 					}
 					// Get excluded fields, added fiels and put it together:
 					$excludeElements = ($this->excludeElements = $this->getExcludeElements($table, $row, $typeNum));
-					$fields = $this->mergeFieldsWithAddedFields($fields, $this->getFieldsToAdd($table, $row, $typeNum));
+					$fields = $this->mergeFieldsWithAddedFields($fields, $this->getFieldsToAdd($table, $row, $typeNum), $table);
 					// If TCEforms will render a tab menu in the next step, push the name to the tab stack:
 					$tabIdentString = '';
 					$tabIdentStringMD5 = '';
@@ -3323,18 +3323,39 @@ function ' . $evalData . '(value) {
 	/**
 	 * Merges the current [types][showitem] array with the array of fields to add for the current subtype field of the "type" value.
 	 *
-	 * @param array A [types][showitem] list of fields, exploded by ",
-	 * @param array The output from getFieldsToAdd()
+	 * @param array $fields A [types][showitem] list of fields, exploded by ",
+	 * @param array $fieldsToAdd The output from getFieldsToAdd()
+	 * @param string $table The table name, if we want to consider it's palettes when positioning the new elements
 	 * @return array Return the modified $fields array.
 	 * @see getMainFields(),getFieldsToAdd()
 	 * @todo Define visibility
 	 */
-	public function mergeFieldsWithAddedFields($fields, $fieldsToAdd) {
+	public function mergeFieldsWithAddedFields($fields, $fieldsToAdd, $table = '') {
 		if (count($fieldsToAdd[0])) {
 			$c = 0;
+			$found = FALSE;
 			foreach ($fields as $fieldInfo) {
-				$parts = explode(';', $fieldInfo);
-				if (!strcmp(trim($parts[0]), $fieldsToAdd[1])) {
+				list($fieldName, $label, $paletteName) = \TYPO3\CMS\Core\Utility\GeneralUtility::trimExplode(';', $fieldInfo);
+				if ($fieldName === $fieldsToAdd[1]) {
+					$found = TRUE;
+				} elseif ($fieldName === '--palette--' && $paletteName && $table !== '') {
+					// Look inside the palette
+					if (is_array($GLOBALS['TCA'][$table]['palettes'][$paletteName])) {
+						$itemList = $GLOBALS['TCA'][$table]['palettes'][$paletteName]['showitem'];
+						if ($itemList) {
+							$paletteFields = \TYPO3\CMS\Core\Utility\GeneralUtility::trimExplode(',', $itemList, TRUE);
+							foreach ($paletteFields as $info) {
+								$fieldParts = \TYPO3\CMS\Core\Utility\GeneralUtility::trimExplode(';', $info);
+								$theField = $fieldParts[0];
+								if ($theField === $fieldsToAdd[1]) {
+									$found = TRUE;
+									break 1;
+								}
+							}
+						}
+					}
+				}
+				if ($found) {
 					array_splice($fields, $c + 1, 0, $fieldsToAdd[0]);
 					break;
 				}
@@ -3675,7 +3696,7 @@ function ' . $evalData . '(value) {
 				foreach ($itemArray as $item) {
 					$itemParts = explode('|', $item);
 					$uidList[] = ($pUid = ($pTitle = $itemParts[0]));
-					$title = htmlspecialchars(basename(rawurldecode($itemParts[1])));
+					$title = htmlspecialchars(rawurldecode($itemParts[1]));
 					$opt[] = '<option value="' . htmlspecialchars(rawurldecode($itemParts[0])) . '" title="' . $title . '">' . $title . '</option>';
 				}
 				break;
@@ -3814,7 +3835,11 @@ function ' . $evalData . '(value) {
 					<td>' . ($params['thumbnails'] ? $this->wrapLabels($params['headers']['items']) : '') . '</td>
 				</tr>' : '') . '
 			<tr>
-				<td valign="top">' . $selector . $thumbnails . ($params['noList'] ? '' : '<span class="filetypes">' . $this->wrapLabels($params['info'])) . '</span></td>
+				<td valign="top">' . $selector . $thumbnails;
+		if (!$params['noList'] && $params['info'] !== '') {
+			$str .= '<span class="filetypes">' . $this->wrapLabels($params['info']) . '</span>';
+		}
+		$str .= '</td>
 					<td valign="top" class="icons">' . implode('<br />', $icons['L']) . '</td>
 					<td valign="top" class="icons">' . implode('<br />', $icons['R']) . '</td>
 					<td valign="top" class="thumbnails">' . $rightbox . '</td>
@@ -3956,7 +3981,9 @@ function ' . $evalData . '(value) {
 						if (!$wConf['notNewRecords'] || \TYPO3\CMS\Core\Utility\MathUtility::canBeInterpretedAsInteger($row['uid'])) {
 							// Setting &P array contents:
 							$params = array();
-							$params['fieldConfig'] = $fieldConfig;
+							if ($wid != 'RTE') {
+								$params['fieldConfig'] = $fieldConfig;
+							}
 							$params['params'] = $wConf['params'];
 							$params['exampleImg'] = $wConf['exampleImg'];
 							$params['table'] = $table;

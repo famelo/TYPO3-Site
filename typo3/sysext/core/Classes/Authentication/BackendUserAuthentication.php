@@ -26,6 +26,9 @@ namespace TYPO3\CMS\Core\Authentication;
  *
  *  This copyright notice MUST APPEAR in all copies of the script!
  ***************************************************************/
+
+use TYPO3\CMS\Core\Utility\GeneralUtility;
+
 /**
  * TYPO3 backend user authentication
  * Contains most of the functions used for checking permissions, authenticating users,
@@ -1128,11 +1131,11 @@ class BackendUserAuthentication extends \TYPO3\CMS\Core\Authentication\AbstractU
 			// Getting Root-ts if not sent
 			$config = $this->userTS;
 		}
-		$TSConf = array();
-		$parts = explode('.', $objectString, 2);
+		$TSConf = array('value' => NULL, 'properties' => NULL);
+		$parts = \TYPO3\CMS\Core\Utility\GeneralUtility::trimExplode('.', $objectString, TRUE, 2);
 		$key = $parts[0];
-		if (trim($key)) {
-			if (count($parts) > 1 && trim($parts[1])) {
+		if (strlen($key) > 0) {
+			if (count($parts) > 1 && strlen($parts[1]) > 0) {
 				// Go on, get the next level
 				if (is_array($config[$key . '.'])) {
 					$TSConf = $this->getTSConfig($parts[1], $config[$key . '.']);
@@ -1452,60 +1455,96 @@ class BackendUserAuthentication extends \TYPO3\CMS\Core\Authentication\AbstractU
 				$this->fileStorages[$storageObject->getUid()] = $storageObject;
 			}
 		} else {
-			// If userHomePath is set, we attempt to mount it
-			if ($GLOBALS['TYPO3_CONF_VARS']['BE']['userHomePath']) {
-				list($userHomeStorageUid, $userHomeFilter) = explode(':', $GLOBALS['TYPO3_CONF_VARS']['BE']['userHomePath'], 2);
-				$userHomeStorageUid = intval($userHomeStorageUid);
-				if ($userHomeStorageUid > 0) {
-					$storageObject = $storageRepository->findByUid($userHomeStorageUid);
-					// First try and mount with [uid]_[username]
-					$userHomeFilterIdentifier = $userHomeFilter . $this->user['uid'] . '_' . $this->user['username'] . $GLOBALS['TYPO3_CONF_VARS']['BE']['userUploadDir'];
-					$didMount = $storageObject->addFileMount($userHomeFilterIdentifier);
-					// If that failed, try and mount with only [uid]
-					if (!$didMount) {
-						$userHomeFilterIdentifier = $userHomeFilter . $this->user['uid'] . '_' . $this->user['username'] . $GLOBALS['TYPO3_CONF_VARS']['BE']['userUploadDir'];
-						$storageObject->addFileMount($userHomeFilterIdentifier);
-					}
-					$this->fileStorages[$storageObject->getUid()] = $storageObject;
-				}
-			}
-			// Mount group home-dirs
-			if (($this->user['options'] & 2) == 2 && $GLOBALS['TYPO3_CONF_VARS']['BE']['groupHomePath'] != '') {
-				// If groupHomePath is set, we attempt to mount it
-				list($groupHomeStorageUid, $groupHomeFilter) = explode(':', $GLOBALS['TYPO3_CONF_VARS']['BE']['groupHomePath'], 2);
-				$groupHomeStorageUid = intval($groupHomeStorageUid);
-				if ($groupHomeStorageUid > 0) {
-					$storageObject = $storageRepository->findByUid($groupHomeStorageUid);
-					foreach ($this->userGroups as $groupUid => $groupData) {
-						$groupHomeFilterIdentifier = $groupHomeFilter . $groupData['uid'];
-						$storageObject->addFileMount($groupHomeFilterIdentifier);
-					}
-					$this->fileStorages[$storageObject->getUid()] = $storageObject;
-				}
-			}
-			// Processing filemounts (both from the user and the groups)
-			$this->dataLists['filemount_list'] = \TYPO3\CMS\Core\Utility\GeneralUtility::uniqueList($this->dataLists['filemount_list']);
-			if ($this->dataLists['filemount_list']) {
-				$orderBy = $GLOBALS['TCA']['sys_filemounts']['ctrl']['default_sortby'] ? $GLOBALS['TYPO3_DB']->stripOrderBy($GLOBALS['TCA']['sys_filemounts']['ctrl']['default_sortby']) : 'sorting';
-				$res = $GLOBALS['TYPO3_DB']->exec_SELECTquery('*', 'sys_filemounts', 'deleted=0 AND hidden=0 AND pid=0 AND uid IN (' . $this->dataLists['filemount_list'] . ')', '', $orderBy);
-				while ($row = $GLOBALS['TYPO3_DB']->sql_fetch_assoc($res)) {
+			// Regular users only have storages that are defined in their filemounts
+			// Permissions and file mounts for the storage are added in StoragePermissionAspect
+			foreach ($this->getFileMountRecords() as $row) {
+				if (!array_key_exists(intval($row['base']), $this->fileStorages)) {
 					$storageObject = $storageRepository->findByUid($row['base']);
-					$storageObject->addFileMount($row['path'], $row);
 					$this->fileStorages[$storageObject->getUid()] = $storageObject;
 				}
-				$GLOBALS['TYPO3_DB']->sql_free_result($res);
 			}
 		}
-		// Injects the users' permissions to each storage
-		foreach ($this->fileStorages as $storageObject) {
-			$storagePermissions = $this->getFilePermissionsForStorage($storageObject);
-			$storageObject->setUserPermissions($storagePermissions);
+
+		// This has to be called always in order to set certain filters
+		$this->evaluateUserSpecificFileFilterSettings();
+	}
+
+	/**
+	 * Returns an array of file mount records, taking workspaces and user home and group home directories into account
+	 * Needs to be called AFTER the groups have been loaded.
+	 *
+	 * @return array
+	 * @internal
+	 */
+	public function getFileMountRecords() {
+		static $fileMountRecords = array();
+
+		if (empty($fileMountRecords)) {
+			// Processing filemounts (both from the user and the groups)
+			$fileMountList = GeneralUtility::uniqueList($this->dataLists['filemount_list']);
+			$fileMounts = GeneralUtility::trimExplode(',', $fileMountList, TRUE);
+
+			// Limit filemounts if set in workspace record
+			if ($this->workspace > 0 && !empty($this->workspaceRec['file_mountpoints'])) {
+				$workspaceFileMounts = GeneralUtility::trimExplode(',', $this->workspaceRec['file_mountpoints'], TRUE);
+				$fileMounts = array_intersect($fileMounts, $workspaceFileMounts);
+				$fileMountList = implode(',', $fileMounts);
+			}
+
+			if (!empty($fileMountList)) {
+				$orderBy = $GLOBALS['TCA']['sys_filemounts']['ctrl']['default_sortby'] ? $GLOBALS['TYPO3_DB']->stripOrderBy($GLOBALS['TCA']['sys_filemounts']['ctrl']['default_sortby']) : 'sorting';
+				$fileMountRecords = $GLOBALS['TYPO3_DB']->exec_SELECTgetRows(
+					'*',
+					'sys_filemounts',
+					'deleted=0 AND hidden=0 AND pid=0 AND uid IN (' . implode(',', $fileMounts) . ')',
+					'',
+					$orderBy
+				);
+			}
+
+			// Personal or Group filemounts are not accessible if file mount list is set in workspace record
+			if ($this->workspace <= 0 || empty($this->workspaceRec['file_mountpoints'])) {
+				// If userHomePath is set, we attempt to mount it
+				if ($GLOBALS['TYPO3_CONF_VARS']['BE']['userHomePath']) {
+					list($userHomeStorageUid, $userHomeFilter) = explode(':', $GLOBALS['TYPO3_CONF_VARS']['BE']['userHomePath'], 2);
+					$userHomeStorageUid = intval($userHomeStorageUid);
+					$userHomeFilter = '/' . ltrim($userHomeFilter, '/');
+					if ($userHomeStorageUid > 0) {
+						// Try and mount with [uid]_[username]
+						$fileMountRecords[] = array(
+							'base' => $userHomeStorageUid,
+							'title' => $this->user['username'],
+							'path' => $userHomeFilter . $this->user['uid'] . '_' . $this->user['username'] . $GLOBALS['TYPO3_CONF_VARS']['BE']['userUploadDir']
+						);
+						// Try and mount with only [uid]
+						$fileMountRecords[] = array(
+							'base' => $userHomeStorageUid,
+							'title' => $this->user['username'],
+							'path' => $userHomeFilter . $this->user['uid'] . $GLOBALS['TYPO3_CONF_VARS']['BE']['userUploadDir']
+						);
+					}
+				}
+
+				// Mount group home-dirs
+				if (($this->user['options'] & 2) == 2 && $GLOBALS['TYPO3_CONF_VARS']['BE']['groupHomePath'] != '') {
+					// If groupHomePath is set, we attempt to mount it
+					list($groupHomeStorageUid, $groupHomeFilter) = explode(':', $GLOBALS['TYPO3_CONF_VARS']['BE']['groupHomePath'], 2);
+					$groupHomeStorageUid = intval($groupHomeStorageUid);
+					$groupHomeFilter = '/' . ltrim($groupHomeFilter, '/');
+					if ($groupHomeStorageUid > 0) {
+						foreach ($this->userGroups as $groupData) {
+							$fileMountRecords[] = array(
+								'base' => $groupHomeStorageUid,
+								'title' => $groupData['title'],
+								'path' => $groupHomeFilter . $groupData['uid']
+							);
+						}
+					}
+				}
+			}
 		}
-		// more narrowing down through the workspace
-		$this->initializeFileStoragesForWorkspace();
-		// this has to be called always in order to set certain filters
-		// @todo Should be in BE_USER object then
-		$GLOBALS['BE_USER']->evaluateUserSpecificFileFilterSettings();
+
+		return $fileMountRecords;
 	}
 
 	/**
@@ -1530,7 +1569,6 @@ class BackendUserAuthentication extends \TYPO3\CMS\Core\Authentication\AbstractU
 	 * but only when needed
 	 *
 	 * @return void
-	 * @todo Should be in BE_USER object then
 	 */
 	public function evaluateUserSpecificFileFilterSettings() {
 		// Add the option for also displaying the non-hidden files
@@ -1547,28 +1585,27 @@ class BackendUserAuthentication extends \TYPO3\CMS\Core\Authentication\AbstractU
 	 * permissions.file.default {
 	 * addFile = 1
 	 * readFile = 1
-	 * editFile = 1
 	 * writeFile = 1
-	 * uploadFile = 1
 	 * copyFile = 1
 	 * moveFile = 1
 	 * renameFile = 1
 	 * unzipFile = 1
-	 * removeFile = 1
+	 * deleteFile = 1
 	 *
 	 * addFolder = 1
 	 * readFolder = 1
-	 * moveFolder = 1
 	 * writeFolder = 1
+	 * copyFolder = 1
+	 * moveFolder = 1
 	 * renameFolder = 1
-	 * removeFolder = 1
-	 * removeSubfolders = 1
+	 * deleteFolder = 1
+	 * recursivedeleteFolder = 1
 	 * }
 	 *
 	 * # overwrite settings for a specific storageObject
 	 * permissions.file.storage.StorageUid {
-	 * readFile = 0
-	 * removeSubfolders = 1
+	 * readFile = 1
+	 * recursivedeleteFolder = 0
 	 * }
 	 *
 	 * Please note that these permissions only apply, if the storage has the
@@ -1580,57 +1617,55 @@ class BackendUserAuthentication extends \TYPO3\CMS\Core\Authentication\AbstractU
 	public function getFilePermissions() {
 		if (!isset($this->filePermissions)) {
 			$defaultOptions = array(
+				// File permissions
 				'addFile' => TRUE,
-				// new option
 				'readFile' => TRUE,
-				// new option, generic check of the user rights
-				'editFile' => TRUE,
-				// new option
 				'writeFile' => TRUE,
-				// new option, generic check of the user rights
-				'uploadFile' => TRUE,
 				'copyFile' => TRUE,
 				'moveFile' => TRUE,
 				'renameFile' => TRUE,
 				'unzipFile' => TRUE,
-				'removeFile' => TRUE,
+				'deleteFile' => TRUE,
+				// Folder permissions
 				'addFolder' => TRUE,
 				'readFolder' => TRUE,
-				// new option,, generic check of the user rights
+				'writeFolder' => TRUE,
+				'copyFolder' => TRUE,
 				'moveFolder' => TRUE,
 				'renameFolder' => TRUE,
-				'writeFolder' => TRUE,
-				// new option, generic check of the user rights
-				'removeFolder' => TRUE,
-				'removeSubfolders' => TRUE
+				'deleteFolder' => TRUE,
+				'recursivedeleteFolder' => TRUE
 			);
 			if (!$this->isAdmin()) {
-				$this->filePermissions = $this->getTSConfig('permissions.file.default');
-				if (!is_array($this->filePermissions)) {
+				$defaultPermissionsTsConfig = $this->getTSConfigProp('permissions.file.default');
+				if (!empty($defaultPermissionsTsConfig)) {
+					$defaultOptions = $defaultPermissionsTsConfig;
+				} else {
 					$oldFileOperationPermissions = $this->getFileoperationPermissions();
 					// Lower permissions if the old file operation permissions are not set
-					if ($oldFileOperationPermissions ^ 1) {
+					if (!($oldFileOperationPermissions & 1)) {
 						$defaultOptions['addFile'] = FALSE;
-						$defaultOptions['uploadFile'] = FALSE;
+						$defaultOptions['writeFile'] = FALSE;
 						$defaultOptions['copyFile'] = FALSE;
 						$defaultOptions['moveFile'] = FALSE;
 						$defaultOptions['renameFile'] = FALSE;
-						$defaultOptions['removeFile'] = FALSE;
+						$defaultOptions['deleteFile'] = FALSE;
 					}
-					if ($oldFileOperationPermissions ^ 2) {
+					if (!($oldFileOperationPermissions & 2)) {
 						$defaultOptions['unzipFile'] = FALSE;
 					}
-					if ($oldFileOperationPermissions ^ 4) {
+					if (!($oldFileOperationPermissions & 4)) {
 						$defaultOptions['addFolder'] = FALSE;
+						$defaultOptions['writeFolder'] = FALSE;
 						$defaultOptions['moveFolder'] = FALSE;
 						$defaultOptions['renameFolder'] = FALSE;
-						$defaultOptions['removeFolder'] = FALSE;
+						$defaultOptions['deleteFolder'] = FALSE;
 					}
-					if ($oldFileOperationPermissions ^ 8) {
+					if (!($oldFileOperationPermissions & 8)) {
 						$defaultOptions['copyFolder'] = FALSE;
 					}
-					if ($oldFileOperationPermissions ^ 16) {
-						$defaultOptions['removeSubfolders'] = FALSE;
+					if (!($oldFileOperationPermissions & 16)) {
+						$defaultOptions['recursivedeleteFolder'] = FALSE;
 					}
 				}
 			}
@@ -1642,21 +1677,22 @@ class BackendUserAuthentication extends \TYPO3\CMS\Core\Authentication\AbstractU
 	/**
 	 * Gets the file permissions for a storage
 	 * by merging any storage-specific permissions for a
-	 * storage with the default settings
+	 * storage with the default settings.
+	 * Admin users will always get the default settings.
 	 *
 	 * @api
 	 * @param \TYPO3\CMS\Core\Resource\ResourceStorage $storageObject
 	 * @return array
 	 */
 	public function getFilePermissionsForStorage(\TYPO3\CMS\Core\Resource\ResourceStorage $storageObject) {
-		$defaultFilePermissions = $this->getFilePermissions();
-		$storagePermissionsArray = $this->getTSConfig('permissions.file.storage.' . $storageObject->getUid());
-		$storageFilePermissions = $storagePermissionsArray['properties'];
-		if (is_array($storageFilePermissions) && count($storageFilePermissions)) {
-			return array_merge($defaultFilePermissions, $storageFilePermissions);
-		} else {
-			return $defaultFilePermissions;
+		$finalUserPermissions = $this->getFilePermissions();
+		if (!$this->isAdmin()) {
+			$storageFilePermissions = $this->getTSConfigProp('permissions.file.storage.' . $storageObject->getUid());
+			if (!empty($storageFilePermissions)) {
+				$finalUserPermissions = array_merge($finalUserPermissions, $storageFilePermissions);
+			}
 		}
+		return $finalUserPermissions;
 	}
 
 	/**

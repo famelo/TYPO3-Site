@@ -164,7 +164,7 @@ abstract class AbstractDriver {
 	 * Generic handler method for directory listings - gluing together the
 	 * listing items is done
 	 *
-	 * @param string $path
+	 * @param string $basePath
 	 * @param integer $start
 	 * @param integer $numberOfItems
 	 * @param array $filterMethods The filter methods used to filter the directory items
@@ -173,7 +173,7 @@ abstract class AbstractDriver {
 	 * @param boolean $recursive
 	 * @return array
 	 */
-	protected function getDirectoryItemList($path, $start, $numberOfItems, array $filterMethods, $itemHandlerMethod, $itemRows = array(), $recursive = FALSE) {
+	protected function getDirectoryItemList($basePath, $start, $numberOfItems, array $filterMethods, $itemHandlerMethod, $itemRows = array(), $recursive = FALSE) {
 
 	}
 
@@ -379,6 +379,18 @@ abstract class AbstractDriver {
 	 * @return array
 	 */
 	abstract public function getFileInfoByIdentifier($identifier);
+
+	/**
+	 * Basic implementation of the method that does directly return the
+	 * file name as is.
+	 *
+	 * @param string $fileName Input string, typically the body of a fileName
+	 * @param string $charset Charset of the a fileName (defaults to current charset; depending on context)
+	 * @return string Output string with any characters not matching [.a-zA-Z0-9_-] is substituted by '_' and trailing dots removed
+	 */
+	public function sanitizeFileName($fileName, $charset = '') {
+		return $fileName;
+	}
 
 	/**
 	 * Returns information about a file for a given file object.
