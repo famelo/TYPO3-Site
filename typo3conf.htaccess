@@ -1,0 +1,4 @@
+
+<FilesMatch "\.sql$">
+deny from all
+</FilesMatch>
