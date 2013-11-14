@@ -1,0 +1,7 @@
+{
+	"database": {
+		"baseDir": "typo3conf",
+		"filename": "Template.sql",
+		"skip": "cache_.*,cf_.*,sys_log,tx_devlog,tx_extensionmanager_domain_model_extension"
+	}
+}
