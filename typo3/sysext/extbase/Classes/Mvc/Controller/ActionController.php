@@ -463,7 +463,12 @@ class ActionController extends \TYPO3\CMS\Extbase\Mvc\Controller\AbstractControl
 		if ($this->configurationManager->isFeatureEnabled('rewrittenPropertyMapper')) {
 			$errorFlashMessage = $this->getErrorFlashMessage();
 			if ($errorFlashMessage !== FALSE) {
-				$this->controllerContext->getFlashMessageQueue()->addMessage(new \TYPO3\CMS\Core\Messaging\FlashMessage($errorFlashMessage, '', \TYPO3\CMS\Core\Messaging\FlashMessage::ERROR));
+				$errorFlashMessageObject = new \TYPO3\CMS\Core\Messaging\FlashMessage(
+					$errorFlashMessage,
+					'',
+					\TYPO3\CMS\Core\Messaging\FlashMessage::ERROR
+				);
+				$this->controllerContext->getFlashMessageQueue()->enqueue($errorFlashMessageObject);
 			}
 			$referringRequest = $this->request->getReferringRequest();
 			if ($referringRequest !== NULL) {
@@ -473,30 +478,24 @@ class ActionController extends \TYPO3\CMS\Extbase\Mvc\Controller\AbstractControl
 				$this->forward($referringRequest->getControllerActionName(), $referringRequest->getControllerName(), $referringRequest->getControllerExtensionName(), $referringRequest->getArguments());
 			}
 			$message = 'An error occurred while trying to call ' . get_class($this) . '->' . $this->actionMethodName . '().' . PHP_EOL;
-			foreach ($this->arguments->getValidationResults()->getFlattenedErrors() as $propertyPath => $errors) {
-				foreach ($errors as $error) {
-					$message .= 'Error for ' . $propertyPath . ':  ' . $error->render() . PHP_EOL;
-				}
-			}
 			return $message;
 		} else {
 			// @deprecated since Extbase 1.4.0, will be removed two versions after Extbase 6.1
 			$this->request->setErrors($this->argumentsMappingResults->getErrors());
 			$errorFlashMessage = $this->getErrorFlashMessage();
 			if ($errorFlashMessage !== FALSE) {
-				$this->controllerContext->getFlashMessageQueue()->addMessage(new \TYPO3\CMS\Core\Messaging\FlashMessage($errorFlashMessage, '', \TYPO3\CMS\Core\Messaging\FlashMessage::ERROR));
+				$errorFlashMessageObject = new \TYPO3\CMS\Core\Messaging\FlashMessage(
+					$errorFlashMessage,
+					'',
+					\TYPO3\CMS\Core\Messaging\FlashMessage::ERROR
+				);
+				$this->controllerContext->getFlashMessageQueue()->enqueue($errorFlashMessageObject);
 			}
 			$referrer = $this->request->getInternalArgument('__referrer');
 			if ($referrer !== NULL) {
 				$this->forward($referrer['actionName'], $referrer['controllerName'], $referrer['extensionName'], $this->request->getArguments());
 			}
 			$message = 'An error occurred while trying to call ' . get_class($this) . '->' . $this->actionMethodName . '().' . PHP_EOL;
-			foreach ($this->argumentsMappingResults->getErrors() as $error) {
-				$message .= 'Error:   ' . $error->getMessage() . PHP_EOL;
-			}
-			foreach ($this->argumentsMappingResults->getWarnings() as $warning) {
-				$message .= 'Warning: ' . $warning->getMessage() . PHP_EOL;
-			}
 			return $message;
 		}
 	}

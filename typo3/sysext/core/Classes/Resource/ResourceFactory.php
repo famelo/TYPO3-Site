@@ -180,9 +180,10 @@ class ResourceFactory implements \TYPO3\CMS\Core\SingletonInterface {
 		$bestMatchStorageUid = 0;
 		$bestMatchLength = 0;
 		foreach ($this->localDriverStorageCache as $storageUid => $basePath) {
-			$commonPrefix = PathUtility::getCommonPrefix(array($basePath, $localPath));
-			$matchLength = strlen($commonPrefix);
-			if ($matchLength > $bestMatchLength) {
+			$matchLength = strlen(PathUtility::getCommonPrefix(array($basePath, $localPath)));
+			$basePathLength = strlen($basePath);
+
+			if ($matchLength >= $basePathLength && $matchLength > $bestMatchLength) {
 				$bestMatchStorageUid = intval($storageUid);
 				$bestMatchLength = $matchLength;
 			}

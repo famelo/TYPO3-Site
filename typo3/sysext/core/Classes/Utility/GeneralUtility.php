@@ -2057,8 +2057,11 @@ class GeneralUtility {
 					}
 				}
 			}
-			// Add the element to the output string:
-			$output .= ($spaceInd >= 0 ? str_pad('', ($level + 1) * $indentN, $indentChar) : '') . '<' . $NSprefix . $tagName . $attr . '>' . $content . '</' . $NSprefix . $tagName . '>' . $nl;
+			if ((string)$tagName !== '') {
+				// Add the element to the output string:
+				$output .= ($spaceInd >= 0 ? str_pad('', ($level + 1) * $indentN, $indentChar) : '')
+					. '<' . $NSprefix . $tagName . $attr . '>' . $content . '</' . $NSprefix . $tagName . '>' . $nl;
+			}
 		}
 		// If we are at the outer-most level, then we finally wrap it all in the document tags and return that as the value:
 		if (!$level) {
@@ -3548,7 +3551,7 @@ Connection: close
 	 */
 	static public function isAbsPath($path) {
 		// On Windows also a path starting with a drive letter is absolute: X:/
-		if (TYPO3_OS === 'WIN' && substr($path, 1, 2) === ':/') {
+		if (TYPO3_OS === 'WIN' && (substr($path, 1, 2) === ':/' || substr($path, 1, 2) === ':\\')) {
 			return TRUE;
 		}
 		// Path starting with a / is always absolute, on every system

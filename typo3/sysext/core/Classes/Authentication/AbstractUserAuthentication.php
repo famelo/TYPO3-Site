@@ -27,6 +27,8 @@ namespace TYPO3\CMS\Core\Authentication;
  *  This copyright notice MUST APPEAR in all copies of the script!
  ***************************************************************/
 
+use TYPO3\CMS\Core\Utility\HttpUtility;
+
 /**
  * Authentication of users in TYPO3
  *
@@ -801,10 +803,11 @@ abstract class AbstractUserAuthentication {
 						// strip port from server
 						$server = str_replace($sslPortSuffix, '', $server);
 					}
-					\TYPO3\CMS\Core\Utility\HttpUtility::redirect('http://' . $server . '/' . $address . TYPO3_mainDir . $backendScript);
+					HttpUtility::redirect('http://' . $server . '/' . $address . TYPO3_mainDir . $backendScript);
 				}
 			}
 		} elseif ($activeLogin || count($tempuserArr)) {
+			HttpUtility::setResponseCode(HttpUtility::HTTP_STATUS_401);
 			$this->loginFailure = TRUE;
 			if ($this->writeDevLog && !count($tempuserArr) && $activeLogin) {
 				\TYPO3\CMS\Core\Utility\GeneralUtility::devLog('Login failed: ' . \TYPO3\CMS\Core\Utility\GeneralUtility::arrayToLogString($loginData), 'TYPO3\\CMS\\Core\\Authentication\\AbstractUserAuthentication', 2);
@@ -1323,8 +1326,14 @@ abstract class AbstractUserAuthentication {
 		$authInfo['db_user']['userident_column'] = $this->userident_column;
 		$authInfo['db_user']['usergroup_column'] = $this->usergroup_column;
 		$authInfo['db_user']['enable_clause'] = $this->user_where_clause();
-		$authInfo['db_user']['checkPidList'] = $this->checkPid ? $this->checkPid_value : '';
-		$authInfo['db_user']['check_pid_clause'] = $this->checkPid ? ' AND pid IN (' . $GLOBALS['TYPO3_DB']->cleanIntList($authInfo['db_user']['checkPidList']) . ')' : '';
+		if ($this->checkPid && $this->checkPid_value !== NULL) {
+			$authInfo['db_user']['checkPidList'] = $this->checkPid_value;
+			$authInfo['db_user']['check_pid_clause'] = ' AND pid IN (' .
+				$GLOBALS['TYPO3_DB']->cleanIntList($this->checkPid_value) . ')';
+		} else {
+			$authInfo['db_user']['checkPidList'] = '';
+			$authInfo['db_user']['check_pid_clause'] = '';
+		}
 		$authInfo['db_groups']['table'] = $this->usergroup_table;
 		return $authInfo;
 	}

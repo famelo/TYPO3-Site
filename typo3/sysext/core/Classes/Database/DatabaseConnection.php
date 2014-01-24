@@ -1290,17 +1290,24 @@ class DatabaseConnection {
 			$this->connectDB();
 		}
 		$dbArr = array();
-		$db_list = $this->link->query("SHOW DATABASES");
-		while ($row = $db_list->fetch_object()) {
-			try {
-				$this->setDatabaseName($row->Database);
-				if ($this->sql_select_db()) {
-					$dbArr[] = $row->Database;
+		$db_list = $this->link->query("SELECT SCHEMA_NAME FROM information_schema.SCHEMATA");
+		if ($db_list === FALSE) {
+			throw new \RuntimeException(
+				'MySQL Error: Cannot get tablenames: "' . $this->sql_error() . '"!',
+				1378457171
+			);
+		} else {
+			while ($row = $db_list->fetch_object()) {
+				try {
+					$this->setDatabaseName($row->SCHEMA_NAME);
+					if ($this->sql_select_db()) {
+						$dbArr[] = $row->SCHEMA_NAME;
+					}
+				} catch (\RuntimeException $exception) {
+					// The exception happens if we cannot connect to the database
+					// (usually due to missing permissions). This is ok here.
+					// We catch the exception, skip the database and continue.
 				}
-			} catch (\RuntimeException $exception) {
-				// The exception happens if we cannot connect to the database
-				// (usually due to missing permissions). This is ok here.
-				// We catch the exception, skip the database and continue.
 			}
 		}
 		return $dbArr;
@@ -1345,10 +1352,12 @@ class DatabaseConnection {
 		}
 		$output = array();
 		$columns_res = $this->link->query('SHOW COLUMNS FROM `' . $tableName . '`');
-		while ($fieldRow = $columns_res->fetch_assoc()) {
-			$output[$fieldRow['Field']] = $fieldRow;
+		if ($columns_res !== FALSE) {
+			while ($fieldRow = $columns_res->fetch_assoc()) {
+				$output[$fieldRow['Field']] = $fieldRow;
+			}
+			$columns_res->free();
 		}
-		$columns_res->free();
 		return $output;
 	}
 
@@ -1365,10 +1374,12 @@ class DatabaseConnection {
 		}
 		$output = array();
 		$keyRes = $this->link->query('SHOW KEYS FROM `' . $tableName . '`');
-		while ($keyRow = $keyRes->fetch_assoc()) {
-			$output[] = $keyRow;
+		if ($keyRes !== FALSE) {
+			while ($keyRow = $keyRes->fetch_assoc()) {
+				$output[] = $keyRow;
+			}
+			$keyRes->free();
 		}
-		$keyRes->free();
 		return $output;
 	}
 

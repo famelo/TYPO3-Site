@@ -424,9 +424,9 @@ class SchedulerModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClas
 			$tr++;
 			// Display information about each service
 			foreach ($registeredClasses as $class => $classInfo) {
-				$table[$tr][] = $classInfo['title'];
-				$table[$tr][] = $classInfo['extension'];
-				$table[$tr][] = $classInfo['description'];
+				$table[$tr][] = htmlspecialchars($classInfo['title']);
+				$table[$tr][] = htmlspecialchars($classInfo['extension']);
+				$table[$tr][] = htmlspecialchars($classInfo['description']);
 				$link = $GLOBALS['MCONF']['_'] . '&SET[function]=list&CMD=add&tx_scheduler[class]=' . $class;
 				$table[$tr][] = '<a href="' . htmlspecialchars($link) . '" title="' . $GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_common.xlf:new', TRUE) . '" class="icon">' . \TYPO3\CMS\Backend\Utility\IconUtility::getSpriteIcon('actions-document-new') . '</a>';
 				$tr++;
@@ -690,10 +690,10 @@ class SchedulerModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClas
 			ksort($groupedClasses);
 			// Loop on all grouped classes to display a selector
 			foreach ($groupedClasses as $extension => $class) {
-				$cell .= '<optgroup label="' . $extension . '">';
+				$cell .= '<optgroup label="' . htmlspecialchars($extension) . '">';
 				foreach ($groupedClasses[$extension] as $class => $classInfo) {
 					$selected = $class == $taskInfo['class'] ? ' selected="selected"' : '';
-					$cell .= '<option value="' . $class . '"' . 'title="' . $classInfo['description'] . '"' . $selected . '>' . $classInfo['title'] . '</option>';
+					$cell .= '<option value="' . $class . '"' . 'title="' . htmlspecialchars($classInfo['description']) . '"' . $selected . '>' . htmlspecialchars($classInfo['title']) . '</option>';
 				}
 				$cell .= '</optgroup>';
 			}
@@ -961,14 +961,13 @@ class SchedulerModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClas
 				if ($this->scheduler->isValidTaskObject($task)) {
 					// The task object is valid
 					$name = htmlspecialchars($registeredClasses[$class]['title'] . ' (' . $registeredClasses[$class]['extension'] . ')');
-					$name .= '<br /> ';
 					$additionalInformation = $task->getAdditionalInformation();
 					if ($task instanceof \TYPO3\CMS\Scheduler\ProgressProviderInterface) {
 						$progress = round(floatval($task->getProgress()), 2);
-						$name .= $this->renderTaskProgressBar($progress);
+						$name .= '<br />' . $this->renderTaskProgressBar($progress);
 					}
 					if (!empty($additionalInformation)) {
-						$name .= '[' . htmlspecialchars($additionalInformation) . ']';
+						$name .= '<br />[' . htmlspecialchars($additionalInformation) . ']';
 					}
 					// Check if task currently has a running execution
 					if (!empty($schedulerRecord['serialized_executions'])) {

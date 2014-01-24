@@ -2354,7 +2354,7 @@ class ContentObjectRenderer {
 		if (!empty($conf['strPad.']['length'])) {
 			$length = intval($conf['strPad.']['length']);
 		}
-		if (!empty($conf['strPad.']['padWith'])) {
+		if (isset($conf['strPad.']['padWith']) && strlen($conf['strPad.']['padWith']) > 0) {
 			$padWith = $conf['strPad.']['padWith'];
 		}
 		if (!empty($conf['strPad.']['type'])) {
@@ -6019,7 +6019,7 @@ class ContentObjectRenderer {
 				} else {
 					$target = '';
 				}
-				$onClick = 'vHWin=window.open(' . \TYPO3\CMS\Core\Utility\GeneralUtility::quoteJSvalue($GLOBALS['TSFE']->baseUrlWrap($finalTagParts['url']), TRUE) . ',\'FEopenLink\',\'' . $JSwindowParams . '\');vHWin.focus();return false;';
+				$onClick = 'vHWin=window.open(' . \TYPO3\CMS\Core\Utility\GeneralUtility::quoteJSvalue($GLOBALS['TSFE']->baseUrlWrap($finalTagParts['url']), TRUE) . ',\'FEopenLink\',' . \TYPO3\CMS\Core\Utility\GeneralUtility::quoteJSvalue($JSwindowParams) . ');vHWin.focus();return false;';
 				$res = '<a href="' . htmlspecialchars($finalTagParts['url']) . '"' . $target . ' onclick="' . htmlspecialchars($onClick) . '"' . ($title ? ' title="' . $title . '"' : '') . ($linkClass ? ' class="' . $linkClass . '"' : '') . $finalTagParts['aTagParams'] . '>';
 			} else {
 				if ($GLOBALS['TSFE']->spamProtectEmailAddresses === 'ascii' && $finalTagParts['TYPE'] === 'mailto') {

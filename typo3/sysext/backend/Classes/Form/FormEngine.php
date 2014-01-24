@@ -587,7 +587,7 @@ class FormEngine {
 			'input' => array('size', 'max', 'readOnly'),
 			'text' => array('cols', 'rows', 'wrap', 'readOnly'),
 			'check' => array('cols', 'showIfRTE', 'readOnly'),
-			'select' => array('size', 'autoSizeMax', 'maxitems', 'minitems', 'readOnly'),
+			'select' => array('size', 'autoSizeMax', 'maxitems', 'minitems', 'readOnly', 'treeConfig'),
 			'group' => array('size', 'autoSizeMax', 'max_size', 'show_thumbs', 'maxitems', 'minitems', 'disable_controls', 'readOnly'),
 			'inline' => array('appearance', 'behaviour', 'foreign_label', 'foreign_selector', 'foreign_unique', 'maxitems', 'minitems', 'size', 'autoSizeMax', 'symmetric_label', 'readOnly')
 		);
@@ -1367,8 +1367,7 @@ class FormEngine {
 			$evalObj = \TYPO3\CMS\Core\Utility\GeneralUtility::getUserObj($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['tce']['formevals'][$evalData] . ':&' . $evalData);
 			if (is_object($evalObj) && method_exists($evalObj, 'returnFieldJS')) {
 				$this->extJSCODE .= '
-
-function ' . $evalData . '(value) {
+TBE_EDITOR.customEvalFunctions[\'' . $evalData . '\'] = function(value) {
 ' . $evalObj->returnFieldJS() . '
 }
 ';
@@ -4017,6 +4016,7 @@ function ' . $evalData . '(value) {
 								// ... else types "popup", "colorbox" and "userFunc" will need additional parameters:
 								$params['formName'] = $this->formName;
 								$params['itemName'] = $itemName;
+								$params['hmac'] = \TYPO3\CMS\Core\Utility\GeneralUtility::hmac($params['formName'] . $params['itemName'], 'wizard_js');
 								$params['fieldChangeFunc'] = $fieldChangeFunc;
 								$params['fieldChangeFuncHash'] = \TYPO3\CMS\Core\Utility\GeneralUtility::hmac(serialize($fieldChangeFunc));
 								switch ((string) $wConf['type']) {
@@ -5473,6 +5473,9 @@ function ' . $evalData . '(value) {
 			TBE_EDITOR.labels.onChangeAlert = ' . $GLOBALS['LANG']->JScharCode($this->getLL('m_onChangeAlert')) . ';
 			evalFunc.USmode = ' . ($GLOBALS['TYPO3_CONF_VARS']['SYS']['USdateFormat'] ? '1' : '0') . ';
 			TBE_EDITOR.backend_interface = "' . $GLOBALS['BE_USER']->uc['interfaceSetup'] . '";
+
+			TBE_EDITOR.customEvalFunctions = {};
+
 			';
 		}
 		// Add JS required for inline fields
@@ -5551,23 +5554,23 @@ function ' . $evalData . '(value) {
 						fObj = formObj[fName];
 					}
 
-						// clear field before adding value, if configured so (maxitems==1)
-					if (typeof TBE_EDITOR.clearBeforeSettingFormValueFromBrowseWin[fName] != "undefined") {
-						clearSettings = TBE_EDITOR.clearBeforeSettingFormValueFromBrowseWin[fName];
-						setFormValueManipulate(fName, "Remove");
-
-							// Clear the upload field
-						var filesContainer = document.getElementById(clearSettings.itemFormElID_file);
-						if(filesContainer) {
-							filesContainer.innerHTML = filesContainer.innerHTML;
-						}
-
-							// update len after removing value
-						len = fObj.length;
-					}
-
 					if (isMultiple || isList) {
 						if (!isMultiple) {
+								// clear field before adding value, if configured so (maxitems==1)
+							if (typeof TBE_EDITOR.clearBeforeSettingFormValueFromBrowseWin[fName] != "undefined") {
+								clearSettings = TBE_EDITOR.clearBeforeSettingFormValueFromBrowseWin[fName];
+								setFormValueManipulate(fName, "Remove");
+
+									// Clear the upload field
+								var filesContainer = document.getElementById(clearSettings.itemFormElID_file);
+								if(filesContainer) {
+									filesContainer.innerHTML = filesContainer.innerHTML;
+								}
+
+								// update len after removing value
+								len = fObj.length;
+							}
+
 								// If multiple values are not allowed, clear anything that is in the control already
 							fObj.options.length = 0;
 							fObj.length = 0; // Note: this is dangerous! "length" on the object is a reserved JS attribute!
