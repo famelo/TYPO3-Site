@@ -135,7 +135,7 @@ CREATE TABLE `be_sessions` (
 
 LOCK TABLES `be_sessions` WRITE;
 /*!40000 ALTER TABLE `be_sessions` DISABLE KEYS */;
-INSERT INTO `be_sessions` VALUES ('744f7144cb2ca1de8542871e5b9077f5','be_typo_user','::1',154107751,1,1384444470,'a:2:{s:16:\"formSessionToken\";s:64:\"ff3a1337dc731125bb5b1dd0d5dee5fadaa627e2bc9c2ae04a14cdef390fe687\";s:27:\"core.template.flashMessages\";N;}',0),('d8ff2cb18c193a4d59b7d6149a1aacb0','be_typo_user','::1',199818037,1,1390576143,'a:2:{s:16:\"formSessionToken\";s:64:\"5c2bcd035c6d083622b17f05718269ab0c9a2afa1f71ed5c4d6d5793db14afd5\";s:27:\"core.template.flashMessages\";N;}',0);
+INSERT INTO `be_sessions` VALUES ('744f7144cb2ca1de8542871e5b9077f5','be_typo_user','::1',154107751,1,1384444470,'a:2:{s:16:\"formSessionToken\";s:64:\"ff3a1337dc731125bb5b1dd0d5dee5fadaa627e2bc9c2ae04a14cdef390fe687\";s:27:\"core.template.flashMessages\";N;}',0),('d8ff2cb18c193a4d59b7d6149a1aacb0','be_typo_user','::1',199818037,1,1390576582,'a:2:{s:16:\"formSessionToken\";s:64:\"5c2bcd035c6d083622b17f05718269ab0c9a2afa1f71ed5c4d6d5793db14afd5\";s:27:\"core.template.flashMessages\";N;}',0);
 /*!40000 ALTER TABLE `be_sessions` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -1832,4 +1832,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2014-01-24 16:09:32
+-- Dump completed on 2014-01-24 16:18:30

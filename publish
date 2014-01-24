@@ -1,0 +1,60 @@
+#!/usr/bin/env php
+<?php
+
+$username = 'mneuhaus';
+$repository = 'famelo/TYPO3-Site';
+$fileName = 'TYPO3.zip';
+$skipBuilding = FALSE;
+$skipRelease = FALSE;
+$skipReleaseUpload = FALSE;
+// $releaseId = 158990;
+
+echo 'Passwort for ' . $username . ': ';
+$password = trim(fgets(STDIN, 4096));
+
+echo 'Release Name: ';
+$releaseName = trim(fgets(STDIN, 4096));
+
+if ($skipBuilding === FALSE) {
+	echo 'tag current state with provided version number' . PHP_EOL;
+	system('git tag "' . $releaseName . '"');
+	echo PHP_EOL;
+
+	echo 'push tags to github' . PHP_EOL;
+	system('git push origin master');
+	system('git push origin --tags');
+	echo PHP_EOL;
+
+	system('zip -r "' . $fileName . '" ./*');
+}
+
+$ch = curl_init();
+curl_setopt($ch, CURLOPT_USERAGENT, 'Release Script for ' . $repository . '');
+curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+curl_setopt($ch, CURLOPT_USERPWD, $username . ':' . $password);
+curl_setopt($ch, CURLOPT_POST, 1);
+
+if ($skipRelease === FALSE) {
+	curl_setopt($ch, CURLOPT_URL, 'https://api.github.com/repos/' . $repository . '/releases');
+	$release = array(
+		'tag_name' => $releaseName,
+		'name' => $releaseName
+	);
+	curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($release));
+
+	$release = json_decode(curl_exec($ch));
+	$releaseId = $release->id;
+}
+
+if ($skipReleaseUpload === FALSE) {
+	$uri = 'https://uploads.github.com/repos/' . $repository . '/releases/' . $releaseId . '/assets?name=' . $fileName;
+
+	curl_setopt($ch, CURLOPT_URL, $uri);
+	curl_setopt ($ch, CURLOPT_HTTPHEADER, array("Content-Type: text/plain"));
+	curl_setopt($ch, CURLOPT_POSTFIELDS, file_get_contents($fileName));
+
+	$result = curl_exec($ch);
+	curl_close($ch);
+
+	unlink($fileName);
+}
