@@ -1,28 +1,19 @@
 <?php
 namespace TYPO3\CMS\Core\Tests\Unit\Resource;
 
-/***************************************************************
- * Copyright notice
+/**
+ * This file is part of the TYPO3 CMS project.
  *
- * (c) 2011-2013 Andreas Wolf <andreas.wolf@ikt-werk.de>
- * All rights reserved
+ * It is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License, either version 2
+ * of the License, or any later version.
  *
- * This script is part of the TYPO3 project. The TYPO3 project is
- * free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
+ * For the full copyright and license information, please read the
+ * LICENSE.txt file that was distributed with this source code.
  *
- * The GNU General Public License can be found at
- * http://www.gnu.org/copyleft/gpl.html.
- *
- * This script is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * This copyright notice MUST APPEAR in all copies of the script!
- ***************************************************************/
+ * The TYPO3 project - inspiring people to share!
+ */
+use TYPO3\CMS\Core\Resource\ResourceStorage;
 
 /**
  * Testcase for the file class of the TYPO3 FAL
@@ -37,20 +28,31 @@ class FileTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	 */
 	protected $singletonInstances = array();
 
+	/**
+	 * @var ResourceStorage
+	 */
+	protected $storageMock;
+
 	public function setUp() {
 		$this->singletonInstances = \TYPO3\CMS\Core\Utility\GeneralUtility::getSingletonInstances();
-		\TYPO3\CMS\Core\Utility\GeneralUtility::purgeInstances();
+		$this->storageMock = $this->getMock('TYPO3\CMS\Core\Resource\ResourceStorage', array(), array(), '', FALSE);
+		$this->storageMock->expects($this->any())->method('getUid')->will($this->returnValue(5));
+
+		$mockedMetaDataRepository = $this->getMock('TYPO3\\CMS\\Core\\Resource\\Index\\MetaDataRepository');
+		$mockedMetaDataRepository->expects($this->any())->method('findByFile')->will($this->returnValue(array('file' => 1)));
+		\TYPO3\CMS\Core\Utility\GeneralUtility::setSingletonInstance('TYPO3\\CMS\\Core\\Resource\\Index\\MetaDataRepository', $mockedMetaDataRepository);
 	}
 
 	public function tearDown() {
 		\TYPO3\CMS\Core\Utility\GeneralUtility::resetSingletonInstances($this->singletonInstances);
+		parent::tearDown();
 	}
 
 	/**
 	 * @return \TYPO3\CMS\Core\Resource\File
 	 */
 	protected function prepareFixture() {
-		$fixture = new \TYPO3\CMS\Core\Resource\File('testfile');
+		$fixture = new \TYPO3\CMS\Core\Resource\File(array('testfile'), $this->storageMock);
 		return $fixture;
 	}
 
@@ -65,7 +67,7 @@ class FileTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 			uniqid() => uniqid(),
 			'uid' => 1
 		);
-		$fixture = new \TYPO3\CMS\Core\Resource\File($properties);
+		$fixture = new \TYPO3\CMS\Core\Resource\File($properties, $this->storageMock);
 		$availablePropertiesBackup = \TYPO3\CMS\Core\Resource\File::getAvailableProperties();
 		\TYPO3\CMS\Core\Resource\File::setAvailableProperties(array_keys($properties));
 		foreach ($properties as $key => $value) {
@@ -84,24 +86,13 @@ class FileTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	public function commonPropertiesAreAvailableWithOwnGetters() {
 		$properties = array(
 			'name' => uniqid(),
-			'storage' => $this->getMock('TYPO3\\CMS\\Core\\Resource\\ResourceStorage', array(), array(), '', FALSE),
+			'storage' => $this->storageMock,
 			'size' => 1024
 		);
-		$fixture = new \TYPO3\CMS\Core\Resource\File($properties);
+		$fixture = new \TYPO3\CMS\Core\Resource\File($properties, $this->storageMock);
 		foreach ($properties as $key => $value) {
 			$this->assertEquals($value, call_user_func(array($fixture, 'get' . $key)));
 		}
-	}
-
-	/**
-	 * @test
-	 */
-	public function fileAsksRepositoryForIndexStatus() {
-		$mockedRepository = $this->getMock('TYPO3\\CMS\\Core\\Resource\\FileRepository');
-		$mockedRepository->expects($this->once())->method('getFileIndexRecord')->will($this->returnValue(array()));
-		\TYPO3\CMS\Core\Utility\GeneralUtility::setSingletonInstance('TYPO3\\CMS\\Core\\Resource\\FileRepository', $mockedRepository);
-		$fixture = new \TYPO3\CMS\Core\Resource\File(array());
-		$this->assertTrue($fixture->isIndexed());
 	}
 
 	/**
@@ -110,7 +101,7 @@ class FileTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	 * @test
 	 */
 	public function fileIndexStatusIsTrueIfUidIsSet() {
-		$fixture = new \TYPO3\CMS\Core\Resource\File(array('uid' => 1));
+		$fixture = new \TYPO3\CMS\Core\Resource\File(array('uid' => 1), $this->storageMock);
 		$this->assertTrue($fixture->isIndexed());
 	}
 
@@ -119,7 +110,7 @@ class FileTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	 */
 	public function updatePropertiesUpdatesFileProperties() {
 		$identifier = '/' . uniqid();
-		$fixture = new \TYPO3\CMS\Core\Resource\File(array('uid' => 1, 'identifier' => '/test'));
+		$fixture = new \TYPO3\CMS\Core\Resource\File(array('uid' => 1, 'identifier' => '/test'), $this->storageMock);
 		$fixture->updateProperties(array('identifier' => $identifier));
 		$this->assertEquals($identifier, $fixture->getIdentifier());
 	}
@@ -128,7 +119,7 @@ class FileTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	 * @test
 	 */
 	public function updatePropertiesLeavesPropertiesUntouchedIfNotSetInNewProperties() {
-		$fixture = new \TYPO3\CMS\Core\Resource\File(array('uid' => 1, 'foo' => 'asdf', 'identifier' => '/test'));
+		$fixture = new \TYPO3\CMS\Core\Resource\File(array('uid' => 1, 'foo' => 'asdf', 'identifier' => '/test'), $this->storageMock);
 		$fixture->updateProperties(array('foo' => 'foobar'));
 		$this->assertEquals('/test', $fixture->getIdentifier());
 		$this->assertEquals('/test', $fixture->getProperty('identifier'));
@@ -138,7 +129,7 @@ class FileTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	 * @test
 	 */
 	public function updatePropertiesDiscardsUidIfAlreadySet() {
-		$fixture = new \TYPO3\CMS\Core\Resource\File(array('uid' => 1, 'identifier' => '/test'));
+		$fixture = new \TYPO3\CMS\Core\Resource\File(array('uid' => 1, 'identifier' => '/test'), $this->storageMock);
 		$fixture->updateProperties(array('uid' => 3));
 		$this->assertEquals(1, $fixture->getUid());
 	}
@@ -147,7 +138,7 @@ class FileTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	 * @test
 	 */
 	public function updatePropertiesRecordsNamesOfChangedProperties() {
-		$fixture = new \TYPO3\CMS\Core\Resource\File(array('uid' => 1, 'foo' => 'asdf', 'baz' => 'fdsw', 'identifier' => '/test'));
+		$fixture = new \TYPO3\CMS\Core\Resource\File(array('uid' => 1, 'foo' => 'asdf', 'baz' => 'fdsw', 'identifier' => '/test'), $this->storageMock);
 		$fixture->updateProperties(array('foo' => 'foobar', 'baz' => 'foobaz'));
 		$this->assertEquals(array('foo', 'baz'), $fixture->getUpdatedProperties());
 	}
@@ -156,7 +147,7 @@ class FileTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	 * @test
 	 */
 	public function updatePropertiesDoesNotRecordPropertyNameIfSameValueIsProvided() {
-		$fixture = new \TYPO3\CMS\Core\Resource\File(array('uid' => 1, 'foo' => 'asdf', 'identifier' => '/test'));
+		$fixture = new \TYPO3\CMS\Core\Resource\File(array('uid' => 1, 'foo' => 'asdf', 'identifier' => '/test'), $this->storageMock);
 		$fixture->updateProperties(array('foo' => 'asdf'));
 		$this->assertEmpty($fixture->getUpdatedProperties());
 	}
@@ -165,7 +156,7 @@ class FileTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	 * @test
 	 */
 	public function updatePropertiesMarksPropertyAsChangedOnlyOnce() {
-		$fixture = new \TYPO3\CMS\Core\Resource\File(array('uid' => 1, 'foo' => 'asdf', 'baz' => 'fdsw', 'identifier' => '/test'));
+		$fixture = new \TYPO3\CMS\Core\Resource\File(array('uid' => 1, 'foo' => 'asdf', 'baz' => 'fdsw', 'identifier' => '/test'), $this->storageMock);
 		$fixture->updateProperties(array('foo' => 'foobar', 'baz' => 'foobaz'));
 		$fixture->updateProperties(array('foo' => 'fdsw', 'baz' => 'asdf'));
 		$this->assertEquals(array('foo', 'baz'), $fixture->getUpdatedProperties());
@@ -175,59 +166,37 @@ class FileTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	 * @test
 	 */
 	public function updatePropertiesReloadsStorageObjectIfStorageChanges() {
+		$fileProperties = array(
+			'uid' => 1,
+			'storage' => 'first',
+		);
+		$subject = $this->getMock(
+			'TYPO3\\CMS\\Core\\Resource\\File',
+			array('loadStorage'),
+			array($fileProperties, $this->storageMock)
+		);
 		$mockedNewStorage = $this->getMock('TYPO3\\CMS\\Core\\Resource\\ResourceStorage', array(), array(), '', FALSE);
-		$mockedOldStorage = $this->getMock('TYPO3\\CMS\\Core\\Resource\\ResourceStorage', array(), array(), '', FALSE);
-		$fixture = new \TYPO3\CMS\Core\Resource\File(array('uid' => 1, 'foo' => 'asdf', 'baz' => 'fdsw', 'identifier' => '/test', 'storage' => $mockedOldStorage));
-		$mockedRepository = $this->getMock('TYPO3\\CMS\\Core\\Resource\\StorageRepository');
-		$mockedRepository->expects($this->once())->method('findByUid')->with(2)->will($this->returnValue($mockedNewStorage));
-		\TYPO3\CMS\Core\Utility\GeneralUtility::setSingletonInstance('TYPO3\\CMS\\Core\\Resource\\StorageRepository', $mockedRepository);
-		$fixture->updateProperties(array('storage' => 2));
-		$this->assertSame($mockedNewStorage, $fixture->getStorage());
+		$mockedResourceFactory = $this->getMock('TYPO3\\CMS\\Core\\Resource\\ResourceFactory');
+		$mockedResourceFactory
+			->expects($this->once())
+			->method('getStorageObject')
+			->will($this->returnValue($mockedNewStorage));
+		\TYPO3\CMS\Core\Utility\GeneralUtility::setSingletonInstance('TYPO3\\CMS\\Core\\Resource\\ResourceFactory', $mockedResourceFactory);
+
+		$subject->updateProperties(array('storage' => 'different'));
+		$this->assertSame($mockedNewStorage, $subject->getStorage());
 	}
 
-	/**
-	 * @test
-	 */
-	public function fetchingIndexedPropertyCausesFileObjectToLoadIndexRecord() {
-		$fixture = new \TYPO3\CMS\Core\Resource\File(array('identifier' => '/test', 'storage' => 1));
-		$mockedRepository = $this->getMock('TYPO3\\CMS\\Core\\Resource\\FileRepository');
-		$mockedRepository->expects($this->once())->method('getFileIndexRecord')->will($this->returnValue(array('uid' => 10)));
-		\TYPO3\CMS\Core\Utility\GeneralUtility::setSingletonInstance('TYPO3\\CMS\\Core\\Resource\\FileRepository', $mockedRepository);
-		$this->assertEquals(10, $fixture->getProperty('uid'));
-	}
 
-	/**
-	 * @test
-	 */
-	public function isIndexedTriggersIndexingIfFileIsNotIndexedAlready() {
-		$fixture = new \TYPO3\CMS\Core\Resource\File(array('identifier' => '/test', 'storage' => 1));
-		$mockedRepository = $this->getMock('TYPO3\\CMS\\Core\\Resource\\FileRepository');
-		$mockedRepository->expects($this->once())->method('getFileIndexRecord')->will($this->returnValue(FALSE));
-		$mockedRepository->expects($this->once())->method('addToIndex')->will($this->returnValue(array('uid' => 10)));
-		\TYPO3\CMS\Core\Utility\GeneralUtility::setSingletonInstance('TYPO3\\CMS\\Core\\Resource\\FileRepository', $mockedRepository);
-		$fixture->isIndexed();
-	}
 
-	/**
-	 * @test
-	 */
-	public function fileIsAutomaticallyIndexedOnPropertyAccessIfNotAlreadyIndexed() {
-		$fixture = new \TYPO3\CMS\Core\Resource\File(array('identifier' => '/test', 'storage' => 1));
-		$mockedRepository = $this->getMock('TYPO3\\CMS\\Core\\Resource\\FileRepository');
-		$mockedRepository->expects($this->once())->method('getFileIndexRecord')->will($this->returnValue(FALSE));
-		$mockedRepository->expects($this->once())->method('addToIndex')->will($this->returnValue(array('uid' => 10)));
-		\TYPO3\CMS\Core\Utility\GeneralUtility::setSingletonInstance('TYPO3\\CMS\\Core\\Resource\\FileRepository', $mockedRepository);
-		$this->assertEquals(10, $fixture->getProperty('uid'));
-	}
-
-	/**
+/**
 	 * @test
 	 */
 	public function copyToCallsCopyOperationOnTargetFolderStorage() {
 		$targetStorage = $this->getMock('TYPO3\\CMS\\Core\\Resource\\ResourceStorage', array(), array(), '', FALSE);
 		$targetFolder = $this->getMock('TYPO3\\CMS\\Core\\Resource\\Folder', array(), array(), '', FALSE);
 		$targetFolder->expects($this->any())->method('getStorage')->will($this->returnValue($targetStorage));
-		$fixture = new \TYPO3\CMS\Core\Resource\File(array());
+		$fixture = new \TYPO3\CMS\Core\Resource\File(array(), $this->storageMock);
 		$targetStorage->expects($this->once())->method('copyFile')->with($this->equalTo($fixture), $this->equalTo($targetFolder));
 		$fixture->copyTo($targetFolder);
 	}
@@ -239,7 +208,7 @@ class FileTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 		$targetStorage = $this->getMock('TYPO3\\CMS\\Core\\Resource\\ResourceStorage', array(), array(), '', FALSE);
 		$targetFolder = $this->getMock('TYPO3\\CMS\\Core\\Resource\\Folder', array(), array(), '', FALSE);
 		$targetFolder->expects($this->any())->method('getStorage')->will($this->returnValue($targetStorage));
-		$fixture = new \TYPO3\CMS\Core\Resource\File(array());
+		$fixture = new \TYPO3\CMS\Core\Resource\File(array(), $this->storageMock);
 		$targetStorage->expects($this->once())->method('moveFile')->with($this->equalTo($fixture), $this->equalTo($targetFolder));
 		$fixture->moveTo($targetFolder);
 	}
@@ -315,7 +284,7 @@ class FileTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	 */
 	public function readFailsIfFileIsClosed() {
 		$this->markTestSkipped();
-		$this->setExpectedException('\RuntimeException', '', 1299863431);
+		$this->setExpectedException('\\RuntimeException', '', 1299863431);
 		$fixture = $this->prepareFixture();
 		$mockFileHandle = $this->getMock('TYPO3\\CMS\\Core\\Resource\\FileHandle', array(), array(), '', FALSE);
 		$mockDriver = $this->getMockForAbstractClass('t3lib_file_driver_Abstract');
@@ -347,7 +316,7 @@ class FileTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	 */
 	public function writeFailsIfFileIsClosed() {
 		$this->markTestSkipped();
-		$this->setExpectedException('\RuntimeException', '', 1299863432);
+		$this->setExpectedException('\\RuntimeException', '', 1299863432);
 		$fixture = $this->prepareFixture();
 		$mockFileHandle = $this->getMock('TYPO3\\CMS\\Core\\Resource\\FileHandle', array(), array(), '', FALSE);
 		$mockDriver = $this->getMockForAbstractClass('t3lib_file_driver_Abstract');
@@ -374,7 +343,8 @@ class FileTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 		$fixture = new \TYPO3\CMS\Core\Resource\File(array(
 			'name' => $originalFilename,
 			'identifier' => '/' . $originalFilename
-		));
+		),
+		$this->storageMock);
 		$this->assertSame($expectedBasename, $fixture->getNameWithoutExtension());
 	}
 
@@ -386,43 +356,25 @@ class FileTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 		$fixture = new \TYPO3\CMS\Core\Resource\File(array(
 			'name' => $originalFilename,
 			'identifier' => '/' . $originalFilename
-		));
+		), $this->storageMock);
 		$this->assertSame($expectedExtension, $fixture->getExtension());
 	}
 
 	/**
 	 * @test
 	 */
-	public function indexablePropertyIsByDefaultTrue() {
-		$fixture = new \TYPO3\CMS\Core\Resource\File(array());
-		$this->assertAttributeEquals(TRUE, 'indexable', $fixture);
+	public function hasPropertyReturnsTrueFilePropertyExists() {
+		$fixture = new \TYPO3\CMS\Core\Resource\File(array('testproperty' => 'testvalue'), $this->storageMock);
+		$this->assertTrue($fixture->hasProperty('testproperty'));
 	}
 
 	/**
 	 * @test
 	 */
-	public function indexablePropertyCanBeSetAndGet() {
-		$fixture = new \TYPO3\CMS\Core\Resource\File(array());
-		foreach (array(FALSE, TRUE) as $value) {
-			$fixture->setIndexable($value);
-			$this->assertSame($value, $fixture->isIndexable());
-		}
-	}
-
-	/**
-	 * @test
-	 */
-	public function callMethodLoadIndexRecordWithPropertyIndexableSetToFalseAndCheckWhetherIsIndexedReturnsNull() {
-		$method = new \ReflectionMethod(
-			'TYPO3\CMS\Core\Resource\File', 'loadIndexRecord'
-		);
-		$method->setAccessible(TRUE);
-
-		$fixture = new \TYPO3\CMS\Core\Resource\File(array());
-		$fixture->setIndexable(FALSE);
-		$method->invoke($fixture);
-		$this->assertNull($fixture->isIndexed());
+	public function hasPropertyReturnsTrueIfMetadataPropertyExists() {
+		$fixture = $this->getAccessibleMock('TYPO3\\CMS\\Core\\Resource\\File', array('dummy'), array(array(), $this->storageMock));
+		$fixture->_set('metaDataLoaded', TRUE);
+		$fixture->_set('metaDataProperties', array('testproperty' => 'testvalue'));
+		$this->assertTrue($fixture->hasProperty('testproperty'));
 	}
 }
-
-?>

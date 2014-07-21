@@ -1,37 +1,29 @@
 <?php
 namespace TYPO3\CMS\Backend\Toolbar;
 
-/***************************************************************
- *  Copyright notice
+/**
+ * This file is part of the TYPO3 CMS project.
  *
- *  (c) 2007-2013 Ingo Renner <ingo@typo3.org>
- *  All rights reserved
+ * It is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License, either version 2
+ * of the License, or any later version.
  *
- *  This script is part of the TYPO3 project. The TYPO3 project is
- *  free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
+ * For the full copyright and license information, please read the
+ * LICENSE.txt file that was distributed with this source code.
  *
- *  The GNU General Public License can be found at
- *  http://www.gnu.org/copyleft/gpl.html.
- *  A copy is found in the textfile GPL.txt and important notices to the license
- *  from the author is found in LICENSE.txt distributed with these scripts.
- *
- *
- *  This script is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  This copyright notice MUST APPEAR in all copies of the script!
- ***************************************************************/
+ * The TYPO3 project - inspiring people to share!
+ */
+
+use TYPO3\CMS\Backend\Utility\BackendUtility;
+use TYPO3\CMS\Backend\Utility\IconUtility;
+use TYPO3\CMS\Core\Utility\GeneralUtility;
+
 /**
  * class to render the menu for the cache clearing actions
  *
  * @author Ingo Renner <ingo@typo3.org>
  */
-class ClearCacheToolbarItem implements \TYPO3\CMS\Backend\Toolbar\ToolbarItemHookInterface {
+class ClearCacheToolbarItem implements ToolbarItemHookInterface {
 
 	/**
 	 * @var array
@@ -46,53 +38,71 @@ class ClearCacheToolbarItem implements \TYPO3\CMS\Backend\Toolbar\ToolbarItemHoo
 	/**
 	 * Reference back to the backend object
 	 *
-	 * @var 	TYPO3backend
+	 * @var \TYPO3\CMS\Backend\Controller\BackendController
 	 */
 	protected $backendReference;
+
+	/**
+	 * TODO potentially unused
+	 * @var string
+	 */
+	public $backPath = '';
 
 	/**
 	 * Constructor
 	 *
 	 * @param \TYPO3\CMS\Backend\Controller\BackendController $backendReference TYPO3 backend object reference
+	 * @throws \UnexpectedValueException
 	 */
 	public function __construct(\TYPO3\CMS\Backend\Controller\BackendController &$backendReference = NULL) {
 		$this->backendReference = $backendReference;
 		$this->cacheActions = array();
-		$this->optionValues = array('all', 'pages');
-		// Clear cache for ALL tables!
-		if ($GLOBALS['BE_USER']->isAdmin() || $GLOBALS['BE_USER']->getTSConfigVal('options.clearCache.all')) {
-			$title = $GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.xlf:rm.clearCacheMenu_all', TRUE);
-			$this->cacheActions[] = array(
-				'id' => 'all',
-				'title' => $title,
-				'href' => $this->backPath . 'tce_db.php?vC=' . $GLOBALS['BE_USER']->veriCode() . '&cacheCmd=all&ajaxCall=1' . \TYPO3\CMS\Backend\Utility\BackendUtility::getUrlToken('tceAction'),
-				'icon' => \TYPO3\CMS\Backend\Utility\IconUtility::getSpriteIcon('actions-system-cache-clear-impact-high')
-			);
-		}
-		// Clear cache for either ALL pages
-		if ($GLOBALS['BE_USER']->isAdmin() || $GLOBALS['BE_USER']->getTSConfigVal('options.clearCache.pages')) {
-			$title = $GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.xlf:rm.clearCacheMenu_pages', TRUE);
+		$this->optionValues = array();
+		$backendUser = $this->getBackendUser();
+
+		// Clear all page-related caches
+		if ($backendUser->isAdmin() || $backendUser->getTSConfigVal('options.clearCache.pages')) {
 			$this->cacheActions[] = array(
 				'id' => 'pages',
-				'title' => $title,
-				'href' => $this->backPath . 'tce_db.php?vC=' . $GLOBALS['BE_USER']->veriCode() . '&cacheCmd=pages&ajaxCall=1' . \TYPO3\CMS\Backend\Utility\BackendUtility::getUrlToken('tceAction'),
-				'icon' => \TYPO3\CMS\Backend\Utility\IconUtility::getSpriteIcon('actions-system-cache-clear-impact-medium')
+				'title' => $GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.xlf:flushPageCachesTitle', TRUE),
+				'description' => $GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.xlf:flushPageCachesDescription', TRUE),
+				'href' => $this->backPath . 'tce_db.php?vC=' . $backendUser->veriCode() . '&cacheCmd=pages&ajaxCall=1' . BackendUtility::getUrlToken('tceAction'),
+				'icon' => IconUtility::getSpriteIcon('actions-system-cache-clear-impact-low')
 			);
+			$this->optionValues[] = 'pages';
 		}
-		// Clearing of cache-files in typo3conf/ + menu
-		if ($GLOBALS['BE_USER']->isAdmin()) {
-			$title = $GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.xlf:rm.clearCacheMenu_allTypo3Conf', TRUE);
+
+		// Clear cache for ALL tables!
+		if ($backendUser->isAdmin() || $backendUser->getTSConfigVal('options.clearCache.all')) {
 			$this->cacheActions[] = array(
-				'id' => 'temp_CACHED',
-				'title' => $title,
-				'href' => $this->backPath . 'tce_db.php?vC=' . $GLOBALS['BE_USER']->veriCode() . '&cacheCmd=temp_CACHED&ajaxCall=1' . \TYPO3\CMS\Backend\Utility\BackendUtility::getUrlToken('tceAction'),
-				'icon' => \TYPO3\CMS\Backend\Utility\IconUtility::getSpriteIcon('actions-system-cache-clear-impact-low')
+				'id' => 'all',
+				'title' => $GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.xlf:flushGeneralCachesTitle', TRUE),
+				'description' => $GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.xlf:flushGeneralCachesDescription', TRUE),
+				'href' => $this->backPath . 'tce_db.php?vC=' . $backendUser->veriCode() . '&cacheCmd=all&ajaxCall=1' . BackendUtility::getUrlToken('tceAction'),
+				'icon' => IconUtility::getSpriteIcon('actions-system-cache-clear-impact-medium')
 			);
+			$this->optionValues[] = 'all';
 		}
-		// Hook for manipulate cacheActions
+
+		// Clearing of system cache (core cache, class cache etc)
+		// is only shown explicitly if activated for a BE-user (not activated for admins by default)
+		// or if the system runs in development mode
+		// or if $GLOBALS['TYPO3_CONF_VARS']['SYS']['clearCacheSystem'] is set (only for admins)
+		if ($backendUser->getTSConfigVal('options.clearCache.system') || GeneralUtility::getApplicationContext()->isDevelopment()
+			|| ((bool) $GLOBALS['TYPO3_CONF_VARS']['SYS']['clearCacheSystem'] === TRUE && $backendUser->isAdmin())) {
+			$this->cacheActions[] = array(
+				'id' => 'system',
+				'title' => $GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.xlf:flushSystemCachesTitle', TRUE),
+				'description' => $GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.xlf:flushSystemCachesDescription', TRUE),
+				'href' => $this->backPath . 'tce_db.php?vC=' . $backendUser->veriCode() . '&cacheCmd=system&ajaxCall=1' . BackendUtility::getUrlToken('tceAction'),
+				'icon' => IconUtility::getSpriteIcon('actions-system-cache-clear-impact-high')
+			);
+			$this->optionValues[] = 'system';
+		}
+		// Hook for manipulating cacheActions
 		if (is_array($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['additionalBackendItems']['cacheActions'])) {
 			foreach ($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['additionalBackendItems']['cacheActions'] as $cacheAction) {
-				$hookObject = \TYPO3\CMS\Core\Utility\GeneralUtility::getUserObj($cacheAction);
+				$hookObject = GeneralUtility::getUserObj($cacheAction);
 				if (!$hookObject instanceof \TYPO3\CMS\Backend\Toolbar\ClearCacheActionsHookInterface) {
 					throw new \UnexpectedValueException('$hookObject must implement interface TYPO3\\CMS\\Backend\\Toolbar\\ClearCacheActionsHookInterface', 1228262000);
 				}
@@ -107,12 +117,13 @@ class ClearCacheToolbarItem implements \TYPO3\CMS\Backend\Toolbar\ToolbarItemHoo
 	 * @return boolean TRUE if user has access, FALSE if not
 	 */
 	public function checkAccess() {
-		if ($GLOBALS['BE_USER']->isAdmin()) {
+		$backendUser = $this->getBackendUser();
+		if ($backendUser->isAdmin()) {
 			return TRUE;
 		}
 		if (is_array($this->optionValues)) {
 			foreach ($this->optionValues as $value) {
-				if ($GLOBALS['BE_USER']->getTSConfigVal('options.clearCache.' . $value)) {
+				if ($backendUser->getTSConfigVal('options.clearCache.' . $value)) {
 					return TRUE;
 				}
 			}
@@ -129,10 +140,12 @@ class ClearCacheToolbarItem implements \TYPO3\CMS\Backend\Toolbar\ToolbarItemHoo
 		$title = $GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.xlf:rm.clearCache_clearCache', TRUE);
 		$this->addJavascriptToBackend();
 		$cacheMenu = array();
-		$cacheMenu[] = '<a href="#" class="toolbar-item">' . \TYPO3\CMS\Backend\Utility\IconUtility::getSpriteIcon('apps-toolbar-menu-cache', array('title' => $title)) . '</a>';
+		$cacheMenu[] = '<a href="#" class="toolbar-item">' . IconUtility::getSpriteIcon('apps-toolbar-menu-cache', array('title' => $title)) . '</a>';
 		$cacheMenu[] = '<ul class="toolbar-item-menu" style="display: none;">';
 		foreach ($this->cacheActions as $actionKey => $cacheAction) {
-			$cacheMenu[] = '<li><a href="' . htmlspecialchars($cacheAction['href']) . '">' . $cacheAction['icon'] . ' ' . $cacheAction['title'] . '</a></li>';
+			$cacheMenu[] = '<li><a href="' . htmlspecialchars($cacheAction['href'])
+				. '" title="' . htmlspecialchars($cacheAction['description'] ?: $cacheAction['title']) . '">'
+				. $cacheAction['icon'] . ' ' . htmlspecialchars($cacheAction['title']) . '</a></li>';
 		}
 		$cacheMenu[] = '</ul>';
 		return implode(LF, $cacheMenu);
@@ -144,7 +157,7 @@ class ClearCacheToolbarItem implements \TYPO3\CMS\Backend\Toolbar\ToolbarItemHoo
 	 * @return void
 	 */
 	protected function addJavascriptToBackend() {
-		$this->backendReference->addJavascriptFile('js/clearcachemenu.js');
+		$this->backendReference->addJavascriptFile('sysext/backend/Resources/Public/JavaScript/clearcachemenu.js');
 	}
 
 	/**
@@ -153,10 +166,15 @@ class ClearCacheToolbarItem implements \TYPO3\CMS\Backend\Toolbar\ToolbarItemHoo
 	 * @return string List item HTML attributes
 	 */
 	public function getAdditionalAttributes() {
-		return ' id="clear-cache-actions-menu"';
+		return 'id="clear-cache-actions-menu"';
 	}
 
+	/**
+	 * Returns the current BE user.
+	 *
+	 * @return \TYPO3\CMS\Core\Authentication\BackendUserAuthentication
+	 */
+	protected function getBackendUser() {
+		return $GLOBALS['BE_USER'];
+	}
 }
-
-
-?>

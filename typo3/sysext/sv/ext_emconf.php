@@ -10,32 +10,22 @@
  ***************************************************************/
 $EM_CONF[$_EXTKEY] = array(
 	'title' => 'TYPO3 System Services',
-	'description' => 'The core/default sevices. This includes the default authentication services for now.',
+	'description' => 'The core/default services. This includes the default authentication services for now.',
 	'category' => 'services',
-	'shy' => 1,
-	'dependencies' => '',
-	'conflicts' => '',
-	'priority' => 'top',
-	'module' => '',
 	'state' => 'stable',
-	'internal' => 1,
 	'uploadfolder' => 0,
 	'createDirs' => '',
-	'modify_tables' => '',
 	'clearCacheOnLoad' => 1,
-	'lockType' => 'S',
 	'author' => 'Rene Fritz',
 	'author_email' => 'r.fritz@colorcube.de',
 	'author_company' => 'Colorcube',
-	'version' => '6.1.0',
+	'version' => '6.2.0',
 	'_md5_values_when_last_written' => '',
 	'constraints' => array(
 		'depends' => array(
-			'typo3' => '6.1.0-6.1.99',
+			'typo3' => '6.2.0-6.2.99',
 		),
 		'conflicts' => array(),
-		'suggests' => array()
+		'suggests' => array(),
 	),
-	'suggests' => array()
 );
-?>

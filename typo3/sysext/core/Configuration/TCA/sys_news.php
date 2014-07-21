@@ -76,9 +76,11 @@ return array(
 						'notNewRecords' => 1,
 						'RTEonly' => 1,
 						'type' => 'script',
-						'title' => 'LLL:EXT:cms/locallang_ttc.php:bodytext.W.RTE',
+						'title' => 'LLL:EXT:cms/locallang_ttc.xlf:bodytext.W.RTE',
 						'icon' => 'wizard_rte2.gif',
-						'script' => 'wizard_rte.php'
+						'module' => array(
+							'name' => 'wizard_rte'
+						)
 					)
 				)
 			)
@@ -90,4 +92,3 @@ return array(
 			--div--;LLL:EXT:lang/locallang_tca.xlf:sys_news.tabs.access, starttime, endtime')
 	)
 );
-?>

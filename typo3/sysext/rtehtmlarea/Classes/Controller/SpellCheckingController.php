@@ -1,28 +1,21 @@
 <?php
 namespace TYPO3\CMS\Rtehtmlarea\Controller;
 
-/***************************************************************
- *  Copyright notice
+/**
+ * This file is part of the TYPO3 CMS project.
  *
- *  (c) 2003-2013 Stanislas Rolland <typo3(arobas)sjbr.ca>
- *  All rights reserved
+ * It is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License, either version 2
+ * of the License, or any later version.
  *
- *  This script is part of the Typo3 project. The Typo3 project is
- *  free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
+ * For the full copyright and license information, please read the
+ * LICENSE.txt file that was distributed with this source code.
  *
- *  The GNU General Public License can be found at
- *  http://www.gnu.org/copyleft/gpl.html.
- *
- *  This script is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  This copyright notice MUST APPEAR in all copies of the script!
- ***************************************************************/
+ * The TYPO3 project - inspiring people to share!
+ */
+
+use TYPO3\CMS\Core\Utility\GeneralUtility;
+
 /**
  * Spell checking plugin 'tx_rtehtmlarea_pi1' for the htmlArea RTE extension.
  *
@@ -157,13 +150,13 @@ class SpellCheckingController {
 	 * @todo Define visibility
 	 */
 	public function main() {
-		$this->csConvObj = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Charset\\CharsetConverter');
+		$this->csConvObj = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Charset\\CharsetConverter');
 		// Setting start time
 		$time_start = microtime(TRUE);
 		$this->pspell_is_available = in_array('pspell', get_loaded_extensions());
-		$this->AspellDirectory = trim($GLOBALS['TYPO3_CONF_VARS']['EXTCONF'][$this->extKey]['plugins']['SpellChecker']['AspellDirectory']) ? trim($GLOBALS['TYPO3_CONF_VARS']['EXTCONF'][$this->extKey]['plugins']['SpellChecker']['AspellDirectory']) : '/usr/bin/aspell';
+		$this->AspellDirectory = trim($GLOBALS['TYPO3_CONF_VARS']['EXTCONF'][$this->extKey]['plugins']['SpellChecker']['AspellDirectory']) ?: '/usr/bin/aspell';
 		// Setting command mode if requested and available
-		$this->forceCommandMode = trim($GLOBALS['TYPO3_CONF_VARS']['EXTCONF'][$this->extKey]['plugins']['SpellChecker']['forceCommandMode']) ? trim($GLOBALS['TYPO3_CONF_VARS']['EXTCONF'][$this->extKey]['plugins']['SpellChecker']['forceCommandMode']) : 0;
+		$this->forceCommandMode = trim($GLOBALS['TYPO3_CONF_VARS']['EXTCONF'][$this->extKey]['plugins']['SpellChecker']['forceCommandMode']) ?: 0;
 		if (!$this->pspell_is_available || $this->forceCommandMode) {
 			$AspellVersionString = explode('Aspell', shell_exec($this->AspellDirectory . ' -v'));
 			$AspellVersion = substr($AspellVersionString[1], 0, 4);
@@ -174,16 +167,16 @@ class SpellCheckingController {
 		}
 		// Setting the list of dictionaries
 		$dictionaryList = shell_exec($this->AspellDirectory . ' dump dicts');
-		$dictionaryList = implode(',', \TYPO3\CMS\Core\Utility\GeneralUtility::trimExplode(LF, $dictionaryList, 1));
-		$dictionaryArray = \TYPO3\CMS\Core\Utility\GeneralUtility::trimExplode(',', $dictionaryList, 1);
-		$restrictToDictionaries = \TYPO3\CMS\Core\Utility\GeneralUtility::_POST('restrictToDictionaries');
+		$dictionaryList = implode(',', GeneralUtility::trimExplode(LF, $dictionaryList, TRUE));
+		$dictionaryArray = GeneralUtility::trimExplode(',', $dictionaryList, TRUE);
+		$restrictToDictionaries = GeneralUtility::_POST('restrictToDictionaries');
 		if ($restrictToDictionaries) {
-			$dictionaryArray = array_intersect($dictionaryArray, \TYPO3\CMS\Core\Utility\GeneralUtility::trimExplode(',', $restrictToDictionaries, 1));
+			$dictionaryArray = array_intersect($dictionaryArray, GeneralUtility::trimExplode(',', $restrictToDictionaries, 1));
 		}
 		if (!count($dictionaryArray)) {
 			$dictionaryArray[] = 'en';
 		}
-		$this->dictionary = \TYPO3\CMS\Core\Utility\GeneralUtility::_POST('dictionary');
+		$this->dictionary = GeneralUtility::_POST('dictionary');
 		$defaultDictionary = $this->dictionary;
 		if (!$defaultDictionary || !in_array($defaultDictionary, $dictionaryArray)) {
 			$defaultDictionary = 'en';
@@ -195,27 +188,26 @@ class SpellCheckingController {
 			$this->dictionary = 'en';
 		}
 		// Setting the pspell suggestion mode
-		$this->pspellMode = \TYPO3\CMS\Core\Utility\GeneralUtility::_POST('pspell_mode') ? \TYPO3\CMS\Core\Utility\GeneralUtility::_POST('pspell_mode') : $this->pspellMode;
+		$this->pspellMode = GeneralUtility::_POST('pspell_mode') ? GeneralUtility::_POST('pspell_mode') : $this->pspellMode;
 		// Now sanitize $this->pspellMode
-		$this->pspellMode = \TYPO3\CMS\Core\Utility\GeneralUtility::inList('ultra,fast,normal,bad-spellers', $this->pspellMode) ? $this->pspellMode : 'normal';
+		$this->pspellMode = GeneralUtility::inList('ultra,fast,normal,bad-spellers', $this->pspellMode) ? $this->pspellMode : 'normal';
 		switch ($this->pspellMode) {
-		case 'ultra':
+			case 'ultra':
 
-		case 'fast':
-			$pspellModeFlag = PSPELL_FAST;
-			break;
-		case 'bad-spellers':
-			$pspellModeFlag = PSPELL_BAD_SPELLERS;
-			break;
-		case 'normal':
+			case 'fast':
+				$pspellModeFlag = PSPELL_FAST;
+				break;
+			case 'bad-spellers':
+				$pspellModeFlag = PSPELL_BAD_SPELLERS;
+				break;
+			case 'normal':
 
-		default:
-			$pspellModeFlag = PSPELL_NORMAL;
-			break;
+			default:
+				$pspellModeFlag = PSPELL_NORMAL;
 		}
 		// Setting the charset
-		if (\TYPO3\CMS\Core\Utility\GeneralUtility::_POST('pspell_charset')) {
-			$this->charset = trim(\TYPO3\CMS\Core\Utility\GeneralUtility::_POST('pspell_charset'));
+		if (GeneralUtility::_POST('pspell_charset')) {
+			$this->charset = trim(GeneralUtility::_POST('pspell_charset'));
 		}
 		if (strtolower($this->charset) == 'iso-8859-1') {
 			$this->parserCharset = strtolower($this->charset);
@@ -234,21 +226,21 @@ class SpellCheckingController {
 		// Setting the path to user personal dictionary, if any
 		$this->setPersonalDictionaryPath();
 		$this->fixPersonalDictionaryCharacterSet();
-		$cmd = \TYPO3\CMS\Core\Utility\GeneralUtility::_POST('cmd');
+		$cmd = GeneralUtility::_POST('cmd');
 		if ($cmd == 'learn') {
 			// Only availble for BE_USERS, die silently if someone has gotten here by accident
 			if (TYPO3_MODE !== 'BE' || !is_object($GLOBALS['BE_USER'])) {
 				die('');
 			}
 			// Updating the personal word list
-			$to_p_dict = \TYPO3\CMS\Core\Utility\GeneralUtility::_POST('to_p_dict');
+			$to_p_dict = GeneralUtility::_POST('to_p_dict');
 			$to_p_dict = $to_p_dict ? $to_p_dict : array();
-			$to_r_list = \TYPO3\CMS\Core\Utility\GeneralUtility::_POST('to_r_list');
+			$to_r_list = GeneralUtility::_POST('to_r_list');
 			$to_r_list = $to_r_list ? $to_r_list : array();
 			header('Content-Type: text/plain; charset=' . strtoupper($this->parserCharset));
 			header('Pragma: no-cache');
 			if ($to_p_dict || $to_r_list) {
-				$tmpFileName = \TYPO3\CMS\Core\Utility\GeneralUtility::tempnam($this->filePrefix);
+				$tmpFileName = GeneralUtility::tempnam($this->filePrefix);
 				$filehandle = fopen($tmpFileName, 'wb');
 				if ($filehandle) {
 					// Get the character set of the main dictionary
@@ -267,7 +259,7 @@ class SpellCheckingController {
 					$cmd = '#' . LF;
 					$result = fwrite($filehandle, $cmd, strlen($cmd));
 					if ($result === FALSE) {
-						\TYPO3\CMS\Core\Utility\GeneralUtility::sysLog('SpellChecker tempfile write error: ' . $tmpFileName, $this->extKey, \TYPO3\CMS\Core\Utility\GeneralUtility::SYSLOG_SEVERITY_ERROR);
+						GeneralUtility::sysLog('SpellChecker tempfile write error: ' . $tmpFileName, $this->extKey, GeneralUtility::SYSLOG_SEVERITY_ERROR);
 					} else {
 						// Assemble the Aspell command
 						$aspellCommand = ((TYPO3_OS === 'WIN') ? 'type ' : 'cat ') . escapeshellarg($tmpFileName) . ' | '
@@ -280,10 +272,10 @@ class SpellCheckingController {
 						$aspellResult = shell_exec($aspellCommand);
 						// Close and delete the temporary file
 						fclose($filehandle);
-						\TYPO3\CMS\Core\Utility\GeneralUtility::unlink_tempfile($tmpFileName);
+						GeneralUtility::unlink_tempfile($tmpFileName);
 					}
 				} else {
-					\TYPO3\CMS\Core\Utility\GeneralUtility::sysLog('SpellChecker tempfile open error: ' . $tmpFileName, $this->extKey, \TYPO3\CMS\Core\Utility\GeneralUtility::SYSLOG_SEVERITY_ERROR);
+					GeneralUtility::sysLog('SpellChecker tempfile open error: ' . $tmpFileName, $this->extKey, GeneralUtility::SYSLOG_SEVERITY_ERROR);
 				}
 			}
 			flush();
@@ -304,7 +296,7 @@ class SpellCheckingController {
 <!--
 ';
 			// Getting the input content
-			$content = \TYPO3\CMS\Core\Utility\GeneralUtility::_POST('content');
+			$content = GeneralUtility::_POST('content');
 			// Parsing the input HTML
 			$parser = xml_parser_create(strtoupper($this->parserCharset));
 			xml_parser_set_option($parser, XML_OPTION_CASE_FOLDING, 0);
@@ -341,7 +333,7 @@ var selectedDictionary = "' . $this->dictionary . '";
 </script>
 </head>
 ';
-			$this->result .= '<body onload="window.parent.RTEarea[\'' . \TYPO3\CMS\Core\Utility\GeneralUtility::_POST('editorId') . '\'].editor.getPlugin(\'SpellChecker\').spellCheckComplete();">';
+			$this->result .= '<body onload="window.parent.RTEarea[\'' . GeneralUtility::_POST('editorId') . '\'].editor.getPlugin(\'SpellChecker\').spellCheckComplete();">';
 			$this->result .= preg_replace('/' . preg_quote('<?xml') . '.*' . preg_quote('?>') . '[' . preg_quote((LF . CR . chr(32))) . ']*/' . ($this->parserCharset == 'utf-8' ? 'u' : ''), '', $this->text);
 			$this->result .= '<div style="display: none;">' . $dictionaries . '</div>';
 			// Closing
@@ -366,7 +358,7 @@ var selectedDictionary = "' . $this->dictionary . '";
 			$this->mainDictionaryPath = trim($aspellResult);
 		}
 		if (!$aspellResult || !$this->mainDictionaryPath) {
-			\TYPO3\CMS\Core\Utility\GeneralUtility::sysLog('SpellChecker main dictionary path retrieval error: ' . $aspellCommand, $this->extKey, \TYPO3\CMS\Core\Utility\GeneralUtility::SYSLOG_SEVERITY_ERROR);
+			GeneralUtility::sysLog('SpellChecker main dictionary path retrieval error: ' . $aspellCommand, $this->extKey, GeneralUtility::SYSLOG_SEVERITY_ERROR);
 		}
 		return $this->mainDictionaryPath;
 	}
@@ -385,25 +377,27 @@ var selectedDictionary = "' . $this->dictionary . '";
 			$dictionaryFileName = $this->mainDictionaryPath . '/' . $mainDictionary[0] . '.dat';
 			$dictionaryHandle = fopen($dictionaryFileName, 'rb');
 			if (!$dictionaryHandle) {
-				\TYPO3\CMS\Core\Utility\GeneralUtility::sysLog('SpellChecker main dictionary open error: ' . $dictionaryFileName, $this->extKey, \TYPO3\CMS\Core\Utility\GeneralUtility::SYSLOG_SEVERITY_ERROR);
+				GeneralUtility::sysLog('SpellChecker main dictionary open error: ' . $dictionaryFileName, $this->extKey, GeneralUtility::SYSLOG_SEVERITY_ERROR);
 			} else {
 				$dictionaryContent = fread($dictionaryHandle, 500);
 				if ($dictionaryContent === FALSE) {
-					\TYPO3\CMS\Core\Utility\GeneralUtility::sysLog('SpellChecker main dictionary read error: ' . $dictionaryFileName, $this->extKey, \TYPO3\CMS\Core\Utility\GeneralUtility::SYSLOG_SEVERITY_ERROR);
+					GeneralUtility::sysLog('SpellChecker main dictionary read error: ' . $dictionaryFileName, $this->extKey, GeneralUtility::SYSLOG_SEVERITY_ERROR);
 				} else {
 					fclose($dictionaryHandle);
 					// Get the line that contains the character set option
 					$dictionaryContent = preg_split('/charset\s*/', $dictionaryContent, 2);
 					if ($dictionaryContent[1]) {
 						// Isolate the character set
-						$dictionaryContent = \TYPO3\CMS\Core\Utility\GeneralUtility::trimExplode(LF, $dictionaryContent[1]);
-						$characterSet = $dictionaryContent[0];
+						$dictionaryContent = GeneralUtility::trimExplode(LF, $dictionaryContent[1]);
 						// Fix Aspell character set oddity (i.e. iso8859-1)
-						$characterSet = str_replace('iso', 'iso-', $characterSet);
-						$characterSet = str_replace('--', '-', $characterSet);
+						$characterSet = str_replace(
+							array('iso', '--'),
+							array('iso-', '-'),
+							$dictionaryContent[0]
+						);
 					}
 					if (!$characterSet) {
-						\TYPO3\CMS\Core\Utility\GeneralUtility::sysLog('SpellChecker main dictionary character set retrieval error: ' . $dictionaryContent[1], $this->extKey, \TYPO3\CMS\Core\Utility\GeneralUtility::SYSLOG_SEVERITY_ERROR);
+						GeneralUtility::sysLog('SpellChecker main dictionary character set retrieval error: ' . $dictionaryContent[1], $this->extKey, GeneralUtility::SYSLOG_SEVERITY_ERROR);
 					}
 				}
 			}
@@ -418,7 +412,7 @@ var selectedDictionary = "' . $this->dictionary . '";
 	 */
 	protected function setPersonalDictionaryPath() {
 		$this->personalDictionaryPath = '';
-		if (\TYPO3\CMS\Core\Utility\GeneralUtility::_POST('enablePersonalDicts') == 'true' && TYPO3_MODE == 'BE' && is_object($GLOBALS['BE_USER'])) {
+		if (GeneralUtility::_POST('enablePersonalDicts') == 'true' && TYPO3_MODE == 'BE' && is_object($GLOBALS['BE_USER'])) {
 			if ($GLOBALS['BE_USER']->user['uid']) {
 				$personalDictionaryFolderName = 'BE_' . $GLOBALS['BE_USER']->user['uid'];
 				// Check for pre-FAL personal dictionary folder
@@ -460,7 +454,7 @@ var selectedDictionary = "' . $this->dictionary . '";
 				if (file_exists($fileName)) {
 					$fileContent = file_get_contents($fileName);
 					if ($fileContent === FALSE) {
-						\TYPO3\CMS\Core\Utility\GeneralUtility::sysLog('SpellChecker personal word list read error: ' . $fileName, $this->extKey, \TYPO3\CMS\Core\Utility\GeneralUtility::SYSLOG_SEVERITY_ERROR);
+						GeneralUtility::sysLog('SpellChecker personal word list read error: ' . $fileName, $this->extKey, GeneralUtility::SYSLOG_SEVERITY_ERROR);
 					} else {
 						$fileContent = explode(LF, $fileContent);
 						if (strpos($fileContent[0], 'utf-8') === FALSE) {
@@ -468,7 +462,7 @@ var selectedDictionary = "' . $this->dictionary . '";
 							$fileContent = implode(LF, $fileContent);
 							$result = file_put_contents($fileName, $fileContent);
 							if ($result === FALSE) {
-								\TYPO3\CMS\Core\Utility\GeneralUtility::sysLog('SpellChecker personal word list write error: ' . $fileName, $this->extKey, \TYPO3\CMS\Core\Utility\GeneralUtility::SYSLOG_SEVERITY_ERROR);
+								GeneralUtility::sysLog('SpellChecker personal word list write error: ' . $fileName, $this->extKey, GeneralUtility::SYSLOG_SEVERITY_ERROR);
 							}
 						}
 					}
@@ -517,7 +511,6 @@ var selectedDictionary = "' . $this->dictionary . '";
 					$this->text .= $key . '="' . $val . '" ';
 				}
 				$this->text .= '>';
-				break;
 		}
 	}
 
@@ -531,7 +524,7 @@ var selectedDictionary = "' . $this->dictionary . '";
 		}
 		switch ($tag) {
 			case 'spellchecker':
-				break;
+
 			case 'br':
 
 			case 'BR':
@@ -554,7 +547,6 @@ var selectedDictionary = "' . $this->dictionary . '";
 				break;
 			default:
 				$this->text .= '</' . $tag . '>';
-				break;
 		}
 	}
 
@@ -590,7 +582,7 @@ var selectedDictionary = "' . $this->dictionary . '";
 						}
 					}
 				} else {
-					$tmpFileName = \TYPO3\CMS\Core\Utility\GeneralUtility::tempnam($this->filePrefix);
+					$tmpFileName = GeneralUtility::tempnam($this->filePrefix);
 					if (!($filehandle = fopen($tmpFileName, 'wb'))) {
 						echo 'SpellChecker tempfile open error';
 					}
@@ -604,21 +596,21 @@ var selectedDictionary = "' . $this->dictionary . '";
 					$AspellCommand = $catCommand . ' ' . escapeshellarg($tmpFileName) . ' | ' . $this->AspellDirectory . ' -a check --mode=none --sug-mode=' . escapeshellarg($this->pspellMode) . ($this->personalDictionaryPath ? ' --home-dir=' . escapeshellarg($this->personalDictionaryPath) : '') . ' --lang=' . escapeshellarg($this->dictionary) . ' --encoding=' . escapeshellarg($this->aspellEncoding) . ' 2>&1';
 					$AspellAnswer = shell_exec($AspellCommand);
 					$AspellResultLines = array();
-					$AspellResultLines = \TYPO3\CMS\Core\Utility\GeneralUtility::trimExplode(LF, $AspellAnswer, 1);
+					$AspellResultLines = GeneralUtility::trimExplode(LF, $AspellAnswer, TRUE);
 					if (substr($AspellResultLines[0], 0, 6) == 'Error:') {
 						echo '{' . $AspellAnswer . '}';
 					}
-					\TYPO3\CMS\Core\Utility\GeneralUtility::unlink_tempfile($tmpFileName);
-					if (substr($AspellResultLines['1'], 0, 1) != '*') {
+					GeneralUtility::unlink_tempfile($tmpFileName);
+					if ($AspellResultLines['1'][0] !== '*') {
 						if (!in_array($word, $this->misspelled)) {
 							if (sizeof($this->misspelled) != 0) {
 								$this->suggestedWords .= ',';
 							}
 							$suggest = array();
 							$suggestions = array();
-							if (substr($AspellResultLines['1'], 0, 1) == '&') {
-								$suggestions = \TYPO3\CMS\Core\Utility\GeneralUtility::trimExplode(':', $AspellResultLines['1'], 1);
-								$suggest = \TYPO3\CMS\Core\Utility\GeneralUtility::trimExplode(',', $suggestions['1'], 1);
+							if ($AspellResultLines['1'][0] === '&') {
+								$suggestions = GeneralUtility::trimExplode(':', $AspellResultLines['1'], TRUE);
+								$suggest = GeneralUtility::trimExplode(',', $suggestions['1'], TRUE);
 							}
 							if (sizeof($suggest) != 0) {
 								$this->suggestionCount++;
@@ -658,6 +650,3 @@ var selectedDictionary = "' . $this->dictionary . '";
 	}
 
 }
-
-
-?>

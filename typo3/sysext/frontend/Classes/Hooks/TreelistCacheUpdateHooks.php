@@ -1,31 +1,21 @@
 <?php
 namespace TYPO3\CMS\Frontend\Hooks;
 
-/***************************************************************
- *  Copyright notice
+/**
+ * This file is part of the TYPO3 CMS project.
  *
- *  (c) 2008-2013 Ingo Renner (ingo@typo3.org)
- *  All rights reserved
+ * It is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License, either version 2
+ * of the License, or any later version.
  *
- *  This script is part of the TYPO3 project. The TYPO3 project is
- *  free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
+ * For the full copyright and license information, please read the
+ * LICENSE.txt file that was distributed with this source code.
  *
- *  The GNU General Public License can be found at
- *  http://www.gnu.org/copyleft/gpl.html.
- *  A copy is found in the textfile GPL.txt and important notices to the license
- *  from the author is found in LICENSE.txt distributed with these scripts.
- *
- *
- *  This script is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  This copyright notice MUST APPEAR in all copies of the script!
- ***************************************************************/
+ * The TYPO3 project - inspiring people to share!
+ */
+
+use TYPO3\CMS\Backend\Utility\BackendUtility;
+
 /**
  * Class that hooks into TCEmain and listens for updates to pages to update the
  * treelist cache
@@ -86,7 +76,7 @@ class TreelistCacheUpdateHooks {
 				$affectedPageUid = $recordId;
 				// When updating a page the pid is not directly available so we
 				// need to retrieve it ourselves.
-				$fullPageRecord = \TYPO3\CMS\Backend\Utility\BackendUtility::getRecord($table, $recordId);
+				$fullPageRecord = BackendUtility::getRecord($table, $recordId);
 				$affectedPagePid = $fullPageRecord['pid'];
 			}
 			$clearCacheActions = $this->determineClearCacheActions($status, $updatedFields);
@@ -107,7 +97,7 @@ class TreelistCacheUpdateHooks {
 	 */
 	public function processCmdmap_postProcess($command, $table, $recordId, $commandValue, \TYPO3\CMS\Core\DataHandling\DataHandler $tceMain) {
 		if ($table == 'pages' && $command == 'delete') {
-			$deletedRecord = \TYPO3\CMS\Backend\Utility\BackendUtility::getRecord($table, $recordId, '*', '', FALSE);
+			$deletedRecord = BackendUtility::getRecord($table, $recordId, '*', '', FALSE);
 			$affectedPageUid = $deletedRecord['uid'];
 			$affectedPagePid = $deletedRecord['pid'];
 			// Faking the updated fields
@@ -199,17 +189,17 @@ class TreelistCacheUpdateHooks {
 		$actionNames = array_keys($actions);
 		foreach ($actionNames as $actionName) {
 			switch ($actionName) {
-			case 'allParents':
-				$this->clearCacheForAllParents($affectedParentPage);
-				break;
-			case 'setExpiration':
-				// Only used when setting an end time for a page
-				$expirationTime = $updatedFields['endtime'];
-				$this->setCacheExpiration($affectedPage, $expirationTime);
-				break;
-			case 'uidInTreelist':
-				$this->clearCacheWhereUidInTreelist($affectedPage);
-				break;
+				case 'allParents':
+					$this->clearCacheForAllParents($affectedParentPage);
+					break;
+				case 'setExpiration':
+					// Only used when setting an end time for a page
+					$expirationTime = $updatedFields['endtime'];
+					$this->setCacheExpiration($affectedPage, $expirationTime);
+					break;
+				case 'uidInTreelist':
+					$this->clearCacheWhereUidInTreelist($affectedPage);
+					break;
 			}
 		}
 		// From time to time clean the cache from expired entries
@@ -228,7 +218,7 @@ class TreelistCacheUpdateHooks {
 	 * @return void
 	 */
 	protected function clearCacheForAllParents($affectedParentPage) {
-		$rootline = \TYPO3\CMS\Backend\Utility\BackendUtility::BEgetRootLine($affectedParentPage);
+		$rootline = BackendUtility::BEgetRootLine($affectedParentPage);
 		$rootlineIds = array();
 		foreach ($rootline as $page) {
 			if ($page['uid'] != 0) {
@@ -292,38 +282,38 @@ class TreelistCacheUpdateHooks {
 			$updatedFieldNames = array_keys($updatedFields);
 			foreach ($updatedFieldNames as $updatedFieldName) {
 				switch ($updatedFieldName) {
-				case 'pid':
+					case 'pid':
 
-				case $GLOBALS['TCA']['pages']['ctrl']['enablecolumns']['disabled']:
+					case $GLOBALS['TCA']['pages']['ctrl']['enablecolumns']['disabled']:
 
-				case $GLOBALS['TCA']['pages']['ctrl']['delete']:
+					case $GLOBALS['TCA']['pages']['ctrl']['delete']:
 
-				case $GLOBALS['TCA']['pages']['ctrl']['enablecolumns']['starttime']:
+					case $GLOBALS['TCA']['pages']['ctrl']['enablecolumns']['starttime']:
 
-				case $GLOBALS['TCA']['pages']['ctrl']['enablecolumns']['fe_group']:
+					case $GLOBALS['TCA']['pages']['ctrl']['enablecolumns']['fe_group']:
 
-				case 'extendToSubpages':
+					case 'extendToSubpages':
 
-				case 'php_tree_stop':
-					// php_tree_stop
-					$actions['allParents'] = TRUE;
-					$actions['uidInTreelist'] = TRUE;
-					break;
-				case $GLOBALS['TCA']['pages']['ctrl']['enablecolumns']['endtime']:
-					// end time set/unset
-					// When setting an end time the cache entry needs an
-					// expiration time. When unsetting the end time the
-					// page must become listed in the treelist again.
-					if ($updatedFields['endtime'] > 0) {
-						$actions['setExpiration'] = TRUE;
-					} else {
+					case 'php_tree_stop':
+						// php_tree_stop
+						$actions['allParents'] = TRUE;
 						$actions['uidInTreelist'] = TRUE;
-					}
-					break;
-				default:
-					if (in_array($updatedFieldName, $this->updateRequiringFields)) {
-						$actions['uidInTreelist'] = TRUE;
-					}
+						break;
+					case $GLOBALS['TCA']['pages']['ctrl']['enablecolumns']['endtime']:
+						// end time set/unset
+						// When setting an end time the cache entry needs an
+						// expiration time. When unsetting the end time the
+						// page must become listed in the treelist again.
+						if ($updatedFields['endtime'] > 0) {
+							$actions['setExpiration'] = TRUE;
+						} else {
+							$actions['uidInTreelist'] = TRUE;
+						}
+						break;
+					default:
+						if (in_array($updatedFieldName, $this->updateRequiringFields)) {
+							$actions['uidInTreelist'] = TRUE;
+						}
 				}
 			}
 		}
@@ -331,6 +321,3 @@ class TreelistCacheUpdateHooks {
 	}
 
 }
-
-
-?>

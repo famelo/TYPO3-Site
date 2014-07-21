@@ -1,31 +1,19 @@
 <?php
 namespace TYPO3\CMS\Backend\Module;
 
-/***************************************************************
- *  Copyright notice
+/**
+ * This file is part of the TYPO3 CMS project.
  *
- *  (c) 2012-2013 Susanne Moog <typo3@susannemoog.de>
- *  All rights reserved
+ * It is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License, either version 2
+ * of the License, or any later version.
  *
- *  This script is part of the TYPO3 project. The TYPO3 project is
- *  free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
+ * For the full copyright and license information, please read the
+ * LICENSE.txt file that was distributed with this source code.
  *
- *  The GNU General Public License can be found at
- *  http://www.gnu.org/copyleft/gpl.html.
- *  A copy is found in the textfile GPL.txt and important notices to the license
- *  from the author is found in LICENSE.txt distributed with these scripts.
- *
- *
- *  This script is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  This copyright notice MUST APPEAR in all copies of the script!
- ***************************************************************/
+ * The TYPO3 project - inspiring people to share!
+ */
+
 /**
  * Class with utility functions for module menu
  *
@@ -53,7 +41,7 @@ class ModuleController {
 
 	/**
 	 * This method creates the module menu if necessary
-	 * afterwards you only need an instance of Typo3_ModuleStorage
+	 * afterwards you only need an instance of \TYPO3\CMS\Backend\Module\ModuleStorage
 	 * to get the menu
 	 *
 	 * @return void
@@ -101,7 +89,7 @@ class ModuleController {
 			$entry->setName($module['name']);
 		}
 		if (!empty($module['title']) && is_string($module['title'])) {
-			$entry->setTitle($GLOBALS['LANG']->sL($module['title']));
+			$entry->setTitle($this->getLanguageService()->sL($module['title']));
 		}
 		if (!empty($module['onclick']) && is_string($module['onclick'])) {
 			$entry->setOnClick($module['onclick']);
@@ -151,7 +139,12 @@ class ModuleController {
 		}
 	}
 
+	/**
+	 * Return language service instance
+	 *
+	 * @return \TYPO3\CMS\Lang\LanguageService
+	 */
+	protected function getLanguageService() {
+		return $GLOBALS['LANG'];
+	}
 }
-
-
-?>

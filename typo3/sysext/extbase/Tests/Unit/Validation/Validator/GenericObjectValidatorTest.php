@@ -2,7 +2,7 @@
 namespace TYPO3\CMS\Extbase\Tests\Unit\Validation\Validator;
 
 /*                                                                        *
- * This script belongs to the Extbase framework.                            *
+ * This script belongs to the Extbase framework.                          *
  *                                                                        *
  * It is free software; you can redistribute it and/or modify it under    *
  * the terms of the GNU Lesser General Public License as published by the *
@@ -20,7 +20,6 @@ namespace TYPO3\CMS\Extbase\Tests\Unit\Validation\Validator;
  *                                                                        *
  * The TYPO3 project - inspiring people to share!                         *
  *                                                                        */
-require_once __DIR__ . '/AbstractValidatorTestcase.php';
 
 /**
  * Testcase for the Generic Object Validator
@@ -30,6 +29,19 @@ require_once __DIR__ . '/AbstractValidatorTestcase.php';
 class GenericObjectValidatorTest extends \TYPO3\CMS\Extbase\Tests\Unit\Validation\Validator\AbstractValidatorTestcase {
 
 	protected $validatorClassName = 'TYPO3\\CMS\\Extbase\\Validation\\Validator\\GenericObjectValidator';
+
+	/**
+	 * @var \TYPO3\CMS\Core\Configuration\ConfigurationManager
+	 */
+	protected $configurationManager;
+
+	public function setUp() {
+		parent::setUp();
+
+		$this->configurationManager = $this->getMock('TYPO3\CMS\Extbase\Configuration\ConfigurationManager', array('isFeatureEnabled'), array(), '', FALSE);
+		$this->configurationManager->expects($this->any())->method('isFeatureEnabled')->with('rewrittenPropertyMapper')->will($this->returnValue(TRUE));
+		$this->validator->injectConfigurationManager($this->configurationManager);
+	}
 
 	/**
 	 * @test
@@ -102,8 +114,13 @@ class GenericObjectValidatorTest extends \TYPO3\CMS\Extbase\Tests\Unit\Validatio
 		$B = new $classNameB();
 		$A->b = $B;
 		$B->a = $A;
+
 		$aValidator = new \TYPO3\CMS\Extbase\Validation\Validator\GenericObjectValidator(array());
 		$bValidator = new \TYPO3\CMS\Extbase\Validation\Validator\GenericObjectValidator(array());
+
+		$aValidator->injectConfigurationManager($this->configurationManager);
+		$bValidator->injectConfigurationManager($this->configurationManager);
+
 		$aValidator->addPropertyValidator('b', $bValidator);
 		$bValidator->addPropertyValidator('a', $aValidator);
 		$this->assertFalse($aValidator->validate($A)->hasErrors());
@@ -124,6 +141,10 @@ class GenericObjectValidatorTest extends \TYPO3\CMS\Extbase\Tests\Unit\Validatio
 		$B->a = $A;
 		$aValidator = $this->getValidator();
 		$bValidator = $this->getValidator();
+
+		$aValidator->injectConfigurationManager($this->configurationManager);
+		$bValidator->injectConfigurationManager($this->configurationManager);
+
 		$aValidator->addPropertyValidator('b', $bValidator);
 		$bValidator->addPropertyValidator('a', $aValidator);
 		$error = new \TYPO3\CMS\Extbase\Error\Error('error1', 123);
@@ -150,6 +171,10 @@ class GenericObjectValidatorTest extends \TYPO3\CMS\Extbase\Tests\Unit\Validatio
 		$B->a = $A;
 		$aValidator = $this->getValidator();
 		$bValidator = $this->getValidator();
+
+		$aValidator->injectConfigurationManager($this->configurationManager);
+		$bValidator->injectConfigurationManager($this->configurationManager);
+
 		$aValidator->addPropertyValidator('b', $bValidator);
 		$bValidator->addPropertyValidator('a', $aValidator);
 		$error1 = new \TYPO3\CMS\Extbase\Error\Error('error1', 123);
@@ -162,5 +187,3 @@ class GenericObjectValidatorTest extends \TYPO3\CMS\Extbase\Tests\Unit\Validatio
 		$this->assertSame(array('b.uuid' => array($error1), 'uuid' => array($error1)), $aValidator->validate($A)->getFlattenedErrors());
 	}
 }
-
-?>

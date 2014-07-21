@@ -20,10 +20,11 @@ namespace TYPO3\CMS\Extbase\Tests\Unit\Mvc\Cli;
  *                                                                        *
  * The TYPO3 project - inspiring people to share!                         *
  *                                                                        */
+
 /**
- * Testcase for the CLI Command class
+ * Test case
  */
-class CommandTest extends \TYPO3\CMS\Extbase\Tests\Unit\BaseTestCase {
+class CommandTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 
 	/**
 	 * @var \TYPO3\CMS\Extbase\Mvc\Cli\Command|\PHPUnit_Framework_MockObject_MockObject|\TYPO3\CMS\Core\Tests\AccessibleObjectInterface
@@ -48,7 +49,7 @@ class CommandTest extends \TYPO3\CMS\Extbase\Tests\Unit\BaseTestCase {
 		$this->mockMethodReflection = $this->getMock('TYPO3\\CMS\\Extbase\\Reflection\\MethodReflection', array(), array(), '', FALSE);
 		$this->command->expects($this->any())->method('getCommandMethodReflection')->will($this->returnValue($this->mockMethodReflection));
 		$this->mockObjectManager = $this->getMock('TYPO3\\CMS\\Extbase\\Object\\ObjectManagerInterface');
-		$this->command->injectObjectManager($this->mockObjectManager);
+		$this->command->_set('objectManager', $this->mockObjectManager);
 	}
 
 	/**
@@ -135,7 +136,7 @@ class CommandTest extends \TYPO3\CMS\Extbase\Tests\Unit\BaseTestCase {
 		$mockReflectionService = $this->getMock('TYPO3\\CMS\\Extbase\\Reflection\\ReflectionService');
 		$mockMethodParameters = array('argument1' => array('optional' => FALSE), 'argument2' => array('optional' => TRUE));
 		$mockReflectionService->expects($this->atLeastOnce())->method('getMethodParameters')->will($this->returnValue($mockMethodParameters));
-		$this->command->injectReflectionService($mockReflectionService);
+		$this->command->_set('reflectionService', $mockReflectionService);
 		$this->mockMethodReflection->expects($this->atLeastOnce())->method('getParameters')->will($this->returnValue(array($mockParameterReflection)));
 		$this->mockMethodReflection->expects($this->atLeastOnce())->method('getTagsValues')->will($this->returnValue(array('param' => array('@param $argument1 argument1 description', '@param $argument2 argument2 description'))));
 		$mockCommandArgumentDefinition1 = $this->getMock('TYPO3\\CMS\\Extbase\\Mvc\\Cli\\CommandArgumentDefinition', array(), array(), '', FALSE);
@@ -147,5 +148,3 @@ class CommandTest extends \TYPO3\CMS\Extbase\Tests\Unit\BaseTestCase {
 		$this->assertSame($expectedResult, $actualResult);
 	}
 }
-
-?>

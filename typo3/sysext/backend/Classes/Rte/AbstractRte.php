@@ -1,38 +1,24 @@
 <?php
 namespace TYPO3\CMS\Backend\Rte;
 
-/***************************************************************
- *  Copyright notice
- *
- *  (c) 2004-2013 Kasper Skårhøj (kasperYYYY@typo3.com)
- *  All rights reserved
- *
- *  This script is part of the TYPO3 project. The TYPO3 project is
- *  free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
- *
- *  The GNU General Public License can be found at
- *  http://www.gnu.org/copyleft/gpl.html.
- *  A copy is found in the textfile GPL.txt and important notices to the license
- *  from the author is found in LICENSE.txt distributed with these scripts.
- *
- *
- *  This script is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  This copyright notice MUST APPEAR in all copies of the script!
- ***************************************************************/
 /**
- * RTE API parent class.
+ * This file is part of the TYPO3 CMS project.
  *
- * @author 	Kasper Skårhøj <kasperYYYY@typo3.com>
+ * It is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License, either version 2
+ * of the License, or any later version.
+ *
+ * For the full copyright and license information, please read the
+ * LICENSE.txt file that was distributed with this source code.
+ *
+ * The TYPO3 project - inspiring people to share!
  */
+
+use TYPO3\CMS\Core\Utility\GeneralUtility;
+
 /**
- * RTE base class: Delivers browser-detection, TCEforms binding and transformation routines for the "rte" extension, registering it with the RTE API in TYPO3 3.6.0
+ * RTE base class: Delivers browser-detection, TCEforms binding and transformation routines
+ * for the "rte" extension, registering it with the RTE API
  * See "rte" extension for usage.
  *
  * @author Kasper Skårhøj <kasperYYYY@typo3.com>
@@ -68,13 +54,7 @@ class AbstractRte {
 	 * @todo Define visibility
 	 */
 	public function isAvailable() {
-		$this->errorLog = array();
-		if (!$GLOBALS['CLIENT']['FORMSTYLE']) {
-			$this->errorLog[] = 'RTE API: Browser didn\'t support styles';
-		}
-		if (!count($this->errorLog)) {
-			return TRUE;
-		}
+		return TRUE;
 	}
 
 	/**
@@ -100,7 +80,7 @@ class AbstractRte {
 		// Create item:
 		$item = '
 			' . $this->triggerField($PA['itemFormElName']) . '
-			<textarea name="' . htmlspecialchars($PA['itemFormElName']) . '"' . $pObj->formWidthText('48', 'off') . ' rows="20" wrap="off" style="background-color: #99eebb;">' . \TYPO3\CMS\Core\Utility\GeneralUtility::formatForTextarea($value) . '</textarea>';
+			<textarea name="' . htmlspecialchars($PA['itemFormElName']) . '"' . $pObj->formWidthText('48', 'off') . ' rows="20" wrap="off" style="background-color: #99eebb;">' . GeneralUtility::formatForTextarea($value) . '</textarea>';
 		// Return form item:
 		return $item;
 	}
@@ -129,7 +109,7 @@ class AbstractRte {
 			// There must be a mode set for transformation
 			if ($p['mode']) {
 				// Initialize transformation:
-				$parseHTML = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Html\\RteHtmlParser');
+				$parseHTML = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Html\\RteHtmlParser');
 				$parseHTML->init($table . ':' . $field, $pid);
 				$parseHTML->setRelPath($RTErelPath);
 				// Perform transformation:
@@ -148,7 +128,7 @@ class AbstractRte {
 	 * Trigger field - this field tells the TCEmain that processing should be done on this value!
 	 *
 	 * @param string $fieldName Field name of the RTE field.
-	 * @return string <input> field of type "hidden" with a flag telling the TCEmain that this fields content should be traansformed back to database state.
+	 * @return string <input> field of type "hidden" with a flag telling the TCEmain that this fields content should be transformed back to database state.
 	 * @todo Define visibility
 	 */
 	public function triggerField($fieldName) {
@@ -157,6 +137,3 @@ class AbstractRte {
 	}
 
 }
-
-
-?>

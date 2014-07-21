@@ -2,7 +2,7 @@
 namespace TYPO3\CMS\Extbase\Tests\Unit\Validation\Validator;
 
 /*                                                                        *
- * This script belongs to the Extbase framework.                            *
+ * This script belongs to the Extbase framework.                          *
  *                                                                        *
  * It is free software; you can redistribute it and/or modify it under    *
  * the terms of the GNU Lesser General Public License as published by the *
@@ -20,7 +20,6 @@ namespace TYPO3\CMS\Extbase\Tests\Unit\Validation\Validator;
  *                                                                        *
  * The TYPO3 project - inspiring people to share!                         *
  *                                                                        */
-require_once __DIR__ . '/AbstractValidatorTestcase.php';
 
 /**
  * Testcase for the float validator
@@ -30,6 +29,10 @@ require_once __DIR__ . '/AbstractValidatorTestcase.php';
 class FloatValidatorTest extends \TYPO3\CMS\Extbase\Tests\Unit\Validation\Validator\AbstractValidatorTestcase {
 
 	protected $validatorClassName = 'TYPO3\\CMS\\Extbase\\Validation\\Validator\\FloatValidator';
+
+	public function setup() {
+		$this->validator = $this->getMock($this->validatorClassName, array('translateErrorMessage'));
+	}
 
 	/**
 	 * Data provider with valid floats
@@ -91,5 +94,3 @@ class FloatValidatorTest extends \TYPO3\CMS\Extbase\Tests\Unit\Validation\Valida
 		$this->assertEquals(1, count($this->validator->validate(123456)->getErrors()));
 	}
 }
-
-?>

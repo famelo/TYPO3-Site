@@ -1,28 +1,18 @@
 <?php
 namespace TYPO3\CMS\Backend\Tests\Unit\Configuration\TypoScript\ConditionMatching;
 
-/***************************************************************
- *  Copyright notice
+/**
+ * This file is part of the TYPO3 CMS project.
  *
- *  (c) 2009-2013 Oliver Hader <oliver@typo3.org>
- *  All rights reserved
+ * It is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License, either version 2
+ * of the License, or any later version.
  *
- *  This script is part of the TYPO3 project. The TYPO3 project is
- *  free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
+ * For the full copyright and license information, please read the
+ * LICENSE.txt file that was distributed with this source code.
  *
- *  The GNU General Public License can be found at
- *  http://www.gnu.org/copyleft/gpl.html.
- *
- *  This script is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  This copyright notice MUST APPEAR in all copies of the script!
- ***************************************************************/
+ * The TYPO3 project - inspiring people to share!
+ */
 
 /**
  * Testcase for class \TYPO3\CMS\Backend\Configuration\TypoScript\ConditionMatching\ConditionMatcher.
@@ -34,51 +24,25 @@ class ConditionMatcherTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	/**
 	 * @var array
 	 */
-	private $backupGlobalVariables;
-
-	/**
-	 * @var array
-	 */
-	private $rootline;
+	protected $rootline;
 
 	/**
 	 * @var \TYPO3\CMS\Backend\Configuration\TypoScript\ConditionMatching\ConditionMatcher
 	 */
-	private $matchCondition;
+	protected $matchCondition;
 
 	/**
 	 * @var string
 	 */
-	private $testTableName;
+	protected $testTableName;
 
 	public function setUp() {
-		$this->backupGlobalVariables = array(
-			'_ENV' => $_ENV,
-			'_GET' => $_GET,
-			'_POST' => $_POST,
-			'_SERVER' => $_SERVER,
-			'TCA' => $GLOBALS['TCA'],
-			'TYPO3_DB' => $GLOBALS['TYPO3_DB'],
-			'TYPO3_CONF_VARS' => $GLOBALS['TYPO3_CONF_VARS'],
-			'T3_VAR' => $GLOBALS['T3_VAR'],
-			'BE_USER' => $GLOBALS['BE_USER'],
-			'SOBE' => $GLOBALS['SOBE']
-		);
-		$this->testTableName = 'TYPO3\\CMS\\Backend\\Configuration\\TypoScript\\ConditionMatching\\ConditionMatcher_testTable';
+		$this->testTableName = 'conditionMatcherTestTable';
 		$this->testGlobalNamespace = uniqid('TEST');
 		$GLOBALS['TCA'][$this->testTableName] = array('ctrl' => array());
 		$GLOBALS[$this->testGlobalNamespace] = array();
 		$this->setUpBackend();
-		$this->matchCondition = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Backend\\Configuration\\TypoScript\\ConditionMatching\\ConditionMatcher');
-	}
-
-	public function tearDown() {
-		foreach ($this->backupGlobalVariables as $key => $data) {
-			$GLOBALS[$key] = $data;
-		}
-		unset($this->matchCondition);
-		unset($this->backupGlobalVariables);
-		unset($GLOBALS[$this->testGlobalNamespace]);
+		$this->matchCondition = $this->getMock('TYPO3\\CMS\\Backend\\Configuration\\TypoScript\\ConditionMatching\\ConditionMatcher', array('determineRootline'), array(), '', FALSE);
 	}
 
 	private function setUpBackend() {
@@ -382,10 +346,10 @@ class ConditionMatcherTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	 * @test
 	 */
 	public function globalVarConditionMatchesOnEqualExpression() {
-		$this->assertTrue($this->matchCondition->match('[globalVar = LIT:10 = 10]'));
-		$this->assertTrue($this->matchCondition->match('[globalVar = LIT:10.1 = 10.1]'));
-		$this->assertTrue($this->matchCondition->match('[globalVar = LIT:10 == 10]'));
-		$this->assertTrue($this->matchCondition->match('[globalVar = LIT:10.1 == 10.1]'));
+		$this->assertTrue($this->matchCondition->match('[globalVar = LIT:10 = 10]'), '1');
+		$this->assertTrue($this->matchCondition->match('[globalVar = LIT:10.1 = 10.1]'), '2');
+		$this->assertTrue($this->matchCondition->match('[globalVar = LIT:10 == 10]'), '3');
+		$this->assertTrue($this->matchCondition->match('[globalVar = LIT:10.1 == 10.1]'), '4');
 	}
 
 	/**
@@ -516,6 +480,29 @@ class ConditionMatcherTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	 *
 	 * @test
 	 */
+	public function globalStringConditionMatchesOnEmptyExpressionWithValueSetToEmptyString() {
+		$testKey = uniqid('test');
+		$_GET = array();
+		$_POST = array($testKey => '');
+		$this->assertTrue($this->matchCondition->match('[globalString = GP:' . $testKey . '=]'));
+		$this->assertTrue($this->matchCondition->match('[globalString = GP:' . $testKey . ' = ]'));
+	}
+
+	/**
+	 * Tests whether string comparison matches.
+	 *
+	 * @test
+	 */
+	public function globalStringConditionMatchesOnEmptyLiteralExpressionWithValueSetToEmptyString() {
+		$this->assertTrue($this->matchCondition->match('[globalString = LIT:=]'));
+		$this->assertTrue($this->matchCondition->match('[globalString = LIT: = ]'));
+	}
+
+	/**
+	 * Tests whether string comparison matches.
+	 *
+	 * @test
+	 */
 	public function globalStringConditionMatchesWildcardExpression() {
 		$this->assertTrue($this->matchCondition->match('[globalString = LIT:TYPO3.Test.Condition = TYPO3?Test?Condition]'));
 		$this->assertTrue($this->matchCondition->match('[globalString = LIT:TYPO3.Test.Condition = TYPO3.T*t.Condition]'));
@@ -580,7 +567,7 @@ class ConditionMatcherTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	 * @test
 	 */
 	public function treeLevelConditionMatchesCurrentPageIdWhileEditingNewPage() {
-		$GLOBALS['SOBE'] = $this->getMock('TYPO3\\CMS\\Backend\\Controller\\EditDocumentController', array());
+		$GLOBALS['SOBE'] = $this->getMock('TYPO3\\CMS\\Backend\\Controller\\EditDocumentController', array(), array(), '', FALSE);
 		$GLOBALS['SOBE']->elementsData = array(
 			array(
 				'table' => 'pages',
@@ -602,7 +589,7 @@ class ConditionMatcherTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	 * @test
 	 */
 	public function treeLevelConditionMatchesCurrentPageIdWhileSavingNewPage() {
-		$GLOBALS['SOBE'] = $this->getMock('TYPO3\\CMS\\Backend\\Controller\\EditDocumentController', array());
+		$GLOBALS['SOBE'] = $this->getMock('TYPO3\\CMS\\Backend\\Controller\\EditDocumentController', array(), array(), '', FALSE);
 		$GLOBALS['SOBE']->elementsData = array(
 			array(
 				'table' => 'pages',
@@ -675,7 +662,7 @@ class ConditionMatcherTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	 * @test
 	 */
 	public function PIDupinRootlineConditionMatchesCurrentPageIdWhileEditingNewPage() {
-		$GLOBALS['SOBE'] = $this->getMock('TYPO3\\CMS\\Backend\\Controller\\EditDocumentController', array());
+		$GLOBALS['SOBE'] = $this->getMock('TYPO3\\CMS\\Backend\\Controller\\EditDocumentController', array(), array(), '', FALSE);
 		$GLOBALS['SOBE']->elementsData = array(
 			array(
 				'table' => 'pages',
@@ -697,7 +684,7 @@ class ConditionMatcherTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	 * @test
 	 */
 	public function PIDupinRootlineConditionMatchesCurrentPageIdWhileSavingNewPage() {
-		$GLOBALS['SOBE'] = $this->getMock('TYPO3\\CMS\\Backend\\Controller\\EditDocumentController', array());
+		$GLOBALS['SOBE'] = $this->getMock('TYPO3\\CMS\\Backend\\Controller\\EditDocumentController', array(), array(), '', FALSE);
 		$GLOBALS['SOBE']->elementsData = array(
 			array(
 				'table' => 'pages',
@@ -996,5 +983,3 @@ class ConditionMatcherTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	}
 
 }
-
-?>

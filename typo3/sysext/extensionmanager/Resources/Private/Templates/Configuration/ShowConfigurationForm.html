@@ -7,27 +7,27 @@
 </f:section>
 
 <f:section name="module-headline">
-	<h2>
+	<h1>
 		<f:translate key="extConfTemplate.headline" />
 		{extension.key}
-	</h2>
+	</h1>
 </f:section>
 
 <f:section name="Content">
 	<div id="typo3-extension-configuration-forms">
 		<div class="tabs">
 			<ul>
-				<f:for each="{configuration}" as="category">
+				<f:for each="{configuration}" as="category" key="categoryNumber">
 					<f:if condition="{category.name}">
-						<li><a href="javascript:void(0);">{category.name}</a></li>
+						<li><a href="#category-{categoryNumber}">{category.name}</a></li>
 					</f:if>
 				</f:for>
 			</ul>
 			<f:form action="save" name="configurationform" class="validate">
 				<f:form.hidden name="extensionKey" value="{extension.key}" />
-				<f:for each="{configuration}" as="category">
+				<f:for each="{configuration}" as="category" key="categoryNumber">
 					<f:if condition="{category.name}">
-						<div class="category">
+						<div class="category" id="category-{categoryNumber}">
 							<f:for each="{category.subcategories}" as="subcategory">
 								<div class="subcategory">
 									<f:if condition="{subcategory.label}">
@@ -43,7 +43,9 @@
 									<f:for each="{subcategory.items}" as="item">
 										<div class="group">
 											<h4>{item.labelHeadline} <span class="info">[{category.name}.{item.name}]</span></h4>
-											<label for="{item.name}">{item.labelText}</label>
+											<f:if condition="{item.labelText}">
+												<label for="{item.name}">{item.labelText}</label>
+											</f:if>
 											<f:if condition="{item.highlight}">
 												<span style="background:red; padding:1px 2px; color:#fff; font-weight:bold;">{item.highlight}</span>
 											</f:if>

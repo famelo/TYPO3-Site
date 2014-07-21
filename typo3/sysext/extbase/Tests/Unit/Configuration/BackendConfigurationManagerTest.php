@@ -1,38 +1,23 @@
 <?php
 namespace TYPO3\CMS\Extbase\Tests\Unit\Configuration;
 
-/***************************************************************
- *  Copyright notice
+/**
+ * This file is part of the TYPO3 CMS project.
  *
- *  This class is a backport of the corresponding class of TYPO3 Flow.
- *  All credits go to the TYPO3 Flow team.
- *  All rights reserved
+ * It is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License, either version 2
+ * of the License, or any later version.
  *
- *  This script is part of the TYPO3 project. The TYPO3 project is
- *  free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
+ * For the full copyright and license information, please read the
+ * LICENSE.txt file that was distributed with this source code.
  *
- *  The GNU General Public License can be found at
- *  http://www.gnu.org/copyleft/gpl.html.
- *  A copy is found in the textfile GPL.txt and important notices to the license
- *  from the author is found in LICENSE.txt distributed with these scripts.
- *
- *
- *  This script is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  This copyright notice MUST APPEAR in all copies of the script!
- ***************************************************************/
-class BackendConfigurationManagerTest extends \TYPO3\CMS\Extbase\Tests\Unit\BaseTestCase {
+ * The TYPO3 project - inspiring people to share!
+ */
 
-	/**
-	 * @var \TYPO3\CMS\Core\Database\DatabaseConnection
-	 */
-	protected $typo3DbBackup;
+/**
+ * Test case
+ */
+class BackendConfigurationManagerTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 
 	/**
 	 * @var \TYPO3\CMS\Extbase\Configuration\BackendConfigurationManager|\PHPUnit_Framework_MockObject_MockObject|\TYPO3\CMS\Core\Tests\AccessibleObjectInterface
@@ -48,18 +33,10 @@ class BackendConfigurationManagerTest extends \TYPO3\CMS\Extbase\Tests\Unit\Base
 	 * Sets up this testcase
 	 */
 	public function setUp() {
-		$this->typo3DbBackup = $GLOBALS['TYPO3_DB'];
 		$GLOBALS['TYPO3_DB'] = $this->getMock('TYPO3\\CMS\\Core\\Database\\DatabaseConnection', array());
 		$this->backendConfigurationManager = $this->getAccessibleMock('TYPO3\\CMS\\Extbase\\Configuration\\BackendConfigurationManager', array('getTypoScriptSetup'));
 		$this->mockTypoScriptService = $this->getAccessibleMock('TYPO3\\CMS\\Extbase\\Service\\TypoScriptService');
-		$this->backendConfigurationManager->injectTypoScriptService($this->mockTypoScriptService);
-	}
-
-	/**
-	 * Tears down this testcase
-	 */
-	public function tearDown() {
-		$GLOBALS['TYPO3_DB'] = $this->typo3DbBackup;
+		$this->backendConfigurationManager->_set('typoScriptService', $this->mockTypoScriptService);
 	}
 
 	/**
@@ -87,10 +64,10 @@ class BackendConfigurationManagerTest extends \TYPO3\CMS\Extbase\Tests\Unit\Base
 	 * @test
 	 */
 	public function getCurrentPageIdReturnsPidFromFirstRootTemplateIfIdIsNotSetAndNoRootPageWasFound() {
-		$GLOBALS['TYPO3_DB']->expects($this->at(0))->method('exec_SELECTgetRows')->with('uid', 'pages', 'deleted=0 AND hidden=0 AND is_siteroot=1', '', '', '1')->will($this->returnValue(array()));
-		$GLOBALS['TYPO3_DB']->expects($this->at(1))->method('exec_SELECTgetRows')->with('pid', 'sys_template', 'deleted=0 AND hidden=0 AND root=1', '', '', '1')->will($this->returnValue(array(
+		$GLOBALS['TYPO3_DB']->expects($this->at(0))->method('exec_SELECTgetSingleRow')->with('uid', 'pages', 'deleted=0 AND hidden=0 AND is_siteroot=1', '', 'sorting')->will($this->returnValue(array()));
+		$GLOBALS['TYPO3_DB']->expects($this->at(1))->method('exec_SELECTgetSingleRow')->with('pid', 'sys_template', 'deleted=0 AND hidden=0 AND root=1', '', 'crdate')->will($this->returnValue(
 			array('pid' => 123)
-		)));
+		));
 		$expectedResult = 123;
 		$actualResult = $this->backendConfigurationManager->_call('getCurrentPageId');
 		$this->assertEquals($expectedResult, $actualResult);
@@ -100,9 +77,9 @@ class BackendConfigurationManagerTest extends \TYPO3\CMS\Extbase\Tests\Unit\Base
 	 * @test
 	 */
 	public function getCurrentPageIdReturnsUidFromFirstRootPageIfIdIsNotSet() {
-		$GLOBALS['TYPO3_DB']->expects($this->once())->method('exec_SELECTgetRows')->with('uid', 'pages', 'deleted=0 AND hidden=0 AND is_siteroot=1', '', '', '1')->will($this->returnValue(array(
+		$GLOBALS['TYPO3_DB']->expects($this->once())->method('exec_SELECTgetSingleRow')->with('uid', 'pages', 'deleted=0 AND hidden=0 AND is_siteroot=1', '', 'sorting')->will($this->returnValue(
 			array('uid' => 321)
-		)));
+		));
 		$expectedResult = 321;
 		$actualResult = $this->backendConfigurationManager->_call('getCurrentPageId');
 		$this->assertEquals($expectedResult, $actualResult);
@@ -112,8 +89,8 @@ class BackendConfigurationManagerTest extends \TYPO3\CMS\Extbase\Tests\Unit\Base
 	 * @test
 	 */
 	public function getCurrentPageIdReturnsDefaultStoragePidIfIdIsNotSetNoRootTemplateAndRootPageWasFound() {
-		$GLOBALS['TYPO3_DB']->expects($this->at(0))->method('exec_SELECTgetRows')->with('uid', 'pages', 'deleted=0 AND hidden=0 AND is_siteroot=1', '', '', '1')->will($this->returnValue(array()));
-		$GLOBALS['TYPO3_DB']->expects($this->at(1))->method('exec_SELECTgetRows')->with('pid', 'sys_template', 'deleted=0 AND hidden=0 AND root=1', '', '', '1')->will($this->returnValue(array()));
+		$GLOBALS['TYPO3_DB']->expects($this->at(0))->method('exec_SELECTgetSingleRow')->with('uid', 'pages', 'deleted=0 AND hidden=0 AND is_siteroot=1', '', 'sorting')->will($this->returnValue(array()));
+		$GLOBALS['TYPO3_DB']->expects($this->at(1))->method('exec_SELECTgetSingleRow')->with('pid', 'sys_template', 'deleted=0 AND hidden=0 AND root=1', '', 'crdate')->will($this->returnValue(array()));
 		$expectedResult = \TYPO3\CMS\Extbase\Configuration\AbstractConfigurationManager::DEFAULT_BACKEND_STORAGE_PID;
 		$actualResult = $this->backendConfigurationManager->_call('getCurrentPageId');
 		$this->assertEquals($expectedResult, $actualResult);
@@ -387,7 +364,7 @@ class BackendConfigurationManagerTest extends \TYPO3\CMS\Extbase\Tests\Unit\Base
 
 		$queryGenerator = $this->getMock('TYPO3\\CMS\\Core\\Database\\QueryGenerator');
 		$queryGenerator->expects($this->never())->method('getTreeList');
-		$abstractConfigurationManager->injectQueryGenerator($queryGenerator);
+		$abstractConfigurationManager->_set('queryGenerator', $queryGenerator);
 
 		$expectedResult = '1,2,3';
 		$actualResult = $abstractConfigurationManager->_call('getRecursiveStoragePids', $storagePid);
@@ -405,12 +382,10 @@ class BackendConfigurationManagerTest extends \TYPO3\CMS\Extbase\Tests\Unit\Base
 
 		$queryGenerator = $this->getMock('TYPO3\\CMS\\Core\\Database\\QueryGenerator');
 		$queryGenerator->expects($this->never())->method('getTreeList');
-		$abstractConfigurationManager->injectQueryGenerator($queryGenerator);
+		$abstractConfigurationManager->_set('queryGenerator', $queryGenerator);
 
 		$expectedResult = '1,2,3';
 		$actualResult = $abstractConfigurationManager->_call('getRecursiveStoragePids', $storagePid, $recursive);
 		$this->assertEquals($expectedResult, $actualResult);
 	}
 }
-
-?>

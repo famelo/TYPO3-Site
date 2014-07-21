@@ -1,31 +1,18 @@
 <?php
 namespace TYPO3\CMS\Core\Resource\Service;
 
-/***************************************************************
- *  Copyright notice
+/**
+ * This file is part of the TYPO3 CMS project.
  *
- *  (c) 2011-2013 Benjamin Mack <benni@typo3.org>
- *  All rights reserved
+ * It is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License, either version 2
+ * of the License, or any later version.
  *
- *  This script is part of the TYPO3 project. The TYPO3 project is
- *  free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
+ * For the full copyright and license information, please read the
+ * LICENSE.txt file that was distributed with this source code.
  *
- *  The GNU General Public License can be found at
- *  http://www.gnu.org/copyleft/gpl.html.
- *  A copy is found in the textfile GPL.txt and important notices to the license
- *  from the author is found in LICENSE.txt distributed with these scripts.
- *
- *
- *  This script is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  This copyright notice MUST APPEAR in all copies of the script!
- ***************************************************************/
+ * The TYPO3 project - inspiring people to share!
+ */
 use TYPO3\CMS\Core\Messaging\FlashMessage;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 
@@ -51,24 +38,47 @@ class UserFileMountService {
 	 */
 	public function renderTceformsSelectDropdown(&$PA, &$tceformsObj) {
 		// If working for sys_filemounts table
-		$storageUid = intval($PA['row']['base']);
+		$storageUid = (int)$PA['row']['base'];
 		if (!$storageUid) {
 			// If working for sys_file_collection table
-			$storageUid = intval($PA['row']['storage']);
+			$storageUid = (int)$PA['row']['storage'];
 		}
 		if ($storageUid > 0) {
 			/** @var $storageRepository \TYPO3\CMS\Core\Resource\StorageRepository */
 			$storageRepository = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Resource\\StorageRepository');
 			/** @var $storage \TYPO3\CMS\Core\Resource\ResourceStorage */
 			$storage = $storageRepository->findByUid($storageUid);
-			if ($storage->isBrowsable()) {
-				$rootLevelFolder = $storage->getRootLevelFolder();
-				$folderItems = $this->getSubfoldersForOptionList($rootLevelFolder);
-				foreach ($folderItems as $item) {
+			if ($storage === NULL) {
+				/** @var \TYPO3\CMS\Core\Messaging\FlashMessageService $flashMessageService */
+				$flashMessageService = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Messaging\\FlashMessageService');
+				$queue = $flashMessageService->getMessageQueueByIdentifier();
+				$queue->enqueue(new FlashMessage('Storage #' . $storageUid . ' does not exist. No folder is currently selectable.', '', FlashMessage::ERROR));
+				if (!count($PA['items'])) {
 					$PA['items'][] = array(
-						htmlspecialchars($item->getIdentifier()),
-						htmlspecialchars($item->getIdentifier())
+						$PA['row'][$PA['field']],
+						$PA['row'][$PA['field']]
 					);
+				}
+			} elseif ($storage->isBrowsable()) {
+				$rootLevelFolders = array();
+
+				$fileMounts = $storage->getFileMounts();
+				if (!empty($fileMounts)) {
+					foreach ($fileMounts as $fileMountInfo) {
+						$rootLevelFolders[] = $fileMountInfo['folder'];
+					}
+				} else {
+					$rootLevelFolders[] = $storage->getRootLevelFolder();
+				}
+
+				foreach ($rootLevelFolders as $rootLevelFolder) {
+					$folderItems = $this->getSubfoldersForOptionList($rootLevelFolder);
+					foreach ($folderItems as $item) {
+						$PA['items'][] = array(
+							$item->getIdentifier(),
+							$item->getIdentifier()
+						);
+					}
 				}
 			} else {
 				/** @var \TYPO3\CMS\Core\Messaging\FlashMessageService $flashMessageService */
@@ -111,6 +121,3 @@ class UserFileMountService {
 	}
 
 }
-
-
-?>

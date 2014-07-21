@@ -2,126 +2,168 @@
 namespace TYPO3\CMS\Dbal\Tests\Unit\Database;
 
 /**
- * Testcase for class DatabaseConnection.
+ * This file is part of the TYPO3 CMS project.
  *
- * @author Xavier Perseguers <xavier@typo3.org>
+ * It is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License, either version 2
+ * of the License, or any later version.
+ *
+ * For the full copyright and license information, please read the
+ * LICENSE.txt file that was distributed with this source code.
+ *
+ * The TYPO3 project - inspiring people to share!
  */
-class DatabaseConnectionTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
+
+use TYPO3\CMS\Core\Utility\GeneralUtility;
+
+/**
+ * Test case
+ */
+class DatabaseConnectionTest extends AbstractTestCase {
 
 	/**
-	 * @var \TYPO3\CMS\Core\Database\DatabaseConnection
+	 * @var \TYPO3\CMS\Dbal\Database\DatabaseConnection|\PHPUnit_Framework_MockObject_MockObject|\TYPO3\CMS\Core\Tests\AccessibleObjectInterface
 	 */
-	protected $db;
+	protected $subject;
 
 	/**
 	 * @var array
 	 */
-	protected $loadedExtensions;
+	protected $temporaryFiles = array();
 
 	/**
-	 * @var array
-	 */
-	protected $temporaryFiles;
-
-	/**
-	 * Prepares the environment before running a test.
+	 * Set up
 	 */
 	public function setUp() {
-		// Backup list of loaded extensions
-		$this->loadedExtensions = $GLOBALS['TYPO3_LOADED_EXT'];
-		// Backup database connection
-		$this->db = $GLOBALS['TYPO3_DB'];
-		$this->temporaryFiles = array();
-		$className = self::buildAccessibleProxy('TYPO3\\CMS\\Dbal\\Database\\DatabaseConnection');
-		$GLOBALS['TYPO3_DB'] = new $className();
-		$GLOBALS['TYPO3_DB']->lastHandlerKey = '_DEFAULT';
+		$GLOBALS['TYPO3_LOADED_EXT'] = array();
+
+		/** @var \TYPO3\CMS\Dbal\Database\DatabaseConnection|\PHPUnit_Framework_MockObject_MockObject|\TYPO3\CMS\Core\Tests\AccessibleObjectInterface $subject */
+		$subject = $this->getAccessibleMock('TYPO3\\CMS\\Dbal\\Database\\DatabaseConnection', array('getFieldInfoCache'), array(), '', FALSE);
+
+		// Disable caching
+		$mockCacheFrontend = $this->getMock('TYPO3\\CMS\\Core\\Cache\\Frontend\\PhpFrontend', array(), array(), '', FALSE);
+		$subject->expects($this->any())->method('getFieldInfoCache')->will($this->returnValue($mockCacheFrontend));
+
+		// Inject SqlParser - Its logic is tested with the tests, too.
+		$sqlParser = $this->getAccessibleMock('TYPO3\\CMS\\Dbal\\Database\\SqlParser', array('dummy'), array(), '', FALSE);
+		$sqlParser->_set('databaseConnection', $subject);
+		$subject->SQLparser = $sqlParser;
+
+		// Mock away schema migration service from install tool
+		$installerSqlMock = $this->getMock('TYPO3\\CMS\\Install\\Service\\SqlSchemaMigrationService', array('getFieldDefinitions_fileContent'), array(), '', FALSE);
+		$installerSqlMock->expects($this->any())->method('getFieldDefinitions_fileContent')->will($this->returnValue(array()));
+		$subject->_set('installerSql', $installerSqlMock);
+
+		$subject->initialize();
+		$subject->lastHandlerKey = '_DEFAULT';
+
+		$this->subject = $subject;
 	}
 
 	/**
-	 * Cleans up the environment after running a test.
+	 * Tear down.
 	 */
 	public function tearDown() {
-		// Clear DBAL-generated cache files
-		$GLOBALS['TYPO3_DB']->clearCachedFieldInfo();
 		// Delete temporary files
 		foreach ($this->temporaryFiles as $filename) {
 			unlink($filename);
 		}
-		// Restore DB connection
-		$GLOBALS['TYPO3_DB'] = $this->db;
-		// Restore list of loaded extensions
-		$GLOBALS['TYPO3_LOADED_EXT'] = $this->loadedExtensions;
-	}
-
-	/**
-	 * Cleans a SQL query.
-	 *
-	 * @param mixed $sql
-	 * @return mixed (string or array)
-	 */
-	private function cleanSql($sql) {
-		if (!is_string($sql)) {
-			return $sql;
-		}
-		$sql = str_replace('
-', ' ', $sql);
-		$sql = preg_replace('/\\s+/', ' ', $sql);
-		return trim($sql);
+		parent::tearDown();
 	}
 
 	/**
 	 * Creates a fake extension with a given table definition.
 	 *
 	 * @param string $tableDefinition SQL script to create the extension's tables
+	 * @throws \RuntimeException
 	 * @return void
 	 */
 	protected function createFakeExtension($tableDefinition) {
 		// Prepare a fake extension configuration
-		$ext_tables = \TYPO3\CMS\Core\Utility\GeneralUtility::tempnam('ext_tables');
-		\TYPO3\CMS\Core\Utility\GeneralUtility::writeFile($ext_tables, $tableDefinition);
+		$ext_tables = GeneralUtility::tempnam('ext_tables');
+		if (!GeneralUtility::writeFile($ext_tables, $tableDefinition)) {
+			throw new \RuntimeException('Can\'t write temporary ext_tables file.');
+		}
 		$this->temporaryFiles[] = $ext_tables;
-		$GLOBALS['TYPO3_LOADED_EXT']['test_dbal'] = array(
-			'ext_tables.sql' => $ext_tables
+		$GLOBALS['TYPO3_LOADED_EXT'] = array(
+			'test_dbal' => array(
+				'ext_tables.sql' => $ext_tables
+			)
 		);
 		// Append our test table to the list of existing tables
-		$GLOBALS['TYPO3_DB']->clearCachedFieldInfo();
-		$GLOBALS['TYPO3_DB']->_call('initInternalVariables');
+		$this->subject->initialize();
 	}
 
 	/**
 	 * @test
-	 * @see http://bugs.typo3.org/view.php?id=12515
+	 */
+	public function tableWithMappingIsDetected() {
+		$dbalConfiguration = array(
+			'mapping' => array(
+				'cf_cache_hash' => array(),
+			),
+		);
+
+		/** @var \TYPO3\CMS\Dbal\Database\DatabaseConnection|\PHPUnit_Framework_MockObject_MockObject|\TYPO3\CMS\Core\Tests\AccessibleObjectInterface $subject */
+		$subject = $this->getAccessibleMock('TYPO3\\CMS\\Dbal\\Database\\DatabaseConnection', array('getFieldInfoCache'), array(), '', FALSE);
+
+		$mockCacheFrontend = $this->getMock('TYPO3\\CMS\\Core\\Cache\\Frontend\\PhpFrontend', array(), array(), '', FALSE);
+		$subject->expects($this->any())->method('getFieldInfoCache')->will($this->returnValue($mockCacheFrontend));
+
+		$sqlParser = $this->getAccessibleMock('TYPO3\\CMS\\Dbal\\Database\\SqlParser', array('dummy'), array(), '', FALSE);
+		$sqlParser->_set('databaseConnection', $subject);
+		$subject->SQLparser = $sqlParser;
+
+		$installerSqlMock = $this->getMock('TYPO3\\CMS\\Install\\Service\\SqlSchemaMigrationService', array(), array(), '', FALSE);
+		$subject->_set('installerSql', $installerSqlMock);
+		$schemaMigrationResult = array(
+			'cf_cache_pages' => array(),
+		);
+		$installerSqlMock->expects($this->once())->method('getFieldDefinitions_fileContent')->will($this->returnValue($schemaMigrationResult));
+
+		$subject->conf = $dbalConfiguration;
+		$subject->initialize();
+		$subject->lastHandlerKey = '_DEFAULT';
+
+		$this->assertFalse($subject->_call('map_needMapping', 'cf_cache_pages'));
+		$cfCacheHashNeedsMapping = $subject->_call('map_needMapping', 'cf_cache_hash');
+		$this->assertEquals('cf_cache_hash', $cfCacheHashNeedsMapping[0]['table']);
+	}
+
+	/**
+	 * @test
+	 * @see http://forge.typo3.org/issues/21502
 	 */
 	public function concatCanBeParsedAfterLikeOperator() {
-		$query = $this->cleanSql($GLOBALS['TYPO3_DB']->SELECTquery('*', 'sys_refindex, tx_dam_file_tracking', 'sys_refindex.tablename = \'tx_dam_file_tracking\'' . ' AND sys_refindex.ref_string LIKE CONCAT(tx_dam_file_tracking.file_path, tx_dam_file_tracking.file_name)'));
+		$result = $this->subject->SELECTquery('*', 'sys_refindex, tx_dam_file_tracking', 'sys_refindex.tablename = \'tx_dam_file_tracking\'' . ' AND sys_refindex.ref_string LIKE CONCAT(tx_dam_file_tracking.file_path, tx_dam_file_tracking.file_name)');
 		$expected = 'SELECT * FROM sys_refindex, tx_dam_file_tracking WHERE sys_refindex.tablename = \'tx_dam_file_tracking\'';
 		$expected .= ' AND sys_refindex.ref_string LIKE CONCAT(tx_dam_file_tracking.file_path, tx_dam_file_tracking.file_name)';
-		$this->assertEquals($expected, $query);
+		$this->assertEquals($expected, $this->cleanSql($result));
 	}
 
 	/**
 	 * @test
-	 * @see http://bugs.typo3.org/view.php?id=10965
+	 * @see http://forge.typo3.org/issues/20346
 	 */
 	public function floatNumberCanBeStoredInDatabase() {
 		$this->createFakeExtension('
 			CREATE TABLE tx_test_dbal (
 				foo double default \'0\',
-				foobar integer default \'0\'
+				foobar int default \'0\'
 			);
 		');
 		$data = array(
 			'foo' => 99.12,
 			'foobar' => -120
 		);
-		$query = $this->cleanSql($GLOBALS['TYPO3_DB']->INSERTquery('tx_test_dbal', $data));
+		$result = $this->subject->INSERTquery('tx_test_dbal', $data);
 		$expected = 'INSERT INTO tx_test_dbal ( foo, foobar ) VALUES ( \'99.12\', \'-120\' )';
-		$this->assertEquals($expected, $query);
+		$this->assertEquals($expected, $this->cleanSql($result));
 	}
 
 	/**
 	 * @test
-	 * @see http://bugs.typo3.org/view.php?id=11093
+	 * @see http://forge.typo3.org/issues/20427
 	 */
 	public function positive64BitIntegerIsSupported() {
 		$this->createFakeExtension('
@@ -134,29 +176,9 @@ class DatabaseConnectionTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 			'foo' => 9223372036854775807,
 			'foobar' => 9223372036854775807
 		);
-		$query = $this->cleanSql($GLOBALS['TYPO3_DB']->INSERTquery('tx_test_dbal', $data));
+		$result = $this->subject->INSERTquery('tx_test_dbal', $data);
 		$expected = 'INSERT INTO tx_test_dbal ( foo, foobar ) VALUES ( \'9223372036854775807\', \'9223372036854775807\' )';
-		$this->assertEquals($expected, $query);
-	}
-
-	/**
-	 * @test
-	 * @see http://bugs.typo3.org/view.php?id=11093
-	 */
-	public function negative64BitIntegerIsSupported() {
-		$this->createFakeExtension('
-			CREATE TABLE tx_test_dbal (
-				foo int default \'0\',
-				foobar bigint default \'0\'
-			);
-		');
-		$data = array(
-			'foo' => -9.2233720368548E+18,
-			'foobar' => -9.2233720368548E+18
-		);
-		$query = $this->cleanSql($GLOBALS['TYPO3_DB']->INSERTquery('tx_test_dbal', $data));
-		$expected = 'INSERT INTO tx_test_dbal ( foo, foobar ) VALUES ( \'-9223372036854775808\', \'-9223372036854775808\' )';
-		$this->assertEquals($expected, $query);
+		$this->assertEquals($expected, $this->cleanSql($result));
 	}
 
 	/**
@@ -169,52 +191,52 @@ class DatabaseConnectionTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 			array('3', '4', 'Title #2', 'Content #2'),
 			array('5', '6', 'Title #3', 'Content #3')
 		);
-		$query = $this->cleanSql($GLOBALS['TYPO3_DB']->INSERTmultipleRows('tt_content', $fields, $rows));
+		$result = $this->subject->INSERTmultipleRows('tt_content', $fields, $rows);
 		$expected = 'INSERT INTO tt_content (uid, pid, title, body) VALUES ';
 		$expected .= '(\'1\', \'2\', \'Title #1\', \'Content #1\'), ';
 		$expected .= '(\'3\', \'4\', \'Title #2\', \'Content #2\'), ';
 		$expected .= '(\'5\', \'6\', \'Title #3\', \'Content #3\')';
-		$this->assertEquals($expected, $query);
+		$this->assertEquals($expected, $this->cleanSql($result));
 	}
 
 	/**
 	 * @test
-	 * @see http://bugs.typo3.org/view.php?id=4493
+	 * @see http://forge.typo3.org/issues/16708
 	 */
 	public function minFunctionAndInOperatorCanBeParsed() {
-		$query = $this->cleanSql($GLOBALS['TYPO3_DB']->SELECTquery('*', 'pages', 'MIN(uid) IN (1,2,3,4)'));
+		$result = $this->subject->SELECTquery('*', 'pages', 'MIN(uid) IN (1,2,3,4)');
 		$expected = 'SELECT * FROM pages WHERE MIN(uid) IN (1,2,3,4)';
-		$this->assertEquals($expected, $query);
+		$this->assertEquals($expected, $this->cleanSql($result));
 	}
 
 	/**
 	 * @test
-	 * @see http://bugs.typo3.org/view.php?id=4493
+	 * @see http://forge.typo3.org/issues/16708
 	 */
 	public function maxFunctionAndInOperatorCanBeParsed() {
-		$query = $this->cleanSql($GLOBALS['TYPO3_DB']->SELECTquery('*', 'pages', 'MAX(uid) IN (1,2,3,4)'));
+		$result = $this->subject->SELECTquery('*', 'pages', 'MAX(uid) IN (1,2,3,4)');
 		$expected = 'SELECT * FROM pages WHERE MAX(uid) IN (1,2,3,4)';
-		$this->assertEquals($expected, $query);
+		$this->assertEquals($expected, $this->cleanSql($result));
 	}
 
 	/**
 	 * @test
-	 * @see http://bugs.typo3.org/view.php?id=12535
+	 * @see http://forge.typo3.org/issues/21514
 	 */
 	public function likeBinaryOperatorIsKept() {
-		$query = $this->cleanSql($GLOBALS['TYPO3_DB']->SELECTquery('*', 'tt_content', 'bodytext LIKE BINARY \'test\''));
+		$result = $this->cleanSql($this->subject->SELECTquery('*', 'tt_content', 'bodytext LIKE BINARY \'test\''));
 		$expected = 'SELECT * FROM tt_content WHERE bodytext LIKE BINARY \'test\'';
-		$this->assertEquals($expected, $query);
+		$this->assertEquals($expected, $this->cleanSql($result));
 	}
 
 	/**
 	 * @test
-	 * @see http://bugs.typo3.org/view.php?id=12535
+	 * @see http://forge.typo3.org/issues/21514
 	 */
 	public function notLikeBinaryOperatorIsKept() {
-		$query = $this->cleanSql($GLOBALS['TYPO3_DB']->SELECTquery('*', 'tt_content', 'bodytext NOT LIKE BINARY \'test\''));
+		$result = $this->cleanSql($this->subject->SELECTquery('*', 'tt_content', 'bodytext NOT LIKE BINARY \'test\''));
 		$expected = 'SELECT * FROM tt_content WHERE bodytext NOT LIKE BINARY \'test\'';
-		$this->assertEquals($expected, $query);
+		$this->assertEquals($expected, $this->cleanSql($result));
 	}
 
 	///////////////////////////////////////
@@ -222,7 +244,7 @@ class DatabaseConnectionTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	///////////////////////////////////////
 	/**
 	 * @test
-	 * @see http://bugs.typo3.org/view.php?id=15457
+	 * @see http://forge.typo3.org/issues/23374
 	 */
 	public function similarNamedParametersAreProperlyReplaced() {
 		$sql = 'SELECT * FROM cache WHERE tag = :tag1 OR tag = :tag10 OR tag = :tag100';
@@ -237,12 +259,24 @@ class DatabaseConnectionTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 		$statement = new $className($sql, 'cache');
 		$statement->bindValues($parameterValues);
 		$parameters = $statement->_get('parameters');
-		$statement->_callRef('replaceValuesInQuery', $query, $precompiledQueryParts, $parameters);
-		$expected = 'SELECT * FROM cache WHERE tag = \'tag-one\' OR tag = \'tag-two\' OR tag = \'tag-three\'';
-		$this->assertEquals($expected, $query);
+		$statement->_callRef('convertNamedPlaceholdersToQuestionMarks', $query, $parameters, $precompiledQueryParts);
+		$expectedQuery = 'SELECT * FROM cache WHERE tag = ? OR tag = ? OR tag = ?';
+		$expectedParameterValues = array(
+			0 => array(
+				'type' => \TYPO3\CMS\Core\Database\PreparedStatement::PARAM_STR,
+				'value' => 'tag-one',
+			),
+			1 => array(
+				'type' => \TYPO3\CMS\Core\Database\PreparedStatement::PARAM_STR,
+				'value' => 'tag-two',
+			),
+			2 => array(
+				'type' => \TYPO3\CMS\Core\Database\PreparedStatement::PARAM_STR,
+				'value' => 'tag-three',
+			),
+		);
+		$this->assertEquals($expectedQuery, $query);
+		$this->assertEquals($expectedParameterValues, $parameters);
 	}
 
 }
-
-
-?>

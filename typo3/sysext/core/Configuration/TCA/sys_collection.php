@@ -139,7 +139,8 @@ return array(
 				'allowed' => '*',
 				'MM' => 'sys_collection_entries',
 				'MM_hasUidField' => TRUE,
-				'multiple' => TRUE
+				'multiple' => TRUE,
+				'size' => 5
 			)
 		),
 		'title' => array(
@@ -179,4 +180,3 @@ return array(
 		'1' => array('showitem' => 'starttime, endtime, fe_group, sys_language_uid, l10n_parent, l10n_diffsource, hidden')
 	)
 );
-?>

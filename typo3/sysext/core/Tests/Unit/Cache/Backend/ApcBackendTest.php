@@ -1,28 +1,18 @@
 <?php
 namespace TYPO3\CMS\Core\Tests\Unit\Cache\Backend;
 
-/***************************************************************
- *  Copyright notice
+/**
+ * This file is part of the TYPO3 CMS project.
  *
- *  (c) 2009-2013 Ingo Renner <ingo@typo3.org>
- *  All rights reserved
+ * It is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License, either version 2
+ * of the License, or any later version.
  *
- *  This script is part of the TYPO3 project. The TYPO3 project is
- *  free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
+ * For the full copyright and license information, please read the
+ * LICENSE.txt file that was distributed with this source code.
  *
- *  The GNU General Public License can be found at
- *  http://www.gnu.org/copyleft/gpl.html.
- *
- *  This script is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  This copyright notice MUST APPEAR in all copies of the script!
- ***************************************************************/
+ * The TYPO3 project - inspiring people to share!
+ */
 
 /**
  * Testcase for the APC cache backend.
@@ -43,8 +33,8 @@ class ApcBackendTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	 */
 	public function setUp() {
 		// Currently APCu identifies itself both as "apcu" and "apc" (for compatibility) although it doesn't provide the APC-opcache functionality
-		if (!extension_loaded('apc')) {
-			$this->markTestSkipped('APC/APCu extension was not available');
+		if (!extension_loaded('apc') || ini_get('apc.enabled') == 0 || ini_get('apc.enable_cli') == 0) {
+			$this->markTestSkipped('APC/APCu extension was not available, or it was disabled for CLI.');
 		}
 		if (ini_get('apc.slam_defense') == 1) {
 			$this->markTestSkipped('This testcase can only be executed with apc.slam_defense = Off');
@@ -66,14 +56,6 @@ class ApcBackendTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	 * @test
 	 */
 	public function itIsPossibleToSetAndCheckExistenceInCache() {
-		// APC has some slam protection that tries to prevent hammering of cache
-		// entries. This can be disabled, but the option does not work at least
-		// in native PHP 5.3.3 on debian squeeze. While it is no problem with
-		// higher PHP version like the current one on travis-ci.org,
-		// the test is now just skipped on PHP environments that are knows for issues.
-		if (version_compare(phpversion(), '5.3.4', '<')) {
-			$this->markTestSkipped('This test is not reliable with PHP version below 5.3.3');
-		}
 		$backend = $this->setUpBackend();
 		$data = 'Some data';
 		$identifier = 'MyIdentifier' . md5(uniqid(mt_rand(), TRUE));
@@ -86,14 +68,6 @@ class ApcBackendTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	 * @test
 	 */
 	public function itIsPossibleToSetAndGetEntry() {
-		// APC has some slam protection that tries to prevent hammering of cache
-		// entries. This can be disabled, but the option does not work at least
-		// in native PHP 5.3.3 on debian squeeze. While it is no problem with
-		// higher PHP version like the current one on travis-ci.org,
-		// the test is now just skipped on PHP environments that are knows for issues.
-		if (version_compare(phpversion(), '5.3.4', '<')) {
-			$this->markTestSkipped('This test is not reliable with PHP version below 5.3.3');
-		}
 		$backend = $this->setUpBackend();
 		$data = 'Some data';
 		$identifier = 'MyIdentifier' . md5(uniqid(mt_rand(), TRUE));
@@ -209,6 +183,9 @@ class ApcBackendTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	 * @test
 	 */
 	public function flushByTagRemovesCacheEntriesWithSpecifiedTag() {
+		if (version_compare(phpversion(), '5.4.0', '<')) {
+			$this->markTestSkipped('This test is not reliable with PHP version below 5.4.0');
+		}
 		$backend = $this->setUpBackend();
 		$data = 'some data' . microtime();
 		$backend->set('BackendAPCTest1', $data, array('UnitTestTag%test', 'UnitTestTag%boring'));
@@ -224,14 +201,6 @@ class ApcBackendTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	 * @test
 	 */
 	public function flushRemovesAllCacheEntries() {
-		// APC has some slam protection that tries to prevent hammering of cache
-		// entries. This can be disabled, but the option does not work at least
-		// in native PHP 5.3.3 on debian squeeze. While it is no problem with
-		// higher PHP version like the current one on travis-ci.org,
-		// the test is now just skipped on PHP environments that are knows for issues.
-		if (version_compare(phpversion(), '5.3.4', '<')) {
-			$this->markTestSkipped('This test is not reliable with PHP version below 5.3.3');
-		}
 		$backend = $this->setUpBackend();
 		$data = 'some data' . microtime();
 		$backend->set('BackendAPCTest1', $data);
@@ -289,5 +258,3 @@ class ApcBackendTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	}
 
 }
-
-?>

@@ -1,31 +1,20 @@
 <?php
 namespace TYPO3\CMS\Backend;
 
-/***************************************************************
- *  Copyright notice
+/**
+ * This file is part of the TYPO3 CMS project.
  *
- *  (c) 1999-2013 Kasper Skårhøj (kasperYYYY@typo3.com)
- *  All rights reserved
+ * It is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License, either version 2
+ * of the License, or any later version.
  *
- *  This script is part of the TYPO3 project. The TYPO3 project is
- *  free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
+ * For the full copyright and license information, please read the
+ * LICENSE.txt file that was distributed with this source code.
  *
- *  The GNU General Public License can be found at
- *  http://www.gnu.org/copyleft/gpl.html.
- *  A copy is found in the textfile GPL.txt and important notices to the license
- *  from the author is found in LICENSE.txt distributed with these scripts.
- *
- *
- *  This script is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  This copyright notice MUST APPEAR in all copies of the script!
- ***************************************************************/
+ * The TYPO3 project - inspiring people to share!
+ */
+
+use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
  * Manage storing and restoring of $GLOBALS['SOBE']->MOD_SETTINGS settings.
@@ -171,9 +160,9 @@ class ModuleSettings {
 	 * @todo Define visibility
 	 */
 	public function setStoreList($storeList) {
-		$this->storeList = is_array($storeList) ? $storeList : \TYPO3\CMS\Core\Utility\GeneralUtility::trimExplode(',', $storeList, 1);
+		$this->storeList = is_array($storeList) ? $storeList : GeneralUtility::trimExplode(',', $storeList, TRUE);
 		if ($this->writeDevLog) {
-			\TYPO3\CMS\Core\Utility\GeneralUtility::devLog('Store list:' . implode(',', $this->storeList), 'TYPO3\\CMS\\Backend\\ModuleSettings', 0);
+			GeneralUtility::devLog('Store list:' . implode(',', $this->storeList), 'TYPO3\\CMS\\Backend\\ModuleSettings', 0);
 		}
 	}
 
@@ -185,10 +174,10 @@ class ModuleSettings {
 	 * @todo Define visibility
 	 */
 	public function addToStoreList($storeList) {
-		$storeList = is_array($storeList) ? $storeList : \TYPO3\CMS\Core\Utility\GeneralUtility::trimExplode(',', $storeList, 1);
+		$storeList = is_array($storeList) ? $storeList : GeneralUtility::trimExplode(',', $storeList, TRUE);
 		$this->storeList = array_merge($this->storeList, $storeList);
 		if ($this->writeDevLog) {
-			\TYPO3\CMS\Core\Utility\GeneralUtility::devLog('Store list:' . implode(',', $this->storeList), 'TYPO3\\CMS\\Backend\\ModuleSettings', 0);
+			GeneralUtility::devLog('Store list:' . implode(',', $this->storeList), 'TYPO3\\CMS\\Backend\\ModuleSettings', 0);
 		}
 	}
 
@@ -209,7 +198,7 @@ class ModuleSettings {
 		}
 		unset($this->storeList[$this->prefix . '_storedSettings']);
 		if ($this->writeDevLog) {
-			\TYPO3\CMS\Core\Utility\GeneralUtility::devLog('Store list:' . implode(',', $this->storeList), 'TYPO3\\CMS\\Backend\\ModuleSettings', 0);
+			GeneralUtility::devLog('Store list:' . implode(',', $this->storeList), 'TYPO3\\CMS\\Backend\\ModuleSettings', 0);
 		}
 	}
 
@@ -303,14 +292,14 @@ class ModuleSettings {
 	 */
 	public function processStoreControl($mconfName = '') {
 		$this->initStorage();
-		$storeControl = \TYPO3\CMS\Core\Utility\GeneralUtility::_GP('storeControl');
+		$storeControl = GeneralUtility::_GP('storeControl');
 		$storeIndex = $storeControl['STORE'];
 		$msg = '';
 		$saveSettings = FALSE;
 		$writeArray = array();
 		if (is_array($storeControl)) {
 			if ($this->writeDevLog) {
-				\TYPO3\CMS\Core\Utility\GeneralUtility::devLog('Store command: ' . \TYPO3\CMS\Core\Utility\GeneralUtility::arrayToLogString($storeControl), 'TYPO3\\CMS\\Backend\\ModuleSettings', 0);
+				GeneralUtility::devLog('Store command: ' . GeneralUtility::arrayToLogString($storeControl), 'TYPO3\\CMS\\Backend\\ModuleSettings', 0);
 			}
 			// Processing LOAD
 			if ($storeControl['LOAD'] and $storeIndex) {
@@ -323,7 +312,7 @@ class ModuleSettings {
 					$newEntry = $this->compileEntry($storeControl);
 					// Create an index for the storage array
 					if (!$storeIndex) {
-						$storeIndex = \TYPO3\CMS\Core\Utility\GeneralUtility::shortMD5($newEntry['title']);
+						$storeIndex = GeneralUtility::shortMD5($newEntry['title']);
 					}
 					// Add data to the storage array
 					$this->storedSettings[$storeIndex] = $newEntry;
@@ -357,11 +346,11 @@ class ModuleSettings {
 	public function writeStoredSetting($writeArray = array(), $mconfName = '') {
 		// Making sure, index 0 is not set
 		unset($this->storedSettings[0]);
-		!($this->storedSettings = $this->cleanupStorageArray($this->storedSettings));
+		$this->storedSettings = $this->cleanupStorageArray($this->storedSettings);
 		$writeArray[$this->prefix . '_storedSettings'] = serialize($this->storedSettings);
 		$GLOBALS['SOBE']->MOD_SETTINGS = \TYPO3\CMS\Backend\Utility\BackendUtility::getModuleData($GLOBALS['SOBE']->MOD_MENU, $writeArray, $mconfName ? $mconfName : $GLOBALS['SOBE']->MCONF['name'], $this->type);
 		if ($this->writeDevLog) {
-			\TYPO3\CMS\Core\Utility\GeneralUtility::devLog('Settings stored:' . $this->msg, 'TYPO3\\CMS\\Backend\\ModuleSettings', 0);
+			GeneralUtility::devLog('Settings stored:' . $this->msg, 'TYPO3\\CMS\\Backend\\ModuleSettings', 0);
 		}
 	}
 
@@ -379,7 +368,7 @@ class ModuleSettings {
 	 * @todo Define visibility
 	 */
 	public function getStoreControl($showElements = 'load,remove,save', $useOwnForm = TRUE) {
-		$showElements = \TYPO3\CMS\Core\Utility\GeneralUtility::trimExplode(',', $showElements, 1);
+		$showElements = GeneralUtility::trimExplode(',', $showElements, TRUE);
 		$this->initStorage();
 		// Preset selector
 		$opt = array();
@@ -439,7 +428,7 @@ class ModuleSettings {
 		// TODO need to add parameters
 		if ($useOwnForm and trim($code)) {
 			$code = '
-		<form action="' . \TYPO3\CMS\Core\Utility\GeneralUtility::getIndpEnv('SCRIPT_NAME') . '" method="post" name="' . $this->formName . '" enctype="' . $GLOBALS['TYPO3_CONF_VARS']['SYS']['form_enctype'] . '">' . $code . '</form>';
+		<form action="' . GeneralUtility::getIndpEnv('SCRIPT_NAME') . '" method="post" name="' . $this->formName . '" enctype="' . $GLOBALS['TYPO3_CONF_VARS']['SYS']['form_enctype'] . '">' . $code . '</form>';
 		}
 		return $code;
 	}
@@ -462,6 +451,3 @@ class ModuleSettings {
 	}
 
 }
-
-
-?>

@@ -102,7 +102,6 @@ return array(
 	'tx_form_System_Filter_Regexp' => 'TYPO3\\CMS\\Form\\Filter\\RegExpFilter',
 	'TYPO3\\CMS\\Form\\Filter\\RegexpFilter' => 'TYPO3\\CMS\\Form\\Filter\\RegExpFilter',
 	'tx_form_System_Filter_Removexss' => 'TYPO3\\CMS\\Form\\Filter\\RemoveXssFilter',
-	'TYPO3\\CMS\\Form\\Filter\\RemovexssFilter' => 'TYPO3\\CMS\\Form\\Filter\\RemoveXssFilter',
 	'tx_form_System_Filter_Stripnewlines' => 'TYPO3\\CMS\\Form\\Filter\\StripNewLinesFilter',
 	'TYPO3\\CMS\\Form\\Filter\\StripnewlinesFilter' => 'TYPO3\\CMS\\Form\\Filter\\StripNewLinesFilter',
 	'tx_form_System_Filter_Titlecase' => 'TYPO3\\CMS\\Form\\Filter\\TitleCaseFilter',
@@ -240,4 +239,3 @@ return array(
 	'tx_form_View_Wizard_Save' => 'TYPO3\\CMS\\Form\\View\\Wizard\\SaveWizardView',
 	'tx_form_View_Wizard_Wizard' => 'TYPO3\\CMS\\Form\\View\\Wizard\\WizardView',
 );
-?>

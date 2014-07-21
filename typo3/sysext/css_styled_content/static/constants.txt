@@ -33,6 +33,10 @@ styles.content.imgtext {
   maxW = 600
     # cat=content/cImage/b2; type=int+; label= Max Image Width (Text): Same as above, but this is the maximum width when text is wrapped around an imageblock. Default is 50% of the normal Max Image Width.
   maxWInText =
+    # cat=content/cImage/b4; type=options[Default img-tag=default, img-tag with alternate sources as srcset-attribute=srcset, picture-tag with source-child-tags=picture, img-tag with alternate sources as data-attributes=data]; label= Rendering-type for responsive images.
+  layoutKey = default
+
+
     # cat=content/cImage/c1; type=int+; label= Click-enlarge Image Width: This specifies the width of the enlarged image when click-enlarge is enabled.
   linkWrap.width = 800m
   linkWrap.height = 600m
@@ -46,9 +50,6 @@ styles.content.imgtext {
     # cat=content/cImage/c5; type=string; label= Lightbox rel="" attribute: Which rel="" attribute to use for lightbox links (only applicable if lightbox rendering is enabled)
   linkWrap.lightboxRelAttribute = lightbox[{field:uid}]
 
-  captionSplit = 0
-    # cat=content/cImage/e1; type=boolean; label= Images, text split: If this is checked, then the image text (caption, alt, title, longdesc) will be split by each line and they will appear on the corresponding images in the imagelist.
-  imageTextSplit = 1
     # cat=content/cImage/e2; type=string; label= Images, empty title handling: How will the 'title' attribute be handled if no title is given for an image. Possible choices: "keepEmpty", "useAlt" or "removeAttr". Recommended for accessibility is "removeAttr". For correct tooltips on IE, use "keepEmpty". For previous TYPO3 behaviour, use "useAlt".
   emptyTitleHandling = removeAttr
     # cat=content/cImage/e3; type=boolean; label= Images, title in link: Do you want the 'title' attribute to be added to the surrounding <a> tag, if present? Recommended for accessibility is "true".
@@ -56,11 +57,11 @@ styles.content.imgtext {
     # cat=content/cImage/e4; type=boolean; label= Images, title in link and IMG: If you have the title in the <a>-tag (titleInLink=true), you don't get the 'title' in the <img>-tag. IE will not show the tooltip anymore. So to get the 'title' in <img> too (to keep IE happy), set this too. Recommended for accessibility is "false". For correct tooltips on IE, set this to "true".
   titleInLinkAndImg = 0
 
-    # cat=content/cImage/g1; type=int[0-100]; label= Advanced, Column space: Horizontal distance between images in a block in content elements of type "Image" or "Text w/Image". If you change this manually in your CSS, you need to adjust this setting accordingly.
+    # cat=content/cImage/g1; type=int[0-100]; label= Advanced, Column space: Horizontal distance between images in a block in content elements of type "Images" or "Text & Images". If you change this manually in your CSS, you need to adjust this setting accordingly.
   colSpace = 10
-    # cat=content/cImage/g2; type=int[0-100]; label= Advanced, Row space: Vertical distance after each image row in content elements of type "Image" or "Text w/Image". If you change this manually in your CSS, you need to adjust this setting accordingly.
+    # cat=content/cImage/g2; type=int[0-100]; label= Advanced, Row space: Vertical distance after each image row in content elements of type "Images" or "Text & Images". If you change this manually in your CSS, you need to adjust this setting accordingly.
   rowSpace = 10
-    # cat=content/cImage/g3; type=int[0-100]; label= Advanced, Margin to text: Horizontal distance between an imageblock and text in content elements of type "Text w/Image".
+    # cat=content/cImage/g3; type=int[0-100]; label= Advanced, Margin to text: Horizontal distance between an imageblock and text in content elements of type "Text & Images".
   textMargin = 10
 
     # cat=content/cImage/i1; type=color; label= Image border, color: Bordercolor of images in content elements when "Border"-option for element is set.

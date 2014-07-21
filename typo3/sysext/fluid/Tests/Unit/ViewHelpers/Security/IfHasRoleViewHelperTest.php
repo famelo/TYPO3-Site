@@ -20,7 +20,6 @@ namespace TYPO3\CMS\Fluid\Tests\Unit\ViewHelpers\Security;
  *                                                                        *
  * The TYPO3 project - inspiring people to share!                         *
  *                                                                        */
-require_once __DIR__ . '/../ViewHelperBaseTestcase.php';
 
 /**
  * Testcase for security.ifHasRole view helper
@@ -80,5 +79,3 @@ class IfHasRoleViewHelperTest extends \TYPO3\CMS\Fluid\Tests\Unit\ViewHelpers\Vi
 		$this->assertEquals('else child', $actualResult);
 	}
 }
-
-?>

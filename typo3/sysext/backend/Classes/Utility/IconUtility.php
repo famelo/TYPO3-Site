@@ -1,31 +1,21 @@
 <?php
 namespace TYPO3\CMS\Backend\Utility;
 
-/***************************************************************
- *  Copyright notice
+/**
+ * This file is part of the TYPO3 CMS project.
  *
- *  (c) 1999-2013 Kasper Skårhøj (kasperYYYY@typo3.com)
- *  All rights reserved
+ * It is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License, either version 2
+ * of the License, or any later version.
  *
- *  This script is part of the TYPO3 project. The TYPO3 project is
- *  free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
+ * For the full copyright and license information, please read the
+ * LICENSE.txt file that was distributed with this source code.
  *
- *  The GNU General Public License can be found at
- *  http://www.gnu.org/copyleft/gpl.html.
- *  A copy is found in the textfile GPL.txt and important notices to the license
- *  from the author is found in LICENSE.txt distributed with these scripts.
- *
- *
- *  This script is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  This copyright notice MUST APPEAR in all copies of the script!
- ***************************************************************/
+ * The TYPO3 project - inspiring people to share!
+ */
+
+use TYPO3\CMS\Core\Utility\GeneralUtility;
+use TYPO3\CMS\Core\Versioning\VersionState;
 
 /**
  * Contains class for icon generation in the backend
@@ -102,6 +92,8 @@ class IconUtility {
 		'xltm' => 'mimetypes-excel',
 		'xltx' => 'mimetypes-excel',
 		'sxc' => 'mimetypes-excel',
+		'pps' => 'mimetypes-powerpoint',
+		'ppsx' => 'mimetypes-powerpoint',
 		'ppt' => 'mimetypes-powerpoint',
 		'pptm' => 'mimetypes-powerpoint',
 		'pptx' => 'mimetypes-powerpoint',
@@ -111,6 +103,14 @@ class IconUtility {
 		'folder' => 'apps-filetree-folder-default',
 		'default' => 'mimetypes-other-other'
 	);
+
+	/**
+	 * Array of icons rendered by getSpriteIcon(). This contains only icons
+	 * without overlays or options. These are the most common form.
+	 *
+	 * @var array
+	 */
+	static protected $spriteIconCache = array();
 
 	/**
 	 * Returns an icon image tag, 18x16 pixels, based on input information.
@@ -126,7 +126,7 @@ class IconUtility {
 	 * @deprecated since TYPO3 6.1 will be removed in 7.0, should not be used anymore as only sprite icons are used since TYPO3 4.4
 	 */
 	static public function getIconImage($table, $row = array(), $backPath, $params = '', $shaded = FALSE) {
-		\TYPO3\CMS\Core\Utility\GeneralUtility::logDeprecatedFunction();
+		GeneralUtility::logDeprecatedFunction();
 
 		$str = '<img' . self::skinImg($backPath, self::getIcon($table, $row, $shaded), 'width="18" height="16"') . (trim($params) ? ' ' . trim($params) : '');
 		if (!stristr($str, 'alt="')) {
@@ -152,20 +152,20 @@ class IconUtility {
 		// The icon is generated only if a default icon for groups is not found... So effectively this is ineffective.
 		$doNotRenderUserGroupNumber = TRUE;
 		// Shadow
-		if ($GLOBALS['TCA'][$table]['ctrl']['versioningWS']) {
-			switch ((int) $row['t3ver_state']) {
-			case 1:
-				return 'gfx/i/shadow_hide.png';
-				break;
-			case 2:
-				return 'gfx/i/shadow_delete.png';
-				break;
-			case 3:
-				return 'gfx/i/shadow_moveto_plh.png';
-				break;
-			case 4:
-				return 'gfx/i/shadow_moveto_pointer.png';
-				break;
+		if (!empty($GLOBALS['TCA'][$table]['ctrl']['versioningWS']) && !empty($row['t3ver_state'])) {
+			switch (VersionState::cast($row['t3ver_state'])) {
+				case new VersionState(VersionState::NEW_PLACEHOLDER):
+					return 'gfx/i/shadow_hide.png';
+					break;
+				case new VersionState(VersionState::DELETE_PLACEHOLDER):
+					return 'gfx/i/shadow_delete.png';
+					break;
+				case new VersionState(VersionState::MOVE_PLACEHOLDER):
+					return 'gfx/i/shadow_moveto_plh.png';
+					break;
+				case new VersionState(VersionState::MOVE_POINTER):
+					return 'gfx/i/shadow_moveto_pointer.png';
+					break;
 			}
 		}
 		// First, find the icon file name. This can depend on configuration in TCA, field values and more:
@@ -176,7 +176,7 @@ class IconUtility {
 			}
 		} else {
 			if (!($iconfile = $GLOBALS['TCA'][$table]['ctrl']['typeicons'][$row[$GLOBALS['TCA'][$table]['ctrl']['typeicon_column']]])) {
-				$iconfile = $GLOBALS['TCA'][$table]['ctrl']['iconfile'] ? $GLOBALS['TCA'][$table]['ctrl']['iconfile'] : $table . '.gif';
+				$iconfile = $GLOBALS['TCA'][$table]['ctrl']['iconfile'] ?: $table . '.gif';
 			}
 		}
 		// Setting path of iconfile if not already set. Default is "gfx/i/"
@@ -211,18 +211,18 @@ class IconUtility {
 			}
 			// If a "starttime" is set and higher than current time:
 			if ($enCols['starttime']) {
-				if ($GLOBALS['EXEC_TIME'] < intval($row[$enCols['starttime']])) {
+				if ($GLOBALS['EXEC_TIME'] < (int)$row[$enCols['starttime']]) {
 					$timing = TRUE;
 					// And if "endtime" is NOT set:
-					if (intval($row[$enCols['endtime']]) == 0) {
+					if ((int)$row[$enCols['endtime']] === 0) {
 						$futuretiming = TRUE;
 					}
 				}
 			}
 			// If an "endtime" is set:
 			if ($enCols['endtime']) {
-				if (intval($row[$enCols['endtime']]) > 0) {
-					if (intval($row[$enCols['endtime']]) < $GLOBALS['EXEC_TIME']) {
+				if ((int)$row[$enCols['endtime']] > 0) {
+					if ((int)$row[$enCols['endtime']] < $GLOBALS['EXEC_TIME']) {
 						// End-timing applies at this point.
 						$timing = TRUE;
 					} else {
@@ -313,7 +313,7 @@ class IconUtility {
 			// Otherwise, test if auto-detection is enabled:
 			// Search for alternative icon automatically:
 			$fExt = $GLOBALS['TBE_STYLES']['skinImgAutoCfg']['forceFileExtension'];
-			$scaleFactor = $GLOBALS['TBE_STYLES']['skinImgAutoCfg']['scaleFactor'] ? $GLOBALS['TBE_STYLES']['skinImgAutoCfg']['scaleFactor'] : 1;
+			$scaleFactor = $GLOBALS['TBE_STYLES']['skinImgAutoCfg']['scaleFactor'] ?: 1;
 			// Scaling factor
 			$lookUpName = $fExt ? preg_replace('/\\.[[:alnum:]]+$/', '', $srcKey) . '.' . $fExt : $srcKey;
 			// Set filename to look for
@@ -347,15 +347,15 @@ class IconUtility {
 		// Return icon source/wHattributes:
 		$output = '';
 		switch ($outputMode) {
-		case 0:
-			$output = ' src="' . $backPath . $src . '" ' . $wHattribs;
-			break;
-		case 1:
-			$output = $backPath . $src;
-			break;
-		case 2:
-			$output = $wHattribs;
-			break;
+			case 0:
+				$output = ' src="' . $backPath . $src . '" ' . $wHattribs;
+				break;
+			case 1:
+				$output = $backPath . $src;
+				break;
+			case 2:
+				$output = $wHattribs;
+				break;
 		}
 		$cachedSkinImages[$imageId] = $output;
 		return $output;
@@ -379,7 +379,7 @@ class IconUtility {
 	 * @access private
 	 */
 	static public function makeIcon($iconfile, $mode, $user, $protectSection, $absFile, $iconFileName_stateTagged) {
-		$iconFileName = 'icon_' . \TYPO3\CMS\Core\Utility\GeneralUtility::shortMD5(($iconfile . '|' . $mode . '|-' . $user . '|' . $protectSection)) . '_' . $iconFileName_stateTagged . '.' . ($GLOBALS['TYPO3_CONF_VARS']['GFX']['gdlib_png'] ? 'png' : 'gif');
+		$iconFileName = 'icon_' . GeneralUtility::shortMD5(($iconfile . '|' . $mode . '|-' . $user . '|' . $protectSection)) . '_' . $iconFileName_stateTagged . '.' . ($GLOBALS['TYPO3_CONF_VARS']['GFX']['gdlib_png'] ? 'png' : 'gif');
 		$mainpath = '../typo3temp/' . $iconFileName;
 		$path = PATH_site . 'typo3temp/' . $iconFileName;
 		if (file_exists(PATH_typo3 . 'icons/' . $iconFileName)) {
@@ -427,30 +427,29 @@ class IconUtility {
 					if ($mode) {
 						unset($ol_im);
 						switch ($mode) {
-						case 'deleted':
-							$ol_im = self::imagecreatefrom($GLOBALS['BACK_PATH'] . 'gfx/overlay_deleted.gif');
-							break;
-						case 'futuretiming':
-							$ol_im = self::imagecreatefrom($GLOBALS['BACK_PATH'] . 'gfx/overlay_timing.gif');
-							break;
-						case 'timing':
-							$ol_im = self::imagecreatefrom($GLOBALS['BACK_PATH'] . 'gfx/overlay_timing.gif');
-							break;
-						case 'hiddentiming':
-							$ol_im = self::imagecreatefrom($GLOBALS['BACK_PATH'] . 'gfx/overlay_hidden_timing.gif');
-							break;
-						case 'no_icon_found':
-							$ol_im = self::imagecreatefrom($GLOBALS['BACK_PATH'] . 'gfx/overlay_no_icon_found.gif');
-							break;
-						case 'disabled':
-							// is already greyed - nothing more
-							$ol_im = 0;
-							break;
-						case 'hidden':
+							case 'deleted':
+								$ol_im = self::imagecreatefrom($GLOBALS['BACK_PATH'] . 'gfx/overlay_deleted.gif');
+								break;
+							case 'futuretiming':
+								$ol_im = self::imagecreatefrom($GLOBALS['BACK_PATH'] . 'gfx/overlay_timing.gif');
+								break;
+							case 'timing':
+								$ol_im = self::imagecreatefrom($GLOBALS['BACK_PATH'] . 'gfx/overlay_timing.gif');
+								break;
+							case 'hiddentiming':
+								$ol_im = self::imagecreatefrom($GLOBALS['BACK_PATH'] . 'gfx/overlay_hidden_timing.gif');
+								break;
+							case 'no_icon_found':
+								$ol_im = self::imagecreatefrom($GLOBALS['BACK_PATH'] . 'gfx/overlay_no_icon_found.gif');
+								break;
+							case 'disabled':
+								// is already greyed - nothing more
+								$ol_im = 0;
+								break;
+							case 'hidden':
 
-						default:
-							$ol_im = self::imagecreatefrom($GLOBALS['BACK_PATH'] . 'gfx/overlay_hidden.gif');
-							break;
+							default:
+								$ol_im = self::imagecreatefrom($GLOBALS['BACK_PATH'] . 'gfx/overlay_hidden.gif');
 						}
 						if ($ol_im < 0) {
 							return $iconfile;
@@ -469,7 +468,7 @@ class IconUtility {
 					}
 					// Create the image as file, destroy GD image and return:
 					@self::imagemake($im, $path);
-					\TYPO3\CMS\Core\Utility\GeneralUtility::gif_compress($path, 'IM');
+					GeneralUtility::gif_compress($path, 'IM');
 					ImageDestroy($im);
 					return $mainpath;
 				} else {
@@ -519,7 +518,7 @@ class IconUtility {
 	 * @see \TYPO3\CMS\Core\Utility\GeneralUtility::read_png_gif
 	 */
 	static public function imagecreatefrom($file) {
-		$file = \TYPO3\CMS\Core\Utility\GeneralUtility::read_png_gif($file, $GLOBALS['TYPO3_CONF_VARS']['GFX']['gdlib_png']);
+		$file = GeneralUtility::read_png_gif($file, $GLOBALS['TYPO3_CONF_VARS']['GFX']['gdlib_png']);
 		if ($GLOBALS['TYPO3_CONF_VARS']['GFX']['gdlib_png']) {
 			return $file ? imagecreatefrompng($file) : -1;
 		} else {
@@ -542,7 +541,7 @@ class IconUtility {
 			@ImageGif($im, $path);
 		}
 		if (@is_file($path)) {
-			\TYPO3\CMS\Core\Utility\GeneralUtility::fixPermissions($path);
+			GeneralUtility::fixPermissions($path);
 		}
 	}
 
@@ -553,50 +552,78 @@ class IconUtility {
 	 * this is typically wrapped in a <span> tag with corresponding CSS classes that
 	 * will be responsible for the
 	 *
-	 * There are three ways to use this API:
+	 * There are four ways to use this API:
 	 *
 	 * 1) for any given TCA record
 	 *	$spriteIconHtml = \TYPO3\CMS\Backend\Utility\IconUtility::getSpriteIconForRecord('pages', $row);
 	 *
-	 * 2) for any given file
+	 * 2) for any given File of Folder object
+	 *	$spriteIconHtml = \TYPO3\CMS\Backend\Utility\IconUtility::getSpriteIconForResource($fileOrFolderObject);
+	 *
+	 * 3) for any given file
 	 *	$spriteIconHtml = \TYPO3\CMS\Backend\Utility\IconUtility::getSpriteIconForFile('myimage.png');
 	 *
-	 * 3) for any other icon you know the name
+	 * 4) for any other icon you know the name
 	 *	$spriteIconHtml = \TYPO3\CMS\Backend\Utility\IconUtility::getSpriteIcon('actions-document-open');
 	 *
 	 **********************************************/
 	/**
-	 * This generic method is used throughout the TYPO3 Backend to show icons in any variation which are not
-	 * bound to any file type (see getSpriteIconForFile) or database record (see getSpriteIconForRecord)
+	 * This generic method is used throughout the TYPO3 Backend to show icons
+	 * in any variation which are not bound to any resource object (see getSpriteIconForResource)
+	 * or database record (see getSpriteIconForRecord)
 	 *
-	 * Generates a HTML tag with proper CSS classes. The TYPO3 skin has defined these CSS classes
-	 * already to have a pre-defined background image, and the correct background-position to show
-	 * the necessary icon.
+	 * Generates a HTML tag with proper CSS classes. The TYPO3 skin has
+	 * defined these CSS classes already to have a pre-defined background image,
+	 * and the correct background-position to show the necessary icon.
+	 *
+	 * If no options or overlays are given, the icon will be cached in
+	 * $priteIconCache.
 	 *
 	 * @param string $iconName The name of the icon to fetch
 	 * @param array $options An associative array with additional options and attributes for the tag. by default, the key is the name of the attribute, and the value is the parameter string that is set. However, there are some additional special reserved keywords that can be used as keys: "html" (which is the HTML that will be inside the icon HTML tag), "tagName" (which is an alternative tagName than "span"), and "class" (additional class names that will be merged with the sprite icon CSS classes)
-	 * @param array	$overlays An associative array with the icon-name as key, and the options for this overlay as an array again (see the parameter $options again)
+	 * @param array $overlays An associative array with the icon-name as key, and the options for this overlay as an array again (see the parameter $options again)
+	 *
 	 * @return string The full HTML tag (usually a <span>)
 	 * @access public
 	 */
 	static public function getSpriteIcon($iconName, array $options = array(), array $overlays = array()) {
+		// Check if icon can be cached and return cached version if present
+		if (empty($options) && empty($overlays)) {
+			if (isset(static::$spriteIconCache[$iconName])) {
+				return static::$spriteIconCache[$iconName];
+			}
+			$iconIsCacheable = TRUE;
+		} else {
+			$iconIsCacheable = FALSE;
+		}
+
 		$innerHtml = isset($options['html']) ? $options['html'] : NULL;
 		$tagName = isset($options['tagName']) ? $options['tagName'] : NULL;
+
 		// Deal with the overlays
-		if (count($overlays)) {
-			foreach ($overlays as $overlayIconName => $overlayOptions) {
-				$overlayOptions['html'] = $innerHtml;
-				$overlayOptions['class'] = (isset($overlayOptions['class']) ? $overlayOptions['class'] . ' ' : '') . 't3-icon-overlay';
-				$innerHtml = self::getSpriteIcon($overlayIconName, $overlayOptions);
-			}
+		foreach ($overlays as $overlayIconName => $overlayOptions) {
+			$overlayOptions['html'] = $innerHtml;
+			$overlayOptions['class'] = (isset($overlayOptions['class']) ? $overlayOptions['class'] . ' ' : '') . 't3-icon-overlay';
+			$innerHtml = self::getSpriteIcon($overlayIconName, $overlayOptions);
 		}
-		// Check if whished icon is available
-		$iconName = in_array($iconName, $GLOBALS['TBE_STYLES']['spriteIconApi']['iconsAvailable']) || $iconName == 'empty-empty' ? $iconName : 'status-status-icon-missing';
+
+		$availableIcons = isset($GLOBALS['TBE_STYLES']['spriteIconApi']['iconsAvailable'])
+			? (array) $GLOBALS['TBE_STYLES']['spriteIconApi']['iconsAvailable']
+			: array();
+		if ($iconName !== 'empty-empty' && !in_array($iconName, $availableIcons, TRUE)) {
+			$iconName = 'status-status-icon-missing';
+		}
+
 		// Create the CSS class
 		$options['class'] = self::getSpriteIconClasses($iconName) . (isset($options['class']) ? ' ' . $options['class'] : '');
-		unset($options['html']);
-		unset($options['tagName']);
-		return self::buildSpriteHtmlIconTag($options, $innerHtml, $tagName);
+		unset($options['html'], $options['tagName']);
+		$spriteHtml = self::buildSpriteHtmlIconTag($options, $innerHtml, $tagName);
+
+		// Store result in cache if possible
+		if ($iconIsCacheable) {
+			static::$spriteIconCache[$iconName] = $spriteHtml;
+		}
+		return $spriteHtml;
 	}
 
 	/**
@@ -646,8 +673,8 @@ class IconUtility {
 		// then it is checked whether it is a valid directory
 		if (strpos($fileExtension, '.') !== FALSE || strpos($fileExtension, '/') !== FALSE) {
 			// Check if it is a directory
-			$filePath = dirname(\TYPO3\CMS\Core\Utility\GeneralUtility::getIndpEnv('SCRIPT_FILENAME')) . '/' . $GLOBALS['BACK_PATH'] . $fileExtension;
-			$path = \TYPO3\CMS\Core\Utility\GeneralUtility::resolveBackPath($filePath);
+			$filePath = dirname(GeneralUtility::getIndpEnv('SCRIPT_FILENAME')) . '/' . $GLOBALS['BACK_PATH'] . $fileExtension;
+			$path = GeneralUtility::resolveBackPath($filePath);
 			if (is_dir($path) || substr($fileExtension, -1) === '/' || substr($fileExtension, -1) === '\\') {
 				$fileExtension = 'folder';
 			} else {
@@ -697,6 +724,99 @@ class IconUtility {
 		unset($options['html']);
 		unset($options['tagName']);
 		return self::buildSpriteHtmlIconTag($options, $innerHtml, $tagName);
+	}
+
+	/**
+	 * This method is used throughout the TYPO3 Backend to show icons for files and folders
+	 *
+	 * The method takes care of the translation of file extension to proper icon and for folders
+	 * it will return the icon depending on the role of the folder.
+	 *
+	 * If the given resource is a folder there are some additional options that can be used:
+	 *  - mount-root => TRUE (to indicate this is the root of a mount)
+	 *  - folder-open => TRUE (to indicate that the folder is opened in the file tree)
+	 *
+	 * There is a hook in place to manipulate the icon name and overlays.
+	 *
+	 * @param \TYPO3\CMS\Core\Resource\ResourceInterface $resource
+	 * @param array $options An associative array with additional options and attributes for the tag. See self::getSpriteIcon()
+	 * @param array $overlays An associative array with the icon-name as key, and the options for this overlay as an array again (see the parameter $options again)
+	 * @return string
+	 * @throws \UnexpectedValueException
+	 */
+	static public function getSpriteIconForResource(\TYPO3\CMS\Core\Resource\ResourceInterface $resource, array $options = array(), array $overlays = array()) {
+		// Folder
+		if ($resource instanceof \TYPO3\CMS\Core\Resource\FolderInterface) {
+			$iconName = NULL;
+			$role = $resource->getRole();
+			// non browsable storage
+			if ($resource->getStorage()->isBrowsable() === FALSE && !empty($options['mount-root'])) {
+				$iconName = 'apps-filetree-folder-locked';
+			} else {
+				// storage root
+				if ($resource->getStorage()->getRootLevelFolder()->getIdentifier() === $resource->getIdentifier()) {
+					$iconName = 'apps-filetree-root';
+				}
+
+
+				// user/group mount root
+				if (!empty($options['mount-root'])) {
+					$iconName = 'apps-filetree-mount';
+					if ($role === \TYPO3\CMS\Core\Resource\FolderInterface::ROLE_READONLY_MOUNT) {
+						$overlays['status-overlay-locked'] = array();
+					} elseif ($role === \TYPO3\CMS\Core\Resource\FolderInterface::ROLE_USER_MOUNT) {
+						$overlays['status-overlay-access-restricted'] = array();
+					}
+				}
+
+				if ($iconName === NULL) {
+					// in folder tree view $options['folder-open'] can define a open folder icon
+					if (!empty($options['folder-open'])) {
+						$iconName = 'apps-filetree-folder-opened';
+					} else {
+						$iconName = 'apps-filetree-folder-default';
+					}
+
+					if ($role === \TYPO3\CMS\Core\Resource\FolderInterface::ROLE_TEMPORARY) {
+						$iconName = 'apps-filetree-folder-temp';
+					} elseif ($role === \TYPO3\CMS\Core\Resource\FolderInterface::ROLE_RECYCLER) {
+						$iconName = 'apps-filetree-folder-recycler';
+					}
+				}
+
+				// if locked add overlay
+				if ($resource instanceof \TYPO3\CMS\Core\Resource\InaccessibleFolder ||
+					!$resource->getStorage()->checkFolderActionPermission('add', $resource)
+				) {
+					$overlays['status-overlay-locked'] = array();
+				}
+			}
+
+
+
+			// File
+		} else {
+			$iconName = self::mapFileExtensionToSpriteIconName($resource->getExtension());
+
+			if ($resource instanceof \TYPO3\CMS\Core\Resource\File && $resource->isMissing()) {
+				$overlays['status-overlay-missing'] = array();
+			}
+		}
+
+		// Hook: allow some other process to influence the choice of icon and overlays
+		if (is_array($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['t3lib/class.t3lib_iconworks.php']['overrideResourceIcon'])) {
+			foreach ($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['t3lib/class.t3lib_iconworks.php']['overrideResourceIcon'] as $classRef) {
+				$hookObject = GeneralUtility::getUserObj($classRef);
+				if (!$hookObject instanceof IconUtilityOverrideResourceIconHookInterface) {
+					throw new \UnexpectedValueException('$hookObject must implement interface TYPO3\\CMS\\Backend\\Utility\\IconUtilityOverrideResourceIconHookInterface', 1393574895);
+				}
+				$hookObject->overrideResourceIcon($resource, $iconName, $options, $overlays);
+			}
+		}
+
+		unset($options['mount-root']);
+		unset($options['folder-open']);
+		return self::getSpriteIcon($iconName, $options, $overlays);
 	}
 
 	/**
@@ -777,7 +897,7 @@ class IconUtility {
 				}
 				if (isset($GLOBALS['TCA'][$table]['ctrl']['typeicon_classes']['userFunc'])) {
 					$parameters = array('row' => $row);
-					$recordType[6] = \TYPO3\CMS\Core\Utility\GeneralUtility::callUserFunction($GLOBALS['TCA'][$table]['ctrl']['typeicon_classes']['userFunc'], $parameters, $ref);
+					$recordType[6] = GeneralUtility::callUserFunction($GLOBALS['TCA'][$table]['ctrl']['typeicon_classes']['userFunc'], $parameters, $ref);
 				}
 			} else {
 				foreach ($recordType as &$type) {
@@ -846,13 +966,13 @@ class IconUtility {
 				$status['hidden'] = TRUE;
 			}
 			// If a "starttime" is set and higher than current time:
-			if ($tcaCtrl['enablecolumns']['starttime'] && $GLOBALS['EXEC_TIME'] < intval($row[$tcaCtrl['enablecolumns']['starttime']])) {
+			if ($tcaCtrl['enablecolumns']['starttime'] && $GLOBALS['EXEC_TIME'] < (int)$row[$tcaCtrl['enablecolumns']['starttime']]) {
 				$status['starttime'] = TRUE;
 			}
 			// If an "endtime" is set
 			if ($tcaCtrl['enablecolumns']['endtime']) {
-				if (intval($row[$tcaCtrl['enablecolumns']['endtime']]) > 0) {
-					if (intval($row[$tcaCtrl['enablecolumns']['endtime']]) < $GLOBALS['EXEC_TIME']) {
+				if ((int)$row[$tcaCtrl['enablecolumns']['endtime']] > 0) {
+					if ((int)$row[$tcaCtrl['enablecolumns']['endtime']] < $GLOBALS['EXEC_TIME']) {
 						// End-timing applies at this point.
 						$status['endtime'] = TRUE;
 					} else {
@@ -879,7 +999,7 @@ class IconUtility {
 		// The status array should be passed as a reference and in order to be modified within the hook
 		if (is_array($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['t3lib/class.t3lib_iconworks.php']['overrideIconOverlay'])) {
 			foreach ($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['t3lib/class.t3lib_iconworks.php']['overrideIconOverlay'] as $classRef) {
-				$hookObject = \TYPO3\CMS\Core\Utility\GeneralUtility::getUserObj($classRef);
+				$hookObject = GeneralUtility::getUserObj($classRef);
 				if (method_exists($hookObject, 'overrideIconOverlay')) {
 					$hookObject->overrideIconOverlay($table, $row, $status);
 				}
@@ -943,6 +1063,3 @@ class IconUtility {
 	}
 
 }
-
-
-?>

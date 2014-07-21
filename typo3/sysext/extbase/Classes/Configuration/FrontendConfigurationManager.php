@@ -1,32 +1,18 @@
 <?php
 namespace TYPO3\CMS\Extbase\Configuration;
 
-/***************************************************************
- *  Copyright notice
+/**
+ * This file is part of the TYPO3 CMS project.
  *
- *  (c) 2010-2013 Extbase Team (http://forge.typo3.org/projects/typo3v4-mvc)
- *  Extbase is a backport of TYPO3 Flow. All credits go to the TYPO3 Flow team.
- *  All rights reserved
+ * It is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License, either version 2
+ * of the License, or any later version.
  *
- *  This script is part of the TYPO3 project. The TYPO3 project is
- *  free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
+ * For the full copyright and license information, please read the
+ * LICENSE.txt file that was distributed with this source code.
  *
- *  The GNU General Public License can be found at
- *  http://www.gnu.org/copyleft/gpl.html.
- *  A copy is found in the textfile GPL.txt and important notices to the license
- *  from the author is found in LICENSE.txt distributed with these scripts.
- *
- *
- *  This script is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  This copyright notice MUST APPEAR in all copies of the script!
- ***************************************************************/
+ * The TYPO3 project - inspiring people to share!
+ */
 /**
  * A general purpose configuration manager used in frontend mode.
  *
@@ -36,16 +22,9 @@ class FrontendConfigurationManager extends \TYPO3\CMS\Extbase\Configuration\Abst
 
 	/**
 	 * @var \TYPO3\CMS\Extbase\Service\FlexFormService
+	 * @inject
 	 */
 	protected $flexFormService;
-
-	/**
-	 * @param \TYPO3\CMS\Extbase\Service\FlexFormService $flexFormService
-	 * @return void
-	 */
-	public function injectFlexFormService(\TYPO3\CMS\Extbase\Service\FlexFormService $flexFormService) {
-		$this->flexFormService = $flexFormService;
-	}
 
 	/**
 	 * Returns TypoScript Setup array from current Environment.
@@ -73,7 +52,10 @@ class FrontendConfigurationManager extends \TYPO3\CMS\Extbase\Configuration\Abst
 		if ($pluginName !== NULL) {
 			$pluginSignature = strtolower($extensionName . '_' . $pluginName);
 			if (is_array($setup['plugin.']['tx_' . $pluginSignature . '.'])) {
-				$pluginConfiguration = \TYPO3\CMS\Core\Utility\GeneralUtility::array_merge_recursive_overrule($pluginConfiguration, $this->typoScriptService->convertTypoScriptArrayToPlainArray($setup['plugin.']['tx_' . $pluginSignature . '.']));
+				\TYPO3\CMS\Core\Utility\ArrayUtility::mergeRecursiveWithOverrule(
+					$pluginConfiguration,
+					$this->typoScriptService->convertTypoScriptArrayToPlainArray($setup['plugin.']['tx_' . $pluginSignature . '.'])
+				);
 			}
 		}
 		return $pluginConfiguration;
@@ -127,13 +109,13 @@ class FrontendConfigurationManager extends \TYPO3\CMS\Extbase\Configuration\Abst
 			if ($this->contentObject->data['recursive'] > 0) {
 				$explodedPages = \TYPO3\CMS\Core\Utility\GeneralUtility::trimExplode(',', $pages);
 				foreach ($explodedPages as $pid) {
-					$list[] = trim($this->contentObject->getTreeList($pid, $this->contentObject->data['recursive']), ',');
+					$list[] = $this->contentObject->getTreeList($pid, $this->contentObject->data['recursive']);
 				}
 			}
 			if (count($list) > 0) {
 				$pages = $pages . ',' . implode(',', $list);
 			}
-			$frameworkConfiguration = \TYPO3\CMS\Core\Utility\GeneralUtility::array_merge_recursive_overrule($frameworkConfiguration, array(
+			\TYPO3\CMS\Core\Utility\ArrayUtility::mergeRecursiveWithOverrule($frameworkConfiguration, array(
 				'persistence' => array(
 					'storagePid' => $pages
 				)
@@ -195,8 +177,12 @@ class FrontendConfigurationManager extends \TYPO3\CMS\Extbase\Configuration\Abst
 	 * @return array the processed framework configuration
 	 */
 	protected function mergeConfigurationIntoFrameworkConfiguration(array $frameworkConfiguration, array $configuration, $configurationPartName) {
-		if (is_array($frameworkConfiguration[$configurationPartName]) && is_array($configuration[$configurationPartName])) {
-			$frameworkConfiguration[$configurationPartName] = \TYPO3\CMS\Core\Utility\GeneralUtility::array_merge_recursive_overrule($frameworkConfiguration[$configurationPartName], $configuration[$configurationPartName]);
+		if (is_array($configuration[$configurationPartName])) {
+			if (is_array($frameworkConfiguration[$configurationPartName])) {
+				\TYPO3\CMS\Core\Utility\ArrayUtility::mergeRecursiveWithOverrule($frameworkConfiguration[$configurationPartName], $configuration[$configurationPartName]);
+			} else {
+				$frameworkConfiguration[$configurationPartName] = $configuration[$configurationPartName];
+			}
 		}
 		return $frameworkConfiguration;
 	}
@@ -253,5 +239,3 @@ class FrontendConfigurationManager extends \TYPO3\CMS\Extbase\Configuration\Abst
 		return rtrim($recursiveStoragePids, ',');
 	}
 }
-
-?>

@@ -1,32 +1,20 @@
 <?php
 namespace TYPO3\CMS\Core\Utility\File;
 
-/***************************************************************
- *  Copyright notice
+/**
+ * This file is part of the TYPO3 CMS project.
  *
- *  (c) 1999-2013 Kasper Skårhøj (kasperYYYY@typo3.com)
- *  All rights reserved
+ * It is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License, either version 2
+ * of the License, or any later version.
  *
- *  This script is part of the TYPO3 project. The TYPO3 project is
- *  free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
+ * For the full copyright and license information, please read the
+ * LICENSE.txt file that was distributed with this source code.
  *
- *  The GNU General Public License can be found at
- *  http://www.gnu.org/copyleft/gpl.html.
- *  A copy is found in the textfile GPL.txt and important notices to the license
- *  from the author is found in LICENSE.txt distributed with these scripts.
- *
- *
- *  This script is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  This copyright notice MUST APPEAR in all copies of the script!
- ***************************************************************/
+ * The TYPO3 project - inspiring people to share!
+ */
 
+use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Core\Resource\File;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 
@@ -74,30 +62,30 @@ class ExtendedFileUtility extends \TYPO3\CMS\Core\Utility\File\BasicFileUtility 
 	 */
 	public $dontCheckForUnique = 0;
 
-	// This array is self-explaining (look in the class below).
-	// It grants access to the functions. This could be set from outside in order to enabled functions to users.
-	// See also the function init_actionPerms() which takes input directly from the user-record
 	/**
-	 * @todo Define visibility
+	 * This array is self-explaining (look in the class below).
+	 * It grants access to the functions. This could be set from outside in order to enabled functions to users.
+	 * See also the function setActionPermissions() which takes input directly from the user-record
 	 */
 	public $actionPerms = array(
-		'deleteFile' => 0,
-		// Deleting files physically
-		'deleteFolder' => 0,
-		// Deleting folders physically
-		'deleteFolderRecursively' => 0,
-		// normally folders are deleted by the PHP-function rmdir(), but with this option a user deletes with 'rm -Rf ....' which is pretty wild!
-		'moveFile' => 0,
-		'moveFolder' => 0,
-		'copyFile' => 0,
-		'copyFolder' => 0,
-		'newFolder' => 0,
-		'newFile' => 0,
-		'editFile' => 0,
-		'unzipFile' => 0,
-		'uploadFile' => 0,
-		'renameFile' => 0,
-		'renameFolder' => 0
+		// File permissions
+		'addFile' => FALSE,
+		'readFile' => FALSE,
+		'writeFile' => FALSE,
+		'copyFile' => FALSE,
+		'moveFile' => FALSE,
+		'renameFile' => FALSE,
+		'unzipFile' => FALSE,
+		'deleteFile' => FALSE,
+		// Folder permissions
+		'addFolder' => FALSE,
+		'readFolder' => FALSE,
+		'writeFolder' => FALSE,
+		'copyFolder' => FALSE,
+		'moveFolder' => FALSE,
+		'renameFolder' => FALSE,
+		'deleteFolder' => FALSE,
+		'recursivedeleteFolder' => FALSE
 	);
 
 	// This is regarded to be the recycler folder
@@ -128,6 +116,13 @@ class ExtendedFileUtility extends \TYPO3\CMS\Core\Utility\File\BasicFileUtility 
 	public $lastError = '';
 
 	/**
+	 * All error messages from the file operations of this script instance
+	 *
+	 * @var array
+	 */
+	protected $errorMessages = array();
+
+	/**
 	 * @var array
 	 */
 	protected $fileCmdMap;
@@ -139,11 +134,6 @@ class ExtendedFileUtility extends \TYPO3\CMS\Core\Utility\File\BasicFileUtility 
 	 */
 	protected $fileFactory;
 
-
-	/**
-	 * @var \TYPO3\CMS\Core\Resource\FileRepository
-	 */
-	protected $fileRepository;
 
 	/**
 	 * Initialization of the class
@@ -161,8 +151,6 @@ class ExtendedFileUtility extends \TYPO3\CMS\Core\Utility\File\BasicFileUtility 
 		$this->unzipPath = $unzipPath;
 		// Initialize Object Factory
 		$this->fileFactory = \TYPO3\CMS\Core\Resource\ResourceFactory::getInstance();
-		// Initialize Object Factory
-		$this->fileRepository = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Resource\\FileRepository');
 		// Initializing file processing commands:
 		$this->fileCmdMap = $fileCmds;
 	}
@@ -171,40 +159,25 @@ class ExtendedFileUtility extends \TYPO3\CMS\Core\Utility\File\BasicFileUtility 
 	 * Sets up permission to perform file/directory operations.
 	 * See below or the be_user-table for the significance of the various bits in $setup.
 	 *
-	 * @param integer $setup File permission integer from BE_USER OR'ed with permissions of back-end groups this user is a member of
 	 * @return void
-	 * @todo Define visibility
+	 * @deprecated since 6.2 will be removed two versions later. Use ExtendedFileUtility::setActionPermissions() instead
 	 */
-	public function init_actionPerms($setup) {
-		// Files: Upload,Copy,Move,Delete,Rename
-		if (($setup & 1) == 1) {
-			$this->actionPerms['uploadFile'] = 1;
-			$this->actionPerms['copyFile'] = 1;
-			$this->actionPerms['moveFile'] = 1;
-			$this->actionPerms['deleteFile'] = 1;
-			$this->actionPerms['renameFile'] = 1;
-			$this->actionPerms['editFile'] = 1;
-			$this->actionPerms['newFile'] = 1;
+	public function init_actionPerms() {
+		GeneralUtility::logDeprecatedFunction();
+		$this->setActionPermissions();
+	}
+
+	/**
+	 * Sets the file action permissions.
+	 * If no argument is given, permissions of the currently logged in backend user are taken into account.
+	 *
+	 * @param array $permissions File Permissions.
+	 */
+	public function setActionPermissions(array $permissions = array()) {
+		if (empty($permissions)) {
+			$permissions = $GLOBALS['BE_USER']->getFilePermissions();
 		}
-		// Files: Unzip
-		if (($setup & 2) == 2) {
-			$this->actionPerms['unzipFile'] = 1;
-		}
-		// Directory: Move,Delete,Rename,New
-		if (($setup & 4) == 4) {
-			$this->actionPerms['moveFolder'] = 1;
-			$this->actionPerms['deleteFolder'] = 1;
-			$this->actionPerms['renameFolder'] = 1;
-			$this->actionPerms['newFolder'] = 1;
-		}
-		// Directory: Copy
-		if (($setup & 8) == 8) {
-			$this->actionPerms['copyFolder'] = 1;
-		}
-		// Directory: Delete recursively (rm -Rf)
-		if (($setup & 16) == 16) {
-			$this->actionPerms['deleteFolderRecursively'] = 1;
-		}
+		$this->actionPerms = $permissions;
 	}
 
 	/**
@@ -224,7 +197,11 @@ class ExtendedFileUtility extends \TYPO3\CMS\Core\Utility\File\BasicFileUtility 
 			if ($this->fileCmdMap['upload']) {
 				$uploads = $this->fileCmdMap['upload'];
 				foreach ($uploads as $upload) {
-					if (!$_FILES[('upload_' . $upload['data'])]['name']) {
+					if (empty($_FILES[('upload_' . $upload['data'])]['name'])
+						|| (is_array($_FILES[('upload_' . $upload['data'])]['name'])
+							&& empty($_FILES[('upload_' . $upload['data'])]['name'][0])
+						)
+					) {
 						unset($this->fileCmdMap['upload'][$upload['data']]);
 					}
 				}
@@ -232,6 +209,19 @@ class ExtendedFileUtility extends \TYPO3\CMS\Core\Utility\File\BasicFileUtility 
 					$this->writelog(1, 1, 108, 'No file was uploaded!', '');
 				}
 			}
+
+			// Check if there were new folder names expected, but non given
+			if ($this->fileCmdMap['newfolder']) {
+				foreach ($this->fileCmdMap['newfolder'] as $key => $cmdArr) {
+					if (empty($cmdArr['data'])) {
+						unset($this->fileCmdMap['newfolder'][$key]);
+					}
+				}
+				if (count($this->fileCmdMap['newfolder']) === 0) {
+					$this->writeLog(6, 1, 108, 'No name for new folder given!', '');
+				}
+			}
+
 			// Traverse each set of actions
 			foreach ($this->fileCmdMap as $action => $actionData) {
 				// Traverse all action data. More than one file might be affected at the same time.
@@ -242,33 +232,33 @@ class ExtendedFileUtility extends \TYPO3\CMS\Core\Utility\File\BasicFileUtility 
 						clearstatcache();
 						// Branch out based on command:
 						switch ($action) {
-						case 'delete':
-							$result[$action][] = $this->func_delete($cmdArr);
-							break;
-						case 'copy':
-							$result[$action][] = $this->func_copy($cmdArr);
-							break;
-						case 'move':
-							$result[$action][] = $this->func_move($cmdArr);
-							break;
-						case 'rename':
-							$result[$action][] = $this->func_rename($cmdArr);
-							break;
-						case 'newfolder':
-							$result[$action][] = $this->func_newfolder($cmdArr);
-							break;
-						case 'newfile':
-							$result[$action][] = $this->func_newfile($cmdArr);
-							break;
-						case 'editfile':
-							$result[$action][] = $this->func_edit($cmdArr);
-							break;
-						case 'upload':
-							$result[$action][] = $this->func_upload($cmdArr);
-							break;
-						case 'unzip':
-							$result[$action][] = $this->func_unzip($cmdArr);
-							break;
+							case 'delete':
+								$result[$action][] = $this->func_delete($cmdArr);
+								break;
+							case 'copy':
+								$result[$action][] = $this->func_copy($cmdArr);
+								break;
+							case 'move':
+								$result[$action][] = $this->func_move($cmdArr);
+								break;
+							case 'rename':
+								$result[$action][] = $this->func_rename($cmdArr);
+								break;
+							case 'newfolder':
+								$result[$action][] = $this->func_newfolder($cmdArr);
+								break;
+							case 'newfile':
+								$result[$action][] = $this->func_newfile($cmdArr);
+								break;
+							case 'editfile':
+								$result[$action][] = $this->func_edit($cmdArr);
+								break;
+							case 'upload':
+								$result[$action][] = $this->func_upload($cmdArr);
+								break;
+							case 'unzip':
+								$result[$action][] = $this->func_unzip($cmdArr);
+								break;
 						}
 						// Hook for post-processing the action
 						if (is_array($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['t3lib/class.t3lib_extfilefunc.php']['processData'])) {
@@ -292,30 +282,20 @@ class ExtendedFileUtility extends \TYPO3\CMS\Core\Utility\File\BasicFileUtility 
 	 *
 	 * @param string $redirect Redirect URL (for creating link in message)
 	 * @return void
-	 * @todo Define visibility
-	 * @deprecated since TYPO3 6.1, will be removed two versions later, use ->getErrorMessages directly instead
+	 * @deprecated since TYPO3 6.1, will be removed two versions later, use ->pushErrorMessagesToFlashMessageQueue directly instead
 	 */
 	public function printLogErrorMessages($redirect = '') {
 		GeneralUtility::logDeprecatedFunction();
-		$this->getErrorMessages();
+		$this->pushErrorMessagesToFlashMessageQueue();
 	}
 
 	/**
-	 * Adds log error messages from the previous file operations of this script instance
-	 * to the FlashMessageQueue
+	 * Adds all log error messages from the operations of this script instance to the FlashMessageQueue
 	 *
 	 * @return void
-	 * @todo Define visibility
 	 */
-	public function getErrorMessages() {
-		$res = $this->getDatabaseConnection()->exec_SELECTquery(
-			'*',
-			'sys_log',
-			'type = 2 AND userid = ' . intval($this->getBackendUser()->user['uid']) . ' AND tstamp=' . intval($GLOBALS['EXEC_TIME']) . ' AND error<>0'
-		);
-		while ($row = $this->getDatabaseConnection()->sql_fetch_assoc($res)) {
-			$logData = unserialize($row['log_data']);
-			$msg = $row['error'] . ': ' . sprintf($row['details'], $logData[0], $logData[1], $logData[2], $logData[3], $logData[4]);
+	public function pushErrorMessagesToFlashMessageQueue() {
+		foreach ($this->getErrorMessages() as $msg) {
 			$flashMessage = GeneralUtility::makeInstance(
 				'TYPO3\\CMS\\Core\\Messaging\\FlashMessage',
 				$msg,
@@ -325,7 +305,15 @@ class ExtendedFileUtility extends \TYPO3\CMS\Core\Utility\File\BasicFileUtility 
 			);
 			$this->addFlashMessage($flashMessage);
 		}
-		$this->getDatabaseConnection()->sql_free_result($res);
+	}
+
+	/**
+	 * Return all error messages from the file operations of this script instance
+	 *
+	 * @return array all errorMessages as a numerical array
+	 */
+	public function getErrorMessages() {
+		return $this->errorMessages;
 	}
 
 	/**
@@ -340,8 +328,8 @@ class ExtendedFileUtility extends \TYPO3\CMS\Core\Utility\File\BasicFileUtility 
 	 */
 	public function findRecycler($theFile) {
 		GeneralUtility::logDeprecatedFunction();
-		if ($this->isPathValid($theFile)) {
-			$theFile = $this->cleanDirectoryName($theFile);
+		if (GeneralUtility::validPathStr($theFile)) {
+			$theFile = \TYPO3\CMS\Core\Utility\PathUtility::getCanonicalPath($theFile);
 			$fI = GeneralUtility::split_fileref($theFile);
 			$c = 0;
 			// !!! Method has been put in the storage, can be saftely removed
@@ -351,7 +339,7 @@ class ExtendedFileUtility extends \TYPO3\CMS\Core\Utility\File\BasicFileUtility 
 					return $rDir;
 				}
 				$theFile = $fI['path'];
-				$theFile = $this->cleanDirectoryName($theFile);
+				$theFile = \TYPO3\CMS\Core\Utility\PathUtility::getCanonicalPath($theFile);
 				$fI = GeneralUtility::split_fileref($theFile);
 				$c++;
 			}
@@ -375,7 +363,10 @@ class ExtendedFileUtility extends \TYPO3\CMS\Core\Utility\File\BasicFileUtility 
 		if (is_object($this->getBackendUser())) {
 			$this->getBackendUser()->writelog($type, $action, $error, $details_nr, $details, $data);
 		}
-		$this->lastError = vsprintf($details, $data);
+		if ($error > 0) {
+			$this->lastError = vsprintf($details, $data);
+			$this->errorMessages[] = $this->lastError;
+		}
 	}
 
 	/*************************************
@@ -401,21 +392,23 @@ class ExtendedFileUtility extends \TYPO3\CMS\Core\Utility\File\BasicFileUtility 
 		// @todo implement the recycler feature which has been removed from the original implementation
 		// checks to delete the file
 		if ($fileObject instanceof File) {
+			// check if the file still has references
+			// Exclude sys_file_metadata records as these are no use references
 			$refIndexRecords = $this->getDatabaseConnection()->exec_SELECTgetRows(
 				'*',
 				'sys_refindex',
-				'deleted=0 AND ref_table="sys_file" AND ref_uid=' . intval($fileObject->getUid())
+				'deleted=0 AND ref_table="sys_file" AND ref_uid=' . (int)$fileObject->getUid()
+				. ' AND tablename != "sys_file_metadata"'
 			);
-			// check if the file still has references
 			if (count($refIndexRecords) > 0) {
 				$shortcutContent = array();
 				foreach ($refIndexRecords as $fileReferenceRow) {
 					if ($fileReferenceRow['tablename'] === 'sys_file_reference') {
 						$row = $this->transformFileReferenceToRecordReference($fileReferenceRow);
-						$shortcutRecord = \TYPO3\CMS\Backend\Utility\BackendUtility::getRecord($row['tablename'], $row['recuid']);
+						$shortcutRecord = BackendUtility::getRecord($row['tablename'], $row['recuid']);
 						$icon = \TYPO3\CMS\Backend\Utility\IconUtility::getSpriteIconForRecord($row['tablename'], $shortcutRecord);
-						$onClick = 'showClickmenu("' . $row['tablename'] . '", "' . $row['recuid'] . '", "1", "+info,history,edit", "|", "");return false;';
-						$shortcutContent[] = '<a href="#" oncontextmenu="' . htmlspecialchars($onClick) . '" onclick="' . htmlspecialchars($onClick) . '">' . $icon . '</a>' . htmlspecialchars((\TYPO3\CMS\Backend\Utility\BackendUtility::getRecordTitle($row['tablename'], $shortcutRecord) . '  [' . \TYPO3\CMS\Backend\Utility\BackendUtility::getRecordPath($shortcutRecord['pid'], '', 80) . ']'));
+						$onClick = 'Clickmenu.show("' . $row['tablename'] . '", "' . $row['recuid'] . '", "1", "+info,history,edit", "|", "");return false;';
+						$shortcutContent[] = '<a href="#" oncontextmenu="this.click();return false;" onclick="' . htmlspecialchars($onClick) . '">' . $icon . '</a>' . htmlspecialchars((BackendUtility::getRecordTitle($row['tablename'], $shortcutRecord) . '  [' . BackendUtility::getRecordPath($shortcutRecord['pid'], '', 80) . ']'));
 					}
 				}
 
@@ -480,7 +473,7 @@ class ExtendedFileUtility extends \TYPO3\CMS\Core\Utility\File\BasicFileUtility 
 					$this->writelog(4, 0, 3, 'Directory "%s" deleted', array($fileObject->getIdentifier()));
 				}
 
-			} catch (\TYPO3\CMS\Core\Resource\Exception\InsufficientFileAccessPermissionsException $e) {
+			} catch (\TYPO3\CMS\Core\Resource\Exception\InsufficientFolderAccessPermissionsException $e) {
 				$this->writelog(4, 1, 123, 'You are not allowed to access the directory', array($fileObject->getIdentifier()));
 			} catch (\TYPO3\CMS\Core\Resource\Exception\NotInMountPointException $e) {
 				$this->writelog(4, 1, 121, 'Target was not within your mountpoints! T="%s"', array($fileObject->getIdentifier()));
@@ -890,7 +883,7 @@ class ExtendedFileUtility extends \TYPO3\CMS\Core\Utility\File\BasicFileUtility 
 	 * in HTML you'd need sth like this: <input type="file" name="upload_1[]" multiple="true" />
 	 *
 	 * @param array $cmds $cmds['data'] is the ID-number (points to the global var that holds the filename-ref  ($_FILES['upload_' . $id]['name']) . $cmds['target'] is the target directory, $cmds['charset'] is the the character set of the file name (utf-8 is needed for JS-interaction)
-	 * @return string Returns the new filename upon success
+	 * @return File[] | FALSE Returns an array of new file objects upon success. False otherwise
 	 * @todo Define visibility
 	 */
 	public function func_upload($cmds) {
@@ -933,8 +926,12 @@ class ExtendedFileUtility extends \TYPO3\CMS\Core\Utility\File\BasicFileUtility 
 				}
 				/** @var $fileObject File */
 				$fileObject = $targetFolderObject->addUploadedFile($fileInfo, $conflictMode);
-				$this->fileRepository->addToIndex($fileObject);
+				$fileObject = \TYPO3\CMS\Core\Resource\ResourceFactory::getInstance()->getFileObjectByStorageAndIdentifier($targetFolderObject->getStorage()->getUid(), $fileObject->getIdentifier());
+				if ($conflictMode === 'replace') {
+					$this->getIndexer($fileObject->getStorage())->updateIndexEntry($fileObject);
+				}
 				$resultObjects[] = $fileObject;
+				$this->internalUploadMap[$uploadPosition] = $fileObject->getCombinedIdentifier();
 				$this->writelog(1, 0, 1, 'Uploading file "%s" to "%s"', array($fileInfo['name'], $targetFolderObject->getIdentifier()));
 			} catch (\TYPO3\CMS\Core\Resource\Exception\UploadException $e) {
 				$this->writelog(1, 2, 106, 'The upload has failed, no uploaded file found!', '');
@@ -1025,6 +1022,15 @@ class ExtendedFileUtility extends \TYPO3\CMS\Core\Utility\File\BasicFileUtility 
 		$defaultFlashMessageQueue->enqueue($flashMessage);
 	}
 
+	/**
+	 * Gets Indexer
+	 *
+	 * @param \TYPO3\CMS\Core\Resource\ResourceStorage $storage
+	 * @return \TYPO3\CMS\Core\Resource\Index\Indexer
+	 */
+	protected function getIndexer(\TYPO3\CMS\Core\Resource\ResourceStorage $storage) {
+		return GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Resource\\Index\\Indexer', $storage);
+	}
 
 	/**
 	 * Get database connection
@@ -1041,6 +1047,5 @@ class ExtendedFileUtility extends \TYPO3\CMS\Core\Utility\File\BasicFileUtility 
 	protected function getBackendUser() {
 		return $GLOBALS['BE_USER'];
 	}
-}
 
-?>
+}

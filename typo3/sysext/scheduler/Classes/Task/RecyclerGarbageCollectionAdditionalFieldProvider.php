@@ -1,28 +1,18 @@
 <?php
 namespace TYPO3\CMS\Scheduler\Task;
 
-/***************************************************************
- *  Copyright notice
+/**
+ * This file is part of the TYPO3 CMS project.
  *
- *  (c) 2011-2013 Kai Vogel <kai.vogel@speedprogs.de>
- *  All rights reserved
+ * It is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License, either version 2
+ * of the License, or any later version.
  *
- *  This script is part of the TYPO3 project. The TYPO3 project is
- *  free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
+ * For the full copyright and license information, please read the
+ * LICENSE.txt file that was distributed with this source code.
  *
- *  The GNU General Public License can be found at
- *  http://www.gnu.org/copyleft/gpl.html.
- *
- *  This script is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  This copyright notice MUST APPEAR in all copies of the script!
- ***************************************************************/
+ * The TYPO3 project - inspiring people to share!
+ */
 /**
  * Additional BE fields for recycler garbage collection task.
  *
@@ -59,12 +49,12 @@ class RecyclerGarbageCollectionAdditionalFieldProvider implements \TYPO3\CMS\Sch
 		}
 		$fieldName = 'tx_scheduler[scheduler_recyclerGarbageCollection_numberOfDays]';
 		$fieldId = 'task_recyclerGarbageCollection_numberOfDays';
-		$fieldValue = intval($taskInfo['scheduler_recyclerGarbageCollection_numberOfDays']);
+		$fieldValue = (int)$taskInfo['scheduler_recyclerGarbageCollection_numberOfDays'];
 		$fieldHtml = '<input type="text" name="' . $fieldName . '" id="' . $fieldId . '" value="' . htmlspecialchars($fieldValue) . '" />';
 		$additionalFields[$fieldId] = array(
 			'code' => $fieldHtml,
-			'label' => 'LLL:EXT:scheduler/mod1/locallang.xml:label.recyclerGarbageCollection.numberOfDays',
-			'cshKey' => '_MOD_tools_txschedulerM1',
+			'label' => 'LLL:EXT:scheduler/mod1/locallang.xlf:label.recyclerGarbageCollection.numberOfDays',
+			'cshKey' => '_MOD_system_txschedulerM1',
 			'cshLabel' => $fieldId
 		);
 		return $additionalFields;
@@ -81,9 +71,9 @@ class RecyclerGarbageCollectionAdditionalFieldProvider implements \TYPO3\CMS\Sch
 		$result = TRUE;
 		// Check if number of days is indeed a number and greater or equals to 0
 		// If not, fail validation and issue error message
-		if (!is_numeric($submittedData['scheduler_recyclerGarbageCollection_numberOfDays']) || intval($submittedData['scheduler_recyclerGarbageCollection_numberOfDays']) < 0) {
+		if (!is_numeric($submittedData['scheduler_recyclerGarbageCollection_numberOfDays']) || (int)$submittedData['scheduler_recyclerGarbageCollection_numberOfDays'] < 0) {
 			$result = FALSE;
-			$parentObject->addMessage($GLOBALS['LANG']->sL('LLL:EXT:scheduler/mod1/locallang.xml:msg.invalidNumberOfDays'), \TYPO3\CMS\Core\Messaging\FlashMessage::ERROR);
+			$parentObject->addMessage($GLOBALS['LANG']->sL('LLL:EXT:scheduler/mod1/locallang.xlf:msg.invalidNumberOfDays'), \TYPO3\CMS\Core\Messaging\FlashMessage::ERROR);
 		}
 		return $result;
 	}
@@ -96,10 +86,7 @@ class RecyclerGarbageCollectionAdditionalFieldProvider implements \TYPO3\CMS\Sch
 	 * @return void
 	 */
 	public function saveAdditionalFields(array $submittedData, \TYPO3\CMS\Scheduler\Task\AbstractTask $task) {
-		$task->numberOfDays = intval($submittedData['scheduler_recyclerGarbageCollection_numberOfDays']);
+		$task->numberOfDays = (int)$submittedData['scheduler_recyclerGarbageCollection_numberOfDays'];
 	}
 
 }
-
-
-?>

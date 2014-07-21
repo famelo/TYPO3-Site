@@ -1,32 +1,18 @@
 <?php
 namespace TYPO3\CMS\Extbase\Persistence;
 
-/***************************************************************
- *  Copyright notice
+/**
+ * This file is part of the TYPO3 CMS project.
  *
- *  This class is a backport of the corresponding class of TYPO3 Flow.
- *  All credits go to the TYPO3 Flow team.
- *  All rights reserved.
+ * It is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License, either version 2
+ * of the License, or any later version.
  *
- *  This script is part of the TYPO3 project. The TYPO3 project is
- *  free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
+ * For the full copyright and license information, please read the
+ * LICENSE.txt file that was distributed with this source code.
  *
- *  The GNU General Public License can be found at
- *  http://www.gnu.org/copyleft/gpl.html.
- *  A copy is found in the textfile GPL.txt and important notices to the license
- *  from the author is found in LICENSE.txt distributed with these scripts.
- *
- *
- *  This script is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  This copyright notice MUST APPEAR in all copies of the script!
- ***************************************************************/
+ * The TYPO3 project - inspiring people to share!
+ */
 /**
  * A persistence query interface
  *
@@ -42,11 +28,25 @@ interface QueryInterface {
 	const OPERATOR_EQUAL_TO = 1;
 
 	/**
+	 * For NULL we have to use 'IS' instead of '='
+	 *
+	 * @api
+	 */
+	const OPERATOR_EQUAL_TO_NULL = 101;
+
+	/**
 	 * The '!=' comparison operator.
 	 *
 	 * @api
 	 */
 	const OPERATOR_NOT_EQUAL_TO = 2;
+
+	/**
+	 * For NULL we have to use 'IS NOT' instead of '!='
+	 *
+	 * @api
+	 */
+	const OPERATOR_NOT_EQUAL_TO_NULL = 202;
 
 	/**
 	 * The '<' comparison operator.
@@ -121,17 +121,19 @@ interface QueryInterface {
 	 * Gets the node-tuple source for this query.
 	 *
 	 * @return \TYPO3\CMS\Extbase\Persistence\Generic\Qom\SourceInterface the node-tuple source; non-NULL
-	 * @deprecated since Extbase 6.0, will be removed in Extbase 7.0
+	 * @deprecated since Extbase 6.0, will be removed in Extbase 7.0. It is deprecated only in the interface to be more
+	 * in sync with Flow in future and will stay in Generic Persistence.
 	 */
 	public function getSource();
 
 	/**
 	 * Executes the query and returns the result.
 	 *
-	 * @return \TYPO3\CMS\Extbase\Persistence\QueryResultInterface|array The query result object or an array if $this->getQuerySettings()->getReturnRawQueryResult() is TRUE
+	 * @param $returnRawQueryResult boolean avoids the object mapping by the persistence
+	 * @return \TYPO3\CMS\Extbase\Persistence\QueryResultInterface|array The query result object or an array if $returnRawQueryResult is TRUE
 	 * @api
 	 */
-	public function execute();
+	public function execute($returnRawQueryResult = FALSE);
 
 	/**
 	 * Sets the property names to order the result by. Expected like this:
@@ -201,11 +203,11 @@ interface QueryInterface {
 	/**
 	 * Performs a logical negation of the given constraint
 	 *
-	 * @param object $constraint Constraint to negate
-	 * @return object
+	 * @param \TYPO3\CMS\Extbase\Persistence\Generic\Qom\ConstraintInterface $constraint Constraint to negate
+	 * @return \TYPO3\CMS\Extbase\Persistence\Generic\Qom\NotInterface
 	 * @api
 	 */
-	public function logicalNot($constraint);
+	public function logicalNot(\TYPO3\CMS\Extbase\Persistence\Generic\Qom\ConstraintInterface $constraint);
 
 	/**
 	 * Returns an equals criterion used for matching objects against a query.
@@ -217,7 +219,7 @@ interface QueryInterface {
 	 * @param string $propertyName The name of the property to compare against
 	 * @param mixed $operand The value to compare with
 	 * @param boolean $caseSensitive Whether the equality test should be done case-sensitive for strings
-	 * @return object
+	 * @return \TYPO3\CMS\Extbase\Persistence\Generic\Qom\ComparisonInterface
 	 * @api
 	 */
 	public function equals($propertyName, $operand, $caseSensitive = TRUE);
@@ -310,7 +312,6 @@ interface QueryInterface {
 	 * Returns the type this query cares for.
 	 *
 	 * @return string
-	 * @deprecated since Extbase 6.0, will be removed in Extbase 7.0
 	 * @api
 	 */
 	public function getType();
@@ -324,13 +325,13 @@ interface QueryInterface {
 	 * @todo decide whether this can be deprecated somewhen
 	 * @api This method is not part of TYPO3Flow API
 	 */
-	public function setQuerySettings(\TYPO3\CMS\Extbase\Persistence\Generic\QuerySettingsInterface $querySettings);
+	public function setQuerySettings(Generic\QuerySettingsInterface $querySettings);
 
 	/**
 	 * Returns the Query Settings.
 	 *
 	 * @return \TYPO3\CMS\Extbase\Persistence\Generic\QuerySettingsInterface $querySettings The Query Settings
-	 * @todo decide whether this can be deprecated somewhen
+	 * @todo decide whether this can be deprecated eventually
 	 * @api This method is not part of  TYPO3Flow API
 	 */
 	public function getQuerySettings();
@@ -374,7 +375,7 @@ interface QueryInterface {
 	/**
 	 * Gets the constraint for this query.
 	 *
-	 * @return mixed the constraint, or null if none
+	 * @return \TYPO3\CMS\Extbase\Persistence\Generic\Qom\ConstraintInterface|NULL the constraint, or null if none
 	 * @api
 	 */
 	public function getConstraint();
@@ -389,6 +390,19 @@ interface QueryInterface {
 	 * @api
 	 */
 	public function isEmpty($propertyName);
-}
 
-?>
+	/**
+	 * Sets the source to fetch the result from
+	 *
+	 * @param \TYPO3\CMS\Extbase\Persistence\Generic\Qom\SourceInterface $source
+	 */
+	public function setSource(Generic\Qom\SourceInterface $source);
+
+	/**
+	 * Returns the statement of this query.
+	 *
+	 * @return \TYPO3\CMS\Extbase\Persistence\Generic\Qom\Statement
+	 */
+	public function getStatement();
+
+}

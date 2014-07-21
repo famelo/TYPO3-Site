@@ -1,28 +1,18 @@
 <?php
 namespace TYPO3\CMS\Scheduler\Task;
 
-/***************************************************************
- *  Copyright notice
+/**
+ * This file is part of the TYPO3 CMS project.
  *
- *  (c) 2011-2013 Kai Vogel <kai.vogel@speedprogs.de>
- *  All rights reserved
+ * It is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License, either version 2
+ * of the License, or any later version.
  *
- *  This script is part of the TYPO3 project. The TYPO3 project is
- *  free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
+ * For the full copyright and license information, please read the
+ * LICENSE.txt file that was distributed with this source code.
  *
- *  The GNU General Public License can be found at
- *  http://www.gnu.org/copyleft/gpl.html.
- *
- *  This script is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  This copyright notice MUST APPEAR in all copies of the script!
- ***************************************************************/
+ * The TYPO3 project - inspiring people to share!
+ */
 /**
  * Recycler folder garbage collection task
  *
@@ -59,7 +49,7 @@ class RecyclerGarbageCollectionTask extends \TYPO3\CMS\Scheduler\Task\AbstractTa
 		if (TYPO3_OS == 'WIN') {
 			throw new \BadMethodCallException('This task is not reliable for Windows OS', 1308270454);
 		}
-		$seconds = 60 * 60 * 24 * (int) $this->numberOfDays;
+		$seconds = 60 * 60 * 24 * (int)$this->numberOfDays;
 		$timestamp = $GLOBALS['EXEC_TIME'] - $seconds;
 		// Get fileadmin directory
 		$directory = PATH_site . 'fileadmin/';
@@ -81,7 +71,7 @@ class RecyclerGarbageCollectionTask extends \TYPO3\CMS\Scheduler\Task\AbstractTa
 	 */
 	protected function cleanupRecycledFiles($directory, $timestamp) {
 		$directory = \TYPO3\CMS\Core\Utility\GeneralUtility::getFileAbsFileName($directory);
-		$timestamp = (int) $timestamp;
+		$timestamp = (int)$timestamp;
 		// Check if given directory exists
 		if (!@is_dir($directory)) {
 			throw new \RuntimeException('Given directory "' . $directory . '" does not exist', 1301614535);
@@ -105,6 +95,3 @@ class RecyclerGarbageCollectionTask extends \TYPO3\CMS\Scheduler\Task\AbstractTa
 	}
 
 }
-
-
-?>

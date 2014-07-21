@@ -57,7 +57,7 @@ adodb_mktime(0,0,0,10,15,1582) - adodb_mktime(0,0,0,10,4,1582)
 
 COPYRIGHT
 
-(c) 2003-2005 John Lim and released under BSD-style license except for code by
+(c) 2003-2014 John Lim and released under BSD-style license except for code by
 jackbbs, which includes adodb_mktime, adodb_get_gmt_diff, adodb_is_leap_year
 and originally found at http://www.php.net/manual/en/function.mktime.php
 
@@ -73,6 +73,9 @@ These should be posted to the ADOdb forums at
 
 FUNCTION DESCRIPTIONS
 
+** FUNCTION adodb_time()
+
+Returns the current time measured in the number of seconds since the Unix Epoch (January 1 1970 00:00:00 GMT) as an unsigned integer.
 
 ** FUNCTION adodb_getdate($date=false)
 
@@ -241,6 +244,8 @@ b. Implement daylight savings, which looks awfully complicated, see
 
 
 CHANGELOG
+- 16 Jan 2011 0.36
+Added adodb_time() which returns current time. If > 2038, will return as float
 
 - 7 Feb 2011 0.35
 Changed adodb_date to be symmetric with adodb_mktime. See $jan1_71. fix for bc.
@@ -605,6 +610,12 @@ function adodb_date_test()
 	echo "Tested $cnt dates<br>";
 	if (!$fail) print "<p>Passed !</p>";
 	else print "<p><b>Failed</b> :-(</p>";
+}
+
+function adodb_time()
+{
+	$d = new DateTime();
+	return $d->format('U');
 }
 
 /**
@@ -1445,6 +1456,3 @@ global $ADODB_DATE_LOCALE;
 	$ret = adodb_date($fmtdate, $ts, $is_gmt);
 	return $ret;
 }
-
-
-?>

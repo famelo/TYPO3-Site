@@ -14,28 +14,18 @@ $EM_CONF[$_EXTKEY] = array(
 	'category' => 'misc',
 	'author' => 'Extbase Team',
 	'author_email' => '',
-	'shy' => '',
-	'dependencies' => '',
-	'conflicts' => '',
-	'priority' => 'top',
-	'module' => '',
+	'author_company' => '',
 	'state' => 'stable',
-	'internal' => '',
 	'uploadfolder' => 0,
 	'createDirs' => '',
-	'modify_tables' => '',
 	'clearCacheOnLoad' => 1,
-	'lockType' => '',
-	'author_company' => '',
-	'version' => '6.1.0',
+	'version' => '6.2.0',
 	'constraints' => array(
 		'depends' => array(
-			'typo3' => '6.1.0-0.0.0'
+			'typo3' => '6.2.0-6.2.99',
 		),
 		'conflicts' => array(),
-		'suggests' => array()
+		'suggests' => array(),
 	),
-	'suggests' => array(),
 	'_md5_values_when_last_written' => '',
 );
-?>

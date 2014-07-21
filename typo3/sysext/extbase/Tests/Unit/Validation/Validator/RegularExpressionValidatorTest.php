@@ -2,7 +2,7 @@
 namespace TYPO3\CMS\Extbase\Tests\Unit\Validation\Validator;
 
 /*                                                                        *
- * This script belongs to the Extbase framework.                            *
+ * This script belongs to the Extbase framework.                          *
  *                                                                        *
  * It is free software; you can redistribute it and/or modify it under    *
  * the terms of the GNU Lesser General Public License as published by the *
@@ -20,14 +20,11 @@ namespace TYPO3\CMS\Extbase\Tests\Unit\Validation\Validator;
  *                                                                        *
  * The TYPO3 project - inspiring people to share!                         *
  *                                                                        */
-require_once __DIR__ . '/AbstractValidatorTestcase.php';
 
 /**
- * Testcase for the regular expression validator
- *
- * @license http://www.gnu.org/licenses/lgpl.html GNU Lesser General Public License, version 3 or later
+ * Test case
  */
-class RegularExpressionValidatorTest extends \TYPO3\CMS\Extbase\Tests\Unit\Validation\Validator\AbstractValidatorTestcase {
+class RegularExpressionValidatorTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 
 	protected $validatorClassName = 'TYPO3\\CMS\\Extbase\\Validation\\Validator\\RegularExpressionValidator';
 
@@ -36,9 +33,10 @@ class RegularExpressionValidatorTest extends \TYPO3\CMS\Extbase\Tests\Unit\Valid
 	 * @author Andreas Förthner <andreas.foerthner@netlogix.de>
 	 */
 	public function regularExpressionValidatorMatchesABasicExpressionCorrectly() {
-		$this->validatorOptions(array('regularExpression' => '/^simple[0-9]expression$/'));
-		$this->assertFalse($this->validator->validate('simple1expression')->hasErrors());
-		$this->assertTrue($this->validator->validate('simple1expressions')->hasErrors());
+		$options = array('regularExpression' => '/^simple[0-9]expression$/');
+		$validator = $this->getMock($this->validatorClassName, array('translateErrorMessage'), array($options));
+		$this->assertFalse($validator->validate('simple1expression')->hasErrors());
+		$this->assertTrue($validator->validate('simple1expressions')->hasErrors());
 	}
 
 	/**
@@ -46,10 +44,10 @@ class RegularExpressionValidatorTest extends \TYPO3\CMS\Extbase\Tests\Unit\Valid
 	 * @author Andreas Förthner <andreas.foerthner@netlogix.de>
 	 */
 	public function regularExpressionValidatorCreatesTheCorrectErrorIfTheExpressionDidNotMatch() {
-		$this->validatorOptions(array('regularExpression' => '/^simple[0-9]expression$/'));
-		$errors = $this->validator->validate('some subject that will not match')->getErrors();
-		$this->assertEquals(array(new \TYPO3\CMS\Extbase\Validation\Error('The given subject did not match the pattern.', 1221565130)), $errors);
+		$options = array('regularExpression' => '/^simple[0-9]expression$/');
+		$validator = $this->getMock($this->validatorClassName, array('translateErrorMessage'), array($options));
+		$errors = $validator->validate('some subject that will not match')->getErrors();
+		// we only test for the error code, after the translation Method for message is mocked anyway
+		$this->assertEquals(array(new \TYPO3\CMS\Extbase\Validation\Error(NULL, 1221565130)), $errors);
 	}
 }
-
-?>

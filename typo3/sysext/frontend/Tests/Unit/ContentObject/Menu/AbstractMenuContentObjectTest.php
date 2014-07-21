@@ -1,41 +1,24 @@
 <?php
 namespace TYPO3\CMS\Frontend\Tests\Unit\ContentObject\Menu;
 
-/***************************************************************
- *  Copyright notice
- *
- *  (c) 2012-2013 Stefan Galinski <stefan.galinski@gmail.com>
- *  All rights reserved
- *
- *  This script is part of the TYPO3 project. The TYPO3 project is
- *  free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
- *
- *  The GNU General Public License can be found at
- *  http://www.gnu.org/copyleft/gpl.html.
- *
- *  This script is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  This copyright notice MUST APPEAR in all copies of the script!
- ***************************************************************/
 /**
- * Testcase for TYPO3\CMS\Frontend\ContentObject\Menu\AbstractMenuContentObject
+ * This file is part of the TYPO3 CMS project.
  *
- * @author Stefan Galinski <stefan.galinski@gmail.com>
+ * It is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License, either version 2
+ * of the License, or any later version.
+ *
+ * For the full copyright and license information, please read the
+ * LICENSE.txt file that was distributed with this source code.
+ *
+ * The TYPO3 project - inspiring people to share!
  */
-class AbstractMenuContentObjectTest extends \TYPO3\CMS\Extbase\Tests\Unit\BaseTestCase {
 
-	/**
-	 * A backup of the global database
-	 *
-	 * @var \TYPO3\CMS\Core\Database\DatabaseConnection
-	 */
-	protected $databaseBackup = NULL;
+/**
+ * Test case
+ *
+ */
+class AbstractMenuContentObjectTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 
 	/**
 	 * @var \TYPO3\CMS\Frontend\ContentObject\Menu\AbstractMenuContentObject
@@ -48,18 +31,10 @@ class AbstractMenuContentObjectTest extends \TYPO3\CMS\Extbase\Tests\Unit\BaseTe
 	public function setUp() {
 		$proxy = $this->buildAccessibleProxy('TYPO3\\CMS\\Frontend\\ContentObject\\Menu\\AbstractMenuContentObject');
 		$this->fixture = new $proxy();
-		$this->databaseBackup = $GLOBALS['TYPO3_DB'];
 		$GLOBALS['TYPO3_DB'] = $this->getMock('TYPO3\\CMS\\Core\\Database\\DatabaseConnection');
 		$GLOBALS['TSFE'] = $this->getMock('TYPO3\\CMS\\Frontend\\Controller\\TypoScriptFrontendController', array(), array($GLOBALS['TYPO3_CONF_VARS'], 1, 1));
 		$GLOBALS['TSFE']->cObj = new \TYPO3\CMS\Frontend\ContentObject\ContentObjectRenderer();
 		$GLOBALS['TSFE']->page = array();
-	}
-
-	/**
-	 * Tear down this testcase
-	 */
-	public function tearDown() {
-		$GLOBALS['TYPO3_DB'] = $this->databaseBackup;
 	}
 
 	////////////////////////////////
@@ -288,6 +263,3 @@ class AbstractMenuContentObjectTest extends \TYPO3\CMS\Extbase\Tests\Unit\BaseTe
 		$this->assertEquals($expectedResult, $this->fixture->isItemState('IFSUB', 0));
 	}
 }
-
-
-?>

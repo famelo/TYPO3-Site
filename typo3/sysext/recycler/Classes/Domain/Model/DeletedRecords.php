@@ -1,28 +1,18 @@
 <?php
 namespace TYPO3\CMS\Recycler\Domain\Model;
 
-/***************************************************************
- *  Copyright notice
+/**
+ * This file is part of the TYPO3 CMS project.
  *
- *  (c) 2009-2013 Julian Kleinhans <typo3@kj187.de>
- *  All rights reserved
+ * It is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License, either version 2
+ * of the License, or any later version.
  *
- *  This script is part of the TYPO3 project. The TYPO3 project is
- *  free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
+ * For the full copyright and license information, please read the
+ * LICENSE.txt file that was distributed with this source code.
  *
- *  The GNU General Public License can be found at
- *  http://www.gnu.org/copyleft/gpl.html.
- *
- *  This script is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  This copyright notice MUST APPEAR in all copies of the script!
- ***************************************************************/
+ * The TYPO3 project - inspiring people to share!
+ */
 
 /**
  * Model class for the 'recycler' extension.
@@ -46,7 +36,7 @@ class DeletedRecords {
 	protected $limit = '';
 
 	/**
-	 * Array with all avaiable FE tables
+	 * Array with all available FE tables
 	 *
 	 * @var 	array
 	 */
@@ -143,7 +133,7 @@ class DeletedRecords {
 	 * @return 	void
 	 */
 	protected function setData($id = 0, $table, $depth, $tcaCtrl, $filter) {
-		$id = intval($id);
+		$id = (int)$id;
 		if (array_key_exists('delete', $tcaCtrl)) {
 			// find the 'deleted' field for this table
 			$deletedField = \TYPO3\CMS\Recycler\Utility\RecyclerUtility::getDeletedField($table);
@@ -375,6 +365,3 @@ class DeletedRecords {
 	}
 
 }
-
-
-?>

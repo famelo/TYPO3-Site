@@ -1,35 +1,19 @@
 <?php
 namespace TYPO3\CMS\Saltedpasswords\Salt;
 
-/***************************************************************
- *  Copyright notice
- *
- *  (c) 2009-2013 Marcus Krause <marcus#exp2009@t3sec.info>
- *  All rights reserved
- *
- *  This script is part of the TYPO3 project. The TYPO3 project is
- *  free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
- *
- *  The GNU General Public License can be found at
- *  http://www.gnu.org/copyleft/gpl.html.
- *  A copy is found in the textfile GPL.txt and important notices to the license
- *  from the author is found in LICENSE.txt distributed with these scripts.
- *
- *
- *  This script is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  This copyright notice MUST APPEAR in all copies of the script!
- ***************************************************************/
 /**
- * Contains class "tx_saltedpasswords_salts_blowfish"
- * that provides Blowfish salted hashing.
+ * This file is part of the TYPO3 CMS project.
+ *
+ * It is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License, either version 2
+ * of the License, or any later version.
+ *
+ * For the full copyright and license information, please read the
+ * LICENSE.txt file that was distributed with this source code.
+ *
+ * The TYPO3 project - inspiring people to share!
  */
+
 /**
  * Class that implements Blowfish salted hashing based on PHP's
  * crypt() function.
@@ -38,7 +22,6 @@ namespace TYPO3\CMS\Saltedpasswords\Salt;
  * on every system.
  *
  * @author Marcus Krause <marcus#exp2009@t3sec.info>
- * @since 2009-09-06
  */
 class BlowfishSalt extends \TYPO3\CMS\Saltedpasswords\Salt\Md5Salt {
 
@@ -97,7 +80,7 @@ class BlowfishSalt extends \TYPO3\CMS\Saltedpasswords\Salt\Md5Salt {
 	/**
 	 * Method applies settings (prefix, hash count) to a salt.
 	 *
-	 * Overwrites {@link tx_saltedpasswords_salts_md5::applySettingsToSalt()}
+	 * Overwrites {@link Md5Salt::applySettingsToSalt()}
 	 * with Blowfish specifics.
 	 *
 	 * @param string $salt A salt to apply setting to
@@ -125,7 +108,7 @@ class BlowfishSalt extends \TYPO3\CMS\Saltedpasswords\Salt\Md5Salt {
 		$firstSplitPos = strpos($setting, '$');
 		// Hashcount existing
 		if ($firstSplitPos !== FALSE && $firstSplitPos <= 2 && is_numeric(substr($setting, 0, $firstSplitPos))) {
-			$countLog2 = intval(substr($setting, 0, $firstSplitPos));
+			$countLog2 = (int)substr($setting, 0, $firstSplitPos);
 		}
 		return $countLog2;
 	}
@@ -155,7 +138,7 @@ class BlowfishSalt extends \TYPO3\CMS\Saltedpasswords\Salt\Md5Salt {
 	}
 
 	/**
-	 * Returns wether all prequesites for the hashing methods are matched
+	 * Returns whether all prerequisites for the hashing methods are matched
 	 *
 	 * @return boolean Method available
 	 */
@@ -178,7 +161,7 @@ class BlowfishSalt extends \TYPO3\CMS\Saltedpasswords\Salt\Md5Salt {
 	/**
 	 * Returns length of a Blowfish salt in bytes.
 	 *
-	 * Overwrites {@link tx_saltedpasswords_salts_md5::getSaltLength()}
+	 * Overwrites {@link Md5Salt::getSaltLength()}
 	 * with Blowfish specifics.
 	 *
 	 * @return integer Length of a Blowfish salt in bytes
@@ -190,7 +173,7 @@ class BlowfishSalt extends \TYPO3\CMS\Saltedpasswords\Salt\Md5Salt {
 	/**
 	 * Returns setting string of Blowfish salted hashes.
 	 *
-	 * Overwrites {@link tx_saltedpasswords_salts_md5::getSetting()}
+	 * Overwrites {@link Md5Salt::getSetting()}
 	 * with Blowfish specifics.
 	 *
 	 * @return string Setting string of Blowfish salted hashes
@@ -223,7 +206,7 @@ class BlowfishSalt extends \TYPO3\CMS\Saltedpasswords\Salt\Md5Salt {
 	/**
 	 * Method determines if a given string is a valid salt.
 	 *
-	 * Overwrites {@link tx_saltedpasswords_salts_md5::isValidSalt()} with
+	 * Overwrites {@link Md5Salt::isValidSalt()} with
 	 * Blowfish specifics.
 	 *
 	 * @param string $salt String to check
@@ -304,6 +287,3 @@ class BlowfishSalt extends \TYPO3\CMS\Saltedpasswords\Salt\Md5Salt {
 	}
 
 }
-
-
-?>

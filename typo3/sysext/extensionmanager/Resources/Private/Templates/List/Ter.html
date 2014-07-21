@@ -3,13 +3,17 @@
 <f:layout name="main"/>
 
 <f:section name="docheader-buttons">
+	<f:be.buttons.icon uri="{f:uri.action(action:'form',controller:'UploadExtensionFile')}" icon="actions-edit-upload" title="{f:translate(key:'extensionList.uploadExtension')}"/>
 </f:section>
 
 <f:section name="module-headline">
-	<h2><f:translate key="getExtensions">Get Extensions</f:translate></h2>
+	<h1><f:translate key="getExtensions">Get Extensions</f:translate></h1>
 </f:section>
 
 <f:section name="Content">
+
+	<f:render partial="List/UploadForm" />
+
 	<div class="headerRow ui-helper-clearfix">
 		<div class="typo3-extensionmanager-headerRowLeft">
 			<f:form class="typo3-extensionmanager-searchTerForm" action="ter">
@@ -23,7 +27,7 @@
 	</div>
 	<f:if condition="{search}">
 		<f:then>
-			<table id="terSearchTable" class="typo3-extension-list">
+			<table id="terSearchTable" class="t3-table typo3-extension-list">
 				<f:render partial="List/TerTable" arguments="{paginatedExtensions:extensions, availableAndInstalled:availableAndInstalled}" />
 			</table>
 		</f:then>

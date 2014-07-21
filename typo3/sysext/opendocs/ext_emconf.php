@@ -12,33 +12,20 @@ $EM_CONF[$_EXTKEY] = array(
 	'title' => 'User>Open Documents',
 	'description' => 'Shows opened documents by the user.',
 	'category' => 'module',
-	'shy' => 0,
-	'dependencies' => '',
-	'conflicts' => '',
-	'priority' => '',
-	'loadOrder' => '',
-	'module' => 'mod',
 	'state' => 'stable',
-	'internal' => 0,
 	'uploadfolder' => 0,
 	'createDirs' => '',
-	'modify_tables' => '',
 	'clearCacheOnLoad' => 1,
-	'lockType' => '',
 	'author' => 'Benjamin Mack',
 	'author_email' => 'mack@xnos.org',
 	'author_company' => '',
-	'CGLcompliance' => '',
-	'CGLcompliance_note' => '',
-	'version' => '6.1.0',
+	'version' => '6.2.0',
 	'_md5_values_when_last_written' => '',
 	'constraints' => array(
 		'depends' => array(
-			'typo3' => '6.1.0-6.1.99',
+			'typo3' => '6.2.0-6.2.99',
 		),
 		'conflicts' => array(),
-		'suggests' => array()
+		'suggests' => array(),
 	),
-	'suggests' => array()
 );
-?>

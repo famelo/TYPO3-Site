@@ -1,28 +1,20 @@
 <?php
 namespace TYPO3\CMS\Linkvalidator;
 
-/***************************************************************
- *  Copyright notice
+/**
+ * This file is part of the TYPO3 CMS project.
  *
- *  (c) 2010 - 2013 Michael Miousse (michael.miousse@infoglobe.ca)
- *  All rights reserved
+ * It is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License, either version 2
+ * of the License, or any later version.
  *
- *  This script is part of the TYPO3 project. The TYPO3 project is
- *  free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
+ * For the full copyright and license information, please read the
+ * LICENSE.txt file that was distributed with this source code.
  *
- *  The GNU General Public License can be found at
- *  http://www.gnu.org/copyleft/gpl.html.
- *
- *  This script is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  This copyright notice MUST APPEAR in all copies of the script!
- ***************************************************************/
+ * The TYPO3 project - inspiring people to share!
+ */
+
+use TYPO3\CMS\Backend\Utility\BackendUtility;
 
 /**
  * This class provides Processing plugin implementation
@@ -99,7 +91,7 @@ class LinkAnalyzer {
 	 * Fill hookObjectsArr with different link types and possible XClasses.
 	 */
 	public function __construct() {
-		$GLOBALS['LANG']->includeLLFile('EXT:linkvalidator/Resources/Private/Language/Module/locallang.xml');
+		$GLOBALS['LANG']->includeLLFile('EXT:linkvalidator/Resources/Private/Language/Module/locallang.xlf');
 		// Hook to handle own checks
 		if (is_array($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['linkvalidator']['checkLinks'])) {
 			foreach ($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['linkvalidator']['checkLinks'] as $key => $classRef) {
@@ -146,7 +138,7 @@ class LinkAnalyzer {
 					$where = 'deleted = 0 AND pid IN (' . $this->pidList . ')';
 				}
 				if (!$considerHidden) {
-					$where .= \TYPO3\CMS\Backend\Utility\BackendUtility::BEenableFields($table);
+					$where .= BackendUtility::BEenableFields($table);
 				}
 				// If table is not configured, assume the extension is not installed
 				// and therefore no need to check it
@@ -236,11 +228,11 @@ class LinkAnalyzer {
 			// Check if a TCA configured field has soft references defined (see TYPO3 Core API document)
 			if ($conf['softref'] && strlen($valueField)) {
 				// Explode the list of soft references/parameters
-				$softRefs = \TYPO3\CMS\Backend\Utility\BackendUtility::explodeSoftRefParserList($conf['softref']);
+				$softRefs = BackendUtility::explodeSoftRefParserList($conf['softref']);
 				// Traverse soft references
 				foreach ($softRefs as $spKey => $spParams) {
 					/** @var $softRefObj \TYPO3\CMS\Core\Database\SoftReferenceIndex */
-					$softRefObj = \TYPO3\CMS\Backend\Utility\BackendUtility::softRefParserObj($spKey);
+					$softRefObj = BackendUtility::softRefParserObj($spKey);
 					// If there is an object returned...
 					if (is_object($softRefObj)) {
 						// Do processing
@@ -393,9 +385,9 @@ class LinkAnalyzer {
 	 * @return string Returns the list with a comma in the end (if any pages selected!)
 	 */
 	public function extGetTreeList($id, $depth, $begin = 0, $permsClause, $considerHidden = FALSE) {
-		$depth = intval($depth);
-		$begin = intval($begin);
-		$id = intval($id);
+		$depth = (int)$depth;
+		$begin = (int)$begin;
+		$id = (int)$id;
 		$theList = '';
 		if ($depth > 0) {
 			$res = $GLOBALS['TYPO3_DB']->exec_SELECTquery(
@@ -441,4 +433,3 @@ class LinkAnalyzer {
 	}
 
 }
-?>

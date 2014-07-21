@@ -1,29 +1,18 @@
 <?php
 namespace TYPO3\CMS\Extensionmanager\Utility\Parser;
 
-/***************************************************************
- * Copyright notice
+/**
+ * This file is part of the TYPO3 CMS project.
  *
- * (c) 2010-2013 Marcus Krause <marcus#exp2010@t3sec.info>
- *		 Steffen Kamper <info@sk-typo3.de>
- * All rights reserved
+ * It is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License, either version 2
+ * of the License, or any later version.
  *
- * This script is part of the TYPO3 project. The TYPO3 project is
- * free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
+ * For the full copyright and license information, please read the
+ * LICENSE.txt file that was distributed with this source code.
  *
- * The GNU General Public License can be found at
- * http://www.gnu.org/copyleft/gpl.html.
- *
- * This script is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU General Public License for more details.
- *
- * This copyright notice MUST APPEAR in all copies of the script!
- ***************************************************************/
+ * The TYPO3 project - inspiring people to share!
+ */
 /**
  * Abstract parser for EM related TYPO3 xml files.
  *
@@ -31,7 +20,7 @@ namespace TYPO3\CMS\Extensionmanager\Utility\Parser;
  * @author Steffen Kamper <info@sk-typo3.de>
  * @since 2010-02-09
  */
-abstract class AbstractXmlParser {
+abstract class AbstractXmlParser implements \SplSubject {
 
 	/**
 	 * Keeps XML parser instance.
@@ -47,6 +36,51 @@ abstract class AbstractXmlParser {
 	 * @var string
 	 */
 	protected $requiredPhpExtensions;
+
+	/**
+	 * Keeps list of attached observers.
+	 *
+	 * @var \SplObserver[]
+	 */
+	protected $observers = array();
+
+	/**
+	 * Method attaches an observer.
+	 *
+	 * @param \SplObserver $observer an observer to attach
+	 * @return void
+	 * @see $observers, detach(), notify()
+	 */
+	public function attach(\SplObserver $observer) {
+		$this->observers[] = $observer;
+	}
+
+	/**
+	 * Method detaches an attached observer
+	 *
+	 * @param \SplObserver $observer an observer to detach
+	 * @return void
+	 * @see $observers, attach(), notify()
+	 */
+	public function detach(\SplObserver $observer) {
+		$key = array_search($observer, $this->observers, TRUE);
+		if ($key !== FALSE) {
+			unset($this->observers[$key]);
+		}
+	}
+
+	/**
+	 * Method notifies attached observers.
+	 *
+	 * @access public
+	 * @return void
+	 * @see $observers, attach(), detach()
+	 */
+	public function notify() {
+		foreach ($this->observers as $observer) {
+			$observer->update($this);
+		}
+	}
 
 	/**
 	 * Method determines if a necessary PHP extension is available.
@@ -82,5 +116,3 @@ abstract class AbstractXmlParser {
 	 */
 	abstract protected function createParser();
 }
-
-?>

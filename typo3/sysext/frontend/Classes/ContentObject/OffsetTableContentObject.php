@@ -1,31 +1,18 @@
 <?php
 namespace TYPO3\CMS\Frontend\ContentObject;
 
-/***************************************************************
- * Copyright notice
+/**
+ * This file is part of the TYPO3 CMS project.
  *
- * (c) 1999-2013 Kasper Skårhøj (kasperYYYY@typo3.com)
- * All rights reserved
+ * It is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License, either version 2
+ * of the License, or any later version.
  *
- * This script is part of the TYPO3 project. The TYPO3 project is
- * free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
+ * For the full copyright and license information, please read the
+ * LICENSE.txt file that was distributed with this source code.
  *
- * The GNU General Public License can be found at
- * http://www.gnu.org/copyleft/gpl.html.
- * A copy is found in the textfile GPL.txt and important notices to the license
- * from the author is found in LICENSE.txt distributed with these scripts.
- *
- *
- * This script is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * This copyright notice MUST APPEAR in all copies of the script!
- ***************************************************************/
+ * The TYPO3 project - inspiring people to share!
+ */
 /**
  * Rendering of tables for offset
  */
@@ -118,7 +105,7 @@ class OffsetTableContentObject extends \TYPO3\CMS\Frontend\ContentObject\Abstrac
 			// top
 			if ($valPairs[1]) {
 				$rows[1] .= '<tr>';
-				$rows[1] .= '<td><img src="' . $GLOBALS['TSFE']->absRefPrefix . 'clear.gif" width="' . ($valPairs[0] ? $valPairs[0] : 1) . '" height="' . $valPairs[1] . '" alt="" title="" /></td>';
+				$rows[1] .= '<td><img src="' . $GLOBALS['TSFE']->absRefPrefix . 'clear.gif" width="' . ($valPairs[0] ?: 1) . '" height="' . $valPairs[1] . '" alt="" title="" /></td>';
 				if ($valPairs[0]) {
 					$rows[1] .= '<td></td>';
 				}
@@ -134,7 +121,7 @@ class OffsetTableContentObject extends \TYPO3\CMS\Frontend\ContentObject\Abstrac
 			}
 			$rows[2] .= '<td' . $this->tdParams . '>' . $content . '</td>';
 			if ($valPairs[2]) {
-				$rows[2] .= $valPairs[3] ? '<td>' . $heightImg . '</td>' : '<td><img src="' . $GLOBALS['TSFE']->absRefPrefix . 'clear.gif" width="' . $valPairs[2] . '" height="' . ($valPairs[5] ? $valPairs[5] : 1) . '" alt="" title="" /></td>';
+				$rows[2] .= $valPairs[3] ? '<td>' . $heightImg . '</td>' : '<td><img src="' . $GLOBALS['TSFE']->absRefPrefix . 'clear.gif" width="' . $valPairs[2] . '" height="' . ($valPairs[5] ?: 1) . '" alt="" title="" /></td>';
 			}
 			$rows[2] .= '</tr>';
 			// Bottom row:
@@ -146,7 +133,7 @@ class OffsetTableContentObject extends \TYPO3\CMS\Frontend\ContentObject\Abstrac
 				if ($valPairs[2]) {
 					$rows[3] .= '<td>' . $widthImg . '</td>';
 				}
-				$rows[3] .= '<td><img src="' . $GLOBALS['TSFE']->absRefPrefix . 'clear.gif" width="' . ($valPairs[2] ? $valPairs[2] : ($valPairs[4] ? $valPairs[4] : 1)) . '" height="' . $valPairs[3] . '" alt="" title="" /></td>';
+				$rows[3] .= '<td><img src="' . $GLOBALS['TSFE']->absRefPrefix . 'clear.gif" width="' . ($valPairs[2] ?: ($valPairs[4] ?: 1)) . '" height="' . $valPairs[3] . '" alt="" title="" /></td>';
 				$rows[3] .= '</tr>';
 			}
 			return $this->begin . implode('', $rows) . $this->end;
@@ -156,6 +143,3 @@ class OffsetTableContentObject extends \TYPO3\CMS\Frontend\ContentObject\Abstrac
 	}
 
 }
-
-
-?>

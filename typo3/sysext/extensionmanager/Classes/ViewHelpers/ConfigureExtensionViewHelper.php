@@ -1,31 +1,18 @@
 <?php
 namespace TYPO3\CMS\Extensionmanager\ViewHelpers;
 
-/***************************************************************
- *  Copyright notice
+/**
+ * This file is part of the TYPO3 CMS project.
  *
- *  (c) 2012-2013 Susanne Moog, <typo3@susannemoog.de>
- *  All rights reserved
+ * It is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License, either version 2
+ * of the License, or any later version.
  *
- *  This script is part of the TYPO3 project. The TYPO3 project is
- *  free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
+ * For the full copyright and license information, please read the
+ * LICENSE.txt file that was distributed with this source code.
  *
- *  The GNU General Public License can be found at
- *  http://www.gnu.org/copyleft/gpl.html.
- *  A copy is found in the textfile GPL.txt and important notices to the license
- *  from the author is found in LICENSE.txt distributed with these scripts.
- *
- *
- *  This script is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  This copyright notice MUST APPEAR in all copies of the script!
- ***************************************************************/
+ * The TYPO3 project - inspiring people to share!
+ */
 /**
  * View helper for configure extension link
  *
@@ -43,20 +30,28 @@ class ConfigureExtensionViewHelper extends \TYPO3\CMS\Fluid\ViewHelpers\Link\Act
 	 *
 	 * @param array $extension Extension configuration array with extension information
 	 * @param boolean $forceConfiguration If TRUE the content is only returned if a link could be generated
+	 * @param boolean $showDescription If TRUE the extension description is also shown in the title attribute
 	 * @return string the rendered tag or child nodes content
 	 */
-	public function render($extension, $forceConfiguration = TRUE) {
-		$content = (string) $this->renderChildren();
-		if ($extension['installed'] && file_exists(PATH_site . $extension['siteRelPath'] . '/ext_conf_template.txt')) {
+	public function render($extension, $forceConfiguration = TRUE, $showDescription = FALSE) {
+		$content = (string)$this->renderChildren();
+		if ($extension['installed'] && file_exists(PATH_site . $extension['siteRelPath'] . 'ext_conf_template.txt')) {
 			$uriBuilder = $this->controllerContext->getUriBuilder();
 			$action = 'showConfigurationForm';
-			$uri = $uriBuilder->reset()->uriFor($action, array(
-				'extension' => array(
-					'key' => $extension['key']
-				)
-			), 'Configuration');
+			$uri = $uriBuilder->reset()->uriFor(
+				$action,
+				array('extension' => array('key' => $extension['key'])),
+				'Configuration'
+			);
+			if ($showDescription) {
+				$title = $extension['description'] . PHP_EOL .
+					\TYPO3\CMS\Extbase\Utility\LocalizationUtility::translate('extensionList.clickToConfigure', 'extensionmanager');
+
+			} else {
+				$title = \TYPO3\CMS\Extbase\Utility\LocalizationUtility::translate('extensionList.configure', 'extensionmanager');
+			}
 			$this->tag->addAttribute('href', $uri);
-			$this->tag->addAttribute('title', \TYPO3\CMS\Extbase\Utility\LocalizationUtility::translate('extensionList.configure', 'extensionmanager'));
+			$this->tag->addAttribute('title', $title);
 			$this->tag->setContent($content);
 			$content = $this->tag->render();
 		} elseif ($forceConfiguration) {
@@ -67,6 +62,3 @@ class ConfigureExtensionViewHelper extends \TYPO3\CMS\Fluid\ViewHelpers\Link\Act
 	}
 
 }
-
-
-?>

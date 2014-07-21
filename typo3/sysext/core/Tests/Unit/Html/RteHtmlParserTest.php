@@ -1,28 +1,18 @@
 <?php
 namespace TYPO3\CMS\Core\Tests\Unit\Html;
 
-/***************************************************************
- *  Copyright notice
+/**
+ * This file is part of the TYPO3 CMS project.
  *
- *  (c) 2011-2013 Stanislas Rolland <typo3@sjbr.ca>
- *  All rights reserved
+ * It is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License, either version 2
+ * of the License, or any later version.
  *
- *  This script is part of the TYPO3 project. The TYPO3 project is
- *  free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
+ * For the full copyright and license information, please read the
+ * LICENSE.txt file that was distributed with this source code.
  *
- *  The GNU General Public License can be found at
- *  http://www.gnu.org/copyleft/gpl.html.
- *
- *  This script is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  This copyright notice MUST APPEAR in all copies of the script!
- ***************************************************************/
+ * The TYPO3 project - inspiring people to share!
+ */
 
 /**
  * Testcase for \TYPO3\CMS\Core\Html\RteHtmlParser
@@ -34,7 +24,7 @@ class RteHtmlParserTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	/**
 	 * @var \TYPO3\CMS\Core\Html\RteHtmlParser
 	 */
-	private $fixture = NULL;
+	protected $fixture = NULL;
 
 	public function setUp() {
 		$this->fixture = new \TYPO3\CMS\Core\Html\RteHtmlParser();
@@ -45,10 +35,6 @@ class RteHtmlParserTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 			'disableUnifyLineBreaks' => '0',
 			'overruleMode' => 'ts_css'
 		);
-	}
-
-	public function tearDown() {
-		unset($this->fixture);
 	}
 
 	/**
@@ -275,9 +261,9 @@ class RteHtmlParserTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 				'<p>paragraph1</p>' . CRLF . '<p>paragraph2</p>',
 				'paragraph1' . CRLF . 'paragraph2',
 			),
-			'Double spacing paragraph' => array(
+			'Double spacing paragraph with text' => array(
 				'<p>&nbsp;</p><p>&nbsp;</p><p>paragraph1</p>',
-				CRLF . CRLF . paragraph1,
+				CRLF . CRLF . 'paragraph1',
 			),
 			'Paragraph followed by linebreak' => array(
 				'<p>paragraph</p>' . CRLF,
@@ -298,14 +284,6 @@ class RteHtmlParserTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 			'Paragraph followed by double spacing paragraph, linebreak-separated' => array(
 				'<p>paragraph</p>' . CRLF . '<p>&nbsp;</p>' . CRLF . '<p>&nbsp;</p>',
 				'paragraph' . CRLF . CRLF . CRLF,
-			),
-			'Paragraph followed by paragraph' => array(
-				'<p>paragraph1</p>' . '<p>paragraph2</p>',
-				'paragraph1' . CRLF . 'paragraph2',
-			),
-			'Paragraph followed by paragraph, linebreak-separated' => array(
-				'<p>paragraph1</p>' . CRLF . '<p>paragraph2</p>',
-				'paragraph1' . CRLF . 'paragraph2',
 			),
 			'Paragraph followed by spacing paragraph and by paragraph' => array(
 				'<p>paragraph1</p>' . '<p>&nbsp;</p>' . '<p>paragraph2</p>',
@@ -661,4 +639,3 @@ class RteHtmlParserTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 		$this->assertEquals($expectedResult, $this->fixture->RTE_transform($this->fixture->RTE_transform($content, array(), 'db', $thisConfig), array(), 'rte', $thisConfig));
 	}
 }
-?>

@@ -1,28 +1,18 @@
 <?php
 namespace TYPO3\CMS\Extensionmanager\Domain\Repository;
 
-/***************************************************************
- *  Copyright notice
+/**
+ * This file is part of the TYPO3 CMS project.
  *
- *  (c) 2012-2013 Susanne Moog, <typo3@susannemoog.de>
- *  All rights reserved
+ * It is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License, either version 2
+ * of the License, or any later version.
  *
- *  This script is part of the TYPO3 project. The TYPO3 project is
- *  free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
+ * For the full copyright and license information, please read the
+ * LICENSE.txt file that was distributed with this source code.
  *
- *  The GNU General Public License can be found at
- *  http://www.gnu.org/copyleft/gpl.html.
- *
- *  This script is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  This copyright notice MUST APPEAR in all copies of the script!
- ***************************************************************/
+ * The TYPO3 project - inspiring people to share!
+ */
 /**
  * A repository for extensions
  *
@@ -31,24 +21,20 @@ namespace TYPO3\CMS\Extensionmanager\Domain\Repository;
 class ExtensionRepository extends \TYPO3\CMS\Extbase\Persistence\Repository {
 
 	/**
+	 * @var string
+	 */
+	const TABLE_NAME = 'tx_extensionmanager_domain_model_extension';
+
+	/**
 	 * @var \TYPO3\CMS\Core\Database\DatabaseConnection
 	 */
 	protected $databaseConnection;
 
 	/**
 	 * @var \TYPO3\CMS\Extbase\Persistence\Generic\Mapper\DataMapper
+	 * @inject
 	 */
 	protected $dataMapper;
-
-	/**
-	 * Injects the DataMapper to map records to objects
-	 *
-	 * @param \TYPO3\CMS\Extbase\Persistence\Generic\Mapper\DataMapper $dataMapper
-	 * @return void
-	 */
-	public function injectDataMapper(\TYPO3\CMS\Extbase\Persistence\Generic\Mapper\DataMapper $dataMapper) {
-		$this->dataMapper = $dataMapper;
-	}
 
 	/**
 	 * Do not include pid in queries
@@ -82,6 +68,11 @@ class ExtensionRepository extends \TYPO3\CMS\Extbase\Persistence\Repository {
 	public function findAll() {
 		$query = $this->createQuery();
 		$query = $this->addDefaultConstraints($query);
+		$query->setOrderings(
+			array(
+				'lastUpdated' => \TYPO3\CMS\Extbase\Persistence\QueryInterface::ORDER_DESCENDING
+			)
+		);
 		return $query->execute();
 	}
 
@@ -204,6 +195,50 @@ class ExtensionRepository extends \TYPO3\CMS\Extbase\Persistence\Repository {
 	}
 
 	/**
+	 * Finds all extensions with category "distribution" not published by the TYPO3 CMS Team
+	 *
+	 * @return \TYPO3\CMS\Extbase\Persistence\QueryResultInterface
+	 */
+	public function findAllCommunityDistributions() {
+		$query = $this->createQuery();
+		$query->matching(
+			$query->logicalAnd(
+				$query->equals('category', \TYPO3\CMS\Extensionmanager\Domain\Model\Extension::DISTRIBUTION_CATEGORY),
+				$query->equals('currentVersion', 1),
+				$query->logicalNot($query->equals('ownerusername', 'typo3v4'))
+			)
+		);
+
+		$query->setOrderings(array(
+			'alldownloadcounter' => \TYPO3\CMS\Extbase\Persistence\QueryInterface::ORDER_DESCENDING
+		));
+
+		return $query->execute();
+	}
+
+	/**
+	 * Finds all extensions with category "distribution" that are published by the TYPO3 CMS Team
+	 *
+	 * @return \TYPO3\CMS\Extbase\Persistence\QueryResultInterface
+	 */
+	public function findAllOfficialDistributions() {
+		$query = $this->createQuery();
+		$query->matching(
+			$query->logicalAnd(
+				$query->equals('category', \TYPO3\CMS\Extensionmanager\Domain\Model\Extension::DISTRIBUTION_CATEGORY),
+				$query->equals('currentVersion', 1),
+				$query->equals('ownerusername', 'typo3v4')
+			)
+		);
+
+		$query->setOrderings(array(
+			'alldownloadcounter' => \TYPO3\CMS\Extbase\Persistence\QueryInterface::ORDER_DESCENDING
+		));
+
+		return $query->execute();
+	}
+
+	/**
 	 * Count extensions with a certain key between a given version range
 	 *
 	 * @param string $extensionKey
@@ -219,7 +254,7 @@ class ExtensionRepository extends \TYPO3\CMS\Extbase\Persistence\Repository {
 	 * Find highest version available of an extension
 	 *
 	 * @param string $extensionKey
-	 * @return object
+	 * @return \TYPO3\CMS\Extensionmanager\Domain\Model\Extension
 	 */
 	public function findHighestAvailableVersion($extensionKey) {
 		$query = $this->createQuery();
@@ -231,42 +266,72 @@ class ExtensionRepository extends \TYPO3\CMS\Extbase\Persistence\Repository {
 	}
 
 	/**
-	 * Update the current_version field after update
-	 * For performance reason "native" TYPO3_DB is
-	 * used here directly.
+	 * Updates the current_version field after update.
 	 *
-	 * @param integer $repositoryUid
-	 * @return integer
+	 * @param int $repositoryUid
+	 * @return int
 	 */
 	public function insertLastVersion($repositoryUid = 1) {
-		$groupedRows = $this->databaseConnection->exec_SELECTgetRows(
-			'extension_key, max(integer_version) as maxintversion',
-			'tx_extensionmanager_domain_model_extension',
-			'repository=' . intval($repositoryUid),
-			'extension_key'
-		);
-		$extensions = count($groupedRows);
+		$this->markExtensionWithMaximumVersionAsCurrent($repositoryUid);
 
-		if ($extensions > 0) {
-			// set all to 0
-			$this->databaseConnection->exec_UPDATEquery(
-				'tx_extensionmanager_domain_model_extension',
-				'current_version=1 AND repository=' . intval($repositoryUid),
-				array('current_version' => 0)
-			);
-			// Find latest version of extensions and set current_version to 1 for these
-			foreach ($groupedRows as $row) {
-				$this->databaseConnection->exec_UPDATEquery(
-					'tx_extensionmanager_domain_model_extension',
-					'extension_key=' .
-							$this->databaseConnection->fullQuoteStr($row['extension_key'], 'tx_extensionmanager_domain_model_extension') .
-							' AND integer_version=' . intval($row['maxintversion']) .
-							' AND repository=' . intval($repositoryUid),
-					array('current_version' => 1)
-				);
-			}
-		}
-		return $extensions;
+		return $this->getNumberOfCurrentExtensions();
+	}
+
+	/**
+	 * Sets current_version = 1 for all extensions where the extension version is maximal.
+	 *
+	 * For performance reasons, the "native" TYPO3_DB is used here directly.
+	 *
+	 * @param int $repositoryUid
+	 * @return void
+	 */
+	protected function markExtensionWithMaximumVersionAsCurrent($repositoryUid) {
+		$uidsOfCurrentVersion = $this->fetchMaximalVersionsForAllExtensions($repositoryUid);
+
+		$this->databaseConnection->exec_UPDATEquery(
+			self::TABLE_NAME,
+			'uid IN (' . implode(',', $uidsOfCurrentVersion) . ')',
+			array(
+				'current_version' => 1,
+			)
+		);
+	}
+
+	/**
+	 * Fetches the UIDs of all maximal versions for all extensions.
+	 * This is done by doing a subselect in the WHERE clause to get all
+	 * max versions and then the UID of that record in the outer select.
+	 *
+	 * @param int $repositoryUid
+	 * @return array
+	 */
+	protected function fetchMaximalVersionsForAllExtensions($repositoryUid) {
+		$extensionUids = $this->databaseConnection->exec_SELECTgetRows(
+			'a.uid AS uid',
+			self::TABLE_NAME . ' a',
+			'integer_version=(' .
+				$this->databaseConnection->SELECTquery(
+					'MAX(integer_version)',
+					self::TABLE_NAME . ' b',
+					'b.repository=' . (int)$repositoryUid . ' AND a.extension_key=b.extension_key'
+				) .
+			') AND repository=' . (int)$repositoryUid,
+			'', '', '', 'uid'
+		);
+		return array_keys($extensionUids);
+	}
+
+	/**
+	 * Returns the number of extensions that are current.
+	 *
+	 * @return int
+	 */
+	protected function getNumberOfCurrentExtensions() {
+		return $this->databaseConnection->exec_SELECTcountRows(
+			'*',
+			self::TABLE_NAME,
+			'current_version = 1'
+		);
 	}
 
 	/**
@@ -291,8 +356,4 @@ class ExtensionRepository extends \TYPO3\CMS\Extbase\Persistence\Repository {
 		}
 		return $query;
 	}
-
 }
-
-
-?>

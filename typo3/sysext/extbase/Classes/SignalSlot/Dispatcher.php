@@ -1,32 +1,18 @@
 <?php
 namespace TYPO3\CMS\Extbase\SignalSlot;
 
-/***************************************************************
- *  Copyright notice
+/**
+ * This file is part of the TYPO3 CMS project.
  *
- *  (c) 2010-2013 Extbase Team (http://forge.typo3.org/projects/typo3v4-mvc)
- *  Extbase is a backport of TYPO3 Flow. All credits go to the TYPO3 Flow team.
- *  All rights reserved
+ * It is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License, either version 2
+ * of the License, or any later version.
  *
- *  This script is part of the TYPO3 project. The TYPO3 project is
- *  free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
+ * For the full copyright and license information, please read the
+ * LICENSE.txt file that was distributed with this source code.
  *
- *  The GNU General Public License can be found at
- *  http://www.gnu.org/copyleft/gpl.html.
- *  A copy is found in the textfile GPL.txt and important notices to the license
- *  from the author is found in LICENSE.txt distributed with these scripts.
- *
- *
- *  This script is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  This copyright notice MUST APPEAR in all copies of the script!
- ***************************************************************/
+ * The TYPO3 project - inspiring people to share!
+ */
 /**
  * A dispatcher which dispatches signals by calling its registered slot methods
  * and passing them the method arguments which were originally passed to the
@@ -115,35 +101,54 @@ class Dispatcher implements \TYPO3\CMS\Core\SingletonInterface {
 	 * @param string $signalClassName Name of the class containing the signal
 	 * @param string $signalName Name of the signal
 	 * @param array $signalArguments arguments passed to the signal method
-	 * @return void
-	 * @throws \TYPO3\CMS\Extbase\SignalSlot\Exception\InvalidSlotException if the slot is not valid
+	 * @return mixed
+	 * @throws Exception\InvalidSlotException if the slot is not valid
+	 * @throws Exception\InvalidSlotReturnException if a slot returns invalid arguments (too few or return value is not an array)
 	 * @api
 	 */
 	public function dispatch($signalClassName, $signalName, array $signalArguments = array()) {
 		$this->initializeObject();
 		if (!isset($this->slots[$signalClassName][$signalName])) {
-			return;
+			return $signalArguments;
 		}
 		foreach ($this->slots[$signalClassName][$signalName] as $slotInformation) {
 			if (isset($slotInformation['object'])) {
 				$object = $slotInformation['object'];
 			} else {
 				if (!isset($this->objectManager)) {
-					throw new \TYPO3\CMS\Extbase\SignalSlot\Exception\InvalidSlotException(sprintf('Cannot dispatch %s::%s to class %s. The object manager is not yet available in the Signal Slot Dispatcher and therefore it cannot dispatch classes.', $signalClassName, $signalName, $slotInformation['class']), 1298113624);
+					throw new Exception\InvalidSlotException(sprintf('Cannot dispatch %s::%s to class %s. The object manager is not yet available in the Signal Slot Dispatcher and therefore it cannot dispatch classes.', $signalClassName, $signalName, $slotInformation['class']), 1298113624);
 				}
 				if (!$this->objectManager->isRegistered($slotInformation['class'])) {
-					throw new \TYPO3\CMS\Extbase\SignalSlot\Exception\InvalidSlotException('The given class "' . $slotInformation['class'] . '" is not a registered object.', 1245673367);
+					throw new Exception\InvalidSlotException('The given class "' . $slotInformation['class'] . '" is not a registered object.', 1245673367);
 				}
 				$object = $this->objectManager->get($slotInformation['class']);
 			}
-			if ($slotInformation['passSignalInformation'] === TRUE) {
-				$signalArguments[] = $signalClassName . '::' . $signalName;
-			}
+
 			if (!method_exists($object, $slotInformation['method'])) {
-				throw new \TYPO3\CMS\Extbase\SignalSlot\Exception\InvalidSlotException('The slot method ' . get_class($object) . '->' . $slotInformation['method'] . '() does not exist.', 1245673368);
+				throw new Exception\InvalidSlotException('The slot method ' . get_class($object) . '->' . $slotInformation['method'] . '() does not exist.', 1245673368);
 			}
-			call_user_func_array(array($object, $slotInformation['method']), $signalArguments);
+
+			$preparedSlotArguments = $signalArguments;
+			if ($slotInformation['passSignalInformation'] === TRUE) {
+				$preparedSlotArguments[] = $signalClassName . '::' . $signalName;
+			}
+
+			$slotReturn = call_user_func_array(array($object, $slotInformation['method']), $preparedSlotArguments);
+
+			if ($slotReturn) {
+				if (!is_array($slotReturn)) {
+					throw new Exception\InvalidSlotReturnException('The slot method ' . get_class($object) . '->' . $slotInformation['method'] . '()\'s return value is of an not allowed type ('
+						. gettype($slotReturn) . ').', 1376683067);
+				} elseif (count($slotReturn) !== count($signalArguments)) {
+					throw new Exception\InvalidSlotReturnException('The slot method ' . get_class($object) . '->' . $slotInformation['method'] . '() returned a different number ('
+						. count($slotReturn) . ') of arguments, than it recieved (' . count($signalArguments) . ').', 1376683066);
+				} else {
+					$signalArguments = $slotReturn;
+				}
+			}
 		}
+
+		return $signalArguments;
 	}
 
 	/**
@@ -158,5 +163,3 @@ class Dispatcher implements \TYPO3\CMS\Core\SingletonInterface {
 		return isset($this->slots[$signalClassName][$signalName]) ? $this->slots[$signalClassName][$signalName] : array();
 	}
 }
-
-?>

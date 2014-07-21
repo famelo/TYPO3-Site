@@ -1,39 +1,23 @@
 <?php
 namespace TYPO3\CMS\Extbase\Tests\Unit\SignalSlot;
 
-/***************************************************************
- *  Copyright notice
- *
- *  (c) 2010-2013 Extbase Team (http://forge.typo3.org/projects/typo3v4-mvc)
- *  Extbase is a backport of TYPO3 Flow. All credits go to the TYPO3 Flow team.
- *  All rights reserved
- *
- *  This script is part of the TYPO3 project. The TYPO3 project is
- *  free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
- *
- *  The GNU General Public License can be found at
- *  http://www.gnu.org/copyleft/gpl.html.
- *  A copy is found in the textfile GPL.txt and important notices to the license
- *  from the author is found in LICENSE.txt distributed with these scripts.
- *
- *
- *  This script is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  This copyright notice MUST APPEAR in all copies of the script!
- ***************************************************************/
 /**
- * Testcase for the Signal Dispatcher Class
+ * This file is part of the TYPO3 CMS project.
  *
- * @author Felix Oertel <f@oer.tel>
- * @author Alexander Schnitzler <alex.schnitzler@typovision.de>
+ * It is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License, either version 2
+ * of the License, or any later version.
+ *
+ * For the full copyright and license information, please read the
+ * LICENSE.txt file that was distributed with this source code.
+ *
+ * The TYPO3 project - inspiring people to share!
  */
-class DispatcherTest extends \TYPO3\CMS\Extbase\Tests\Unit\BaseTestCase {
+
+/**
+ * Test case
+ */
+class DispatcherTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 
 	/**
 	 * @var \TYPO3\CMS\Extbase\SignalSlot\Dispatcher|\PHPUnit_Framework_MockObject_MockObject|\Tx_Phpunit_Interface_AccessibleObject
@@ -47,7 +31,6 @@ class DispatcherTest extends \TYPO3\CMS\Extbase\Tests\Unit\BaseTestCase {
 
 	/**
 	 * @test
-	 * @author Felix Oertel <f@oer.tel>
 	 */
 	public function connectAllowsForConnectingASlotWithASignal() {
 		$mockSignal = $this->getMock('ClassA', array('emitSomeSignal'));
@@ -61,7 +44,6 @@ class DispatcherTest extends \TYPO3\CMS\Extbase\Tests\Unit\BaseTestCase {
 
 	/**
 	 * @test
-	 * @author Felix Oertel <f@oer.tel>
 	 */
 	public function connectAlsoAcceptsObjectsInPlaceOfTheClassName() {
 		$mockSignal = $this->getMock('ClassA', array('emitSomeSignal'));
@@ -75,7 +57,6 @@ class DispatcherTest extends \TYPO3\CMS\Extbase\Tests\Unit\BaseTestCase {
 
 	/**
 	 * @test
-	 * @author Felix Oertel <f@oer.tel>
 	 */
 	public function connectAlsoAcceptsClosuresActingAsASlot() {
 		$mockSignal = $this->getMock('ClassA', array('emitSomeSignal'));
@@ -90,7 +71,6 @@ class DispatcherTest extends \TYPO3\CMS\Extbase\Tests\Unit\BaseTestCase {
 
 	/**
 	 * @test
-	 * @author Felix Oertel <f@oer.tel>
 	 */
 	public function dispatchPassesTheSignalArgumentsToTheSlotMethod() {
 		$arguments = array();
@@ -98,13 +78,12 @@ class DispatcherTest extends \TYPO3\CMS\Extbase\Tests\Unit\BaseTestCase {
 			($arguments = func_get_args());
 		};
 		$this->signalSlotDispatcher->connect('Foo', 'bar', $mockSlot, NULL, FALSE);
-		$this->signalSlotDispatcher->dispatch('Foo', 'bar', array('foo' => 'bar', 'baz' => 'quux'));
+		$this->signalSlotDispatcher->dispatch('Foo', 'bar', array('bar', 'quux'));
 		$this->assertSame(array('bar', 'quux'), $arguments);
 	}
 
 	/**
 	 * @test
-	 * @author Felix Oertel <f@oer.tel>
 	 */
 	public function dispatchRetrievesSlotInstanceFromTheObjectManagerIfOnlyAClassNameWasSpecified() {
 		$slotClassName = uniqid('Mock_');
@@ -116,14 +95,133 @@ class DispatcherTest extends \TYPO3\CMS\Extbase\Tests\Unit\BaseTestCase {
 		$this->signalSlotDispatcher->_set('objectManager', $mockObjectManager);
 		$this->signalSlotDispatcher->_set('isInitialized', TRUE);
 		$this->signalSlotDispatcher->connect('Foo', 'emitBar', $slotClassName, 'slot', FALSE);
-		$this->signalSlotDispatcher->dispatch('Foo', 'emitBar', array('foo' => 'bar', 'baz' => 'quux'));
+		$this->signalSlotDispatcher->dispatch('Foo', 'emitBar', array('bar', 'quux'));
 		$this->assertSame($mockSlot->arguments, array('bar', 'quux'));
 	}
 
 	/**
 	 * @test
+	 */
+	public function dispatchHandsOverArgumentsReturnedByAFormerSlot() {
+		$this->signalSlotDispatcher->_set('isInitialized', TRUE);
+
+		$firstMockSlot = $this->getMock('TYPO3\\CMS\\Extbase\\Tests\\Fixture\\SlotFixture');
+		$firstMockSlot->expects($this->once())
+			->method('slot')
+			->will($this->returnCallback(
+						function($foo, $baz) {
+							return array('modified_' . $foo, 'modified_' . $baz);}
+					));
+
+		$secondMockSlot = $this->getMock('TYPO3\\CMS\\Extbase\\Tests\\Fixture\\SlotFixture');
+		$secondMockSlot->expects($this->once())
+			->method('slot')
+			->with('modified_bar', 'modified_quux');
+
+
+		$this->signalSlotDispatcher->connect('Foo', 'emitBar', $firstMockSlot, 'slot', FALSE);
+		$this->signalSlotDispatcher->connect('Foo', 'emitBar', $secondMockSlot, 'slot', FALSE);
+
+		$this->signalSlotDispatcher->dispatch('Foo', 'emitBar', array('bar', 'quux'));
+	}
+
+	/**
+	 * @test
+	 */
+	public function dispatchHandsOverArgumentsReturnedByAFormerSlotWithoutInterferingWithSignalSlotInformation() {
+		$this->signalSlotDispatcher->_set('isInitialized', TRUE);
+
+		$firstMockSlot = $this->getMock('TYPO3\\CMS\\Extbase\\Tests\\Fixture\\SlotFixture');
+		$firstMockSlot->expects($this->once())
+			->method('slot')
+			->will($this->returnCallback(
+						function($foo, $baz) {
+							return array('modified_' . $foo, 'modified_' . $baz);}
+					));
+
+		$secondMockSlot = $this->getMock('TYPO3\\CMS\\Extbase\\Tests\\Fixture\\SlotFixture');
+		$secondMockSlot->expects($this->once())
+			->method('slot')
+			->with('modified_bar', 'modified_quux');
+
+		$this->signalSlotDispatcher->connect('Foo', 'emitBar', $firstMockSlot, 'slot');
+		$this->signalSlotDispatcher->connect('Foo', 'emitBar', $secondMockSlot, 'slot');
+
+		$this->signalSlotDispatcher->dispatch('Foo', 'emitBar', array('bar', 'quux'));
+	}
+
+	/**
+	 * @test
+	 */
+	public function dispatchHandsOverFormerArgumentsIfPreviousSlotDoesNotReturnAnything() {
+		$this->signalSlotDispatcher->_set('isInitialized', TRUE);
+
+		$firstMockSlot = $this->getMock('TYPO3\\CMS\\Extbase\\Tests\\Fixture\\SlotFixture');
+		$firstMockSlot->expects($this->once())
+			->method('slot')
+			->will($this->returnCallback(
+						function($foo, $baz) {
+							return array('modified_' . $foo, 'modified_' . $baz);}
+					));
+
+		$secondMockSlot = $this->getMock('TYPO3\\CMS\\Extbase\\Tests\\Fixture\\SlotFixture');
+		$secondMockSlot->expects($this->once())
+			->method('slot');
+
+		$thirdMockSlot = $this->getMock('TYPO3\\CMS\\Extbase\\Tests\\Fixture\\SlotFixture');
+		$thirdMockSlot->expects($this->once())
+			->method('slot')
+			->with('modified_bar', 'modified_quux');
+
+
+		$this->signalSlotDispatcher->connect('Foo', 'emitBar', $firstMockSlot, 'slot');
+		$this->signalSlotDispatcher->connect('Foo', 'emitBar', $secondMockSlot, 'slot');
+		$this->signalSlotDispatcher->connect('Foo', 'emitBar', $thirdMockSlot, 'slot');
+
+		$this->signalSlotDispatcher->dispatch('Foo', 'emitBar', array('bar', 'quux'));
+	}
+
+	/**
+	 * @test
+	 * @expectedException \TYPO3\CMS\Extbase\SignalSlot\Exception\InvalidSlotReturnException
+	 */
+	public function dispatchThrowsAnExceptionIfTheSlotReturnsNonArray() {
+		$this->signalSlotDispatcher->_set('isInitialized', TRUE);
+
+		$mockSlot = $this->getMock('TYPO3\\CMS\\Extbase\\Tests\\Fixture\\SlotFixture');
+		$mockSlot->expects($this->once())
+			->method('slot')
+			->will($this->returnCallback(
+						function() {
+							return 'string';}
+					));
+
+		$this->signalSlotDispatcher->connect('Foo', 'emitBar', $mockSlot, 'slot', FALSE);
+		$this->signalSlotDispatcher->dispatch('Foo', 'emitBar', array('bar', 'quux'));
+	}
+
+	/**
+	 * @test
+	 * @expectedException \TYPO3\CMS\Extbase\SignalSlot\Exception\InvalidSlotReturnException
+	 */
+	public function dispatchThrowsAnExceptionIfTheSlotReturnsDifferentNumberOfItems() {
+		$this->signalSlotDispatcher->_set('isInitialized', TRUE);
+
+		$mockSlot = $this->getMock('TYPO3\\CMS\\Extbase\\Tests\\Fixture\\SlotFixture');
+		$mockSlot->expects($this->once())
+			->method('slot')
+			->will($this->returnCallback(
+						function() {
+							return array(1, 2, 3);}
+					));
+
+		$this->signalSlotDispatcher->connect('Foo', 'emitBar', $mockSlot, 'slot', FALSE);
+		$this->signalSlotDispatcher->dispatch('Foo', 'emitBar', array('bar', 'quux'));
+	}
+
+	/**
+	 * @test
 	 * @expectedException \TYPO3\CMS\Extbase\SignalSlot\Exception\InvalidSlotException
-	 * @author Felix Oertel <f@oer.tel>
 	 */
 	public function dispatchThrowsAnExceptionIfTheSpecifiedClassOfASlotIsUnknown() {
 		$mockObjectManager = $this->getMock('TYPO3\\CMS\\Extbase\\Object\\ObjectManagerInterface');
@@ -137,7 +235,6 @@ class DispatcherTest extends \TYPO3\CMS\Extbase\Tests\Unit\BaseTestCase {
 	/**
 	 * @test
 	 * @expectedException \TYPO3\CMS\Extbase\SignalSlot\Exception\InvalidSlotException
-	 * @author Felix Oertel <f@oer.tel>
 	 */
 	public function dispatchThrowsAnExceptionIfTheSpecifiedSlotMethodDoesNotExist() {
 		$slotClassName = uniqid('Mock_');
@@ -149,13 +246,12 @@ class DispatcherTest extends \TYPO3\CMS\Extbase\Tests\Unit\BaseTestCase {
 		$this->signalSlotDispatcher->_set('objectManager', $mockObjectManager);
 		$this->signalSlotDispatcher->_set('isInitialized', TRUE);
 		$this->signalSlotDispatcher->connect('Foo', 'emitBar', $slotClassName, 'unknownMethodName', TRUE);
-		$this->signalSlotDispatcher->dispatch('Foo', 'emitBar', array('foo' => 'bar', 'baz' => 'quux'));
+		$this->signalSlotDispatcher->dispatch('Foo', 'emitBar', array('bar', 'quux'));
 		$this->assertSame($mockSlot->arguments, array('bar', 'quux'));
 	}
 
 	/**
 	 * @test
-	 * @author Felix Oertel <f@oer.tel>
 	 */
 	public function dispatchPassesFirstArgumentContainingSlotInformationIfTheConnectionStatesSo() {
 		$arguments = array();
@@ -166,7 +262,7 @@ class DispatcherTest extends \TYPO3\CMS\Extbase\Tests\Unit\BaseTestCase {
 		$this->signalSlotDispatcher->connect('SignalClassName', 'methodName', $mockSlot, NULL, TRUE);
 		$this->signalSlotDispatcher->_set('objectManager', $mockObjectManager);
 		$this->signalSlotDispatcher->_set('isInitialized', TRUE);
-		$this->signalSlotDispatcher->dispatch('SignalClassName', 'methodName', array('foo' => 'bar', 'baz' => 'quux'));
+		$this->signalSlotDispatcher->dispatch('SignalClassName', 'methodName', array('bar', 'quux'));
 		$this->assertSame(array('bar', 'quux', 'SignalClassName::methodName'), $arguments);
 	}
 
@@ -183,8 +279,27 @@ class DispatcherTest extends \TYPO3\CMS\Extbase\Tests\Unit\BaseTestCase {
 	 * @test
 	 * @author Alexander Schnitzler <alex.schnitzler@typovision.de>
 	 */
-	public function dispatchReturnsVoidIfSignalNameAndOrSignalClassNameIsNotRegistered() {
-		$this->assertSame(NULL, $this->signalSlotDispatcher->dispatch('ClassA', 'emitSomeSignal'));
+	public function dispatchReturnsEmptyArrayIfSignalNameAndOrSignalClassNameIsNotRegistered() {
+		$this->assertSame(array(), $this->signalSlotDispatcher->dispatch('ClassA', 'someNotRegisteredSignalName'));
+	}
+
+	/**
+	 * @test
+	 */
+	public function dispatchReturnsEmptyArrayIfSignalDoesNotProvideAnyArguments() {
+		$this->assertSame(array(), $this->signalSlotDispatcher->dispatch('ClassA', 'emitSomeSignal'));
+	}
+
+	/**
+	 * @test
+	 */
+	public function dispatchReturnsArgumentsArrayAsIsIfSignalIsNotRegistered() {
+		$arguments = array(
+			42,
+			'a string',
+			new \stdClass()
+		);
+		$this->assertSame($arguments, $this->signalSlotDispatcher->dispatch('ClassA', 'emitSomeSignal', $arguments));
 	}
 
 	/**
@@ -200,5 +315,3 @@ class DispatcherTest extends \TYPO3\CMS\Extbase\Tests\Unit\BaseTestCase {
 		$this->assertSame(NULL, $this->signalSlotDispatcher->dispatch('ClassA', 'emitSomeSignal'));
 	}
 }
-
-?>

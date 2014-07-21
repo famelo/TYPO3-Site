@@ -1,29 +1,18 @@
 <?php
 namespace TYPO3\CMS\Scheduler;
 
-/***************************************************************
- *  Copyright notice
+/**
+ * This file is part of the TYPO3 CMS project.
  *
- *  (c) 2005-2013 Christian Jul Jensen <julle@typo3.org>
+ * It is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License, either version 2
+ * of the License, or any later version.
  *
- *  All rights reserved
+ * For the full copyright and license information, please read the
+ * LICENSE.txt file that was distributed with this source code.
  *
- *  This script is part of the TYPO3 project. The TYPO3 project is
- *  free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
- *
- *  The GNU General Public License can be found at
- *  http://www.gnu.org/copyleft/gpl.html.
- *
- *  This script is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  This copyright notice MUST APPEAR in all copies of the script!
- ***************************************************************/
+ * The TYPO3 project - inspiring people to share!
+ */
 /**
  * TYPO3 Scheduler. This class handles scheduling and execution of tasks.
  * Formerly known as "Gabriel TYPO3 arch angel"
@@ -69,6 +58,8 @@ class Scheduler implements \TYPO3\CMS\Core\SingletonInterface {
 			$fields = array(
 				'crdate' => $GLOBALS['EXEC_TIME'],
 				'disable' => $task->isDisabled(),
+				'description' => $task->getDescription(),
+				'task_group' => $task->getTaskGroup(),
 				'serialized_task_object' => 'RESERVED'
 			);
 			$result = $GLOBALS['TYPO3_DB']->exec_INSERTquery('tx_scheduler_task', $fields);
@@ -117,7 +108,7 @@ class Scheduler implements \TYPO3\CMS\Core\SingletonInterface {
 				} else {
 					$value = serialize($executions);
 				}
-				$GLOBALS['TYPO3_DB']->exec_UPDATEquery('tx_scheduler_task', 'uid = ' . intval($row['uid']), array('serialized_executions' => $value));
+				$GLOBALS['TYPO3_DB']->exec_UPDATEquery('tx_scheduler_task', 'uid = ' . (int)$row['uid'], array('serialized_executions' => $value));
 			}
 		}
 		$GLOBALS['TYPO3_DB']->sql_free_result($res);
@@ -233,6 +224,8 @@ class Scheduler implements \TYPO3\CMS\Core\SingletonInterface {
 			$fields = array(
 				'nextexecution' => $executionTime,
 				'disable' => $task->isDisabled(),
+				'description' => $task->getDescription(),
+				'task_group' => $task->getTaskGroup(),
 				'serialized_task_object' => serialize($task)
 			);
 			$result = $GLOBALS['TYPO3_DB']->exec_UPDATEquery('tx_scheduler_task', 'uid = ' . $taskUid, $fields);
@@ -257,16 +250,21 @@ class Scheduler implements \TYPO3\CMS\Core\SingletonInterface {
 		// Define where clause
 		// If no uid is given, take any non-disabled task which has a next execution time in the past
 		if (empty($uid)) {
-			$whereClause = 'disable = 0 AND nextexecution != 0 AND nextexecution <= ' . $GLOBALS['EXEC_TIME'];
+			$queryArray = array(
+				'SELECT' => 'tx_scheduler_task.uid AS uid, serialized_task_object',
+				'FROM' => 'tx_scheduler_task LEFT JOIN tx_scheduler_task_group ON tx_scheduler_task.task_group = tx_scheduler_task_group.uid',
+				'WHERE' => 'disable = 0 AND nextexecution != 0 AND nextexecution <= ' . $GLOBALS['EXEC_TIME'] . ' AND (tx_scheduler_task_group.hidden = 0 OR tx_scheduler_task_group.hidden IS NULL)',
+				'LIMIT' => 1
+			);
 		} else {
-			$whereClause = 'uid = ' . intval($uid);
+			$queryArray = array(
+				'SELECT' => 'uid, serialized_task_object',
+				'FROM' => 'tx_scheduler_task',
+				'WHERE' => 'uid = ' . (int)$uid,
+				'LIMIT' => 1
+			);
 		}
-		$queryArray = array(
-			'SELECT' => 'uid, serialized_task_object',
-			'FROM' => 'tx_scheduler_task',
-			'WHERE' => $whereClause,
-			'LIMIT' => 1
-		);
+
 		$res = $GLOBALS['TYPO3_DB']->exec_SELECT_queryArray($queryArray);
 		// If there are no available tasks, thrown an exception
 		if ($GLOBALS['TYPO3_DB']->sql_num_rows($res) == 0) {
@@ -299,10 +297,10 @@ class Scheduler implements \TYPO3\CMS\Core\SingletonInterface {
 	 * @see tx_scheduler::fetchTask()
 	 */
 	public function fetchTaskRecord($uid) {
-		$res = $GLOBALS['TYPO3_DB']->exec_SELECTquery('*', 'tx_scheduler_task', 'uid = ' . intval($uid));
+		$res = $GLOBALS['TYPO3_DB']->exec_SELECTquery('*', 'tx_scheduler_task', 'uid = ' . (int)$uid);
 		// If the task is not found, throw an exception
 		if ($GLOBALS['TYPO3_DB']->sql_num_rows($res) == 0) {
-			throw new \OutOfBoundsException('No task', 1247827244);
+			throw new \OutOfBoundsException('No task', 1247827245);
 		} else {
 			$row = $GLOBALS['TYPO3_DB']->sql_fetch_assoc($res);
 			$GLOBALS['TYPO3_DB']->sql_free_result($res);
@@ -386,7 +384,7 @@ class Scheduler implements \TYPO3\CMS\Core\SingletonInterface {
 	 * @see tx_scheduler::fetchTask()
 	 */
 	public function scheduleNextSchedulerRunUsingAtDaemon() {
-		if ((int) $this->extConf['useAtdaemon'] !== 1) {
+		if ((int)$this->extConf['useAtdaemon'] !== 1) {
 			return FALSE;
 		}
 		/** @var $registry \TYPO3\CMS\Core\Registry */
@@ -394,7 +392,7 @@ class Scheduler implements \TYPO3\CMS\Core\SingletonInterface {
 		// Get at job id from registry and remove at job
 		$atJobId = $registry->get('tx_scheduler', 'atJobId');
 		if (\TYPO3\CMS\Core\Utility\MathUtility::canBeInterpretedAsInteger($atJobId)) {
-			shell_exec('atrm ' . (int) $atJobId . ' 2>&1');
+			shell_exec('atrm ' . (int)$atJobId . ' 2>&1');
 		}
 		// Can not use fetchTask() here because if tasks have just executed
 		// they are not in the list of next executions
@@ -436,7 +434,7 @@ class Scheduler implements \TYPO3\CMS\Core\SingletonInterface {
 				}
 			}
 			if ($outputParts[0] === 'job' && \TYPO3\CMS\Core\Utility\MathUtility::canBeInterpretedAsInteger($outputParts[1])) {
-				$atJobId = (int) $outputParts[1];
+				$atJobId = (int)$outputParts[1];
 				$registry->set('tx_scheduler', 'atJobId', $atJobId);
 			}
 		}
@@ -444,6 +442,3 @@ class Scheduler implements \TYPO3\CMS\Core\SingletonInterface {
 	}
 
 }
-
-
-?>

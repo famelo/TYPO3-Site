@@ -1,32 +1,18 @@
 <?php
 namespace TYPO3\CMS\Extbase\Mvc\Controller;
 
-/***************************************************************
- *  Copyright notice
+/**
+ * This file is part of the TYPO3 CMS project.
  *
- *  (c) 2010-2013 Extbase Team (http://forge.typo3.org/projects/typo3v4-mvc)
- *  Extbase is a backport of TYPO3 Flow. All credits go to the TYPO3 Flow team.
- *  All rights reserved
+ * It is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License, either version 2
+ * of the License, or any later version.
  *
- *  This script is part of the TYPO3 project. The TYPO3 project is
- *  free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
+ * For the full copyright and license information, please read the
+ * LICENSE.txt file that was distributed with this source code.
  *
- *  The GNU General Public License can be found at
- *  http://www.gnu.org/copyleft/gpl.html.
- *  A copy is found in the textfile GPL.txt and important notices to the license
- *  from the author is found in LICENSE.txt distributed with these scripts.
- *
- *
- *  This script is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  This copyright notice MUST APPEAR in all copies of the script!
- ***************************************************************/
+ * The TYPO3 project - inspiring people to share!
+ */
 /**
  * An abstract base class for Controllers
  *
@@ -36,6 +22,7 @@ abstract class AbstractController implements \TYPO3\CMS\Extbase\Mvc\Controller\C
 
 	/**
 	 * @var \TYPO3\CMS\Extbase\SignalSlot\Dispatcher
+	 * @inject
 	 */
 	protected $signalSlotDispatcher;
 
@@ -81,11 +68,13 @@ abstract class AbstractController implements \TYPO3\CMS\Extbase\Mvc\Controller\C
 	/**
 	 * @var \TYPO3\CMS\Extbase\Property\Mapper
 	 * @deprecated since Extbase 1.4.0, will be removed two versions after Extbase 6.1
+	 * @inject
 	 */
 	protected $deprecatedPropertyMapper;
 
 	/**
 	 * @var \TYPO3\CMS\Extbase\Validation\ValidatorResolver
+	 * @inject
 	 */
 	protected $validatorResolver;
 
@@ -165,17 +154,6 @@ abstract class AbstractController implements \TYPO3\CMS\Extbase\Mvc\Controller\C
 	}
 
 	/**
-	 * Injects the property mapper
-	 *
-	 * @param \TYPO3\CMS\Extbase\Property\Mapper $deprecatedPropertyMapper The property mapper
-	 * @return void
-	 * @deprecated since Extbase 1.4.0, will be removed two versions after Extbase 6.1
-	 */
-	public function injectDeprecatedPropertyMapper(\TYPO3\CMS\Extbase\Property\Mapper $deprecatedPropertyMapper) {
-		$this->deprecatedPropertyMapper = $deprecatedPropertyMapper;
-	}
-
-	/**
 	 * Injects the object manager
 	 *
 	 * @param \TYPO3\CMS\Extbase\Object\ObjectManagerInterface $objectManager
@@ -187,32 +165,39 @@ abstract class AbstractController implements \TYPO3\CMS\Extbase\Mvc\Controller\C
 	}
 
 	/**
-	 * Injects the validator resolver
-	 *
-	 * @param \TYPO3\CMS\Extbase\Validation\ValidatorResolver $validatorResolver
-	 * @return void
-	 */
-	public function injectValidatorResolver(\TYPO3\CMS\Extbase\Validation\ValidatorResolver $validatorResolver) {
-		$this->validatorResolver = $validatorResolver;
-	}
-
-	/**
-	 * Injects the flash messages container
+	 * This method is deprecated! For further information have a look at
+	 * the PhpDoc of class \TYPO3\CMS\Extbase\Mvc\Controller\FlashMessageContainer
 	 *
 	 * @param \TYPO3\CMS\Extbase\Mvc\Controller\FlashMessageContainer $flashMessageContainer
 	 * @return void
+	 *
+	 * @deprecated since Extbase 6.1, will be removed 2 versions later
 	 */
 	public function injectFlashMessageContainer(\TYPO3\CMS\Extbase\Mvc\Controller\FlashMessageContainer $flashMessageContainer) {
 		$this->flashMessageContainer = $flashMessageContainer;
 	}
 
 	/**
-	 * Injects the signal slot dispatcher
+	 * Creates a Message object and adds it to the FlashMessageQueue.
 	 *
-	 * @param \TYPO3\CMS\Extbase\SignalSlot\Dispatcher $signalSlotDispatcher
+	 * @param string $messageBody The message
+	 * @param string $messageTitle Optional message title
+	 * @param integer $severity Optional severity, must be one of \TYPO3\CMS\Core\Messaging\FlashMessage constants
+	 * @param boolean $storeInSession Optional, defines whether the message should be stored in the session (default) or not
+	 * @return void
+	 * @throws \InvalidArgumentException if the message body is no string
+	 * @see \TYPO3\CMS\Core\Messaging\FlashMessage
+	 * @api
 	 */
-	public function injectSignalSlotDispatcher(\TYPO3\CMS\Extbase\SignalSlot\Dispatcher $signalSlotDispatcher) {
-		$this->signalSlotDispatcher = $signalSlotDispatcher;
+	public function addFlashMessage($messageBody, $messageTitle = '', $severity = \TYPO3\CMS\Core\Messaging\AbstractMessage::OK, $storeInSession = TRUE) {
+		if (!is_string($messageBody)) {
+			throw new \InvalidArgumentException('The message body must be of type string, "' . gettype($messageBody) . '" given.', 1243258395);
+		}
+		/* @var \TYPO3\CMS\Core\Messaging\FlashMessage $flashMessage */
+		$flashMessage = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance(
+			'TYPO3\\CMS\\Core\\Messaging\\FlashMessage', $messageBody, $messageTitle, $severity, $storeInSession
+		);
+		$this->controllerContext->getFlashMessageQueue()->enqueue($flashMessage);
 	}
 
 	/**
@@ -246,7 +231,7 @@ abstract class AbstractController implements \TYPO3\CMS\Extbase\Mvc\Controller\C
 	 */
 	public function processRequest(\TYPO3\CMS\Extbase\Mvc\RequestInterface $request, \TYPO3\CMS\Extbase\Mvc\ResponseInterface $response) {
 		if (!$this->canProcessRequest($request)) {
-			throw new \TYPO3\CMS\Extbase\Mvc\Exception\UnsupportedRequestTypeException(get_class($this) . ' does not support requests of type "' . get_class($request) . '". Supported types are: ' . implode(' ', $this->supportedRequestTypes), 1187701131);
+			throw new \TYPO3\CMS\Extbase\Mvc\Exception\UnsupportedRequestTypeException(get_class($this) . ' does not support requests of type "' . get_class($request) . '". Supported types are: ' . implode(' ', $this->supportedRequestTypes), 1187701132);
 		}
 		$response->setRequest($request);
 		$this->request = $request;
@@ -362,14 +347,14 @@ abstract class AbstractController implements \TYPO3\CMS\Extbase\Mvc\Controller\C
 	 */
 	protected function redirectToUri($uri, $delay = 0, $statusCode = 303) {
 		if (!$this->request instanceof \TYPO3\CMS\Extbase\Mvc\Web\Request) {
-			throw new \TYPO3\CMS\Extbase\Mvc\Exception\UnsupportedRequestTypeException('redirect() only supports web requests.', 1220539734);
+			throw new \TYPO3\CMS\Extbase\Mvc\Exception\UnsupportedRequestTypeException('redirect() only supports web requests.', 1220539735);
 		}
 
 		$this->objectManager->get('TYPO3\CMS\Extbase\Service\CacheService')->clearCachesOfRegisteredPageIds();
 
 		$uri = $this->addBaseUriIfNecessary($uri);
 		$escapedUri = htmlentities($uri, ENT_QUOTES, 'utf-8');
-		$this->response->setContent('<html><head><meta http-equiv="refresh" content="' . intval($delay) . ';url=' . $escapedUri . '"/></head></html>');
+		$this->response->setContent('<html><head><meta http-equiv="refresh" content="' . (int)$delay . ';url=' . $escapedUri . '"/></head></html>');
 		$this->response->setStatus($statusCode);
 		$this->response->setHeader('Location', (string) $uri);
 		throw new \TYPO3\CMS\Extbase\Mvc\Exception\StopActionException();
@@ -456,5 +441,3 @@ abstract class AbstractController implements \TYPO3\CMS\Extbase\Mvc\Controller\C
 		}
 	}
 }
-
-?>

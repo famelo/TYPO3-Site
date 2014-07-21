@@ -24,6 +24,9 @@
 			<trans-unit id="allowed_languages" xml:space="preserve">
 				<source>Limit to languages:</source>
 			</trans-unit>
+			<trans-unit id="category_perms" xml:space="preserve">
+				<source>Category Mounts:</source>
+			</trans-unit>
 			<trans-unit id="workspace_perms" xml:space="preserve">
 				<source>Workspace permissions:</source>
 			</trans-unit>
@@ -81,11 +84,38 @@
 			<trans-unit id="be_users.fileoper_perms" xml:space="preserve">
 				<source>Fileoperation permissions:</source>
 			</trans-unit>
-			<trans-unit id="be_users.fileoper_perms_general" xml:space="preserve">
-				<source>Files: Upload,Copy,Move,Delete,Rename,New,Edit</source>
+			<trans-unit id="be_users.file_permissions.files" xml:space="preserve">
+				<source>Files:</source>
+			</trans-unit>
+			<trans-unit id="be_users.file_permissions.files_read" xml:space="preserve">
+				<source>Files: Read</source>
+			</trans-unit>
+			<trans-unit id="be_users.file_permissions.files_write" xml:space="preserve">
+				<source>Files: Write</source>
+			</trans-unit>
+			<trans-unit id="be_users.file_permissions.files_add" xml:space="preserve">
+				<source>Files: Add</source>
+			</trans-unit>
+			<trans-unit id="be_users.file_permissions.files_upload" xml:space="preserve">
+				<source>Files: Upload</source>
+			</trans-unit>
+			<trans-unit id="be_users.file_permissions.files_rename" xml:space="preserve">
+				<source>Files: Rename</source>
+			</trans-unit>
+			<trans-unit id="be_users.file_permissions.files_move" xml:space="preserve">
+				<source>Files: Move</source>
+			</trans-unit>
+			<trans-unit id="be_users.file_permissions.files_copy" xml:space="preserve">
+				<source>Files: Copy</source>
 			</trans-unit>
 			<trans-unit id="be_users.fileoper_perms_unzip" xml:space="preserve">
 				<source>Files: Unzip</source>
+			</trans-unit>
+			<trans-unit id="be_users.file_permissions.file_delete" xml:space="preserve">
+				<source>Files: Delete</source>
+			</trans-unit>
+			<trans-unit id="be_users.fileoper_perms_general" xml:space="preserve">
+				<source>Files: Upload,Copy,Move,Delete,Rename,New,Edit</source>
 			</trans-unit>
 			<trans-unit id="be_users.fileoper_perms_diroper_perms" xml:space="preserve">
 				<source>Directory: Move,Delete,Rename,New</source>
@@ -153,11 +183,68 @@
 			<trans-unit id="be_groups.fileoper_perms" xml:space="preserve">
 				<source>Fileoperation permissions:</source>
 			</trans-unit>
-			<trans-unit id="be_groups.fileoper_perms_general" xml:space="preserve">
-				<source>Files: Upload,Copy,Move,Delete,Rename,New,Edit</source>
+			<trans-unit id="be_groups.file_permissions.folder" xml:space="preserve">
+				<source>Directory:</source>
+			</trans-unit>
+			<trans-unit id="be_groups.file_permissions.folder_read" xml:space="preserve">
+				<source>Directory: Read</source>
+			</trans-unit>
+			<trans-unit id="be_groups.file_permissions.folder_write" xml:space="preserve">
+				<source>Directory: Write</source>
+			</trans-unit>
+			<trans-unit id="be_groups.file_permissions.folder_add" xml:space="preserve">
+				<source>Directory: Add</source>
+			</trans-unit>
+			<trans-unit id="be_groups.file_permissions.folder_rename" xml:space="preserve">
+				<source>Directory: Rename</source>
+			</trans-unit>
+			<trans-unit id="be_groups.file_permissions.folder_move" xml:space="preserve">
+				<source>Directory: Move</source>
+			</trans-unit>
+			<trans-unit id="be_groups.file_permissions.folder_copy" xml:space="preserve">
+				<source>Directory: Copy</source>
+			</trans-unit>
+			<trans-unit id="be_groups.file_permissions.folder_delete" xml:space="preserve">
+				<source>Directory: Delete</source>
+			</trans-unit>
+			<trans-unit id="be_groups.file_permissions.folder_recursivedelete" xml:space="preserve">
+				<source>Directory: Delete recursively</source>
+			</trans-unit>
+			<trans-unit id="be_groups.file_permissions.files" xml:space="preserve">
+				<source>Files:</source>
+			</trans-unit>
+			<trans-unit id="be_groups.file_permissions.files_read" xml:space="preserve">
+				<source>Files: Read</source>
+			</trans-unit>
+			<trans-unit id="be_groups.file_permissions.files_write" xml:space="preserve">
+				<source>Files: Write</source>
+			</trans-unit>
+			<trans-unit id="be_groups.file_permissions.files_edit" xml:space="preserve">
+				<source>Files: Edit</source>
+			</trans-unit>
+			<trans-unit id="be_groups.file_permissions.files_add" xml:space="preserve">
+				<source>Files: Add</source>
+			</trans-unit>
+			<trans-unit id="be_groups.file_permissions.files_upload" xml:space="preserve">
+				<source>Files: Upload</source>
+			</trans-unit>
+			<trans-unit id="be_groups.file_permissions.files_rename" xml:space="preserve">
+				<source>Files: Rename</source>
+			</trans-unit>
+			<trans-unit id="be_groups.file_permissions.files_move" xml:space="preserve">
+				<source>Files: Move</source>
+			</trans-unit>
+			<trans-unit id="be_groups.file_permissions.files_copy" xml:space="preserve">
+				<source>Files: Copy</source>
 			</trans-unit>
 			<trans-unit id="be_groups.fileoper_perms_unzip" xml:space="preserve">
 				<source>Files: Unzip</source>
+			</trans-unit>
+			<trans-unit id="be_groups.file_permissions.files_delete" xml:space="preserve">
+				<source>Files: Delete</source>
+			</trans-unit>
+			<trans-unit id="be_groups.fileoper_perms_general" xml:space="preserve">
+				<source>Files: Upload,Copy,Move,Delete,Rename,New,Edit</source>
 			</trans-unit>
 			<trans-unit id="be_groups.fileoper_perms_diroper_perms" xml:space="preserve">
 				<source>Directory: Move,Delete,Rename,New</source>
@@ -324,11 +411,14 @@
 			<trans-unit id="sys_file_storage.is_online" xml:space="preserve">
 				<source>Is online?</source>
 			</trans-unit>
+			<trans-unit id="sys_file_storage.is_default" xml:space="preserve">
+				<source>Is default storage?</source>
+			</trans-unit>
 			<trans-unit id="sys_file_storage.is_browsable" xml:space="preserve">
 				<source>Is browsable?</source>
 			</trans-unit>
 			<trans-unit id="sys_file_storage.is_public" xml:space="preserve">
-				<source>Is publically available?</source>
+				<source>Is publicly available?</source>
 			</trans-unit>
 			<trans-unit id="sys_file_storage.is_writable" xml:space="preserve">
 				<source>Is writable?</source>
@@ -405,6 +495,15 @@
 			<trans-unit id="sys_file.alternative" xml:space="preserve">
 				<source>Alternative Text</source>
 			</trans-unit>
+			<trans-unit id="sys_file.missing" xml:space="preserve">
+				<source>Marked as missing</source>
+			</trans-unit>
+			<trans-unit id="sys_file.metadata" xml:space="preserve">
+				<source>Metadata records</source>
+			</trans-unit>
+			<trans-unit id="sys_file_metadata" xml:space="preserve">
+				<source>File Metadata</source>
+			</trans-unit>
 			<trans-unit id="sys_file_reference" xml:space="preserve">
 				<source>File Reference</source>
 			</trans-unit>
@@ -462,11 +561,17 @@
 			<trans-unit id="sys_file_collection.type.1" xml:space="preserve">
 				<source>Folder from Storage</source>
 			</trans-unit>
+			<trans-unit id="sys_file_collection.type.2" xml:space="preserve">
+				<source>Select by category</source>
+			</trans-unit>
 			<trans-unit id="sys_file_collection.storage" xml:space="preserve">
 				<source>File Storage</source>
 			</trans-unit>
 			<trans-unit id="sys_file_collection.folder" xml:space="preserve">
 				<source>Folder</source>
+			</trans-unit>
+			<trans-unit id="sys_file_collection.category" xml:space="preserve">
+				<source>Category</source>
 			</trans-unit>
 			<trans-unit id="sys_language" xml:space="preserve">
 				<source>Website Language</source>

@@ -1,32 +1,21 @@
 <?php
 namespace TYPO3\CMS\Extbase\Mvc\Controller;
 
-/***************************************************************
- *  Copyright notice
+/**
+ * This file is part of the TYPO3 CMS project.
  *
- *  (c) 2010-2013 Extbase Team (http://forge.typo3.org/projects/typo3v4-mvc)
- *  Extbase is a backport of TYPO3 Flow. All credits go to the TYPO3 Flow team.
- *  All rights reserved
+ * It is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License, either version 2
+ * of the License, or any later version.
  *
- *  This script is part of the TYPO3 project. The TYPO3 project is
- *  free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
+ * For the full copyright and license information, please read the
+ * LICENSE.txt file that was distributed with this source code.
  *
- *  The GNU General Public License can be found at
- *  http://www.gnu.org/copyleft/gpl.html.
- *  A copy is found in the textfile GPL.txt and important notices to the license
- *  from the author is found in LICENSE.txt distributed with these scripts.
- *
- *
- *  This script is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  This copyright notice MUST APPEAR in all copies of the script!
- ***************************************************************/
+ * The TYPO3 project - inspiring people to share!
+ */
+use TYPO3\CMS\Extbase\Configuration\ConfigurationManagerInterface;
+use TYPO3\CMS\Extbase\Mvc\View\ViewInterface;
+
 /**
  * A multi action controller. This is by far the most common base class for Controllers.
  *
@@ -36,18 +25,20 @@ class ActionController extends \TYPO3\CMS\Extbase\Mvc\Controller\AbstractControl
 
 	/**
 	 * @var \TYPO3\CMS\Extbase\Reflection\ReflectionService
+	 * @inject
 	 */
 	protected $reflectionService;
 
 	/**
 	 * @var \TYPO3\CMS\Extbase\Service\CacheService
+	 * @inject
 	 */
 	protected $cacheService;
 
 	/**
 	 * The current view, as resolved by resolveView()
 	 *
-	 * @var \TYPO3\CMS\Extbase\Mvc\View\ViewInterface
+	 * @var ViewInterface
 	 * @api
 	 */
 	protected $view = NULL;
@@ -106,32 +97,10 @@ class ActionController extends \TYPO3\CMS\Extbase\Mvc\Controller\AbstractControl
 
 	/**
 	 * @var \TYPO3\CMS\Extbase\Mvc\Controller\MvcPropertyMappingConfigurationService
+	 * @inject
 	 * @api
 	 */
 	protected $mvcPropertyMappingConfigurationService;
-
-	/**
-	 * @param \TYPO3\CMS\Extbase\Reflection\ReflectionService $reflectionService
-	 * @return void
-	 */
-	public function injectReflectionService(\TYPO3\CMS\Extbase\Reflection\ReflectionService $reflectionService) {
-		$this->reflectionService = $reflectionService;
-	}
-
-	/**
-	 * @param \TYPO3\CMS\Extbase\Service\CacheService $cacheService
-	 * @return void
-	 */
-	public function injectCacheService(\TYPO3\CMS\Extbase\Service\CacheService $cacheService) {
-		$this->cacheService = $cacheService;
-	}
-
-	/**
-	 * @param \TYPO3\CMS\Extbase\Mvc\Controller\MvcPropertyMappingConfigurationService $mvcPropertyMappingConfigurationService
-	 */
-	public function injectMvcPropertyMappingConfigurationService(\TYPO3\CMS\Extbase\Mvc\Controller\MvcPropertyMappingConfigurationService $mvcPropertyMappingConfigurationService) {
-		$this->mvcPropertyMappingConfigurationService = $mvcPropertyMappingConfigurationService;
-	}
 
 	/**
 	 * Checks if the current request type is supported by the controller.
@@ -141,6 +110,7 @@ class ActionController extends \TYPO3\CMS\Extbase\Mvc\Controller\AbstractControl
 	 * method.
 	 *
 	 * @param \TYPO3\CMS\Extbase\Mvc\RequestInterface $request The current request
+	 *
 	 * @return boolean TRUE if this request type is supported, otherwise FALSE
 	 */
 	public function canProcessRequest(\TYPO3\CMS\Extbase\Mvc\RequestInterface $request) {
@@ -152,6 +122,7 @@ class ActionController extends \TYPO3\CMS\Extbase\Mvc\Controller\AbstractControl
 	 *
 	 * @param \TYPO3\CMS\Extbase\Mvc\RequestInterface $request The request object
 	 * @param \TYPO3\CMS\Extbase\Mvc\ResponseInterface $response The response, modified by this handler
+	 *
 	 * @throws \TYPO3\CMS\Extbase\Mvc\Exception\UnsupportedRequestTypeException
 	 * @return void
 	 */
@@ -214,37 +185,67 @@ class ActionController extends \TYPO3\CMS\Extbase\Mvc\Controller\AbstractControl
 	}
 
 	/**
-	 * Adds the needed valiators to the Arguments:
-	 * - Validators checking the data type from the @param annotation
-	 * - Custom validators specified with @validate.
+	 * Adds the needed validators to the Arguments:
 	 *
-	 * In case @dontvalidate is NOT set for an argument, the following two
-	 * validators are also added:
-	 * - Model-based validators (@validate annotations in the model)
+	 * - Validators checking the data type from the @param annotation
+	 * - Custom validators specified with validate annotations.
+	 * - Model-based validators (validate annotations in the model)
 	 * - Custom model validator classes
 	 *
 	 * @return void
 	 */
 	protected function initializeActionMethodValidators() {
-		// TODO: still needs to be modified
-		$parameterValidators = $this->validatorResolver->buildMethodArgumentsValidatorConjunctions(get_class($this), $this->actionMethodName);
-		$dontValidateAnnotations = array();
+
 		if (!$this->configurationManager->isFeatureEnabled('rewrittenPropertyMapper')) {
-			// If the rewritten property mapper is *enabled*, we do not support @dontvalidate annotation, thus $dontValidateAnnotations stays empty.
+			// @deprecated since Extbase 1.4.0, will be removed two versions after Extbase 6.1
+
+			$parameterValidators = $this->validatorResolver->buildMethodArgumentsValidatorConjunctions(get_class($this), $this->actionMethodName);
+			$dontValidateAnnotations = array();
+
 			$methodTagsValues = $this->reflectionService->getMethodTagsValues(get_class($this), $this->actionMethodName);
 			if (isset($methodTagsValues['dontvalidate'])) {
 				$dontValidateAnnotations = $methodTagsValues['dontvalidate'];
 			}
-		}
-		foreach ($this->arguments as $argument) {
-			$validator = $parameterValidators[$argument->getName()];
-			if (array_search('$' . $argument->getName(), $dontValidateAnnotations) === FALSE) {
+
+			foreach ($this->arguments as $argument) {
+				$validator = $parameterValidators[$argument->getName()];
+				if (array_search('$' . $argument->getName(), $dontValidateAnnotations) === FALSE) {
+					$baseValidatorConjunction = $this->validatorResolver->getBaseValidatorConjunction($argument->getDataType());
+					if ($baseValidatorConjunction !== NULL) {
+						$validator->addValidator($baseValidatorConjunction);
+					}
+				}
+				$argument->setValidator($validator);
+			}
+		} else {
+			/**
+			 * @todo: add validation group support
+			 * (https://review.typo3.org/#/c/13556/4)
+			 */
+
+			$actionMethodParameters = static::getActionMethodParameters($this->objectManager);
+			if (isset($actionMethodParameters[$this->actionMethodName])) {
+				$methodParameters = $actionMethodParameters[$this->actionMethodName];
+			} else {
+				$methodParameters = array();
+			}
+
+			/**
+			 * @todo: add resolving of $actionValidateAnnotations and pass them to
+			 * buildMethodArgumentsValidatorConjunctions as in TYPO3.Flow
+			 */
+
+			$parameterValidators = $this->validatorResolver->buildMethodArgumentsValidatorConjunctions(get_class($this), $this->actionMethodName, $methodParameters);
+
+			foreach ($this->arguments as $argument) {
+				$validator = $parameterValidators[$argument->getName()];
+
 				$baseValidatorConjunction = $this->validatorResolver->getBaseValidatorConjunction($argument->getDataType());
-				if ($baseValidatorConjunction !== NULL) {
+				if (count($baseValidatorConjunction) > 0) {
 					$validator->addValidator($baseValidatorConjunction);
 				}
+				$argument->setValidator($validator);
 			}
-			$argument->setValidator($validator);
 		}
 	}
 
@@ -281,7 +282,7 @@ class ActionController extends \TYPO3\CMS\Extbase\Mvc\Controller\AbstractControl
 			}
 			$validationResult = $this->arguments->getValidationResults();
 			if (!$validationResult->hasErrors()) {
-				$this->signalSlotDispatcher->dispatch(__CLASS__, 'beforeCallActionMethod', array('controllerName' => get_class($this), 'actionMethodName' => $this->actionMethodName, 'preparedArguments' => $preparedArguments));
+				$this->emitBeforeCallActionMethodSignal($preparedArguments);
 				$actionResult = call_user_func_array(array($this, $this->actionMethodName), $preparedArguments);
 			} else {
 				$methodTagsValues = $this->reflectionService->getMethodTagsValues(get_class($this), $this->actionMethodName);
@@ -302,7 +303,7 @@ class ActionController extends \TYPO3\CMS\Extbase\Mvc\Controller\AbstractControl
 					$shouldCallActionMethod = FALSE;
 				}
 				if ($shouldCallActionMethod) {
-					$this->signalSlotDispatcher->dispatch(__CLASS__, 'beforeCallActionMethod', array('controllerName' => get_class($this), 'actionMethodName' => $this->actionMethodName, 'preparedArguments' => $preparedArguments));
+					$this->emitBeforeCallActionMethodSignal($preparedArguments);
 					$actionResult = call_user_func_array(array($this, $this->actionMethodName), $preparedArguments);
 				} else {
 					$actionResult = call_user_func(array($this, $this->errorMethodName));
@@ -317,17 +318,26 @@ class ActionController extends \TYPO3\CMS\Extbase\Mvc\Controller\AbstractControl
 			if ($this->argumentsMappingResults->hasErrors()) {
 				$actionResult = call_user_func(array($this, $this->errorMethodName));
 			} else {
-				$this->signalSlotDispatcher->dispatch(__CLASS__, 'beforeCallActionMethod', array('controllerName' => get_class($this), 'actionMethodName' => $this->actionMethodName, 'preparedArguments' => $preparedArguments));
+				$this->emitBeforeCallActionMethodSignal($preparedArguments);
 				$actionResult = call_user_func_array(array($this, $this->actionMethodName), $preparedArguments);
 			}
 		}
-		if ($actionResult === NULL && $this->view instanceof \TYPO3\CMS\Extbase\Mvc\View\ViewInterface) {
+		if ($actionResult === NULL && $this->view instanceof ViewInterface) {
 			$this->response->appendContent($this->view->render());
 		} elseif (is_string($actionResult) && strlen($actionResult) > 0) {
 			$this->response->appendContent($actionResult);
 		} elseif (is_object($actionResult) && method_exists($actionResult, '__toString')) {
-			$this->response->appendContent((string) $actionResult);
+			$this->response->appendContent((string)$actionResult);
 		}
+	}
+
+	/**
+	 * Emits a signal before the current action is called
+	 *
+	 * @param array $preparedArguments
+	 */
+	protected function emitBeforeCallActionMethodSignal(array $preparedArguments) {
+		$this->signalSlotDispatcher->dispatch(__CLASS__, 'beforeCallActionMethod', array(get_class($this), $this->actionMethodName, $preparedArguments));
 	}
 
 	/**
@@ -341,7 +351,7 @@ class ActionController extends \TYPO3\CMS\Extbase\Mvc\Controller\AbstractControl
 	protected function resolveView() {
 		$viewObjectName = $this->resolveViewObjectName();
 		if ($viewObjectName !== FALSE) {
-			/** @var $view \TYPO3\CMS\Extbase\Mvc\View\ViewInterface */
+			/** @var $view ViewInterface */
 			$view = $this->objectManager->get($viewObjectName);
 			$this->setViewConfiguration($view);
 			if ($view->canRender($this->controllerContext) === FALSE) {
@@ -349,7 +359,7 @@ class ActionController extends \TYPO3\CMS\Extbase\Mvc\Controller\AbstractControl
 			}
 		}
 		if (!isset($view) && $this->defaultViewObjectName != '') {
-			/** @var $view \TYPO3\CMS\Extbase\Mvc\View\ViewInterface */
+			/** @var $view ViewInterface */
 			$view = $this->objectManager->get($this->defaultViewObjectName);
 			$this->setViewConfiguration($view);
 			if ($view->canRender($this->controllerContext) === FALSE) {
@@ -373,21 +383,87 @@ class ActionController extends \TYPO3\CMS\Extbase\Mvc\Controller\AbstractControl
 	}
 
 	/**
-	 * @param \TYPO3\CMS\Extbase\Mvc\View\ViewInterface $view
+	 * @param ViewInterface $view
+	 *
 	 * @return void
 	 */
-	protected function setViewConfiguration(\TYPO3\CMS\Extbase\Mvc\View\ViewInterface $view) {
+	protected function setViewConfiguration(ViewInterface $view) {
 		// Template Path Override
-		$extbaseFrameworkConfiguration = $this->configurationManager->getConfiguration(\TYPO3\CMS\Extbase\Configuration\ConfigurationManagerInterface::CONFIGURATION_TYPE_FRAMEWORK);
-		if (isset($extbaseFrameworkConfiguration['view']['templateRootPath']) && strlen($extbaseFrameworkConfiguration['view']['templateRootPath']) > 0 && method_exists($view, 'setTemplateRootPath')) {
-			$view->setTemplateRootPath(\TYPO3\CMS\Core\Utility\GeneralUtility::getFileAbsFileName($extbaseFrameworkConfiguration['view']['templateRootPath']));
+		$extbaseFrameworkConfiguration = $this->configurationManager->getConfiguration(
+			ConfigurationManagerInterface::CONFIGURATION_TYPE_FRAMEWORK
+		);
+
+		// set TemplateRootPaths
+		$viewFunctionName = 'setTemplateRootPaths';
+		if (method_exists($view, $viewFunctionName)) {
+			$deprecatedSetting = 'templateRootPath';
+			$setting = 'templateRootPaths';
+			$parameter = $this->getViewProperty($extbaseFrameworkConfiguration, $setting, $deprecatedSetting);
+			// no need to bother if there is nothing to set
+			if ($parameter) {
+				$view->$viewFunctionName($parameter);
+			}
 		}
-		if (isset($extbaseFrameworkConfiguration['view']['layoutRootPath']) && strlen($extbaseFrameworkConfiguration['view']['layoutRootPath']) > 0 && method_exists($view, 'setLayoutRootPath')) {
-			$view->setLayoutRootPath(\TYPO3\CMS\Core\Utility\GeneralUtility::getFileAbsFileName($extbaseFrameworkConfiguration['view']['layoutRootPath']));
+
+		// set LayoutRootPaths
+		$viewFunctionName = 'setLayoutRootPaths';
+		if (method_exists($view, $viewFunctionName)) {
+			$deprecatedSetting = 'layoutRootPath';
+			$setting = 'layoutRootPaths';
+			$parameter = $this->getViewProperty($extbaseFrameworkConfiguration, $setting, $deprecatedSetting);
+			// no need to bother if there is nothing to set
+			if ($parameter) {
+				$view->$viewFunctionName($parameter);
+			}
 		}
-		if (isset($extbaseFrameworkConfiguration['view']['partialRootPath']) && strlen($extbaseFrameworkConfiguration['view']['partialRootPath']) > 0 && method_exists($view, 'setPartialRootPath')) {
-			$view->setPartialRootPath(\TYPO3\CMS\Core\Utility\GeneralUtility::getFileAbsFileName($extbaseFrameworkConfiguration['view']['partialRootPath']));
+
+		// set PartialRootPaths
+		$viewFunctionName = 'setPartialRootPaths';
+		if (method_exists($view, $viewFunctionName)) {
+			$deprecatedSetting = 'partialRootPath';
+			$setting = 'partialRootPaths';
+			$parameter = $this->getViewProperty($extbaseFrameworkConfiguration, $setting, $deprecatedSetting);
+			// no need to bother if there is nothing to set
+			if ($parameter) {
+				$view->$viewFunctionName($parameter);
+			}
 		}
+	}
+
+	/**
+	 * Handles the path resolving for *rootPath(s)
+	 * singular one is deprecated and will be removed two versions after 6.2
+	 * if deprecated setting is found, use it as the very last fallback target
+	 *
+	 * numerical arrays get ordered by key ascending
+	 *
+	 * @param array $extbaseFrameworkConfiguration
+	 * @param string $setting parameter name from TypoScript
+	 * @param string $deprecatedSetting parameter name from TypoScript
+	 *
+	 * @return array
+	 */
+	protected function getViewProperty($extbaseFrameworkConfiguration, $setting, $deprecatedSetting = '') {
+
+		$values = array();
+
+		if (
+			!empty($extbaseFrameworkConfiguration['view'][$setting])
+			&& is_array($extbaseFrameworkConfiguration['view'][$setting])
+		) {
+			$values = \TYPO3\CMS\Extbase\Utility\ArrayUtility::sortArrayWithIntegerKeys($extbaseFrameworkConfiguration['view'][$setting]);
+			$values = array_reverse($values, TRUE);
+		}
+
+		// @todo remove handling of deprecatedSetting two versions after 6.2
+		if (
+			isset($extbaseFrameworkConfiguration['view'][$deprecatedSetting])
+			&& strlen($extbaseFrameworkConfiguration['view'][$deprecatedSetting]) > 0
+		) {
+			$values[] = $extbaseFrameworkConfiguration['view'][$deprecatedSetting];
+		}
+
+		return $values;
 	}
 
 	/**
@@ -405,16 +481,25 @@ class ActionController extends \TYPO3\CMS\Extbase\Mvc\Controller\AbstractControl
 			$possibleViewName = $this->viewObjectNamePattern;
 		}
 
-		$extensionName = $this->request->getControllerExtensionName();
-		$possibleViewName = str_replace('@extension', $extensionName, $possibleViewName);
-		$possibleViewName = str_replace('@controller', $this->request->getControllerName(), $possibleViewName);
-		$possibleViewName = str_replace('@action', ucfirst($this->request->getControllerActionName()), $possibleViewName);
+		$possibleViewName = str_replace(
+			array(
+				'@extension',
+				'@controller',
+				'@action'
+			),
+			array(
+				$this->request->getControllerExtensionName(),
+				$this->request->getControllerName(),
+				ucfirst($this->request->getControllerActionName())
+			),
+			$possibleViewName
+		);
 		$format = $this->request->getFormat();
-		$viewObjectName = str_replace('@format', ucfirst($this->request->getFormat()), $possibleViewName);
+		$viewObjectName = str_replace('@format', ucfirst($format), $possibleViewName);
 		if (class_exists($viewObjectName) === FALSE) {
 			$viewObjectName = str_replace('@format', '', $possibleViewName);
 		}
-		if (class_exists($viewObjectName) === FALSE && isset($this->viewFormatToObjectNameMap[$format])) {
+		if (isset($this->viewFormatToObjectNameMap[$format]) && class_exists($viewObjectName) === FALSE) {
 			$viewObjectName = $this->viewFormatToObjectNameMap[$format];
 		}
 		return class_exists($viewObjectName) ? $viewObjectName : FALSE;
@@ -426,11 +511,12 @@ class ActionController extends \TYPO3\CMS\Extbase\Mvc\Controller\AbstractControl
 	 * Override this method to solve assign variables common for all actions
 	 * or prepare the view in another way before the action is called.
 	 *
-	 * @param \TYPO3\CMS\Extbase\Mvc\View\ViewInterface $view The view to be initialized
+	 * @param ViewInterface $view The view to be initialized
+	 *
 	 * @return void
 	 * @api
 	 */
-	protected function initializeView(\TYPO3\CMS\Extbase\Mvc\View\ViewInterface $view) {
+	protected function initializeView(ViewInterface $view) {
 	}
 
 	/**
@@ -555,7 +641,7 @@ class ActionController extends \TYPO3\CMS\Extbase\Mvc\Controller\AbstractControl
 	 * @return void
 	 */
 	protected function clearCacheOnError() {
-		$extbaseSettings = $this->configurationManager->getConfiguration(\TYPO3\CMS\Extbase\Configuration\ConfigurationManagerInterface::CONFIGURATION_TYPE_FRAMEWORK);
+		$extbaseSettings = $this->configurationManager->getConfiguration(ConfigurationManagerInterface::CONFIGURATION_TYPE_FRAMEWORK);
 		if (isset($extbaseSettings['persistence']['enableAutomaticCacheClearing']) && $extbaseSettings['persistence']['enableAutomaticCacheClearing'] === '1') {
 			if (isset($GLOBALS['TSFE'])) {
 				$pageUid = $GLOBALS['TSFE']->id;
@@ -563,6 +649,27 @@ class ActionController extends \TYPO3\CMS\Extbase\Mvc\Controller\AbstractControl
 			}
 		}
 	}
-}
 
-?>
+	/**
+	 * Returns a map of action method names and their parameters.
+	 *
+	 * @param \TYPO3\CMS\Extbase\Object\ObjectManagerInterface $objectManager
+	 *
+	 * @return array Array of method parameters by action name
+	 */
+	static public function getActionMethodParameters($objectManager) {
+		$reflectionService = $objectManager->get('TYPO3\CMS\Extbase\Reflection\ReflectionService');
+
+		$result = array();
+
+		$className = get_called_class();
+		$methodNames = get_class_methods($className);
+		foreach ($methodNames as $methodName) {
+			if (strlen($methodName) > 6 && strpos($methodName, 'Action', strlen($methodName) - 6) !== FALSE) {
+				$result[$methodName] = $reflectionService->getMethodParameters($className, $methodName);
+			}
+		}
+
+		return $result;
+	}
+}

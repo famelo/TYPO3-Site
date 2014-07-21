@@ -1,28 +1,20 @@
 <?php
 namespace TYPO3\CMS\Form\View\Wizard;
 
-/***************************************************************
- *  Copyright notice
+/**
+ * This file is part of the TYPO3 CMS project.
  *
- *  (c) 2010-2013 Patrick Broens <patrick@patrickbroens.nl>
- *  All rights reserved
+ * It is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License, either version 2
+ * of the License, or any later version.
  *
- *  This script is part of the TYPO3 project. The TYPO3 project is
- *  free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
+ * For the full copyright and license information, please read the
+ * LICENSE.txt file that was distributed with this source code.
  *
- *  The GNU General Public License can be found at
- *  http://www.gnu.org/copyleft/gpl.html.
- *
- *  This script is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  This copyright notice MUST APPEAR in all copies of the script!
- ***************************************************************/
+ * The TYPO3 project - inspiring people to share!
+ */
+
+use TYPO3\CMS\Backend\Utility\BackendUtility;
 
 /**
  * The form wizard view
@@ -34,37 +26,37 @@ class WizardView extends \TYPO3\CMS\Form\View\Wizard\AbstractWizardView {
 	/**
 	 * The document template object
 	 *
-	 * Needs to be a local variable of the class, because this will be used by
-	 * the TYPO3 Backend Template Class typo3/template.php
+	 * Needs to be a local variable of the class.
 	 *
 	 * @var \TYPO3\CMS\Backend\Template\DocumentTemplate
 	 */
 	public $doc;
 
 	/**
+	 * @var \TYPO3\CMS\Core\Page\PageRenderer
+	 */
+	protected $pageRenderer;
+
+	/**
 	 * Constructs this view
 	 *
 	 * Defines the global variable SOBE. Normally this is used by the wizards
-	 * which are one file only. SOBE is used by typo3/template.php. This view is
-	 * now the class with the global variable name SOBE.
+	 * which are one file only. This view is now the class with the global
+	 * variable name SOBE.
 	 *
 	 * Defines the document template object.
 	 *
 	 * @param \TYPO3\CMS\Form\Domain\Repository\ContentRepository $repository
+	 * @see \TYPO3\CMS\Backend\Template\DocumentTemplate
 	 */
 	public function __construct(\TYPO3\CMS\Form\Domain\Repository\ContentRepository $repository) {
 		parent::__construct($repository);
-		$GLOBALS['LANG']->includeLLFile('EXT:form/Resources/Private/Language/locallang_wizard.xml');
+		$GLOBALS['LANG']->includeLLFile('EXT:form/Resources/Private/Language/locallang_wizard.xlf');
 		$GLOBALS['SOBE'] = $this;
 		// Define the document template object
 		$this->doc = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Backend\\Template\\DocumentTemplate');
 		$this->doc->backPath = $GLOBALS['BACK_PATH'];
 		$this->doc->setModuleTemplate('EXT:form/Resources/Private/Templates/Wizard.html');
-		$this->doc->JScode = $this->doc->wrapScriptTags('
-			function jumpToUrl(URL,formEl) {
-				window.location.href = URL;
-			}
-		');
 		$this->pageRenderer = $this->doc->getPageRenderer();
 		$this->pageRenderer->enableConcatenateFiles();
 		$this->pageRenderer->enableCompressCss();
@@ -100,10 +92,11 @@ class WizardView extends \TYPO3\CMS\Form\View\Wizard\AbstractWizardView {
 		// Getting the body content
 		$markers['CONTENT'] = $this->getBodyContent();
 		// Build the HTML for the module
-		$content = $this->doc->startPage($GLOBALS['LANG']->getLL('title', 1));
+		$content = $this->doc->startPage($GLOBALS['LANG']->getLL('title', TRUE));
 		$content .= $this->doc->moduleBody(array(), $docHeaderButtons, $markers);
 		$content .= $this->doc->endPage();
 		$content = $this->doc->insertStylesAndJS($content);
+
 		echo $content;
 		die;
 	}
@@ -117,7 +110,6 @@ class WizardView extends \TYPO3\CMS\Form\View\Wizard\AbstractWizardView {
 	 */
 	protected function loadJavascript() {
 		$compress = TRUE;
-		$baseUrl = \TYPO3\CMS\Core\Utility\GeneralUtility::resolveBackPath('../../../../../' . \TYPO3\CMS\Core\Utility\ExtensionManagementUtility::siteRelPath('form') . 'Resources/Public/JavaScript/Wizard/');
 		$javascriptFiles = array(
 			'Initialize.js',
 			'Ux/Ext.ux.merge.js',
@@ -214,11 +206,13 @@ class WizardView extends \TYPO3\CMS\Form\View\Wizard\AbstractWizardView {
 			'Viewport/Left/Form/PostProcessor.js',
 			'Viewport/Left/Form/PostProcessors/PostProcessor.js',
 			'Viewport/Left/Form/PostProcessors/Dummy.js',
-			'Viewport/Left/Form/PostProcessors/Mail.js'
+			'Viewport/Left/Form/PostProcessors/Mail.js',
+			'Viewport/Left/Form/PostProcessors/Redirect.js'
 		);
 		// Load ExtJS
 		$this->pageRenderer->loadExtJS();
 		// Load the wizards javascript
+		$baseUrl = \TYPO3\CMS\Core\Utility\ExtensionManagementUtility::extRelPath('form') . 'Resources/Public/JavaScript/Wizard/';
 		foreach ($javascriptFiles as $javascriptFile) {
 			$this->pageRenderer->addJsFile($baseUrl . $javascriptFile, 'text/javascript', $compress, FALSE);
 		}
@@ -234,11 +228,11 @@ class WizardView extends \TYPO3\CMS\Form\View\Wizard\AbstractWizardView {
 	protected function loadCss() {
 		// TODO Set to TRUE when finished
 		$compress = FALSE;
-		$baseUrl = \TYPO3\CMS\Core\Utility\GeneralUtility::resolveBackPath('../../../../../' . \TYPO3\CMS\Core\Utility\ExtensionManagementUtility::siteRelPath('form') . 'Resources/Public/CSS/');
 		$cssFiles = array(
 			'Wizard/Form.css',
 			'Wizard/Wizard.css'
 		);
+		$baseUrl = \TYPO3\CMS\Core\Utility\ExtensionManagementUtility::extRelPath('form') . 'Resources/Public/CSS/';
 		// Load the wizards css
 		foreach ($cssFiles as $cssFile) {
 			$this->pageRenderer->addCssFile($baseUrl . $cssFile, 'stylesheet', 'all', '', $compress, FALSE);
@@ -255,7 +249,7 @@ class WizardView extends \TYPO3\CMS\Form\View\Wizard\AbstractWizardView {
 	protected function loadSettings() {
 		$record = $this->repository->getRecord();
 		$pageId = $record->getPageId();
-		$modTSconfig = \TYPO3\CMS\Backend\Utility\BackendUtility::getModTSconfig($pageId, 'mod.wizards.form');
+		$modTSconfig = BackendUtility::getModTSconfig($pageId, 'mod.wizards.form');
 		$settings = $modTSconfig['properties'];
 		$this->removeTrailingDotsFromTyposcript($settings);
 		$this->doc->JScode .= $this->doc->wrapScriptTags('TYPO3.Form.Wizard.Settings = ' . json_encode($settings) . ';');
@@ -269,8 +263,8 @@ class WizardView extends \TYPO3\CMS\Form\View\Wizard\AbstractWizardView {
 	protected function loadLocalization() {
 		$wizardLabels = $GLOBALS['LANG']->includeLLFile('EXT:form/Resources/Private/Language/locallang_wizard.xlf', FALSE, TRUE);
 		$controllerLabels = $GLOBALS['LANG']->includeLLFile('EXT:form/Resources/Private/Language/locallang_controller.xlf', FALSE, TRUE);
-		$labels = \TYPO3\CMS\Core\Utility\GeneralUtility::array_merge_recursive_overrule($controllerLabels, $wizardLabels);
-		$this->pageRenderer->addInlineLanguageLabelArray($labels['default']);
+		\TYPO3\CMS\Core\Utility\ArrayUtility::mergeRecursiveWithOverrule($controllerLabels, $wizardLabels);
+		$this->pageRenderer->addInlineLanguageLabelArray($controllerLabels['default']);
 	}
 
 	/**
@@ -325,9 +319,9 @@ class WizardView extends \TYPO3\CMS\Form\View\Wizard\AbstractWizardView {
 			'reload' => ''
 		);
 		// CSH
-		$buttons['csh'] = \TYPO3\CMS\Backend\Utility\BackendUtility::cshItem('xMOD_csh_corebe', 'wizard_forms_wiz', $GLOBALS['BACK_PATH'], '');
+		$buttons['csh'] = BackendUtility::cshItem('xMOD_csh_corebe', 'wizard_forms_wiz', $GLOBALS['BACK_PATH'], '');
 		// CSH Buttons
-		$buttons['csh_buttons'] = \TYPO3\CMS\Backend\Utility\BackendUtility::cshItem('xMOD_csh_corebe', 'wizard_forms_wiz_buttons', $GLOBALS['BACK_PATH'], '');
+		$buttons['csh_buttons'] = BackendUtility::cshItem('xMOD_csh_corebe', 'wizard_forms_wiz_buttons', $GLOBALS['BACK_PATH'], '');
 		// Close
 		$getPostVariables = \TYPO3\CMS\Core\Utility\GeneralUtility::_GP('P');
 		$buttons['close'] = '<a href="#" onclick="' . htmlspecialchars(('jumpToUrl(unescape(\'' . rawurlencode(\TYPO3\CMS\Core\Utility\GeneralUtility::sanitizeLocalUrl($getPostVariables['returnUrl'])) . '\')); return false;')) . '">' . \TYPO3\CMS\Backend\Utility\IconUtility::getSpriteIcon('actions-document-close', array(
@@ -349,12 +343,10 @@ class WizardView extends \TYPO3\CMS\Form\View\Wizard\AbstractWizardView {
 			$bodyContent = '';
 		} else {
 			/** @var $flashMessage \TYPO3\CMS\Core\Messaging\FlashMessage */
-			$flashMessage = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Messaging\\FlashMessage', $GLOBALS['LANG']->getLL('errorMessage', 1), $GLOBALS['LANG']->getLL('errorTitle', 1), \TYPO3\CMS\Core\Messaging\FlashMessage::ERROR);
+			$flashMessage = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Messaging\\FlashMessage', $GLOBALS['LANG']->getLL('errorMessage', TRUE), $GLOBALS['LANG']->getLL('errorTitle', TRUE), \TYPO3\CMS\Core\Messaging\FlashMessage::ERROR);
 			$bodyContent = $flashMessage->render();
 		}
 		return $bodyContent;
 	}
 
 }
-
-?>

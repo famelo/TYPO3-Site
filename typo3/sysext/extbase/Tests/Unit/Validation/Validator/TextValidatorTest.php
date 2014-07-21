@@ -2,7 +2,7 @@
 namespace TYPO3\CMS\Extbase\Tests\Unit\Validation\Validator;
 
 /*                                                                        *
- * This script belongs to the Extbase framework.                            *
+ * This script belongs to the Extbase framework.                          *
  *                                                                        *
  * It is free software; you can redistribute it and/or modify it under    *
  * the terms of the GNU Lesser General Public License as published by the *
@@ -20,7 +20,6 @@ namespace TYPO3\CMS\Extbase\Tests\Unit\Validation\Validator;
  *                                                                        *
  * The TYPO3 project - inspiring people to share!                         *
  *                                                                        */
-require_once __DIR__ . '/AbstractValidatorTestcase.php';
 
 /**
  * Testcase for the text validator
@@ -30,6 +29,10 @@ require_once __DIR__ . '/AbstractValidatorTestcase.php';
 class TextValidatorTest extends \TYPO3\CMS\Extbase\Tests\Unit\Validation\Validator\AbstractValidatorTestcase {
 
 	protected $validatorClassName = 'TYPO3\\CMS\\Extbase\\Validation\\Validator\\TextValidator';
+
+	public function setup() {
+		$this->validator = $this->getMock($this->validatorClassName, array('translateErrorMessage'));
+	}
 
 	/**
 	 * @test
@@ -70,9 +73,8 @@ class TextValidatorTest extends \TYPO3\CMS\Extbase\Tests\Unit\Validation\Validat
 	 * @author Andreas Förthner <andreas.foerthner@netlogix.de>
 	 */
 	public function textValidatorCreatesTheCorrectErrorIfTheSubjectContainsHtmlEntities() {
-		$expected = array(new \TYPO3\CMS\Extbase\Validation\Error('The given subject was not a valid text (e.g. contained XML tags).', 1221565786));
+		// we only test for the error code, after the translation Method for message is mocked anyway
+		$expected = array(new \TYPO3\CMS\Extbase\Validation\Error(NULL, 1221565786));
 		$this->assertEquals($expected, $this->validator->validate('<span style="color: #BBBBBB;">a nice text</span>')->getErrors());
 	}
 }
-
-?>

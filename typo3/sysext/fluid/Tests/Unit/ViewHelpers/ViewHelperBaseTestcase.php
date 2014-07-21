@@ -14,7 +14,7 @@ namespace TYPO3\CMS\Fluid\Tests\Unit\ViewHelpers;
 /**
  * Base test class for testing view helpers
  */
-abstract class ViewHelperBaseTestcase extends \TYPO3\CMS\Extbase\Tests\Unit\BaseTestCase {
+abstract class ViewHelperBaseTestcase extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 
 	/**
 	 * @var \TYPO3\CMS\Fluid\Core\ViewHelper\ViewHelperVariableContainer
@@ -80,17 +80,18 @@ abstract class ViewHelperBaseTestcase extends \TYPO3\CMS\Extbase\Tests\Unit\Base
 		$this->uriBuilder->expects($this->any())->method('setTargetPageType')->will($this->returnValue($this->uriBuilder));
 		$this->uriBuilder->expects($this->any())->method('setNoCache')->will($this->returnValue($this->uriBuilder));
 		$this->uriBuilder->expects($this->any())->method('setUseCacheHash')->will($this->returnValue($this->uriBuilder));
+		$this->uriBuilder->expects($this->any())->method('setAddQueryStringMethod')->will($this->returnValue($this->uriBuilder));
 		$this->request = $this->getMock('TYPO3\\CMS\\Extbase\\Mvc\\Web\\Request');
 		$this->controllerContext = $this->getMock('TYPO3\\CMS\\Extbase\\Mvc\\Controller\\ControllerContext', array(), array(), '', FALSE);
 		$this->controllerContext->expects($this->any())->method('getUriBuilder')->will($this->returnValue($this->uriBuilder));
 		$this->controllerContext->expects($this->any())->method('getRequest')->will($this->returnValue($this->request));
 		$this->tagBuilder = $this->getMock('TYPO3\\CMS\\Fluid\\Core\\ViewHelper\\TagBuilder');
 		$this->arguments = array();
-		$this->renderingContext = new \TYPO3\CMS\Fluid\Core\Rendering\RenderingContext();
+		$this->renderingContext = $this->getAccessibleMock('TYPO3\\CMS\\Fluid\\Core\\Rendering\\RenderingContext', array('dummy'));
 		$this->renderingContext->injectTemplateVariableContainer($this->templateVariableContainer);
-		$this->renderingContext->injectViewHelperVariableContainer($this->viewHelperVariableContainer);
+		$this->renderingContext->_set('viewHelperVariableContainer', $this->viewHelperVariableContainer);
 		$this->renderingContext->setControllerContext($this->controllerContext);
-		$this->mvcPropertyMapperConfigurationService = new \TYPO3\CMS\Extbase\Mvc\Controller\MvcPropertyMappingConfigurationService;
+		$this->mvcPropertyMapperConfigurationService = $this->getAccessibleMock('TYPO3\CMS\Extbase\Mvc\Controller\MvcPropertyMappingConfigurationService', array('dummy'));
 	}
 
 	/**
@@ -101,9 +102,7 @@ abstract class ViewHelperBaseTestcase extends \TYPO3\CMS\Extbase\Tests\Unit\Base
 		$viewHelper->setRenderingContext($this->renderingContext);
 		$viewHelper->setArguments($this->arguments);
 		if ($viewHelper instanceof \TYPO3\CMS\Fluid\Core\ViewHelper\AbstractTagBasedViewHelper) {
-			$viewHelper->injectTagBuilder($this->tagBuilder);
+			$viewHelper->_set('tag', $this->tagBuilder);
 		}
 	}
 }
-
-?>

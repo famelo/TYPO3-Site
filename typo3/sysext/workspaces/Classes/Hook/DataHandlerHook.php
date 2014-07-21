@@ -1,31 +1,21 @@
 <?php
 namespace TYPO3\CMS\Workspaces\Hook;
 
-/***************************************************************
- *  Copyright notice
+/**
+ * This file is part of the TYPO3 CMS project.
  *
- *  (c) 2010-2013 Workspaces Team (http://forge.typo3.org/projects/show/typo3v4-workspaces)
- *  All rights reserved
+ * It is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License, either version 2
+ * of the License, or any later version.
  *
- *  This script is part of the TYPO3 project. The TYPO3 project is
- *  free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
+ * For the full copyright and license information, please read the
+ * LICENSE.txt file that was distributed with this source code.
  *
- *  The GNU General Public License can be found at
- *  http://www.gnu.org/copyleft/gpl.html.
- *  A copy is found in the textfile GPL.txt and important notices to the license
- *  from the author is found in LICENSE.txt distributed with these scripts.
- *
- *
- *  This script is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  This copyright notice MUST APPEAR in all copies of the script!
- ***************************************************************/
+ * The TYPO3 project - inspiring people to share!
+ */
+
+use TYPO3\CMS\Backend\Utility\BackendUtility;
+
 /**
  * Tcemain service
  *
@@ -77,10 +67,10 @@ class DataHandlerHook {
 	protected function resetStageOfElements($stageId) {
 		$fields = array('t3ver_stage' => \TYPO3\CMS\Workspaces\Service\StagesService::STAGE_EDIT_ID);
 		foreach ($this->getTcaTables() as $tcaTable) {
-			if (\TYPO3\CMS\Backend\Utility\BackendUtility::isTableWorkspaceEnabled($tcaTable)) {
-				$where = 't3ver_stage = ' . intval($stageId);
+			if (BackendUtility::isTableWorkspaceEnabled($tcaTable)) {
+				$where = 't3ver_stage = ' . (int)$stageId;
 				$where .= ' AND t3ver_wsid > 0 AND pid=-1';
-				$where .= \TYPO3\CMS\Backend\Utility\BackendUtility::deleteClause($tcaTable);
+				$where .= BackendUtility::deleteClause($tcaTable);
 				$GLOBALS['TYPO3_DB']->exec_UPDATEquery($tcaTable, $where, $fields);
 			}
 		}
@@ -95,10 +85,10 @@ class DataHandlerHook {
 	protected function flushWorkspaceElements($workspaceId) {
 		$command = array();
 		foreach ($this->getTcaTables() as $tcaTable) {
-			if (\TYPO3\CMS\Backend\Utility\BackendUtility::isTableWorkspaceEnabled($tcaTable)) {
+			if (BackendUtility::isTableWorkspaceEnabled($tcaTable)) {
 				$where = '1=1';
-				$where .= \TYPO3\CMS\Backend\Utility\BackendUtility::getWorkspaceWhereClause($tcaTable, $workspaceId);
-				$where .= \TYPO3\CMS\Backend\Utility\BackendUtility::deleteClause($tcaTable);
+				$where .= BackendUtility::getWorkspaceWhereClause($tcaTable, $workspaceId);
+				$where .= BackendUtility::deleteClause($tcaTable);
 				$records = $GLOBALS['TYPO3_DB']->exec_SELECTgetRows('uid', $tcaTable, $where, '', '', '', 'uid');
 				if (is_array($records)) {
 					foreach (array_keys($records) as $recordId) {
@@ -139,12 +129,9 @@ class DataHandlerHook {
 	 * @return void
 	 */
 	protected function flushWorkspaceCacheEntriesByWorkspaceId($workspaceId) {
-		$workspacesCache = $GLOBALS['typo3CacheManager']->getCache('workspaces_cache');
+		$workspacesCache = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Cache\\CacheManager')->getCache('workspaces_cache');
 		$workspacesCache->flushByTag($workspaceId);
 		$workspacesCache->flushByTag(\TYPO3\CMS\Workspaces\Service\WorkspaceService::SELECT_ALL_WORKSPACES);
 	}
 
 }
-
-
-?>

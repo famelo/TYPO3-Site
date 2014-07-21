@@ -1,31 +1,23 @@
 <?php
 namespace TYPO3\CMS\Backend\Form\Element;
 
-/***************************************************************
- *  Copyright notice
+/**
+ * This file is part of the TYPO3 CMS project.
  *
- *  (c) 2007-2013 Andreas Wolf <andreas.wolf@ikt-werk.de>
- *  All rights reserved
+ * It is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License, either version 2
+ * of the License, or any later version.
  *
- *  This script is part of the TYPO3 project. The TYPO3 project is
- *  free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
+ * For the full copyright and license information, please read the
+ * LICENSE.txt file that was distributed with this source code.
  *
- *  The GNU General Public License can be found at
- *  http://www.gnu.org/copyleft/gpl.html.
- *  A copy is found in the textfile GPL.txt and important notices to the license
- *  from the author is found in LICENSE.txt distributed with these scripts.
- *
- *
- *  This script is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  This copyright notice MUST APPEAR in all copies of the script!
- ***************************************************************/
+ * The TYPO3 project - inspiring people to share!
+ */
+
+use TYPO3\CMS\Backend\Utility\BackendUtility;
+use TYPO3\CMS\Backend\Utility\IconUtility;
+use TYPO3\CMS\Core\Utility\GeneralUtility;
+
 /**
  * Default implementation of a handler class for an ajax record selector.
  *
@@ -112,11 +104,11 @@ class SuggestDefaultReceiver {
 		$this->config = $config;
 		// get a list of all the pages that should be looked on
 		if (isset($config['pidList'])) {
-			$allowedPages = ($pageIds = \TYPO3\CMS\Core\Utility\GeneralUtility::trimExplode(',', $config['pidList']));
-			$depth = intval($config['pidDepth']);
+			$allowedPages = ($pageIds = GeneralUtility::trimExplode(',', $config['pidList']));
+			$depth = (int)$config['pidDepth'];
 			foreach ($pageIds as $pageId) {
 				if ($pageId > 0) {
-					$allowedPages = \TYPO3\CMS\Core\Utility\GeneralUtility::array_merge_recursive_overrule($allowedPages, $this->getAllSubpagesOfPage($pageId, $depth));
+					\TYPO3\CMS\Core\Utility\ArrayUtility::mergeRecursiveWithOverrule($allowedPages, $this->getAllSubpagesOfPage($pageId, $depth));
 				}
 			}
 			$this->allowedPages = array_unique($allowedPages);
@@ -169,7 +161,7 @@ class SuggestDefaultReceiver {
 				if (!$this->checkRecordAccess($row, $row['uid'])) {
 					continue;
 				}
-				$spriteIcon = \TYPO3\CMS\Backend\Utility\IconUtility::getSpriteIconForRecord(
+				$spriteIcon = IconUtility::getSpriteIconForRecord(
 					$this->table, $row, array('style' => 'margin: 0 4px 0 -20px; padding: 0;')
 				);
 				$uid = $row['t3ver_oid'] > 0 ? $row['t3ver_oid'] : $row['uid'];
@@ -212,13 +204,13 @@ class SuggestDefaultReceiver {
 	protected function prepareSelectStatement() {
 		$searchWholePhrase = $this->config['searchWholePhrase'];
 		$searchString = $this->params['value'];
-		$searchUid = intval($searchString);
+		$searchUid = (int)$searchString;
 		if (strlen($searchString)) {
 			$searchString = $GLOBALS['TYPO3_DB']->quoteStr($searchString, $this->table);
 			$likeCondition = ' LIKE \'' . ($searchWholePhrase ? '%' : '') . $GLOBALS['TYPO3_DB']->escapeStrForLike($searchString, $this->table) . '%\'';
 			// Search in all fields given by label or label_alt
 			$selectFieldsList = $GLOBALS['TCA'][$this->table]['ctrl']['label'] . ',' . $GLOBALS['TCA'][$this->table]['ctrl']['label_alt'] . ',' . $this->config['additionalSearchFields'];
-			$selectFields = \TYPO3\CMS\Core\Utility\GeneralUtility::trimExplode(',', $selectFieldsList, TRUE);
+			$selectFields = GeneralUtility::trimExplode(',', $selectFieldsList, TRUE);
 			$selectFields = array_unique($selectFields);
 			$selectParts = array();
 			foreach ($selectFields as $field) {
@@ -302,15 +294,15 @@ class SuggestDefaultReceiver {
 	 */
 	protected function checkRecordAccess($row, $uid) {
 		$retValue = TRUE;
-		$table = $this->mmForeignTable ? $this->mmForeignTable : $this->table;
+		$table = $this->mmForeignTable ?: $this->table;
 		if ($table == 'pages') {
-			if (!\TYPO3\CMS\Backend\Utility\BackendUtility::readPageAccess($uid, $GLOBALS['BE_USER']->getPagePermsClause(1))) {
+			if (!BackendUtility::readPageAccess($uid, $GLOBALS['BE_USER']->getPagePermsClause(1))) {
 				$retValue = FALSE;
 			}
 		} elseif (isset($GLOBALS['TCA'][$table]['ctrl']['is_static']) && (bool) $GLOBALS['TCA'][$table]['ctrl']['is_static']) {
 			$retValue = TRUE;
 		} else {
-			if (!is_array(\TYPO3\CMS\Backend\Utility\BackendUtility::readPageAccess($row['pid'], $GLOBALS['BE_USER']->getPagePermsClause(1)))) {
+			if (!is_array(BackendUtility::readPageAccess($row['pid'], $GLOBALS['BE_USER']->getPagePermsClause(1)))) {
 				$retValue = FALSE;
 			}
 		}
@@ -326,7 +318,7 @@ class SuggestDefaultReceiver {
 	protected function makeWorkspaceOverlay(&$row) {
 		// Check for workspace-versions
 		if ($GLOBALS['BE_USER']->workspace != 0 && $GLOBALS['TCA'][$this->table]['ctrl']['versioningWS'] == TRUE) {
-			\TYPO3\CMS\Backend\Utility\BackendUtility::workspaceOL($this->mmForeignTable ? $this->mmForeignTable : $this->table, $row);
+			BackendUtility::workspaceOL($this->mmForeignTable ? $this->mmForeignTable : $this->table, $row);
 		}
 	}
 
@@ -337,8 +329,8 @@ class SuggestDefaultReceiver {
 	 * @return string The path to the icon
 	 */
 	protected function getIcon($row) {
-		$icon = \TYPO3\CMS\Backend\Utility\IconUtility::getIcon($this->mmForeignTable ? $this->mmForeignTable : $this->table, $row);
-		return \TYPO3\CMS\Backend\Utility\IconUtility::skinImg('', $icon, '', 1);
+		$icon = IconUtility::getIcon($this->mmForeignTable ? $this->mmForeignTable : $this->table, $row);
+		return IconUtility::skinImg('', $icon, '', 1);
 	}
 
 	/**
@@ -354,12 +346,12 @@ class SuggestDefaultReceiver {
 	protected function getRecordPath(&$row, $uid) {
 		$titleLimit = max($this->config['maxPathTitleLength'], 0);
 		if (($this->mmForeignTable ? $this->mmForeignTable : $this->table) == 'pages') {
-			$path = \TYPO3\CMS\Backend\Utility\BackendUtility::getRecordPath($uid, '', $titleLimit);
+			$path = BackendUtility::getRecordPath($uid, '', $titleLimit);
 			// For pages we only want the first (n-1) parts of the path,
 			// because the n-th part is the page itself
 			$path = substr($path, 0, strrpos($path, '/', -2)) . '/';
 		} else {
-			$path = \TYPO3\CMS\Backend\Utility\BackendUtility::getRecordPath($row['pid'], '', $titleLimit);
+			$path = BackendUtility::getRecordPath($row['pid'], '', $titleLimit);
 		}
 		return $path;
 	}
@@ -371,7 +363,7 @@ class SuggestDefaultReceiver {
 	 * @return string The label
 	 */
 	protected function getLabel($row) {
-		return \TYPO3\CMS\Backend\Utility\BackendUtility::getRecordTitle($this->mmForeignTable ? $this->mmForeignTable : $this->table, $row, TRUE);
+		return BackendUtility::getRecordTitle($this->mmForeignTable ? $this->mmForeignTable : $this->table, $row, TRUE);
 	}
 
 	/**
@@ -392,12 +384,9 @@ class SuggestDefaultReceiver {
 				'row' => $row,
 				'entry' => &$entry
 			);
-			\TYPO3\CMS\Core\Utility\GeneralUtility::callUserFunction($this->config['renderFunc'], $params, $this, '');
+			GeneralUtility::callUserFunction($this->config['renderFunc'], $params, $this, '');
 		}
 		return $entry;
 	}
 
 }
-
-
-?>

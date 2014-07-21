@@ -1,84 +1,54 @@
 <?php
 namespace TYPO3\CMS\Extensionmanager\Controller;
 
-/***************************************************************
- *  Copyright notice
+/**
+ * This file is part of the TYPO3 CMS project.
  *
- *  (c) 2012-2013 Susanne Moog, <typo3@susannemoog.de>
- *  All rights reserved
+ * It is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License, either version 2
+ * of the License, or any later version.
  *
- *  This script is part of the TYPO3 project. The TYPO3 project is
- *  free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
+ * For the full copyright and license information, please read the
+ * LICENSE.txt file that was distributed with this source code.
  *
- *  The GNU General Public License can be found at
- *  http://www.gnu.org/copyleft/gpl.html.
- *  A copy is found in the textfile GPL.txt and important notices to the license
- *  from the author is found in LICENSE.txt distributed with these scripts.
- *
- *
- *  This script is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  This copyright notice MUST APPEAR in all copies of the script!
- ***************************************************************/
+ * The TYPO3 project - inspiring people to share!
+ */
 /**
  * Controller for extension listings (TER or local extensions)
  *
  * @author Susanne Moog <typo3@susannemoog.de>
  */
-class ListController extends \TYPO3\CMS\Extensionmanager\Controller\AbstractController {
+class ListController extends AbstractController {
 
 	/**
 	 * @var \TYPO3\CMS\Extensionmanager\Domain\Repository\ExtensionRepository
+	 * @inject
 	 */
 	protected $extensionRepository;
 
 	/**
 	 * @var \TYPO3\CMS\Extensionmanager\Utility\ListUtility
+	 * @inject
 	 */
 	protected $listUtility;
 
 	/**
-	 * Dependency injection of the Extension Repository
-	 *
-	 * @param \TYPO3\CMS\Extensionmanager\Domain\Repository\ExtensionRepository $extensionRepository
-	 * @return void
-	 */
-	public function injectExtensionRepository(\TYPO3\CMS\Extensionmanager\Domain\Repository\ExtensionRepository $extensionRepository) {
-		$this->extensionRepository = $extensionRepository;
-	}
-
-	/**
-	 * @param \TYPO3\CMS\Extensionmanager\Utility\ListUtility $listUtility
-	 * @return void
-	 */
-	public function injectListUtility(\TYPO3\CMS\Extensionmanager\Utility\ListUtility $listUtility) {
-		$this->listUtility = $listUtility;
-	}
-
-	/**
 	 * @var \TYPO3\CMS\Core\Page\PageRenderer
+	 * @inject
 	 */
 	protected $pageRenderer;
 
 	/**
-	 * @param \TYPO3\CMS\Core\Page\PageRenderer $pageRenderer
-	 * @return void
+	 * @var \TYPO3\CMS\Extensionmanager\Utility\DependencyUtility
+	 * @inject
 	 */
-	public function injectPageRenderer(\TYPO3\CMS\Core\Page\PageRenderer $pageRenderer) {
-		$this->pageRenderer = $pageRenderer;
-	}
+	protected $dependencyUtility;
 
 	/**
 	 * Add the needed JavaScript files for all actions
 	 */
 	public function initializeAction() {
-		$this->pageRenderer->addJsFile('../t3lib/js/extjs/notifications.js');
+		$this->pageRenderer->addJsFile('sysext/backend/Resources/Public/JavaScript/notifications.js');
 		$this->pageRenderer->addInlineLanguageLabelFile('EXT:extensionmanager/Resources/Private/Language/locallang.xlf');
 	}
 
@@ -88,11 +58,35 @@ class ListController extends \TYPO3\CMS\Extensionmanager\Controller\AbstractCont
 	 * @return void
 	 */
 	public function indexAction() {
-		$availableExtensions = $this->listUtility->getAvailableExtensions();
-		$availableAndInstalledExtensions = $this->listUtility->getAvailableAndInstalledExtensions($availableExtensions);
-		$availableAndInstalledExtensions = $this->listUtility->enrichExtensionsWithEmConfAndTerInformation($availableAndInstalledExtensions);
+		$availableAndInstalledExtensions = $this->listUtility->getAvailableAndInstalledExtensionsWithAdditionalInformation();
 		$this->view->assign('extensions', $availableAndInstalledExtensions);
 		$this->handleTriggerArguments();
+	}
+
+	/**
+	 * Shows a list of unresolved dependency errors with the possibility to bypass the dependency check
+	 *
+	 * @param string $extensionKey
+	 * @throws \TYPO3\CMS\Extensionmanager\Exception\ExtensionManagerException
+	 * @return void
+	 */
+	public function unresolvedDependenciesAction($extensionKey) {
+		$availableExtensions = $this->listUtility->getAvailableExtensions();
+		if (isset($availableExtensions[$extensionKey])) {
+			$extensionArray = $this->listUtility->enrichExtensionsWithEmConfAndTerInformation(
+				array(
+					$extensionKey => $availableExtensions[$extensionKey]
+				)
+			);
+			/** @var \TYPO3\CMS\Extensionmanager\Utility\ExtensionModelUtility $extensionModelUtility */
+			$extensionModelUtility = $this->objectManager->get('TYPO3\\CMS\\Extensionmanager\\Utility\\ExtensionModelUtility');
+			$extension = $extensionModelUtility->mapExtensionArrayToModel($extensionArray[$extensionKey]);
+		} else {
+			throw new \TYPO3\CMS\Extensionmanager\Exception\ExtensionManagerException('Extension ' . $extensionKey . ' is not available', 1402421007);
+		}
+		$this->dependencyUtility->checkDependencies($extension);
+		$this->view->assign('extension', $extension);
+		$this->view->assign('unresolvedDependencies', $this->dependencyUtility->getDependencyErrors());
 	}
 
 	/**
@@ -100,6 +94,7 @@ class ListController extends \TYPO3\CMS\Extensionmanager\Controller\AbstractCont
 	 * Either all extensions or depending on a search param
 	 *
 	 * @param string $search
+	 * @return void
 	 */
 	public function terAction($search = '') {
 		if (!empty($search)) {
@@ -114,9 +109,36 @@ class ListController extends \TYPO3\CMS\Extensionmanager\Controller\AbstractCont
 	}
 
 	/**
+	 * Action for listing all possible distributions
+	 *
+	 * @return void
+	 */
+	public function distributionsAction() {
+		$importExportInstalled = \TYPO3\CMS\Core\Utility\ExtensionManagementUtility::isLoaded('impexp');
+		if ($importExportInstalled) {
+			// check if a TER update has been done at all, if not, fetch it directly
+			/** @var $repositoryHelper \TYPO3\CMS\Extensionmanager\Utility\Repository\Helper */
+			$repositoryHelper = $this->objectManager->get('TYPO3\\CMS\\Extensionmanager\\Utility\\Repository\\Helper');
+			// repository needs an update, but not because of the extension hash has changed
+			if ($repositoryHelper->isExtListUpdateNecessary() > 0 && ($repositoryHelper->isExtListUpdateNecessary() & $repositoryHelper::PROBLEM_EXTENSION_HASH_CHANGED) === 0) {
+				$repositoryHelper->fetchExtListFile();
+				$repositoryHelper->updateExtList();
+			}
+
+			$officialDistributions = $this->extensionRepository->findAllOfficialDistributions();
+			$this->view->assign('officialDistributions', $officialDistributions);
+
+			$communityDistributions = $this->extensionRepository->findAllCommunityDistributions();
+			$this->view->assign('communityDistributions', $communityDistributions);
+		}
+		$this->view->assign('enableDistributionsView', $importExportInstalled);
+	}
+
+	/**
 	 * Shows all versions of a specific extension
 	 *
 	 * @param string $extensionKey
+	 * @return void
 	 */
 	public function showAllVersionsAction($extensionKey) {
 		$currentVersion = $this->extensionRepository->findOneByCurrentVersionByExtensionKey($extensionKey);
@@ -131,4 +153,3 @@ class ListController extends \TYPO3\CMS\Extensionmanager\Controller\AbstractCont
 		);
 	}
 }
-?>

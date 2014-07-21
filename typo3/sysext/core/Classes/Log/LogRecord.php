@@ -1,29 +1,18 @@
 <?php
 namespace TYPO3\CMS\Core\Log;
 
-/***************************************************************
- * Copyright notice
+/**
+ * This file is part of the TYPO3 CMS project.
  *
- * (c) 2011-2013 Ingo Renner (ingo@typo3.org)
- * (c) 2012-2013 Steffen Müller (typo3@t3node.com)
- * All rights reserved
+ * It is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License, either version 2
+ * of the License, or any later version.
  *
- * This script is part of the TYPO3 project. The TYPO3 project is
- * free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
+ * For the full copyright and license information, please read the
+ * LICENSE.txt file that was distributed with this source code.
  *
- * The GNU General Public License can be found at
- * http://www.gnu.org/copyleft/gpl.html.
- *
- * This script is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * This copyright notice MUST APPEAR in all copies of the script!
- ***************************************************************/
+ * The TYPO3 project - inspiring people to share!
+ */
 /**
  * Log record
  *
@@ -161,7 +150,7 @@ class LogRecord implements \ArrayAccess {
 	 *
 	 * @param integer $level Severity level
 	 * @return \TYPO3\CMS\Core\Log\LogRecord
-	 * @throws RangeException if the given log level is invalid
+	 * @throws \RangeException if the given log level is invalid
 	 * @see \TYPO3\CMS\Core\Log\Level
 	 */
 	public function setLevel($level) {
@@ -174,7 +163,7 @@ class LogRecord implements \ArrayAccess {
 	 * Returns the severity level
 	 *
 	 * @see \TYPO3\CMS\Core\Log\Level
-	 * @return int Severity level
+	 * @return integer Severity level
 	 */
 	public function getLevel() {
 		return $this->level;
@@ -215,11 +204,11 @@ class LogRecord implements \ArrayAccess {
 	/**
 	 * Sets the log message
 	 *
-	 * @param string $message Log message
+	 * @param string|object $message Log message. Usually a string, or an object that can be casted to string (implements __toString())
 	 * @return \TYPO3\CMS\Core\Log\LogRecord
 	 */
 	public function setMessage($message) {
-		$this->message = $message;
+		$this->message = (string)$message;
 		return $this;
 	}
 
@@ -259,7 +248,7 @@ class LogRecord implements \ArrayAccess {
 	 * @return string
 	 */
 	public function __toString() {
-		$timestamp = date('r', (int) $this->created);
+		$timestamp = date('r', (int)$this->created);
 		$levelName = \TYPO3\CMS\Core\Log\LogLevel::getName($this->level);
 		$data = !empty($this->data) ? '- ' . json_encode($this->data) : '';
 		$logRecordString = sprintf('%s [%s] request="%s" component="%s": %s %s', $timestamp, $levelName, $this->requestId, $this->component, $this->message, $data);
@@ -335,6 +324,3 @@ class LogRecord implements \ArrayAccess {
 	}
 
 }
-
-
-?>

@@ -1,40 +1,24 @@
 <?php
-/***************************************************************
- *  Copyright notice
+/**
+ * This file is part of the TYPO3 CMS project.
  *
- *  (c) 1999-2013 Kasper Skårhøj (kasperYYYY@typo3.com)
- *  All rights reserved
+ * It is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License, either version 2
+ * of the License, or any later version.
  *
- *  This script is part of the TYPO3 project. The TYPO3 project is
- *  free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
+ * For the full copyright and license information, please read the
+ * LICENSE.txt file that was distributed with this source code.
  *
- *  The GNU General Public License can be found at
- *  http://www.gnu.org/copyleft/gpl.html.
- *  A copy is found in the textfile GPL.txt and important notices to the license
- *  from the author is found in LICENSE.txt distributed with these scripts.
- *
- *
- *  This script is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  This copyright notice MUST APPEAR in all copies of the script!
- ***************************************************************/
+ * The TYPO3 project - inspiring people to share!
+ */
 /**
  * New content elements wizard
  * (Part of the 'cms' extension)
  *
- * Revised for TYPO3 3.6 November/2003 by Kasper Skårhøj
- * XHTML compatible.
- *
  * @author Kasper Skårhøj <kasperYYYY@typo3.com>
  */
 unset($MCONF);
-require 'conf.php';
+require __DIR__ . '/conf.php';
 require $BACK_PATH . 'init.php';
 // Unset MCONF/MLANG since all we wanted was back path etc. for this particular script.
 unset($MCONF);
@@ -42,8 +26,9 @@ unset($MLANG);
 // Merging locallang files/arrays:
 $GLOBALS['LANG']->includeLLFile('EXT:lang/locallang_misc.xlf');
 $LOCAL_LANG_orig = $LOCAL_LANG;
-$LANG->includeLLFile('EXT:cms/layout/locallang_db_new_content_el.xml');
-$LOCAL_LANG = \TYPO3\CMS\Core\Utility\GeneralUtility::array_merge_recursive_overrule($LOCAL_LANG_orig, $LOCAL_LANG);
+$LANG->includeLLFile('EXT:cms/layout/locallang_db_new_content_el.xlf');
+\TYPO3\CMS\Core\Utility\ArrayUtility::mergeRecursiveWithOverrule($LOCAL_LANG_orig, $LOCAL_LANG);
+$LOCAL_LANG = $LOCAL_LANG_orig;
 // Exits if 'cms' extension is not loaded:
 \TYPO3\CMS\Core\Utility\ExtensionManagementUtility::isLoaded('cms', 1);
 /**
@@ -104,4 +89,3 @@ foreach ($SOBE->include_once as $INC_FILE) {
 }
 $SOBE->main();
 $SOBE->printContent();
-?>

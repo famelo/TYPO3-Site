@@ -1,30 +1,23 @@
 <?php
 namespace TYPO3\CMS\Recycler\Controller;
 
-/***************************************************************
- *  Copyright notice
+/**
+ * This file is part of the TYPO3 CMS project.
  *
- *  (c) 2009-2013 Julian Kleinhans <typo3@kj187.de>
- *  All rights reserved
+ * It is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License, either version 2
+ * of the License, or any later version.
  *
- *  This script is part of the TYPO3 project. The TYPO3 project is
- *  free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
+ * For the full copyright and license information, please read the
+ * LICENSE.txt file that was distributed with this source code.
  *
- *  The GNU General Public License can be found at
- *  http://www.gnu.org/copyleft/gpl.html.
- *
- *  This script is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  This copyright notice MUST APPEAR in all copies of the script!
- ***************************************************************/
+ * The TYPO3 project - inspiring people to share!
+ */
+
+use TYPO3\CMS\Backend\Utility\BackendUtility;
 
 // This checks permissions and exits if the users has no permission for entry.
+
 /**
  * Module 'Recycler' for the 'recycler' extension.
  *
@@ -53,6 +46,14 @@ class RecyclerModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClass
 	protected $pageRenderer;
 
 	/**
+	 * Constructor
+	 */
+	public function __construct() {
+		$GLOBALS['LANG']->includeLLFile('EXT:recycler/mod1/locallang.xlf');
+		$GLOBALS['BE_USER']->modAccess($GLOBALS['MCONF'], TRUE);
+	}
+
+	/**
 	 * Initializes the Module
 	 *
 	 * @return 	void
@@ -65,7 +66,7 @@ class RecyclerModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClass
 		$this->doc->setExtDirectStateProvider();
 		$this->pageRenderer = $this->doc->getPageRenderer();
 		$this->relativePath = \TYPO3\CMS\Core\Utility\ExtensionManagementUtility::extRelPath('recycler');
-		$this->pageRecord = \TYPO3\CMS\Backend\Utility\BackendUtility::readPageAccess($this->id, $this->perms_clause);
+		$this->pageRecord = BackendUtility::readPageAccess($this->id, $this->perms_clause);
 		$this->isAccessibleForCurrentUser = $this->id && is_array($this->pageRecord) || !$this->id && $this->isCurrentUserAdmin();
 		//don't access in workspace
 		if ($GLOBALS['BE_USER']->workspace !== 0) {
@@ -78,8 +79,8 @@ class RecyclerModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClass
 		} else {
 			$this->allowDelete = $modTS['properties']['allowDelete'] == '1';
 		}
-		if (isset($modTS['properties']['recordsPageLimit']) && intval($modTS['properties']['recordsPageLimit']) > 0) {
-			$this->recordsPageLimit = intval($modTS['properties']['recordsPageLimit']);
+		if (isset($modTS['properties']['recordsPageLimit']) && (int)$modTS['properties']['recordsPageLimit'] > 0) {
+			$this->recordsPageLimit = (int)$modTS['properties']['recordsPageLimit'];
 		}
 	}
 
@@ -90,7 +91,7 @@ class RecyclerModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClass
 	 */
 	public function render() {
 		$this->content .= $this->doc->header($GLOBALS['LANG']->getLL('title'));
-		$this->content .= $this->doc->section('', $GLOBALS['LANG']->getLL('description'));
+		$this->content .= '<p class="lead">' . $GLOBALS['LANG']->getLL('description') . '</p>';
 		if ($this->isAccessibleForCurrentUser) {
 			$this->loadHeaderData();
 			// div container for renderTo
@@ -140,7 +141,7 @@ class RecyclerModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClass
 		$this->pageRenderer->addInlineLanguageLabelArray($this->getJavaScriptLabels());
 		// Load Recycler JavaScript:
 		// Load Plugins
-		$uxPath = $this->doc->backpath . '../t3lib/js/extjs/ux/';
+		$uxPath = $this->doc->backpath . 'js/extjs/ux/';
 		$this->pageRenderer->addJsFile($uxPath . 'Ext.grid.RowExpander.js');
 		$this->pageRenderer->addJsFile($uxPath . 'Ext.app.SearchField.js');
 		$this->pageRenderer->addJsFile($uxPath . 'Ext.ux.FitToParent.js');
@@ -161,7 +162,6 @@ class RecyclerModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClass
 			'tableDefault' => 'pages',
 			'renderTo' => 'recyclerContent',
 			'isSSL' => \TYPO3\CMS\Core\Utility\GeneralUtility::getIndpEnv('TYPO3_SSL'),
-			'ajaxController' => $this->doc->backPath . 'ajax.php?ajaxID=RecyclerAjaxController::init',
 			'deleteDisable' => $this->allowDelete ? 0 : 1,
 			'depthSelection' => $this->getDataFromSession('depthSelection', 0),
 			'tableSelection' => $this->getDataFromSession('tableSelection', 'pages'),
@@ -198,7 +198,7 @@ class RecyclerModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClass
 	 *
 	 * @param 	string		$selectionPrefix: Prefix to select the correct labels (default: 'js.')
 	 * @param 	string		$stripFromSelectionName: Sub-prefix to be removed from label names in the result (default: '')
-	 * @return 	array		Lables to be used in JavaScript of the current locallang file
+	 * @return 	array		Labels to be used in JavaScript of the current locallang file
 	 * @todo 	Check, whether this method can be moved in a generic way to $GLOBALS['LANG']
 	 */
 	protected function getJavaScriptLabelsFromLocallang($selectionPrefix = 'js.', $stripFromSelectionName = '') {
@@ -206,7 +206,7 @@ class RecyclerModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClass
 		$labels = array_merge((array) $GLOBALS['LOCAL_LANG']['default'], (array) $GLOBALS['LOCAL_LANG'][$GLOBALS['LANG']->lang]);
 		// Regular expression to strip the selection prefix and possibly something from the label name:
 		$labelPattern = '#^' . preg_quote($selectionPrefix, '#') . '(' . preg_quote($stripFromSelectionName, '#') . ')?#';
-		// Iterate through all locallang lables:
+		// Iterate through all locallang labels:
 		foreach ($labels as $label => $value) {
 			if (strpos($label, $selectionPrefix) === 0) {
 				$key = preg_replace($labelPattern, '', $label);
@@ -223,7 +223,7 @@ class RecyclerModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClass
 	 */
 	protected function getDocHeaderButtons() {
 		$buttons = array(
-			'csh' => \TYPO3\CMS\Backend\Utility\BackendUtility::cshItem('_MOD_web_func', '', $GLOBALS['BACK_PATH']),
+			'csh' => BackendUtility::cshItem('_MOD_web_func', '', $GLOBALS['BACK_PATH']),
 			'shortcut' => $this->getShortcutButton(),
 			'save' => ''
 		);
@@ -265,7 +265,7 @@ class RecyclerModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClass
 	 * @return 	string		The HTML representation of the function menu selector
 	 */
 	protected function getFunctionMenu() {
-		return \TYPO3\CMS\Backend\Utility\BackendUtility::getFuncMenu(0, 'SET[function]', $this->MOD_SETTINGS['function'], $this->MOD_MENU['function']);
+		return BackendUtility::getFuncMenu(0, 'SET[function]', $this->MOD_SETTINGS['function'], $this->MOD_MENU['function']);
 	}
 
 	/**
@@ -286,6 +286,3 @@ class RecyclerModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClass
 	}
 
 }
-
-
-?>

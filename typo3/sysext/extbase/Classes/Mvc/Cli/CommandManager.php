@@ -1,29 +1,18 @@
 <?php
 namespace TYPO3\CMS\Extbase\Mvc\Cli;
 
-/***************************************************************
- *  Copyright notice
- *  All rights reserved
+/**
+ * This file is part of the TYPO3 CMS project.
  *
- *  This class is a backport of the corresponding class of TYPO3 Flow.
- *  All credits go to the TYPO3 Flow team.
+ * It is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License, either version 2
+ * of the License, or any later version.
  *
- *  This script is part of the TYPO3 project. The TYPO3 project is
- *  free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
+ * For the full copyright and license information, please read the
+ * LICENSE.txt file that was distributed with this source code.
  *
- *  The GNU General Public License can be found at
- *  http://www.gnu.org/copyleft/gpl.html.
- *
- *  This script is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  This copyright notice MUST APPEAR in all copies of the script!
- ***************************************************************/
+ * The TYPO3 project - inspiring people to share!
+ */
 /**
  * A helper for CLI commands
  *
@@ -33,6 +22,7 @@ class CommandManager implements \TYPO3\CMS\Core\SingletonInterface {
 
 	/**
 	 * @var \TYPO3\CMS\Extbase\Object\ObjectManagerInterface
+	 * @inject
 	 */
 	protected $objectManager;
 
@@ -45,14 +35,6 @@ class CommandManager implements \TYPO3\CMS\Core\SingletonInterface {
 	 * @var array
 	 */
 	protected $shortCommandIdentifiers = NULL;
-
-	/**
-	 * @param \TYPO3\CMS\Extbase\Object\ObjectManagerInterface $objectManager A reference to the object manager
-	 * @return void
-	 */
-	public function injectObjectManager(\TYPO3\CMS\Extbase\Object\ObjectManagerInterface $objectManager) {
-		$this->objectManager = $objectManager;
-	}
 
 	/**
 	 * Returns an array of all commands
@@ -182,5 +164,3 @@ class CommandManager implements \TYPO3\CMS\Core\SingletonInterface {
 		return $searchedCommandIdentifierParts === $commandIdentifierParts;
 	}
 }
-
-?>

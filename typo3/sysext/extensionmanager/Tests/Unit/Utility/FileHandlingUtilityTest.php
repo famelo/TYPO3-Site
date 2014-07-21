@@ -1,34 +1,24 @@
 <?php
 namespace TYPO3\CMS\Extensionmanager\Tests\Unit\Utility;
 
-/***************************************************************
- * Copyright notice
+/**
+ * This file is part of the TYPO3 CMS project.
  *
- * (c) 2012
- * All rights reserved
+ * It is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License, either version 2
+ * of the License, or any later version.
  *
- * This script is part of the TYPO3 project. The TYPO3 project is
- * free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
+ * For the full copyright and license information, please read the
+ * LICENSE.txt file that was distributed with this source code.
  *
- * The GNU General Public License can be found at
- * http://www.gnu.org/copyleft/gpl.html.
- *
- * This script is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * This copyright notice MUST APPEAR in all copies of the script!
- ***************************************************************/
+ * The TYPO3 project - inspiring people to share!
+ */
 
 /**
  * Testcase
  *
  */
-class FileHandlingUtilityTest extends \TYPO3\CMS\Extbase\Tests\Unit\BaseTestCase {
+class FileHandlingUtilityTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 
 	/**
 	 * @var array List of created fake extensions to be deleted in tearDown() again
@@ -54,6 +44,7 @@ class FileHandlingUtilityTest extends \TYPO3\CMS\Extbase\Tests\Unit\BaseTestCase
 				rmdir($resource);
 			}
 		}
+		parent::tearDown();
 	}
 
 	/**
@@ -241,6 +232,73 @@ class FileHandlingUtilityTest extends \TYPO3\CMS\Extbase\Tests\Unit\BaseTestCase
 	 * @test
 	 * @return void
 	 */
+	public function unpackExtensionFromExtensionDataArrayStripsDirectoriesFromFilesArray() {
+		$extensionData = array(
+			'extKey' => 'test'
+		);
+		$files = array(
+			'ChangeLog' => array(
+				'name' => 'ChangeLog',
+				'size' => 4559,
+				'mtime' => 1219448527,
+				'is_executable' => FALSE,
+				'content' => 'some content to write'
+			),
+			'doc/' => array(
+				'name' => 'doc/',
+				'size' => 0,
+				'mtime' => 1219448527,
+				'is_executable' => FALSE,
+				'content' => ''
+			),
+			'doc/ChangeLog' => array(
+				'name' => 'ChangeLog',
+				'size' => 4559,
+				'mtime' => 1219448527,
+				'is_executable' => FALSE,
+				'content' => 'some content to write'
+			),
+		);
+		$cleanedFiles = array(
+			'ChangeLog' => array(
+				'name' => 'ChangeLog',
+				'size' => 4559,
+				'mtime' => 1219448527,
+				'is_executable' => FALSE,
+				'content' => 'some content to write'
+			),
+			'doc/ChangeLog' => array(
+				'name' => 'ChangeLog',
+				'size' => 4559,
+				'mtime' => 1219448527,
+				'is_executable' => FALSE,
+				'content' => 'some content to write'
+			),
+		);
+		$directories = array(
+			'doc/',
+			'mod/doc/'
+		);
+
+		$fileHandlerMock = $this->getAccessibleMock('TYPO3\\CMS\\Extensionmanager\\Utility\\FileHandlingUtility', array(
+			'makeAndClearExtensionDir',
+			'writeEmConfToFile',
+			'extractFilesArrayFromExtensionData',
+			'extractDirectoriesFromExtensionData',
+			'createDirectoriesForExtensionFiles',
+			'writeExtensionFiles'
+		));
+		$fileHandlerMock->expects($this->once())->method('extractFilesArrayFromExtensionData')->will($this->returnValue($files));
+		$fileHandlerMock->expects($this->once())->method('extractDirectoriesFromExtensionData')->will($this->returnValue($directories));
+		$fileHandlerMock->expects($this->once())->method('createDirectoriesForExtensionFiles')->with($directories);
+		$fileHandlerMock->expects($this->once())->method('writeExtensionFiles')->with($cleanedFiles);
+		$fileHandlerMock->_call('unpackExtensionFromExtensionDataArray', $extensionData);
+	}
+
+	/**
+	 * @test
+	 * @return void
+	 */
 	public function extractFilesArrayFromExtensionDataReturnsFileArray() {
 		$extensionData = array(
 			'key' => 'test',
@@ -288,12 +346,33 @@ class FileHandlingUtilityTest extends \TYPO3\CMS\Extbase\Tests\Unit\BaseTestCase
 	 */
 	public function extractDirectoriesFromExtensionDataExtractsDirectories() {
 		$files = array(
+			'ChangeLog' => array(
+				'name' => 'ChangeLog',
+				'size' => 4559,
+				'mtime' => 1219448527,
+				'is_executable' => FALSE,
+				'content' => 'some content to write'
+			),
+			'doc/' => array(
+				'name' => 'doc/',
+				'size' => 0,
+				'mtime' => 1219448527,
+				'is_executable' => FALSE,
+				'content' => ''
+			),
 			'doc/ChangeLog' => array(
 				'name' => 'ChangeLog',
 				'size' => 4559,
 				'mtime' => 1219448527,
 				'is_executable' => FALSE,
 				'content' => 'some content to write'
+			),
+			'doc/README' => array(
+				'name' => 'README',
+				'size' => 4566,
+				'mtime' => 1219448533,
+				'is_executable' => FALSE,
+				'content' => 'FEEL FREE TO ADD SOME DOCUMENTATION HERE'
 			),
 			'mod/doc/README' => array(
 				'name' => 'README',
@@ -305,8 +384,11 @@ class FileHandlingUtilityTest extends \TYPO3\CMS\Extbase\Tests\Unit\BaseTestCase
 		);
 		$fileHandlerMock = $this->getAccessibleMock('TYPO3\\CMS\\Extensionmanager\\Utility\\FileHandlingUtility', array('makeAndClearExtensionDir'));
 		$extractedDirectories = $fileHandlerMock->_call('extractDirectoriesFromExtensionData', $files);
-		$this->assertContains('doc/', $extractedDirectories);
-		$this->assertContains('mod/doc/', $extractedDirectories);
+		$expected = array(
+			'doc/',
+			'mod/doc/'
+		);
+		$this->assertSame($expected, array_values($extractedDirectories));
 	}
 
 	/**
@@ -478,7 +560,7 @@ class FileHandlingUtilityTest extends \TYPO3\CMS\Extbase\Tests\Unit\BaseTestCase
 		// Create zip-file from extension
 		$filename = $fileHandlerMock->_call('createZipFileFromExtension', $extKey);
 
-		$expectedFilename = PATH_site . 'typo3temp/' . $extKey . '_0.0.0.zip';
+		$expectedFilename = PATH_site . 'typo3temp/' . $extKey . '_0.0.0_' . date('YmdHi') . '.zip';
 		$this->assertEquals($expectedFilename, $filename, 'Archive file name differs from expectation');
 
 		// File was created
@@ -499,5 +581,3 @@ class FileHandlingUtilityTest extends \TYPO3\CMS\Extbase\Tests\Unit\BaseTestCase
 		$this->assertEquals($archive->numFiles, 5, 'Too many or too less files in archive');
 	}
 }
-
-?>

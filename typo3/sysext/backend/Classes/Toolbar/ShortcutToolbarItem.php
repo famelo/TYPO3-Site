@@ -1,31 +1,23 @@
 <?php
 namespace TYPO3\CMS\Backend\Toolbar;
 
-/***************************************************************
- *  Copyright notice
+/**
+ * This file is part of the TYPO3 CMS project.
  *
- *  (c) 2007-2013 Ingo Renner <ingo@typo3.org>
- *  All rights reserved
+ * It is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License, either version 2
+ * of the License, or any later version.
  *
- *  This script is part of the TYPO3 project. The TYPO3 project is
- *  free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
+ * For the full copyright and license information, please read the
+ * LICENSE.txt file that was distributed with this source code.
  *
- *  The GNU General Public License can be found at
- *  http://www.gnu.org/copyleft/gpl.html.
- *  A copy is found in the textfile GPL.txt and important notices to the license
- *  from the author is found in LICENSE.txt distributed with these scripts.
- *
- *
- *  This script is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  This copyright notice MUST APPEAR in all copies of the script!
- ***************************************************************/
+ * The TYPO3 project - inspiring people to share!
+ */
+
+use TYPO3\CMS\Backend\Utility\BackendUtility;
+use TYPO3\CMS\Backend\Utility\IconUtility;
+use TYPO3\CMS\Core\Utility\GeneralUtility;
+use TYPO3\CMS\Core\Utility\MathUtility;
 
 /**
  * Class to render the shortcut menu
@@ -34,7 +26,25 @@ namespace TYPO3\CMS\Backend\Toolbar;
  */
 class ShortcutToolbarItem implements \TYPO3\CMS\Backend\Toolbar\ToolbarItemHookInterface {
 
-	protected $shortcutGroups;
+	const SUPERGLOBAL_GROUP = -100;
+
+	/**
+	 * @var string
+	 * @todo define visibility
+	 */
+	public $perms_clause;
+
+	/**
+	 * @var string
+	 * @todo define visibility
+	 */
+	public $backPath;
+
+	/**
+	 * @var array
+	 * @todo define visibility
+	 */
+	public $fieldArray;
 
 	/**
 	 * All available shortcuts
@@ -42,6 +52,11 @@ class ShortcutToolbarItem implements \TYPO3\CMS\Backend\Toolbar\ToolbarItemHookI
 	 * @var array
 	 */
 	protected $shortcuts;
+
+	/**
+	 * @var array
+	 */
+	protected $shortcutGroups;
 
 	/**
 	 * Labels of all groups.
@@ -54,7 +69,7 @@ class ShortcutToolbarItem implements \TYPO3\CMS\Backend\Toolbar\ToolbarItemHookI
 	/**
 	 * Reference back to the backend object
 	 *
-	 * @var 	TYPO3backend
+	 * @var \TYPO3\CMS\Backend\Controller\BackendController
 	 */
 	protected $backendReference;
 
@@ -64,6 +79,12 @@ class ShortcutToolbarItem implements \TYPO3\CMS\Backend\Toolbar\ToolbarItemHookI
 	 * @param \TYPO3\CMS\Backend\Controller\BackendController $backendReference TYPO3 backend object reference
 	 */
 	public function __construct(\TYPO3\CMS\Backend\Controller\BackendController &$backendReference = NULL) {
+		if (TYPO3_REQUESTTYPE & TYPO3_REQUESTTYPE_AJAX) {
+			$GLOBALS['LANG']->includeLLFile('EXT:lang/locallang_misc.xlf');
+			// Needed to get the correct icons when reloading the menu after saving it
+			$loadModules = GeneralUtility::makeInstance('TYPO3\\CMS\\Backend\\Module\\ModuleLoader');
+			$loadModules->load($GLOBALS['TBE_MODULES']);
+		}
 		$this->backendReference = $backendReference;
 		$this->shortcuts = array();
 		// By default, 5 groups are set
@@ -96,7 +117,7 @@ class ShortcutToolbarItem implements \TYPO3\CMS\Backend\Toolbar\ToolbarItemHookI
 		$title = $GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.xlf:toolbarItems.bookmarks', TRUE);
 		$this->addJavascriptToBackend();
 		$shortcutMenu = array();
-		$shortcutMenu[] = '<a href="#" class="toolbar-item">' . \TYPO3\CMS\Backend\Utility\IconUtility::getSpriteIcon('apps-toolbar-menu-shortcut', array('title' => $title)) . '</a>';
+		$shortcutMenu[] = '<a href="#" class="toolbar-item">' . IconUtility::getSpriteIcon('apps-toolbar-menu-shortcut', array('title' => $title)) . '</a>';
 		$shortcutMenu[] = '<div class="toolbar-item-menu" style="display: none;">';
 		$shortcutMenu[] = $this->renderMenu();
 		$shortcutMenu[] = '</div>';
@@ -112,9 +133,9 @@ class ShortcutToolbarItem implements \TYPO3\CMS\Backend\Toolbar\ToolbarItemHookI
 		$shortcutGroup = $GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.xlf:toolbarItems.bookmarksGroup', TRUE);
 		$shortcutEdit = $GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.xlf:toolbarItems.bookmarksEdit', TRUE);
 		$shortcutDelete = $GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.xlf:toolbarItems.bookmarksDelete', TRUE);
-		$groupIcon = '<img' . \TYPO3\CMS\Backend\Utility\IconUtility::skinImg($this->backPath, 'gfx/i/sysf.gif', 'width="18" height="16"') . ' title="' . $shortcutGroup . '" alt="' . $shortcutGroup . '" />';
-		$editIcon = '<img' . \TYPO3\CMS\Backend\Utility\IconUtility::skinImg($this->backPath, 'gfx/edit2.gif', 'width="11" height="12"') . ' title="' . $shortcutEdit . '" alt="' . $shortcutEdit . '"';
-		$deleteIcon = '<img' . \TYPO3\CMS\Backend\Utility\IconUtility::skinImg($this->backPath, 'gfx/garbage.gif', 'width="11" height="12"') . ' title="' . $shortcutDelete . '" alt="' . $shortcutDelete . '" />';
+		$groupIcon = '<img' . IconUtility::skinImg($this->backPath, 'gfx/i/sysf.gif', 'width="18" height="16"') . ' title="' . $shortcutGroup . '" alt="' . $shortcutGroup . '" />';
+		$editIcon = '<img' . IconUtility::skinImg($this->backPath, 'gfx/edit2.gif', 'width="11" height="12"') . ' title="' . $shortcutEdit . '" alt="' . $shortcutEdit . '"';
+		$deleteIcon = '<img' . IconUtility::skinImg($this->backPath, 'gfx/garbage.gif', 'width="11" height="12"') . ' title="' . $shortcutDelete . '" alt="' . $shortcutDelete . '" />';
 		$shortcutMenu[] = '<table border="0" cellspacing="0" cellpadding="0" class="shortcut-list">';
 		// Render shortcuts with no group (group id = 0) first
 		$noGroupShortcuts = $this->getShortcutsByGroup(0);
@@ -164,7 +185,7 @@ class ShortcutToolbarItem implements \TYPO3\CMS\Backend\Toolbar\ToolbarItemHookI
 		if (count($shortcutMenu) == 1) {
 			// No shortcuts added yet, show a small help message how to add shortcuts
 			$title = $GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.xlf:toolbarItems.bookmarks', TRUE);
-			$icon = \TYPO3\CMS\Backend\Utility\IconUtility::getSpriteIcon('actions-system-shortcut-new', array(
+			$icon = IconUtility::getSpriteIcon('actions-system-shortcut-new', array(
 				'title' => $title
 			));
 			$label = str_replace('%icon%', $icon, $GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_misc.xlf:bookmarkDescription'));
@@ -179,7 +200,7 @@ class ShortcutToolbarItem implements \TYPO3\CMS\Backend\Toolbar\ToolbarItemHookI
 	 * Renders the menu so that it can be returned as response to an AJAX call
 	 *
 	 * @param array $params Array of parameters from the AJAX interface, currently unused
-	 * @param \TYPO3\CMS\Core\Http\AjaxRequestHandler $ajaxObj Object of type TYPO3AJAX
+	 * @param \TYPO3\CMS\Core\Http\AjaxRequestHandler $ajaxObj Object of type AjaxRequestHandler
 	 * @return void
 	 */
 	public function renderAjax($params = array(), \TYPO3\CMS\Core\Http\AjaxRequestHandler &$ajaxObj = NULL) {
@@ -193,7 +214,7 @@ class ShortcutToolbarItem implements \TYPO3\CMS\Backend\Toolbar\ToolbarItemHookI
 	 * @return void
 	 */
 	protected function addJavascriptToBackend() {
-		$this->backendReference->addJavascriptFile('js/shortcutmenu.js');
+		$this->backendReference->addJavascriptFile('sysext/backend/Resources/Public/JavaScript/shortcutmenu.js');
 	}
 
 	/**
@@ -202,7 +223,7 @@ class ShortcutToolbarItem implements \TYPO3\CMS\Backend\Toolbar\ToolbarItemHookI
 	 * @return string List item HTML attibutes
 	 */
 	public function getAdditionalAttributes() {
-		return ' id="shortcut-menu"';
+		return 'id="shortcut-menu"';
 	}
 
 	/**
@@ -211,69 +232,108 @@ class ShortcutToolbarItem implements \TYPO3\CMS\Backend\Toolbar\ToolbarItemHookI
 	 * @return array Array of shortcuts
 	 */
 	protected function initShortcuts() {
-		$shortcuts = array();
-		$globalGroups = $this->getGlobalShortcutGroups();
-		$res = $GLOBALS['TYPO3_DB']->exec_SELECTquery('*', 'sys_be_shortcuts', '((userid = ' . $GLOBALS['BE_USER']->user['uid'] . ' AND sc_group>=0) OR sc_group IN (' . implode(',', array_keys($globalGroups)) . '))', '', 'sc_group,sorting');
+		$globalGroupIdList = implode(',', array_keys($this->getGlobalShortcutGroups()));
+		$res = $GLOBALS['TYPO3_DB']->exec_SELECTquery(
+			'*',
+			'sys_be_shortcuts',
+			'(userid = ' . (int)$GLOBALS['BE_USER']->user['uid'] . ' AND sc_group>=0) OR sc_group IN (' . $globalGroupIdList . ')',
+			'',
+			'sc_group,sorting'
+		);
 		// Traverse shortcuts
+		$lastGroup = 0;
+		$shortcuts = array();
 		while ($row = $GLOBALS['TYPO3_DB']->sql_fetch_assoc($res)) {
 			$shortcut = array('raw' => $row);
-			$moduleParts = explode('|', $row['module_name']);
-			$row['module_name'] = $moduleParts[0];
-			$row['M_module_name'] = $moduleParts[1];
-			$moduleParts = explode('_', $row['M_module_name'] ? $row['M_module_name'] : $row['module_name']);
+
+			list($row['module_name'], $row['M_module_name']) = explode('|', $row['module_name']);
+
 			$queryParts = parse_url($row['url']);
-			$queryParameters = \TYPO3\CMS\Core\Utility\GeneralUtility::explodeUrl2Array($queryParts['query'], 1);
-			if ($row['module_name'] == 'xMOD_alt_doc.php' && is_array($queryParameters['edit'])) {
+			$queryParameters = GeneralUtility::explodeUrl2Array($queryParts['query'], 1);
+			if ($row['module_name'] === 'xMOD_alt_doc.php' && is_array($queryParameters['edit'])) {
 				$shortcut['table'] = key($queryParameters['edit']);
 				$shortcut['recordid'] = key($queryParameters['edit'][$shortcut['table']]);
-				if ($queryParameters['edit'][$shortcut['table']][$shortcut['recordid']] == 'edit') {
+				if ($queryParameters['edit'][$shortcut['table']][$shortcut['recordid']] === 'edit') {
 					$shortcut['type'] = 'edit';
-				} elseif ($queryParameters['edit'][$shortcut['table']][$shortcut['recordid']] == 'new') {
+				} elseif ($queryParameters['edit'][$shortcut['table']][$shortcut['recordid']] === 'new') {
 					$shortcut['type'] = 'new';
 				}
-				if (substr($shortcut['recordid'], -1) == ',') {
+				if (substr($shortcut['recordid'], -1) === ',') {
 					$shortcut['recordid'] = substr($shortcut['recordid'], 0, -1);
 				}
 			} else {
 				$shortcut['type'] = 'other';
 			}
 			// Check for module access
+			$moduleName = $row['M_module_name'] ?: $row['module_name'];
 			$pageId = $this->getLinkedPageId($row['url']);
 			if (!$GLOBALS['BE_USER']->isAdmin()) {
-				if (!isset($GLOBALS['LANG']->moduleLabels['tabs_images'][(implode('_', $moduleParts) . '_tab')])) {
+				if (!isset($GLOBALS['LANG']->moduleLabels['tabs_images'][$moduleName . '_tab'])) {
 					// Nice hack to check if the user has access to this module
 					// - otherwise the translation label would not have been loaded :-)
 					continue;
 				}
-				if (\TYPO3\CMS\Core\Utility\MathUtility::canBeInterpretedAsInteger($pageId)) {
+				if (MathUtility::canBeInterpretedAsInteger($pageId)) {
 					// Check for webmount access
 					if (!$GLOBALS['BE_USER']->isInWebMount($pageId)) {
 						continue;
 					}
 					// Check for record access
-					$pageRow = \TYPO3\CMS\Backend\Utility\BackendUtility::getRecord('pages', $pageId);
+					$pageRow = BackendUtility::getRecord('pages', $pageId);
 					if (!$GLOBALS['BE_USER']->doesUserHaveAccess($pageRow, ($perms = 1))) {
 						continue;
 					}
 				}
 			}
-			$shortcutGroup = $row['sc_group'];
-			if ($shortcutGroup && strcmp($lastGroup, $shortcutGroup) && $shortcutGroup != -100) {
+			$moduleParts = explode('_', $moduleName);
+			$shortcutGroup = (int)$row['sc_group'];
+			if ($shortcutGroup && $lastGroup !== $shortcutGroup && $shortcutGroup !== self::SUPERGLOBAL_GROUP) {
 				$shortcut['groupLabel'] = $this->getShortcutGroupLabel($shortcutGroup);
 			}
+			$lastGroup = $shortcutGroup;
+
 			if ($row['description']) {
 				$shortcut['label'] = $row['description'];
 			} else {
-				$shortcut['label'] = \TYPO3\CMS\Core\Utility\GeneralUtility::fixed_lgd_cs(rawurldecode($queryParts['query']), 150);
+				$shortcut['label'] = GeneralUtility::fixed_lgd_cs(rawurldecode($queryParts['query']), 150);
 			}
 			$shortcut['group'] = $shortcutGroup;
 			$shortcut['icon'] = $this->getShortcutIcon($row, $shortcut);
-			$shortcut['iconTitle'] = $this->getShortcutIconTitle($shortcutLabel, $row['module_name'], $row['M_module_name']);
-			$shortcut['action'] = 'jump(unescape(\'' . rawurlencode($row['url']) . '\'),\'' . implode('_', $moduleParts) . '\',\'' . $moduleParts[0] . '\', ' . intval($pageId) . ');';
-			$lastGroup = $row['sc_group'];
+			$shortcut['iconTitle'] = $this->getShortcutIconTitle($shortcut['label'], $row['module_name'], $row['M_module_name']);
+			$shortcut['action'] = 'jump(unescape(\'' . rawurlencode($this->getTokenUrl($row['url'])) . '\'),\'' . $moduleName . '\',\'' . $moduleParts[0] . '\', ' . (int)$pageId . ');';
+
 			$shortcuts[] = $shortcut;
 		}
 		return $shortcuts;
+	}
+
+	/**
+	 * Adds the correct token, if the url is a mod.php script
+	 *
+	 * @param string $url
+	 * @return string
+	 */
+	protected function getTokenUrl($url) {
+		$parsedUrl = parse_url($url);
+		parse_str($parsedUrl['query'], $parameters);
+
+		// parse the returnUrl and replace the module token of it
+		if (isset($parameters['returnUrl'])) {
+			$parsedReturnUrl = parse_url($parameters['returnUrl']);
+			parse_str($parsedReturnUrl['query'], $returnUrlParameters);
+			if (strpos($parsedReturnUrl['path'], 'mod.php') !== FALSE && isset($returnUrlParameters['M'])) {
+				$module = $returnUrlParameters['M'];
+				$returnUrl = BackendUtility::getModuleUrl($module, $returnUrlParameters);
+				$parameters['returnUrl'] = $returnUrl;
+				$url = $parsedUrl['path'] . '?' . http_build_query($parameters);
+			}
+		}
+
+		if (strpos($parsedUrl['path'], 'mod.php') !== FALSE && isset($parameters['M'])) {
+			$module = $parameters['M'];
+			$url = str_replace('mod.php', '', $parsedUrl['path']) . BackendUtility::getModuleUrl($module, $parameters);
+		}
+		return $url;
 	}
 
 	/**
@@ -301,7 +361,7 @@ class ShortcutToolbarItem implements \TYPO3\CMS\Backend\Toolbar\ToolbarItemHookI
 	protected function getShortcutById($shortcutId) {
 		$returnShortcut = FALSE;
 		foreach ($this->shortcuts as $shortcut) {
-			if ($shortcut['raw']['uid'] == (int) $shortcutId) {
+			if ($shortcut['raw']['uid'] == (int)$shortcutId) {
 				$returnShortcut = $shortcut;
 				continue;
 			}
@@ -310,20 +370,17 @@ class ShortcutToolbarItem implements \TYPO3\CMS\Backend\Toolbar\ToolbarItemHookI
 	}
 
 	/**
-	 * Gets the available shortcut groups from default gropups, user TSConfig,
-	 * and global groups
+	 * Gets the available shortcut groups from default groups, user TSConfig, and global groups
 	 *
-	 * @param array $params Array of parameters from the AJAX interface, currently unused
-	 * @param \TYPO3\CMS\Core\Http\AjaxRequestHandler $ajaxObj Object of type TYPO3AJAX
 	 * @return array
 	 */
-	protected function initShortcutGroups($params = array(), \TYPO3\CMS\Core\Http\AjaxRequestHandler &$ajaxObj = NULL) {
+	protected function initShortcutGroups() {
 		// Groups from TSConfig
 		$bookmarkGroups = $GLOBALS['BE_USER']->getTSConfigProp('options.bookmarkGroups');
 		if (is_array($bookmarkGroups) && count($bookmarkGroups)) {
 			foreach ($bookmarkGroups as $groupId => $label) {
-				if (strcmp('', $label) && strcmp('0', $label)) {
-					$this->shortcutGroups[$groupId] = (string) $label;
+				if (!empty($label)) {
+					$this->shortcutGroups[$groupId] = (string)$label;
 				} elseif ($GLOBALS['BE_USER']->isAdmin()) {
 					unset($this->shortcutGroups[$groupId]);
 				}
@@ -337,12 +394,13 @@ class ShortcutToolbarItem implements \TYPO3\CMS\Backend\Toolbar\ToolbarItemHookI
 			}
 		}
 		// Group -100 is kind of superglobal and can't be changed.
-		$this->shortcutGroups[-100] = 1;
+		$this->shortcutGroups[self::SUPERGLOBAL_GROUP] = 1;
 		// Add labels
 		foreach ($this->shortcutGroups as $groupId => $groupLabel) {
+			$groupId = (int)$groupId;
 			$label = $groupLabel;
 			if ($groupLabel == '1') {
-				$label = $GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_misc.xlf:bookmark_group_' . abs($groupId), 1);
+				$label = $GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_misc.xlf:bookmark_group_' . abs($groupId), TRUE);
 				if (empty($label)) {
 					// Fallback label
 					$label = $GLOBALS['LANG']->getLL('bookmark_group', 1) . ' ' . abs($groupId);
@@ -350,8 +408,8 @@ class ShortcutToolbarItem implements \TYPO3\CMS\Backend\Toolbar\ToolbarItemHookI
 			}
 			if ($groupId < 0) {
 				// Global group
-				$label = $GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_misc.xlf:bookmark_global', 1) . ': ' . (!empty($label) ? $label : abs($groupId));
-				if ($groupId == -100) {
+				$label = $GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_misc.xlf:bookmark_global', TRUE) . ': ' . (!empty($label) ? $label : abs($groupId));
+				if ($groupId === self::SUPERGLOBAL_GROUP) {
 					$label = $GLOBALS['LANG']->getLL('bookmark_global', 1) . ': ' . $GLOBALS['LANG']->getLL('bookmark_all', 1);
 				}
 			}
@@ -364,14 +422,14 @@ class ShortcutToolbarItem implements \TYPO3\CMS\Backend\Toolbar\ToolbarItemHookI
 	 * gets the available shortcut groups
 	 *
 	 * @param array $params Array of parameters from the AJAX interface, currently unused
-	 * @param \TYPO3\CMS\Core\Http\AjaxRequestHandler $ajaxObj Object of type TYPO3AJAX
+	 * @param \TYPO3\CMS\Core\Http\AjaxRequestHandler $ajaxObj Object of type AjaxRequestHandler
 	 * @return void
 	 */
 	public function getAjaxShortcutGroups($params = array(), \TYPO3\CMS\Core\Http\AjaxRequestHandler &$ajaxObj = NULL) {
 		$shortcutGroups = $this->shortcutGroups;
 		if (!$GLOBALS['BE_USER']->isAdmin()) {
 			foreach ($shortcutGroups as $groupId => $groupName) {
-				if (intval($groupId) < 0) {
+				if ((int)$groupId < 0) {
 					unset($shortcutGroups[$groupId]);
 				}
 			}
@@ -384,11 +442,11 @@ class ShortcutToolbarItem implements \TYPO3\CMS\Backend\Toolbar\ToolbarItemHookI
 	 * Deletes a shortcut through an AJAX call
 	 *
 	 * @param array $params Array of parameters from the AJAX interface, currently unused
-	 * @param \TYPO3\CMS\Core\Http\AjaxRequestHandler $ajaxObj Object of type TYPO3AJAX
+	 * @param \TYPO3\CMS\Core\Http\AjaxRequestHandler $ajaxObj Object of type AjaxRequestHandler
 	 * @return void
 	 */
 	public function deleteAjaxShortcut($params = array(), \TYPO3\CMS\Core\Http\AjaxRequestHandler &$ajaxObj = NULL) {
-		$shortcutId = (int) \TYPO3\CMS\Core\Utility\GeneralUtility::_POST('shortcutId');
+		$shortcutId = (int)GeneralUtility::_POST('shortcutId');
 		$fullShortcut = $this->getShortcutById($shortcutId);
 		$ajaxReturn = 'failed';
 		if ($fullShortcut['raw']['userid'] == $GLOBALS['BE_USER']->user['uid']) {
@@ -404,7 +462,7 @@ class ShortcutToolbarItem implements \TYPO3\CMS\Backend\Toolbar\ToolbarItemHookI
 	 * Creates a shortcut through an AJAX call
 	 *
 	 * @param array $params Array of parameters from the AJAX interface, currently unused
-	 * @param \TYPO3\CMS\Core\Http\AjaxRequestHandler $ajaxObj Oject of type TYPO3AJAX
+	 * @param \TYPO3\CMS\Core\Http\AjaxRequestHandler $ajaxObj Oject of type AjaxRequestHandler
 	 * @return void
 	 */
 	public function createAjaxShortcut($params = array(), \TYPO3\CMS\Core\Http\AjaxRequestHandler &$ajaxObj = NULL) {
@@ -412,12 +470,12 @@ class ShortcutToolbarItem implements \TYPO3\CMS\Backend\Toolbar\ToolbarItemHookI
 		// Default name
 		$shortcutName = 'Shortcut';
 		$shortcutNamePrepend = '';
-		$url = \TYPO3\CMS\Core\Utility\GeneralUtility::_POST('url');
-		$module = \TYPO3\CMS\Core\Utility\GeneralUtility::_POST('module');
-		$motherModule = \TYPO3\CMS\Core\Utility\GeneralUtility::_POST('motherModName');
+		$url = GeneralUtility::_POST('url');
+		$module = GeneralUtility::_POST('module');
+		$motherModule = GeneralUtility::_POST('motherModName');
 		// Determine shortcut type
 		$queryParts = parse_url($url);
-		$queryParameters = \TYPO3\CMS\Core\Utility\GeneralUtility::explodeUrl2Array($queryParts['query'], 1);
+		$queryParameters = GeneralUtility::explodeUrl2Array($queryParts['query'], 1);
 		// Proceed only if no scheme is defined, as URL is expected to be relative
 		if (empty($queryParts['scheme'])) {
 			if (is_array($queryParameters['edit'])) {
@@ -435,8 +493,8 @@ class ShortcutToolbarItem implements \TYPO3\CMS\Backend\Toolbar\ToolbarItemHookI
 			}
 			// Lookup the title of this page and use it as default description
 			$pageId = $shortcut['recordid'] ? $shortcut['recordid'] : $this->getLinkedPageId($url);
-			if (\TYPO3\CMS\Core\Utility\MathUtility::canBeInterpretedAsInteger($pageId)) {
-				$page = \TYPO3\CMS\Backend\Utility\BackendUtility::getRecord('pages', $pageId);
+			if (MathUtility::canBeInterpretedAsInteger($pageId)) {
+				$page = BackendUtility::getRecord('pages', $pageId);
 				if (count($page)) {
 					// Set the name to the title of the page
 					if ($shortcut['type'] == 'other') {
@@ -477,16 +535,16 @@ class ShortcutToolbarItem implements \TYPO3\CMS\Backend\Toolbar\ToolbarItemHookI
 	 * permissions to do so and saves the changes if everything is ok
 	 *
 	 * @param array $params Array of parameters from the AJAX interface, currently unused
-	 * @param \TYPO3\CMS\Core\Http\AjaxRequestHandler $ajaxObj Object of type TYPO3AJAX
+	 * @param \TYPO3\CMS\Core\Http\AjaxRequestHandler $ajaxObj Object of type AjaxRequestHandler
 	 * @return void
 	 */
 	public function setAjaxShortcut($params = array(), \TYPO3\CMS\Core\Http\AjaxRequestHandler &$ajaxObj = NULL) {
-		$shortcutId = (int) \TYPO3\CMS\Core\Utility\GeneralUtility::_POST('shortcutId');
-		$shortcutName = strip_tags(\TYPO3\CMS\Core\Utility\GeneralUtility::_POST('value'));
-		$shortcutGroupId = (int) \TYPO3\CMS\Core\Utility\GeneralUtility::_POST('shortcut-group');
+		$shortcutId = (int)GeneralUtility::_POST('shortcutId');
+		$shortcutName = strip_tags(GeneralUtility::_POST('value'));
+		$shortcutGroupId = (int)GeneralUtility::_POST('shortcut-group');
 		if ($shortcutGroupId > 0 || $GLOBALS['BE_USER']->isAdmin()) {
 			// Users can delete only their own shortcuts (except admins)
-			$addUserWhere = !$GLOBALS['BE_USER']->isAdmin() ? ' AND userid=' . intval($GLOBALS['BE_USER']->user['uid']) : '';
+			$addUserWhere = !$GLOBALS['BE_USER']->isAdmin() ? ' AND userid=' . (int)$GLOBALS['BE_USER']->user['uid'] : '';
 			$fieldValues = array(
 				'description' => $shortcutName,
 				'sc_group' => $shortcutGroupId
@@ -512,11 +570,7 @@ class ShortcutToolbarItem implements \TYPO3\CMS\Backend\Toolbar\ToolbarItemHookI
 	 * @return string The shortcut group label, can be an empty string if no group was found for the id
 	 */
 	protected function getShortcutGroupLabel($groupId) {
-		$label = '';
-		if ($this->shortcutGroups[$groupId]) {
-			$label = $this->shortcutGroups[$groupId];
-		}
-		return $label;
+		return isset($this->shortcutGroups[$groupId]) ? $this->shortcutGroups[$groupId] : '';
 	}
 
 	/**
@@ -556,66 +610,65 @@ class ShortcutToolbarItem implements \TYPO3\CMS\Backend\Toolbar\ToolbarItemHookI
 	 */
 	protected function getShortcutIcon($row, $shortcut) {
 		switch ($row['module_name']) {
-		case 'xMOD_alt_doc.php':
-			$table = $shortcut['table'];
-			$recordid = $shortcut['recordid'];
-			if ($shortcut['type'] == 'edit') {
-				// Creating the list of fields to include in the SQL query:
-				$selectFields = $this->fieldArray;
-				$selectFields[] = 'uid';
-				$selectFields[] = 'pid';
-				if ($table == 'pages') {
-					if (\TYPO3\CMS\Core\Utility\ExtensionManagementUtility::isLoaded('cms')) {
+			case 'xMOD_alt_doc.php':
+				$table = $shortcut['table'];
+				$recordid = $shortcut['recordid'];
+				$icon = '';
+				if ($shortcut['type'] == 'edit') {
+					// Creating the list of fields to include in the SQL query:
+					$selectFields = $this->fieldArray;
+					$selectFields[] = 'uid';
+					$selectFields[] = 'pid';
+					if ($table == 'pages') {
 						$selectFields[] = 'module';
 						$selectFields[] = 'extendToSubpages';
+						$selectFields[] = 'doktype';
 					}
-					$selectFields[] = 'doktype';
+					if (is_array($GLOBALS['TCA'][$table]['ctrl']['enablecolumns'])) {
+						$selectFields = array_merge($selectFields, $GLOBALS['TCA'][$table]['ctrl']['enablecolumns']);
+					}
+					if ($GLOBALS['TCA'][$table]['ctrl']['type']) {
+						$selectFields[] = $GLOBALS['TCA'][$table]['ctrl']['type'];
+					}
+					if ($GLOBALS['TCA'][$table]['ctrl']['typeicon_column']) {
+						$selectFields[] = $GLOBALS['TCA'][$table]['ctrl']['typeicon_column'];
+					}
+					if ($GLOBALS['TCA'][$table]['ctrl']['versioningWS']) {
+						$selectFields[] = 't3ver_state';
+					}
+					// Unique list!
+					$selectFields = array_unique($selectFields);
+					$permissionClause = $table === 'pages' && $this->perms_clause ? ' AND ' . $this->perms_clause : '';
+					$sqlQueryParts = array(
+						'SELECT' => implode(',', $selectFields),
+						'FROM' => $table,
+						'WHERE' => 'uid IN (' . $recordid . ') ' . $permissionClause . BackendUtility::deleteClause($table) . BackendUtility::versioningPlaceholderClause($table)
+					);
+					$result = $GLOBALS['TYPO3_DB']->exec_SELECT_queryArray($sqlQueryParts);
+					$row = $GLOBALS['TYPO3_DB']->sql_fetch_assoc($result);
+					$icon = IconUtility::getIcon($table, $row, $this->backPath);
+				} elseif ($shortcut['type'] == 'new') {
+					$icon = IconUtility::getIcon($table, array(), $this->backPath);
 				}
-				if (is_array($GLOBALS['TCA'][$table]['ctrl']['enablecolumns'])) {
-					$selectFields = array_merge($selectFields, $GLOBALS['TCA'][$table]['ctrl']['enablecolumns']);
+				$icon = IconUtility::skinImg($this->backPath, $icon, '', 1);
+				break;
+			case 'xMOD_file_edit.php':
+				$icon = 'gfx/edit_file.gif';
+				break;
+			case 'wizard_rte':
+				$icon = 'gfx/edit_rtewiz.gif';
+				break;
+			default:
+				if ($GLOBALS['LANG']->moduleLabels['tabs_images'][$row['module_name'] . '_tab']) {
+					$icon = $GLOBALS['LANG']->moduleLabels['tabs_images'][$row['module_name'] . '_tab'];
+					// Change icon of fileadmin references - otherwise it doesn't differ with Web->List
+					$icon = str_replace('mod/file/list/list.gif', 'mod/file/file.gif', $icon);
+					if (GeneralUtility::isAbsPath($icon)) {
+						$icon = '../' . \TYPO3\CMS\Core\Utility\PathUtility::stripPathSitePrefix($icon);
+					}
+				} else {
+					$icon = 'gfx/dummy_module.gif';
 				}
-				if ($GLOBALS['TCA'][$table]['ctrl']['type']) {
-					$selectFields[] = $GLOBALS['TCA'][$table]['ctrl']['type'];
-				}
-				if ($GLOBALS['TCA'][$table]['ctrl']['typeicon_column']) {
-					$selectFields[] = $GLOBALS['TCA'][$table]['ctrl']['typeicon_column'];
-				}
-				if ($GLOBALS['TCA'][$table]['ctrl']['versioningWS']) {
-					$selectFields[] = 't3ver_state';
-				}
-				// Unique list!
-				$selectFields = array_unique($selectFields);
-				$permissionClause = $table == 'pages' && $this->perms_clause ? ' AND ' . $this->perms_clause : '';
-				$sqlQueryParts = array(
-					'SELECT' => implode(',', $selectFields),
-					'FROM' => $table,
-					'WHERE' => 'uid IN (' . $recordid . ') ' . $permissionClause . \TYPO3\CMS\Backend\Utility\BackendUtility::deleteClause($table) . \TYPO3\CMS\Backend\Utility\BackendUtility::versioningPlaceholderClause($table)
-				);
-				$result = $GLOBALS['TYPO3_DB']->exec_SELECT_queryArray($sqlQueryParts);
-				$row = $GLOBALS['TYPO3_DB']->sql_fetch_assoc($result);
-				$icon = \TYPO3\CMS\Backend\Utility\IconUtility::getIcon($table, $row, $this->backPath);
-			} elseif ($shortcut['type'] == 'new') {
-				$icon = \TYPO3\CMS\Backend\Utility\IconUtility::getIcon($table, '', $this->backPath);
-			}
-			$icon = \TYPO3\CMS\Backend\Utility\IconUtility::skinImg($this->backPath, $icon, '', 1);
-			break;
-		case 'xMOD_file_edit.php':
-			$icon = 'gfx/edit_file.gif';
-			break;
-		case 'xMOD_wizard_rte.php':
-			$icon = 'gfx/edit_rtewiz.gif';
-			break;
-		default:
-			if ($GLOBALS['LANG']->moduleLabels['tabs_images'][$row['module_name'] . '_tab']) {
-				$icon = $GLOBALS['LANG']->moduleLabels['tabs_images'][$row['module_name'] . '_tab'];
-				// Change icon of fileadmin references - otherwise it doesn't differ with Web->List
-				$icon = str_replace('mod/file/list/list.gif', 'mod/file/file.gif', $icon);
-				if (\TYPO3\CMS\Core\Utility\GeneralUtility::isAbsPath($icon)) {
-					$icon = '../' . substr($icon, strlen(PATH_site));
-				}
-			} else {
-				$icon = 'gfx/dummy_module.gif';
-			}
 		}
 		return '<img src="' . $icon . '" alt="' . $GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.xlf:toolbarItems.shortcut', TRUE) . '" title="' . $GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.xlf:toolbarItems.shortcut', TRUE) . '" />';
 	}
@@ -657,6 +710,3 @@ class ShortcutToolbarItem implements \TYPO3\CMS\Backend\Toolbar\ToolbarItemHookI
 	}
 
 }
-
-
-?>

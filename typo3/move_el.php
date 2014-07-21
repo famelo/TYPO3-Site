@@ -1,48 +1,31 @@
 <?php
-/***************************************************************
- *  Copyright notice
+/**
+ * This file is part of the TYPO3 CMS project.
  *
- *  (c) 1999-2013 Kasper Skårhøj (kasperYYYY@typo3.com)
- *  All rights reserved
+ * It is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License, either version 2
+ * of the License, or any later version.
  *
- *  This script is part of the TYPO3 project. The TYPO3 project is
- *  free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
+ * For the full copyright and license information, please read the
+ * LICENSE.txt file that was distributed with this source code.
  *
- *  The GNU General Public License can be found at
- *  http://www.gnu.org/copyleft/gpl.html.
- *  A copy is found in the textfile GPL.txt and important notices to the license
- *  from the author is found in LICENSE.txt distributed with these scripts.
- *
- *
- *  This script is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  This copyright notice MUST APPEAR in all copies of the script!
- ***************************************************************/
+ * The TYPO3 project - inspiring people to share!
+ */
+
 /**
  * Move element wizard:
  * Moving pages or content elements (tt_content) around in the system via a page tree navigation.
  *
- * Revised for TYPO3 3.6 November/2003 by Kasper Skårhøj
- * XHTML compatible.
- *
  * @author Kasper Skårhøj <kasperYYYY@typo3.com>
  */
-$BACK_PATH = '';
-require 'init.php';
-// Include local language labels:
-$LANG->includeLLFile('EXT:lang/locallang_misc.xlf');
+require __DIR__ . '/init.php';
+
 /**
  * Local extension of the page tree class
  *
  * @author Kasper Skårhøj <kasperYYYY@typo3.com>
  */
-class localPageTree extends \TYPO3\CMS\Backend\Tree\View\PageTreeView {
+class moveElementLocalPageTree extends \TYPO3\CMS\Backend\Tree\View\PageTreeView {
 
 	/**
 	 * Inserting uid-information in title-text for an icon
@@ -71,6 +54,13 @@ class ext_posMap_pages extends \TYPO3\CMS\Backend\Tree\View\PagePositionMap {
 	public $l_insertNewPageHere = 'movePageToHere';
 
 	/**
+	 * Page tree implementation class name
+	 *
+	 * @var string
+	 */
+	protected $pageTreeClassName = 'moveElementLocalPageTree';
+
+	/**
 	 * Creates the onclick event for the insert-icons.
 	 *
 	 * @param integer $pid The pid.
@@ -91,7 +81,7 @@ class ext_posMap_pages extends \TYPO3\CMS\Backend\Tree\View\PagePositionMap {
 	 * @todo Define visibility
 	 */
 	public function linkPageTitle($str, $rec) {
-		$url = \TYPO3\CMS\Core\Utility\GeneralUtility::linkThisScript(array('uid' => intval($rec['uid']), 'moveUid' => $GLOBALS['SOBE']->moveUid));
+		$url = \TYPO3\CMS\Core\Utility\GeneralUtility::linkThisScript(array('uid' => (int)$rec['uid'], 'moveUid' => $GLOBALS['SOBE']->moveUid));
 		return '<a href="' . htmlspecialchars($url) . '">' . $str . '</a>';
 	}
 
@@ -99,7 +89,7 @@ class ext_posMap_pages extends \TYPO3\CMS\Backend\Tree\View\PagePositionMap {
 	 * Wrap $t_code in bold IF the $dat uid matches $id
 	 *
 	 * @param string $t_code Title string
-	 * @param array $dat Infomation array with record array inside.
+	 * @param array $dat Information array with record array inside.
 	 * @param integer $id The current id.
 	 * @return string The title string.
 	 * @todo Define visibility
@@ -123,6 +113,13 @@ class ext_posMap_tt_content extends \TYPO3\CMS\Backend\Tree\View\PagePositionMap
 	public $dontPrintPageInsertIcons = 1;
 
 	/**
+	 * Page tree implementation class name
+	 *
+	 * @var string
+	 */
+	protected $pageTreeClassName = 'moveElementLocalPageTree';
+
+	/**
 	 * Wrapping page title.
 	 *
 	 * @param string $str Page title.
@@ -131,7 +128,7 @@ class ext_posMap_tt_content extends \TYPO3\CMS\Backend\Tree\View\PagePositionMap
 	 * @todo Define visibility
 	 */
 	public function linkPageTitle($str, $rec) {
-		$url = \TYPO3\CMS\Core\Utility\GeneralUtility::linkThisScript(array('uid' => intval($rec['uid']), 'moveUid' => $GLOBALS['SOBE']->moveUid));
+		$url = \TYPO3\CMS\Core\Utility\GeneralUtility::linkThisScript(array('uid' => (int)$rec['uid'], 'moveUid' => $GLOBALS['SOBE']->moveUid));
 		return '<a href="' . htmlspecialchars($url) . '">' . $str . '</a>';
 	}
 
@@ -149,18 +146,8 @@ class ext_posMap_tt_content extends \TYPO3\CMS\Backend\Tree\View\PagePositionMap
 		}
 		return parent::wrapRecordTitle($str, $row);
 	}
-
 }
 
-/*
- * @deprecated since 6.0, the classname SC_move_el and this file is obsolete
- * and will be removed with 6.2. The class was renamed and is now located at:
- * typo3/sysext/backend/Classes/Controller/ContentElement/MoveElementController.php
- */
-require_once \TYPO3\CMS\Core\Utility\ExtensionManagementUtility::extPath('backend') . 'Classes/Controller/ContentElement/MoveElementController.php';
-// Make instance:
-$SOBE = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Backend\\Controller\\ContentElement\\MoveElementController');
-$SOBE->init();
-$SOBE->main();
-$SOBE->printContent();
-?>
+$moveElementController = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Backend\\Controller\\ContentElement\\MoveElementController');
+$moveElementController->main();
+$moveElementController->printContent();

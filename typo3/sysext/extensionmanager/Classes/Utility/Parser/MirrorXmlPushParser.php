@@ -1,29 +1,18 @@
 <?php
 namespace TYPO3\CMS\Extensionmanager\Utility\Parser;
 
-/***************************************************************
- * Copyright notice
+/**
+ * This file is part of the TYPO3 CMS project.
  *
- * (c) 2010-2013 Marcus Krause <marcus#exp2010@t3sec.info>
- *		 Steffen Kamper <info@sk-typo3.de>
- * All rights reserved
+ * It is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License, either version 2
+ * of the License, or any later version.
  *
- * This script is part of the TYPO3 project. The TYPO3 project is
- * free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
+ * For the full copyright and license information, please read the
+ * LICENSE.txt file that was distributed with this source code.
  *
- * The GNU General Public License can be found at
- * http://www.gnu.org/copyleft/gpl.html.
- *
- * This script is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU General Public License for more details.
- *
- * This copyright notice MUST APPEAR in all copies of the script!
- ***************************************************************/
+ * The TYPO3 project - inspiring people to share!
+ */
 /**
  * Parser for TYPO3's mirrors.xml file.
  *
@@ -38,14 +27,12 @@ namespace TYPO3\CMS\Extensionmanager\Utility\Parser;
  * @author Steffen Kamper <info@sk-typo3.de>
  * @since 2010-11-17
  */
-class MirrorXmlPushParser extends \TYPO3\CMS\Extensionmanager\Utility\Parser\AbstractMirrorXmlParser implements \SplSubject {
+class MirrorXmlPushParser extends AbstractMirrorXmlParser {
 
 	/**
-	 * Keeps list of attached observers.
-	 *
-	 * @var SplObserver[]
+	 * @var string
 	 */
-	protected $observers = array();
+	protected $element;
 
 	/**
 	 * Class constructor.
@@ -103,8 +90,8 @@ class MirrorXmlPushParser extends \TYPO3\CMS\Extensionmanager\Utility\Parser\Abs
 	 */
 	protected function startElement($parser, $elementName, $attrs) {
 		switch ($elementName) {
-		default:
-			$this->element = $elementName;
+			default:
+				$this->element = $elementName;
 		}
 	}
 
@@ -120,12 +107,12 @@ class MirrorXmlPushParser extends \TYPO3\CMS\Extensionmanager\Utility\Parser\Abs
 	 */
 	protected function endElement($parser, $elementName) {
 		switch ($elementName) {
-		case 'mirror':
-			$this->notify();
-			$this->resetProperties();
-			break;
-		default:
-			$this->element = NULL;
+			case 'mirror':
+				$this->notify();
+				$this->resetProperties();
+				break;
+			default:
+				$this->element = NULL;
 		}
 	}
 
@@ -142,72 +129,30 @@ class MirrorXmlPushParser extends \TYPO3\CMS\Extensionmanager\Utility\Parser\Abs
 	protected function characterData($parser, $data) {
 		if (isset($this->element)) {
 			switch ($this->element) {
-			case 'title':
-				$this->title = $data;
-				break;
-			case 'host':
-				$this->host = $data;
-				break;
-			case 'path':
-				$this->path = $data;
-				break;
-			case 'country':
-				$this->country = $data;
-				break;
-			case 'name':
-				$this->sponsorname = $data;
-				break;
-			case 'link':
-				$this->sponsorlink = $data;
-				break;
-			case 'logo':
-				$this->sponsorlogo = $data;
-				break;
-			default:
-
+				case 'title':
+					$this->title = $data;
+					break;
+				case 'host':
+					$this->host = $data;
+					break;
+				case 'path':
+					$this->path = $data;
+					break;
+				case 'country':
+					$this->country = $data;
+					break;
+				case 'name':
+					$this->sponsorname = $data;
+					break;
+				case 'link':
+					$this->sponsorlink = $data;
+					break;
+				case 'logo':
+					$this->sponsorlogo = $data;
+					break;
+				default:
+					// Do nothing
 			}
 		}
 	}
-
-	/**
-	 * Method attaches an observer.
-	 *
-	 * @param SplObserver $observer an observer to attach
-	 * @return void
-	 * @see $observers, detach(), notify()
-	 */
-	public function attach(\SplObserver $observer) {
-		$this->observers[] = $observer;
-	}
-
-	/**
-	 * Method detaches an attached observer
-	 *
-	 * @param SplObserver $observer an observer to detach
-	 * @return void
-	 * @see $observers, attach(), notify()
-	 */
-	public function detach(\SplObserver $observer) {
-		$key = array_search($observer, $this->observers, TRUE);
-		if (!($key === FALSE)) {
-			unset($this->observers[$key]);
-		}
-	}
-
-	/**
-	 * Method notifies attached observers.
-	 *
-	 * @access public
-	 * @return void
-	 * @see $observers, attach(), detach()
-	 */
-	public function notify() {
-		foreach ($this->observers as $observer) {
-			$observer->update($this);
-		}
-	}
-
 }
-
-
-?>

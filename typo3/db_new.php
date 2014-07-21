@@ -1,49 +1,33 @@
 <?php
-/***************************************************************
- *  Copyright notice
+/**
+ * This file is part of the TYPO3 CMS project.
  *
- *  (c) 1999-2013 Kasper Skårhøj (kasperYYYY@typo3.com)
- *  All rights reserved
+ * It is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License, either version 2
+ * of the License, or any later version.
  *
- *  This script is part of the TYPO3 project. The TYPO3 project is
- *  free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
+ * For the full copyright and license information, please read the
+ * LICENSE.txt file that was distributed with this source code.
  *
- *  The GNU General Public License can be found at
- *  http://www.gnu.org/copyleft/gpl.html.
- *  A copy is found in the textfile GPL.txt and important notices to the license
- *  from the author is found in LICENSE.txt distributed with these scripts.
- *
- *
- *  This script is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  This copyright notice MUST APPEAR in all copies of the script!
- ***************************************************************/
+ * The TYPO3 project - inspiring people to share!
+ */
+
 /**
  * New database item menu
  *
  * This script lets users choose a new database element to create.
  * Includes a wizard mode for visually pointing out the position of new pages
  *
- * Revised for TYPO3 3.6 November/2003 by Kasper Skårhøj
- * XHTML compliant
- *
  * @author Kasper Skårhøj <kasperYYYY@typo3.com>
  */
-$BACK_PATH = '';
-require 'init.php';
-$LANG->includeLLFile('EXT:lang/locallang_misc.xlf');
+require __DIR__ . '/init.php';
+
 /**
  * Extension for the tree class that generates the tree of pages in the page-wizard mode
  *
  * @author Kasper Skårhøj <kasperYYYY@typo3.com>
  */
-class localPageTree extends \TYPO3\CMS\Backend\Tree\View\PageTreeView {
+class newRecordLocalPageTree extends \TYPO3\CMS\Backend\Tree\View\PageTreeView {
 
 	/**
 	 * Inserting uid-information in title-text for an icon
@@ -68,18 +52,8 @@ class localPageTree extends \TYPO3\CMS\Backend\Tree\View\PageTreeView {
 	public function expandNext($id) {
 		return $id == $GLOBALS['SOBE']->id ? 1 : 0;
 	}
-
 }
 
-/*
- * @deprecated since 6.0, the classname SC_db_new and this file is obsolete
- * and will be removed with 6.2. The class was renamed and is now located at:
- * typo3/sysext/backend/Classes/Controller/NewRecordController.php
- */
-require_once \TYPO3\CMS\Core\Utility\ExtensionManagementUtility::extPath('backend') . 'Classes/Controller/NewRecordController.php';
-// Make instance:
-$SOBE = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Backend\\Controller\\NewRecordController');
-$SOBE->init();
-$SOBE->main();
-$SOBE->printContent();
-?>
+$newRecordController = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Backend\\Controller\\NewRecordController');
+$newRecordController->main();
+$newRecordController->printContent();

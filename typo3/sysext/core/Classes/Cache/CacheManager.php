@@ -1,28 +1,22 @@
 <?php
 namespace TYPO3\CMS\Core\Cache;
 
-/***************************************************************
- *  Copyright notice
+/**
+ * This file is part of the TYPO3 CMS project.
  *
- *  (c) 2009-2013 Ingo Renner <ingo@typo3.org>
- *  All rights reserved
+ * It is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License, either version 2
+ * of the License, or any later version.
  *
- *  This script is part of the TYPO3 project. The TYPO3 project is
- *  free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
+ * For the full copyright and license information, please read the
+ * LICENSE.txt file that was distributed with this source code.
  *
- *  The GNU General Public License can be found at
- *  http://www.gnu.org/copyleft/gpl.html.
- *
- *  This script is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  This copyright notice MUST APPEAR in all copies of the script!
- ***************************************************************/
+ * The TYPO3 project - inspiring people to share!
+ */
+
+use TYPO3\CMS\Core\Cache\Exception\NoSuchCacheGroupException;
+
+
 /**
  * The Cache Manager
  *
@@ -40,7 +34,7 @@ class CacheManager implements \TYPO3\CMS\Core\SingletonInterface {
 	protected $cacheFactory;
 
 	/**
-	 * @var array
+	 * @var \TYPO3\CMS\Core\Cache\Frontend\FrontendInterface[]
 	 */
 	protected $caches = array();
 
@@ -50,12 +44,23 @@ class CacheManager implements \TYPO3\CMS\Core\SingletonInterface {
 	protected $cacheConfigurations = array();
 
 	/**
+	 * Used to flush caches of a specific group
+	 * is an associative array containing the group identifier as key
+	 * and the identifier as an array within that group
+	 * groups are set via the cache configurations of each cache.
+	 *
+	 * @var array
+	 */
+	protected $cacheGroups = array();
+
+	/**
 	 * @var array Default cache configuration as fallback
 	 */
 	protected $defaultCacheConfiguration = array(
 		'frontend' => 'TYPO3\\CMS\\Core\\Cache\\Frontend\\VariableFrontend',
 		'backend' => 'TYPO3\\CMS\\Core\\Cache\\Backend\\Typo3DatabaseBackend',
-		'options' => array()
+		'options' => array(),
+		'groups' => array('all')
 	);
 
 	/**
@@ -150,6 +155,51 @@ class CacheManager implements \TYPO3\CMS\Core\SingletonInterface {
 	}
 
 	/**
+	 * Flushes all registered caches of a specific group
+	 *
+	 * @param string $groupIdentifier
+	 * @return void
+	 * @throws NoSuchCacheGroupException
+	 * @api
+	 */
+	public function flushCachesInGroup($groupIdentifier) {
+		$this->createAllCaches();
+		if (isset($this->cacheGroups[$groupIdentifier])) {
+			foreach ($this->cacheGroups[$groupIdentifier] as $cacheIdentifier) {
+				if (isset($this->caches[$cacheIdentifier])) {
+					$this->caches[$cacheIdentifier]->flush();
+				}
+			}
+		} else {
+			throw new NoSuchCacheGroupException('No cache in the specified group \'' . $groupIdentifier . '\'', 1390334120);
+		}
+	}
+
+	/**
+	 * Flushes entries tagged by the specified tag of all registered
+	 * caches of a specific group.
+	 *
+	 * @param string $groupIdentifier
+	 * @param string $tag Tag to search for
+	 * @return void
+	 * @throws NoSuchCacheGroupException
+	 * @api
+	 */
+	public function flushCachesInGroupByTag($groupIdentifier, $tag) {
+		$this->createAllCaches();
+		if (isset($this->cacheGroups[$groupIdentifier])) {
+			foreach ($this->cacheGroups[$groupIdentifier] as $cacheIdentifier) {
+				if (isset($this->caches[$cacheIdentifier])) {
+					$this->caches[$cacheIdentifier]->flushByTag($tag);
+				}
+			}
+		} else {
+			throw new NoSuchCacheGroupException('No cache in the specified group \'' . $groupIdentifier . '\'', 1390337129);
+		}
+	}
+
+
+	/**
 	 * Flushes entries tagged by the specified tag of all registered
 	 * caches.
 	 *
@@ -187,79 +237,78 @@ class CacheManager implements \TYPO3\CMS\Core\SingletonInterface {
 		$objectClassesCache = $this->getCache('FLOW3_Object_Classes');
 		$objectConfigurationCache = $this->getCache('FLOW3_Object_Configuration');
 		switch ($fileMonitorIdentifier) {
-		case 'FLOW3_ClassFiles':
-			$modifiedAspectClassNamesWithUnderscores = array();
-			foreach ($changedFiles as $pathAndFilename => $status) {
-				$pathAndFilename = str_replace(FLOW3_PATH_PACKAGES, '', $pathAndFilename);
-				$matches = array();
-				if (preg_match('/[^\\/]+\\/(.+)\\/(Classes|Tests)\\/(.+)\\.php/', $pathAndFilename, $matches) === 1) {
-					$classNameWithUnderscores = str_replace('/', '_', $matches[1] . '_' . ($matches[2] === 'Tests' ? 'Tests_' : '') . $matches[3]);
-					$classNameWithUnderscores = str_replace('.', '_', $classNameWithUnderscores);
-					$modifiedClassNamesWithUnderscores[$classNameWithUnderscores] = TRUE;
-					// If an aspect was modified, the whole code cache needs to be flushed, so keep track of them:
-					if (substr($classNameWithUnderscores, -6, 6) === 'Aspect') {
-						$modifiedAspectClassNamesWithUnderscores[$classNameWithUnderscores] = TRUE;
-					}
-					// As long as no modified aspect was found, we are optimistic that only part of the cache needs to be flushed:
-					if (count($modifiedAspectClassNamesWithUnderscores) === 0) {
-						$objectClassesCache->remove($classNameWithUnderscores);
-					}
-				}
-			}
-			$flushDoctrineProxyCache = FALSE;
-			if (count($modifiedClassNamesWithUnderscores) > 0) {
-				$reflectionStatusCache = $this->getCache('FLOW3_Reflection_Status');
-				foreach (array_keys($modifiedClassNamesWithUnderscores) as $classNameWithUnderscores) {
-					$reflectionStatusCache->remove($classNameWithUnderscores);
-					if ($flushDoctrineProxyCache === FALSE && preg_match('/_Domain_Model_(.+)/', $classNameWithUnderscores) === 1) {
-						$flushDoctrineProxyCache = TRUE;
+			case 'FLOW3_ClassFiles':
+				$modifiedAspectClassNamesWithUnderscores = array();
+				foreach ($changedFiles as $pathAndFilename => $status) {
+					$pathAndFilename = str_replace(FLOW3_PATH_PACKAGES, '', $pathAndFilename);
+					$matches = array();
+					if (preg_match('/[^\\/]+\\/(.+)\\/(Classes|Tests)\\/(.+)\\.php/', $pathAndFilename, $matches) === 1) {
+						$classNameWithUnderscores = str_replace(array('/', '.'), '_', $matches[1] . '_' . ($matches[2] === 'Tests' ? 'Tests_' : '') . $matches[3]);
+						$modifiedClassNamesWithUnderscores[$classNameWithUnderscores] = TRUE;
+						// If an aspect was modified, the whole code cache needs to be flushed, so keep track of them:
+						if (substr($classNameWithUnderscores, -6, 6) === 'Aspect') {
+							$modifiedAspectClassNamesWithUnderscores[$classNameWithUnderscores] = TRUE;
+						}
+						// As long as no modified aspect was found, we are optimistic that only part of the cache needs to be flushed:
+						if (count($modifiedAspectClassNamesWithUnderscores) === 0) {
+							$objectClassesCache->remove($classNameWithUnderscores);
+						}
 					}
 				}
+				$flushDoctrineProxyCache = FALSE;
+				if (count($modifiedClassNamesWithUnderscores) > 0) {
+					$reflectionStatusCache = $this->getCache('FLOW3_Reflection_Status');
+					foreach (array_keys($modifiedClassNamesWithUnderscores) as $classNameWithUnderscores) {
+						$reflectionStatusCache->remove($classNameWithUnderscores);
+						if ($flushDoctrineProxyCache === FALSE && preg_match('/_Domain_Model_(.+)/', $classNameWithUnderscores) === 1) {
+							$flushDoctrineProxyCache = TRUE;
+						}
+					}
+					$objectConfigurationCache->remove('allCompiledCodeUpToDate');
+				}
+				if (count($modifiedAspectClassNamesWithUnderscores) > 0) {
+					$this->systemLogger->log('Aspect classes have been modified, flushing the whole proxy classes cache.', LOG_INFO);
+					$objectClassesCache->flush();
+				}
+				if ($flushDoctrineProxyCache === TRUE) {
+					$this->systemLogger->log('Domain model changes have been detected, triggering Doctrine 2 proxy rebuilding.', LOG_INFO);
+					$objectConfigurationCache->remove('doctrineProxyCodeUpToDate');
+				}
+				break;
+			case 'FLOW3_ConfigurationFiles':
+				$policyChangeDetected = FALSE;
+				$routesChangeDetected = FALSE;
+				foreach (array_keys($changedFiles) as $pathAndFilename) {
+					$filename = basename($pathAndFilename);
+					if (!in_array($filename, array('Policy.yaml', 'Routes.yaml'))) {
+						continue;
+					}
+					if ($policyChangeDetected === FALSE && $filename === 'Policy.yaml') {
+						$this->systemLogger->log('The security policies have changed, flushing the policy cache.', LOG_INFO);
+						$this->getCache('FLOW3_Security_Policy')->flush();
+						$policyChangeDetected = TRUE;
+					} elseif ($routesChangeDetected === FALSE && $filename === 'Routes.yaml') {
+						$this->systemLogger->log('A Routes.yaml file has been changed, flushing the routing cache.', LOG_INFO);
+						$this->getCache('FLOW3_Mvc_Routing_FindMatchResults')->flush();
+						$this->getCache('FLOW3_Mvc_Routing_Resolve')->flush();
+						$routesChangeDetected = TRUE;
+					}
+				}
+				$this->systemLogger->log('The configuration has changed, triggering an AOP proxy class rebuild.', LOG_INFO);
+				$objectConfigurationCache->remove('allAspectClassesUpToDate');
 				$objectConfigurationCache->remove('allCompiledCodeUpToDate');
-			}
-			if (count($modifiedAspectClassNamesWithUnderscores) > 0) {
-				$this->systemLogger->log('Aspect classes have been modified, flushing the whole proxy classes cache.', LOG_INFO);
 				$objectClassesCache->flush();
-			}
-			if ($flushDoctrineProxyCache === TRUE) {
-				$this->systemLogger->log('Domain model changes have been detected, triggering Doctrine 2 proxy rebuilding.', LOG_INFO);
-				$objectConfigurationCache->remove('doctrineProxyCodeUpToDate');
-			}
-			break;
-		case 'FLOW3_ConfigurationFiles':
-			$policyChangeDetected = FALSE;
-			$routesChangeDetected = FALSE;
-			foreach (array_keys($changedFiles) as $pathAndFilename) {
-				$filename = basename($pathAndFilename);
-				if (!in_array($filename, array('Policy.yaml', 'Routes.yaml'))) {
-					continue;
+				break;
+			case 'FLOW3_TranslationFiles':
+				foreach ($changedFiles as $pathAndFilename => $status) {
+					$matches = array();
+					if (preg_match('/\\/Translations\\/.+\\.xlf/', $pathAndFilename, $matches) === 1) {
+						$this->systemLogger->log('The localization files have changed, thus flushing the I18n XML model cache.', LOG_INFO);
+						$this->getCache('FLOW3_I18n_XmlModelCache')->flush();
+						break;
+					}
 				}
-				if ($policyChangeDetected === FALSE && basename($pathAndFilename) === 'Policy.yaml') {
-					$this->systemLogger->log('The security policies have changed, flushing the policy cache.', LOG_INFO);
-					$this->getCache('FLOW3_Security_Policy')->flush();
-					$policyChangeDetected = TRUE;
-				} elseif ($routesChangeDetected === FALSE && basename($pathAndFilename) === 'Routes.yaml') {
-					$this->systemLogger->log('A Routes.yaml file has been changed, flushing the routing cache.', LOG_INFO);
-					$this->getCache('FLOW3_Mvc_Routing_FindMatchResults')->flush();
-					$this->getCache('FLOW3_Mvc_Routing_Resolve')->flush();
-					$routesChangeDetected = TRUE;
-				}
-			}
-			$this->systemLogger->log('The configuration has changed, triggering an AOP proxy class rebuild.', LOG_INFO);
-			$objectConfigurationCache->remove('allAspectClassesUpToDate');
-			$objectConfigurationCache->remove('allCompiledCodeUpToDate');
-			$objectClassesCache->flush();
-			break;
-		case 'FLOW3_TranslationFiles':
-			foreach ($changedFiles as $pathAndFilename => $status) {
-				$matches = array();
-				if (preg_match('/\\/Translations\\/.+\\.xlf/', $pathAndFilename, $matches) === 1) {
-					$this->systemLogger->log('The localization files have changed, thus flushing the I18n XML model cache.', LOG_INFO);
-					$this->getCache('FLOW3_I18n_XmlModelCache')->flush();
-					break;
-				}
-			}
-			break;
+				break;
 		}
 	}
 
@@ -317,10 +366,21 @@ class CacheManager implements \TYPO3\CMS\Core\SingletonInterface {
 		} else {
 			$backendOptions = $this->defaultCacheConfiguration['options'];
 		}
+
+		// Add the cache identifier to the groups that it should be attached to, or use the default ones.
+		if (isset($this->cacheConfigurations[$identifier]['groups']) && is_array($this->cacheConfigurations[$identifier]['groups'])) {
+			$assignedGroups = $this->cacheConfigurations[$identifier]['groups'];
+		} else {
+			$assignedGroups = $this->defaultCacheConfiguration['groups'];
+		}
+		foreach ($assignedGroups as $groupIdentifier) {
+			if (!isset($this->cacheGroups[$groupIdentifier])) {
+				$this->cacheGroups[$groupIdentifier] = array();
+			}
+			$this->cacheGroups[$groupIdentifier][] = $identifier;
+		}
+
 		$this->cacheFactory->create($identifier, $frontend, $backend, $backendOptions);
 	}
 
 }
-
-
-?>

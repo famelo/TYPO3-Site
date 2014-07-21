@@ -1,32 +1,18 @@
 <?php
 namespace TYPO3\CMS\Rtehtmlarea\Controller;
 
-/***************************************************************
- *  Copyright notice
+/**
+ * This file is part of the TYPO3 CMS project.
  *
- *  (c) 1999-2013 Kasper Skårhøj (kasperYYYY@typo3.com)
- *  (c) 2005-2013 Stanislas Rolland <typo3(arobas)sjbr.ca>
- *  All rights reserved
+ * It is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License, either version 2
+ * of the License, or any later version.
  *
- *  This script is part of the TYPO3 project. The TYPO3 project is
- *  free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
+ * For the full copyright and license information, please read the
+ * LICENSE.txt file that was distributed with this source code.
  *
- *  The GNU General Public License can be found at
- *  http://www.gnu.org/copyleft/gpl.html.
- *  A copy is found in the textfile GPL.txt and important notices to the license
- *  from the author is found in LICENSE.txt distributed with these scripts.
- *
- *
- *  This script is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  This copyright notice MUST APPEAR in all copies of the script!
- ***************************************************************/
+ * The TYPO3 project - inspiring people to share!
+ */
 
 /**
  * Script class for the Element Browser window.
@@ -42,6 +28,13 @@ class BrowseLinksController {
 	protected $content = '';
 
 	/**
+	 * Initialize language files
+	 */
+	public function __construct() {
+		$GLOBALS['LANG']->includeLLFile('EXT:rtehtmlarea/mod3/locallang.xlf');
+		$GLOBALS['LANG']->includeLLFile('EXT:rtehtmlarea/htmlarea/locallang_dialogs.xlf');
+	}
+	/**
 	 * Main function, rendering the element browser in RTE mode.
 	 *
 	 * @return 	void
@@ -53,10 +46,10 @@ class BrowseLinksController {
 		// Clear temporary DB mounts
 		$tmpMount = \TYPO3\CMS\Core\Utility\GeneralUtility::_GET('setTempDBmount');
 		if (isset($tmpMount)) {
-			$GLOBALS['BE_USER']->setAndSaveSessionData('pageTree_temporaryMountPoint', intval($tmpMount));
+			$GLOBALS['BE_USER']->setAndSaveSessionData('pageTree_temporaryMountPoint', (int)$tmpMount);
 		}
 		// Set temporary DB mounts
-		$tempDBmount = intval($GLOBALS['BE_USER']->getSessionData('pageTree_temporaryMountPoint'));
+		$tempDBmount = (int)$GLOBALS['BE_USER']->getSessionData('pageTree_temporaryMountPoint');
 		if ($tempDBmount) {
 			$altMountPoints = $tempDBmount;
 		}
@@ -69,10 +62,8 @@ class BrowseLinksController {
 		if ($altMountPoints) {
 			$altMountPoints = \TYPO3\CMS\Core\Utility\GeneralUtility::trimExplode(',', $altMountPoints);
 			foreach ($altMountPoints as $filePathRelativeToFileadmindir) {
-				$GLOBALS['BE_USER']->addFileMount('', $filePathRelativeToFileadmindir, $filePathRelativeToFileadmindir, 1, 'readonly');
+				// @todo: add this feature for FAL and TYPO3 6.2
 			}
-			$GLOBALS['BE_USER']->getFileStorages();
-			$GLOBALS['FILEMOUNTS'] = $GLOBALS['BE_USER']->groupData['filemounts'];
 		}
 		// Render type by user function
 		$browserRendered = FALSE;
@@ -90,7 +81,7 @@ class BrowseLinksController {
 		}
 		// If type was not rendered, use default rendering functions
 		if (!$browserRendered) {
-			$GLOBALS['SOBE']->browser = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('tx_rtehtmlarea_browse_links');
+			$GLOBALS['SOBE']->browser = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Rtehtmlarea\\BrowseLinks');
 			$GLOBALS['SOBE']->browser->init();
 			$modData = $GLOBALS['BE_USER']->getModuleData('browse_links.php', 'ses');
 			list($modData, $store) = $GLOBALS['SOBE']->browser->processSessionData($modData);
@@ -110,6 +101,3 @@ class BrowseLinksController {
 	}
 
 }
-
-
-?>

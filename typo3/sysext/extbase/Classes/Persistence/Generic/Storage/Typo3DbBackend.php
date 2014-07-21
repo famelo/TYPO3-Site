@@ -1,39 +1,27 @@
 <?php
 namespace TYPO3\CMS\Extbase\Persistence\Generic\Storage;
 
-/***************************************************************
- *  Copyright notice
+/**
+ * This file is part of the TYPO3 CMS project.
  *
- *  (c) 2010-2013 Extbase Team (http://forge.typo3.org/projects/typo3v4-mvc)
- *  Extbase is a backport of TYPO3 Flow. All credits go to the TYPO3 Flow team.
- *  All rights reserved
+ * It is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License, either version 2
+ * of the License, or any later version.
  *
- *  This script is part of the TYPO3 project. The TYPO3 project is
- *  free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
+ * For the full copyright and license information, please read the
+ * LICENSE.txt file that was distributed with this source code.
  *
- *  The GNU General Public License can be found at
- *  http://www.gnu.org/copyleft/gpl.html.
- *  A copy is found in the textfile GPL.txt and important notices to the license
- *  from the author is found in LICENSE.txt distributed with these scripts.
- *
- *
- *  This script is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  This copyright notice MUST APPEAR in all copies of the script!
- ***************************************************************/
+ * The TYPO3 project - inspiring people to share!
+ */
+
+use TYPO3\CMS\Backend\Utility\BackendUtility;
+use TYPO3\CMS\Extbase\Persistence\Generic\Qom\Statement;
+use TYPO3\CMS\Extbase\Persistence\QueryInterface;
+
 /**
  * A Storage backend
  */
-class Typo3DbBackend implements \TYPO3\CMS\Extbase\Persistence\Generic\Storage\BackendInterface, \TYPO3\CMS\Core\SingletonInterface {
-
-	const OPERATOR_EQUAL_TO_NULL = 'operatorEqualToNull';
-	const OPERATOR_NOT_EQUAL_TO_NULL = 'operatorNotEqualToNull';
+class Typo3DbBackend implements BackendInterface, \TYPO3\CMS\Core\SingletonInterface {
 
 	/**
 	 * The TYPO3 database object
@@ -44,6 +32,7 @@ class Typo3DbBackend implements \TYPO3\CMS\Extbase\Persistence\Generic\Storage\B
 
 	/**
 	 * @var \TYPO3\CMS\Extbase\Persistence\Generic\Mapper\DataMapper
+	 * @inject
 	 */
 	protected $dataMapper;
 
@@ -63,16 +52,19 @@ class Typo3DbBackend implements \TYPO3\CMS\Extbase\Persistence\Generic\Storage\B
 
 	/**
 	 * @var \TYPO3\CMS\Extbase\Configuration\ConfigurationManagerInterface
+	 * @inject
 	 */
 	protected $configurationManager;
 
 	/**
 	 * @var \TYPO3\CMS\Extbase\Service\CacheService
+	 * @inject
 	 */
 	protected $cacheService;
 
 	/**
 	 * @var \TYPO3\CMS\Core\Cache\CacheManager
+	 * @inject
 	 */
 	protected $cacheManager;
 
@@ -82,9 +74,28 @@ class Typo3DbBackend implements \TYPO3\CMS\Extbase\Persistence\Generic\Storage\B
 	protected $tableColumnCache;
 
 	/**
+	 * @var \TYPO3\CMS\Core\Cache\Frontend\VariableFrontend
+	 */
+	protected $queryCache;
+
+	/**
 	 * @var \TYPO3\CMS\Extbase\Service\EnvironmentService
+	 * @inject
 	 */
 	protected $environmentService;
+
+	/**
+	 * @var \TYPO3\CMS\Extbase\Persistence\Generic\Storage\Typo3DbQueryParser
+	 * @inject
+	 */
+	protected $queryParser;
+
+	/**
+	 * A first level cache for queries during runtime
+	 *
+	 * @var array
+	 */
+	protected $queryRuntimeCache = array();
 
 	/**
 	 * Constructor. takes the database handle from $GLOBALS['TYPO3_DB']
@@ -94,357 +105,440 @@ class Typo3DbBackend implements \TYPO3\CMS\Extbase\Persistence\Generic\Storage\B
 	}
 
 	/**
-	 * @param \TYPO3\CMS\Extbase\Configuration\ConfigurationManagerInterface $configurationManager
-	 * @return void
-	 */
-	public function injectConfigurationManager(\TYPO3\CMS\Extbase\Configuration\ConfigurationManagerInterface $configurationManager) {
-		$this->configurationManager = $configurationManager;
-	}
-
-	/**
-	 * @param \TYPO3\CMS\Core\Cache\CacheManager $cacheManager
-	 */
-	public function injectCacheManager(\TYPO3\CMS\Core\Cache\CacheManager $cacheManager) {
-		$this->cacheManager = $cacheManager;
-	}
-
-	/**
 	 * Lifecycle method
 	 *
 	 * @return void
 	 */
 	public function initializeObject() {
 		$this->tableColumnCache = $this->cacheManager->getCache('extbase_typo3dbbackend_tablecolumns');
-	}
-
-	/**
-	 * Injects the DataMapper to map nodes to objects
-	 *
-	 * @param \TYPO3\CMS\Extbase\Persistence\Generic\Mapper\DataMapper $dataMapper
-	 * @return void
-	 */
-	public function injectDataMapper(\TYPO3\CMS\Extbase\Persistence\Generic\Mapper\DataMapper $dataMapper) {
-		$this->dataMapper = $dataMapper;
-	}
-
-	/**
-	 * @param \TYPO3\CMS\Extbase\Service\CacheService $cacheService
-	 * @return void
-	 */
-	public function injectCacheService(\TYPO3\CMS\Extbase\Service\CacheService $cacheService) {
-		$this->cacheService = $cacheService;
-	}
-
-	/**
-	 * @param \TYPO3\CMS\Extbase\Service\EnvironmentService $environmentService
-	 * @return void
-	 */
-	public function injectEnvironmentService(\TYPO3\CMS\Extbase\Service\EnvironmentService $environmentService) {
-		$this->environmentService = $environmentService;
+		$this->queryCache = $this->cacheManager->getCache('extbase_typo3dbbackend_queries');
 	}
 
 	/**
 	 * Adds a row to the storage
 	 *
 	 * @param string $tableName The database table name
-	 * @param array $row The row to be inserted
-	 * @param boolean $isRelation TRUE if we are currently inserting into a relation table, FALSE by default
-	 * @return int The uid of the inserted row
+	 * @param array $fieldValues The row to be inserted
+	 * @param bool $isRelation TRUE if we are currently inserting into a relation table, FALSE by default
+	 * @return integer The uid of the inserted row
 	 */
-	public function addRow($tableName, array $row, $isRelation = FALSE) {
-		$fields = array();
-		$values = array();
-		$parameters = array();
-		if (isset($row['uid'])) {
-			unset($row['uid']);
+	public function addRow($tableName, array $fieldValues, $isRelation = FALSE) {
+		if (isset($fieldValues['uid'])) {
+			unset($fieldValues['uid']);
 		}
-		foreach ($row as $columnName => $value) {
-			$fields[] = $columnName;
-			$values[] = '?';
-			$parameters[] = $value;
-		}
-		$sqlString = 'INSERT INTO ' . $tableName . ' (' . implode(', ', $fields) . ') VALUES (' . implode(', ', $values) . ')';
-		$this->replacePlaceholders($sqlString, $parameters, $tableName);
-		// debug($sqlString,-2);
-		$this->databaseHandle->sql_query($sqlString);
-		$this->checkSqlErrors($sqlString);
+
+		$this->databaseHandle->exec_INSERTquery($tableName, $fieldValues);
+		$this->checkSqlErrors();
 		$uid = $this->databaseHandle->sql_insert_id();
+
 		if (!$isRelation) {
 			$this->clearPageCache($tableName, $uid);
 		}
-		return (integer) $uid;
+		return (int)$uid;
 	}
 
 	/**
 	 * Updates a row in the storage
 	 *
 	 * @param string $tableName The database table name
-	 * @param array $row The row to be updated
-	 * @param boolean $isRelation TRUE if we are currently inserting into a relation table, FALSE by default
+	 * @param array $fieldValues The row to be updated
+	 * @param bool $isRelation TRUE if we are currently inserting into a relation table, FALSE by default
 	 * @throws \InvalidArgumentException
 	 * @return bool
 	 */
-	public function updateRow($tableName, array $row, $isRelation = FALSE) {
-		if (!isset($row['uid'])) {
+	public function updateRow($tableName, array $fieldValues, $isRelation = FALSE) {
+		if (!isset($fieldValues['uid'])) {
 			throw new \InvalidArgumentException('The given row must contain a value for "uid".');
 		}
-		$uid = (integer) $row['uid'];
-		unset($row['uid']);
-		$fields = array();
-		$parameters = array();
-		foreach ($row as $columnName => $value) {
-			$fields[] = $columnName . '=?';
-			$parameters[] = $value;
-		}
-		$parameters[] = $uid;
-		$sqlString = 'UPDATE ' . $tableName . ' SET ' . implode(', ', $fields) . ' WHERE uid=?';
-		$this->replacePlaceholders($sqlString, $parameters, $tableName);
-		// debug($sqlString,-2);
-		$returnValue = $this->databaseHandle->sql_query($sqlString);
-		$this->checkSqlErrors($sqlString);
+
+		$uid = (int)$fieldValues['uid'];
+		unset($fieldValues['uid']);
+
+		$updateSuccessful = $this->databaseHandle->exec_UPDATEquery($tableName, 'uid = '. $uid, $fieldValues);
+		$this->checkSqlErrors();
+
 		if (!$isRelation) {
 			$this->clearPageCache($tableName, $uid);
 		}
-		return $returnValue;
+
+		return $updateSuccessful;
 	}
 
 	/**
 	 * Updates a relation row in the storage.
 	 *
 	 * @param string $tableName The database relation table name
-	 * @param array $row The row to be updated
+	 * @param array $fieldValues The row to be updated
 	 * @throws \InvalidArgumentException
-	 * @return boolean
+	 * @return bool
 	 */
-	public function updateRelationTableRow($tableName, array $row) {
-		if (!isset($row['uid_local']) && !isset($row['uid_foreign'])) {
+	public function updateRelationTableRow($tableName, array $fieldValues) {
+		if (!isset($fieldValues['uid_local']) && !isset($fieldValues['uid_foreign'])) {
 			throw new \InvalidArgumentException(
-				'The given row must contain a value for "uid_local" and "uid_foreign".', 1360500126
+				'The given fieldValues must contain a value for "uid_local" and "uid_foreign".', 1360500126
 			);
 		}
-		$uidLocal = (int) $row['uid_local'];
-		$uidForeign = (int) $row['uid_foreign'];
-		unset($row['uid_local']);
-		unset($row['uid_foreign']);
-		$fields = array();
-		$parameters = array();
-		foreach ($row as $columnName => $value) {
-			$fields[] = $columnName . '=?';
-			$parameters[] = $value;
-		}
-		$parameters[] = $uidLocal;
-		$parameters[] = $uidForeign;
 
-		$sqlString = 'UPDATE ' . $tableName . ' SET ' . implode(', ', $fields) . ' WHERE uid_local=? AND uid_foreign=?';
-		$this->replacePlaceholders($sqlString, $parameters);
+		$where['uid_local'] = (int)$fieldValues['uid_local'];
+		$where['uid_foreign'] = (int)$fieldValues['uid_foreign'];
+		unset($fieldValues['uid_local']);
+		unset($fieldValues['uid_foreign']);
 
-		$returnValue = $this->databaseHandle->sql_query($sqlString);
-		$this->checkSqlErrors($sqlString);
+		$updateSuccessful = $this->databaseHandle->exec_UPDATEquery(
+			$tableName,
+			$this->resolveWhereStatement($where, $tableName),
+			$fieldValues
+		);
+		$this->checkSqlErrors();
 
-		return $returnValue;
+		return $updateSuccessful;
 	}
 
 	/**
 	 * Deletes a row in the storage
 	 *
 	 * @param string $tableName The database table name
-	 * @param array $identifier An array of identifier array('fieldname' => value). This array will be transformed to a WHERE clause
-	 * @param boolean $isRelation TRUE if we are currently manipulating a relation table, FALSE by default
+	 * @param array $where An array of where array('fieldname' => value).
+	 * @param bool $isRelation TRUE if we are currently manipulating a relation table, FALSE by default
 	 * @return bool
 	 */
-	public function removeRow($tableName, array $identifier, $isRelation = FALSE) {
-		$statement = 'DELETE FROM ' . $tableName . ' WHERE ' . $this->parseIdentifier($identifier);
-		$this->replacePlaceholders($statement, $identifier, $tableName);
-		if (!$isRelation && isset($identifier['uid'])) {
-			$this->clearPageCache($tableName, $identifier['uid'], $isRelation);
+	public function removeRow($tableName, array $where, $isRelation = FALSE) {
+		$deleteSuccessful = $this->databaseHandle->exec_DELETEquery(
+			$tableName,
+			$this->resolveWhereStatement($where, $tableName)
+		);
+		$this->checkSqlErrors();
+
+		if (!$isRelation && isset($where['uid'])) {
+			$this->clearPageCache($tableName, $where['uid']);
 		}
-		// debug($statement, -2);
-		$returnValue = $this->databaseHandle->sql_query($statement);
-		$this->checkSqlErrors($statement);
-		return $returnValue;
+
+		return $deleteSuccessful;
 	}
 
 	/**
 	 * Fetches maximal value for given table column from database.
 	 *
 	 * @param string $tableName The database table name
-	 * @param array $identifier An array of identifier array('fieldname' => value). This array will be transformed to a WHERE clause
+	 * @param array $where An array of where array('fieldname' => value).
 	 * @param string $columnName column name to get the max value from
 	 * @return mixed the max value
 	 */
-	public function getMaxValueFromTable($tableName, $identifier, $columnName) {
-		$sqlString = 'SELECT ' . $columnName . ' FROM ' . $tableName . ' WHERE ' . $this->parseIdentifier($identifier) . ' ORDER BY  ' . $columnName . ' DESC LIMIT 1';
-		$this->replacePlaceholders($sqlString, $identifier);
+	public function getMaxValueFromTable($tableName, array $where, $columnName) {
+		$result = $this->databaseHandle->exec_SELECTgetSingleRow(
+			$columnName,
+			$tableName,
+			$this->resolveWhereStatement($where, $tableName),
+			'',
+			$columnName . ' DESC',
+			TRUE
+		);
+		$this->checkSqlErrors();
 
-		$result = $this->databaseHandle->sql_query($sqlString);
-		$row = $this->databaseHandle->sql_fetch_assoc($result);
-		$this->checkSqlErrors($sqlString);
-		return $row[$columnName];
+		return $result[0];
 	}
 
 	/**
 	 * Fetches row data from the database
 	 *
 	 * @param string $tableName
-	 * @param array $identifier The Identifier of the row to fetch
-	 * @return array|boolean
+	 * @param array $where An array of where array('fieldname' => value).
+	 * @return array|bool
 	 */
-	public function getRowByIdentifier($tableName, array $identifier) {
-		$statement = 'SELECT * FROM ' . $tableName . ' WHERE ' . $this->parseIdentifier($identifier);
-		$this->replacePlaceholders($statement, $identifier, $tableName);
-		// debug($statement,-2);
-		$res = $this->databaseHandle->sql_query($statement);
-		$this->checkSqlErrors($statement);
-		$row = $this->databaseHandle->sql_fetch_assoc($res);
-		if ($row !== FALSE) {
-			return $row;
-		} else {
-			return FALSE;
-		}
+	public function getRowByIdentifier($tableName, array $where) {
+		$row = $this->databaseHandle->exec_SELECTgetSingleRow(
+			'*',
+			$tableName,
+			$this->resolveWhereStatement($where, $tableName)
+		);
+		$this->checkSqlErrors();
+
+		return $row ?: FALSE;
 	}
 
 	/**
-	 * @param array $identifier
+	 * Converts an array to an AND concatenated where statement
+	 *
+	 * @param array $where array('fieldName' => 'fieldValue')
+	 * @param string $tableName table to use for escaping config
+	 *
 	 * @return string
 	 */
-	protected function parseIdentifier(array $identifier) {
-		$fieldNames = array_keys($identifier);
-		$suffixedFieldNames = array();
-		foreach ($fieldNames as $fieldName) {
-			$suffixedFieldNames[] = $fieldName . '=?';
+	protected function resolveWhereStatement(array $where, $tableName = 'foo') {
+		$whereStatement = array();
+
+		foreach ($where as $fieldName => $fieldValue) {
+			$whereStatement[] = $fieldName . ' = ' . $this->databaseHandle->fullQuoteStr($fieldValue, $tableName);
 		}
-		return implode(' AND ', $suffixedFieldNames);
+
+		return implode(' AND ', $whereStatement);
 	}
 
 	/**
 	 * Returns the object data matching the $query.
 	 *
-	 * @param \TYPO3\CMS\Extbase\Persistence\QueryInterface $query
+	 * @param QueryInterface $query
 	 * @return array
 	 */
-	public function getObjectDataByQuery(\TYPO3\CMS\Extbase\Persistence\QueryInterface $query) {
+	public function getObjectDataByQuery(QueryInterface $query) {
 		$statement = $query->getStatement();
-		if ($statement instanceof \TYPO3\CMS\Extbase\Persistence\Generic\Qom\Statement) {
-			$sql = $statement->getStatement();
-			$parameters = $statement->getBoundVariables();
+		if ($statement instanceof Statement) {
+			$rows = $this->getObjectDataByRawQuery($statement);
 		} else {
-			$parameters = array();
-			$statementParts = $this->parseQuery($query, $parameters);
-			$sql = $this->buildQuery($statementParts, $parameters);
+			$rows = $this->getRowsByStatementParts($query);
 		}
-		$tableName = 'foo';
-		if (is_array($statementParts) && !empty($statementParts['tables'][0])) {
-			$tableName = $statementParts['tables'][0];
-		}
-		$this->replacePlaceholders($sql, $parameters, $tableName);
-		// debug($sql,-2);
-		$result = $this->databaseHandle->sql_query($sql);
-		$this->checkSqlErrors($sql);
-		$rows = $this->getRowsFromResult($result);
-		$this->databaseHandle->sql_free_result($result);
-		// Get language uid from querySettings.
-		// Ensure the backend handling is not broken (fallback to Get parameter 'L' if needed)
+
 		$rows = $this->doLanguageAndWorkspaceOverlay($query->getSource(), $rows, $query->getQuerySettings());
-		// TODO: implement $objectData = $this->processObjectRecords($statementHandle);
+		return $rows;
+	}
+
+	/**
+	 * Creates the parameters for the query methods of the database methods in the TYPO3 core, from an array
+	 * that came from a parsed query.
+	 *
+	 * @param array $statementParts
+	 * @return array
+	 */
+	protected function createQueryCommandParametersFromStatementParts(array $statementParts) {
+		return array(
+			'selectFields' => implode(' ', $statementParts['keywords']) . ' ' . implode(',', $statementParts['fields']),
+			'fromTable'    => implode(' ', $statementParts['tables']) . ' ' . implode(' ', $statementParts['unions']),
+			'whereClause'  => (!empty($statementParts['where']) ? implode('', $statementParts['where']) : '1')
+				. (!empty($statementParts['additionalWhereClause'])
+					? ' AND ' . implode(' AND ', $statementParts['additionalWhereClause'])
+					: ''
+			),
+			'orderBy'      => (!empty($statementParts['orderings']) ? implode(', ', $statementParts['orderings']) : ''),
+			'limit'        => ($statementParts['offset'] ? $statementParts['offset'] . ', ' : '')
+				. ($statementParts['limit'] ? $statementParts['limit'] : '')
+		);
+	}
+
+	/**
+	 * Determines whether to use prepared statement or not and returns the rows from the corresponding method
+	 *
+	 * @param QueryInterface $query
+	 * @return array
+	 */
+	protected function getRowsByStatementParts(QueryInterface $query) {
+		if ($query->getQuerySettings()->getUsePreparedStatement()) {
+			list($statementParts, $parameters) = $this->getStatementParts($query, FALSE);
+			$rows = $this->getRowsFromPreparedDatabase($statementParts, $parameters);
+		} else {
+			list($statementParts) = $this->getStatementParts($query);
+			$rows = $this->getRowsFromDatabase($statementParts);
+		}
+
+		return $rows;
+	}
+
+	/**
+	 * Fetches the rows directly from the database, not using prepared statement
+	 *
+	 * @param array $statementParts
+	 * @return array the result
+	 */
+	protected function getRowsFromDatabase(array $statementParts) {
+		$queryCommandParameters = $this->createQueryCommandParametersFromStatementParts($statementParts);
+		$rows = $this->databaseHandle->exec_SELECTgetRows(
+			$queryCommandParameters['selectFields'],
+			$queryCommandParameters['fromTable'],
+			$queryCommandParameters['whereClause'],
+			'',
+			$queryCommandParameters['orderBy'],
+			$queryCommandParameters['limit']
+		);
+		$this->checkSqlErrors();
+
+		return $rows;
+	}
+
+	/**
+	 * Fetches the rows from the database, using prepared statement
+	 *
+	 * @param array $statementParts
+	 * @param array $parameters
+	 * @return array the result
+	 */
+	protected function getRowsFromPreparedDatabase(array $statementParts, array $parameters) {
+		$queryCommandParameters = $this->createQueryCommandParametersFromStatementParts($statementParts);
+		$preparedStatement = $this->databaseHandle->prepare_SELECTquery(
+			$queryCommandParameters['selectFields'],
+			$queryCommandParameters['fromTable'],
+			$queryCommandParameters['whereClause'],
+			'',
+			$queryCommandParameters['orderBy'],
+			$queryCommandParameters['limit']
+		);
+
+		$preparedStatement->execute($parameters);
+		$rows = $preparedStatement->fetchAll();
+
+		$preparedStatement->free();
+		return $rows;
+	}
+
+	/**
+	 * Returns the object data using a custom statement
+	 *
+	 * @param Statement $statement
+	 * @return array
+	 */
+	protected function getObjectDataByRawQuery(Statement $statement) {
+		$realStatement = $statement->getStatement();
+		$parameters = $statement->getBoundVariables();
+
+		if ($realStatement instanceof \TYPO3\CMS\Core\Database\PreparedStatement) {
+			$realStatement->execute($parameters);
+			$rows = $realStatement->fetchAll();
+
+			$realStatement->free();
+		} else {
+			/**
+			 * @deprecated since 6.2, this block will be removed in two versions
+			 * the deprecation log is in Qom\Statement
+			 */
+			if (!empty($parameters)) {
+				$this->replacePlaceholders($realStatement, $parameters);
+			}
+
+			$result = $this->databaseHandle->sql_query($realStatement);
+			$this->checkSqlErrors();
+
+			$rows = array();
+			while ($row = $this->databaseHandle->sql_fetch_assoc($result)) {
+				if (is_array($row)) {
+					$rows[] = $row;
+				}
+			}
+			$this->databaseHandle->sql_free_result($result);
+		}
+
 		return $rows;
 	}
 
 	/**
 	 * Returns the number of tuples matching the query.
 	 *
-	 * @param \TYPO3\CMS\Extbase\Persistence\QueryInterface $query
+	 * @param QueryInterface $query
 	 * @throws Exception\BadConstraintException
 	 * @return integer The number of matching tuples
 	 */
-	public function getObjectCountByQuery(\TYPO3\CMS\Extbase\Persistence\QueryInterface $query) {
-		$constraint = $query->getConstraint();
-		if ($constraint instanceof \TYPO3\CMS\Extbase\Persistence\Generic\Qom\Statement) {
-			throw new \TYPO3\CMS\Extbase\Persistence\Generic\Storage\Exception\BadConstraintException('Could not execute count on queries with a constraint of type TYPO3\\CMS\\Extbase\\Persistence\\Generic\\Qom\\StatementInterface', 1256661045);
+	public function getObjectCountByQuery(QueryInterface $query) {
+		if ($query->getConstraint() instanceof Statement) {
+			throw new \TYPO3\CMS\Extbase\Persistence\Generic\Storage\Exception\BadConstraintException('Could not execute count on queries with a constraint of type TYPO3\\CMS\\Extbase\\Persistence\\Generic\\Qom\\Statement', 1256661045);
 		}
-		$parameters = array();
-		$statementParts = $this->parseQuery($query, $parameters);
-		// Reset $statementParts for valid table return
-		reset($statementParts);
-		// if limit is set, we need to count the rows "manually" as COUNT(*) ignores LIMIT constraints
-		if (!empty($statementParts['limit'])) {
-			$statement = $this->buildQuery($statementParts, $parameters);
-			$this->replacePlaceholders($statement, $parameters, current($statementParts['tables']));
-			$result = $this->databaseHandle->sql_query($statement);
-			$this->checkSqlErrors($statement);
-			$count = $this->databaseHandle->sql_num_rows($result);
+
+		list($statementParts) = $this->getStatementParts($query);
+
+		$fields = '*';
+		if (isset($statementParts['keywords']['distinct'])) {
+			$fields = 'DISTINCT ' . reset($statementParts['tables']) . '.uid';
+		}
+
+		$queryCommandParameters = $this->createQueryCommandParametersFromStatementParts($statementParts);
+		$count = $this->databaseHandle->exec_SELECTcountRows(
+			$fields,
+			$queryCommandParameters['fromTable'],
+			$queryCommandParameters['whereClause']
+		);
+		$this->checkSqlErrors();
+
+		if ($statementParts['offset']) {
+			$count -= $statementParts['offset'];
+		}
+
+		if ($statementParts['limit']) {
+			$count = min($count, $statementParts['limit']);
+		}
+
+		return (int)max(0, $count);
+	}
+
+	/**
+	 * Looks for the query in cache or builds it up otherwise
+	 *
+	 * @param QueryInterface $query
+	 * @param bool $resolveParameterPlaceholders whether to resolve the parameters or leave the placeholders
+	 * @return array
+	 * @throws \RuntimeException
+	 */
+	protected function getStatementParts($query, $resolveParameterPlaceholders = TRUE) {
+		/**
+		 * The queryParser will preparse the query to get the query's hash and parameters.
+		 * If the hash is found in the cache and useQueryCaching is enabled, extbase will
+		 * then take the string representation from cache and build a prepared query with
+		 * the parameters found.
+		 *
+		 * Otherwise extbase will parse the complete query, build the string representation
+		 * and run a usual query.
+		 */
+		list($queryHash, $parameters) = $this->queryParser->preparseQuery($query);
+
+		if ($query->getQuerySettings()->getUseQueryCache()) {
+			$statementParts = $this->getQueryCacheEntry($queryHash);
+			if ($queryHash && !$statementParts) {
+				$statementParts = $this->queryParser->parseQuery($query);
+				$this->setQueryCacheEntry($queryHash, $statementParts);
+			}
 		} else {
-			$statementParts['fields'] = array('COUNT(*)');
-			// having orderings without grouping is not compatible with non-MySQL DBMS
-			$statementParts['orderings'] = array();
-			if (isset($statementParts['keywords']['distinct'])) {
-				unset($statementParts['keywords']['distinct']);
-				$statementParts['fields'] = array('COUNT(DISTINCT ' . reset($statementParts['tables']) . '.uid)');
-			}
-			$statement = $this->buildQuery($statementParts, $parameters);
-			$this->replacePlaceholders($statement, $parameters, current($statementParts['tables']));
-			$result = $this->databaseHandle->sql_query($statement);
-			$this->checkSqlErrors($statement);
-			$rows = $this->getRowsFromResult($result);
-			$count = current(current($rows));
+			$statementParts = $this->queryParser->parseQuery($query);
 		}
-		$this->databaseHandle->sql_free_result($result);
-		return (integer) $count;
+
+		if (!$statementParts) {
+			throw new \RuntimeException('Your query could not be built.', 1394453197);
+		}
+
+		$this->queryParser->addDynamicQueryParts($query->getQuerySettings(), $statementParts);
+
+		// Limit and offset are not cached to allow caching of pagebrowser queries.
+		$statementParts['limit'] = ((int)$query->getLimit() ?: NULL);
+		$statementParts['offset'] = ((int)$query->getOffset() ?: NULL);
+
+		if ($resolveParameterPlaceholders === TRUE) {
+			$statementParts = $this->resolveParameterPlaceholders($statementParts, $parameters);
+		}
+
+		return array($statementParts, $parameters);
 	}
 
 	/**
-	 * Parses the query and returns the SQL statement parts.
+	 * Replaces the parameters in the queryStructure with given values
 	 *
-	 * @param \TYPO3\CMS\Extbase\Persistence\QueryInterface $query The query
-	 * @param array &$parameters
-	 * @return array The SQL statement parts
+	 * @param array $statementParts
+	 * @param array $parameters
+	 * @return array
 	 */
-	public function parseQuery(\TYPO3\CMS\Extbase\Persistence\QueryInterface $query, array &$parameters) {
-		$sql = array();
-		$sql['keywords'] = array();
-		$sql['tables'] = array();
-		$sql['unions'] = array();
-		$sql['fields'] = array();
-		$sql['where'] = array();
-		$sql['additionalWhereClause'] = array();
-		$sql['orderings'] = array();
-		$sql['limit'] = array();
-		$source = $query->getSource();
-		$this->parseSource($source, $sql);
-		$this->parseConstraint($query->getConstraint(), $source, $sql, $parameters);
-		$this->parseOrderings($query->getOrderings(), $source, $sql);
-		$this->parseLimitAndOffset($query->getLimit(), $query->getOffset(), $sql);
-		$tableNames = array_unique(array_keys($sql['tables'] + $sql['unions']));
-		foreach ($tableNames as $tableName) {
-			if (is_string($tableName) && strlen($tableName) > 0) {
-				$this->addAdditionalWhereClause($query->getQuerySettings(), $tableName, $sql);
-			}
-		}
-		return $sql;
-	}
+	protected function resolveParameterPlaceholders(array $statementParts, array $parameters) {
+		$tableNameForEscape = (reset($statementParts['tables']) ?: 'foo');
 
-	/**
-	 * Returns the statement, ready to be executed.
-	 *
-	 * @param array $sql The SQL statement parts
-	 * @return string The SQL statement
-	 */
-	public function buildQuery(array $sql) {
-		$statement = 'SELECT ' . implode(' ', $sql['keywords']) . ' ' . implode(',', $sql['fields']) . ' FROM ' . implode(' ', $sql['tables']) . ' ' . implode(' ', $sql['unions']);
-		if (!empty($sql['where'])) {
-			$statement .= ' WHERE ' . implode('', $sql['where']);
-			if (!empty($sql['additionalWhereClause'])) {
-				$statement .= ' AND ' . implode(' AND ', $sql['additionalWhereClause']);
+		foreach ($parameters as $parameterPlaceholder => $parameter) {
+			if ($parameter instanceof \TYPO3\CMS\Extbase\Persistence\Generic\LazyLoadingProxy) {
+				$parameter = $parameter->_loadRealInstance();
 			}
-		} elseif (!empty($sql['additionalWhereClause'])) {
-			$statement .= ' WHERE ' . implode(' AND ', $sql['additionalWhereClause']);
+
+			if ($parameter instanceof \DateTime) {
+				$parameter = $parameter->format('U');
+			} elseif ($parameter instanceof \TYPO3\CMS\Extbase\DomainObject\DomainObjectInterface) {
+				$parameter = (int)$parameter->getUid();
+			} elseif (is_array($parameter)) {
+				$subParameters = array();
+				foreach ($parameter as $subParameter) {
+					$subParameters[] = $this->databaseHandle->fullQuoteStr($subParameter, $tableNameForEscape);
+				}
+				$parameter = implode(',', $subParameters);
+			} elseif ($parameter === NULL) {
+				$parameter = 'NULL';
+			} elseif (is_bool($parameter)) {
+				$parameter = (int)$parameter;
+			} else {
+				$parameter = $this->databaseHandle->fullQuoteStr((string)$parameter, $tableNameForEscape);
+			}
+
+			$statementParts['where'] = str_replace($parameterPlaceholder, $parameter, $statementParts['where']);
 		}
-		if (!empty($sql['orderings'])) {
-			$statement .= ' ORDER BY ' . implode(', ', $sql['orderings']);
-		}
-		if (!empty($sql['limit'])) {
-			$statement .= ' LIMIT ' . $sql['limit'];
-		}
-		return $statement;
+
+		return $statementParts;
 	}
 
 	/**
@@ -452,6 +546,7 @@ class Typo3DbBackend implements \TYPO3\CMS\Extbase\Persistence\Generic\Storage\B
 	 *
 	 * @param \TYPO3\CMS\Extbase\DomainObject\AbstractValueObject $object The Value Object
 	 * @return mixed The matching uid if an object was found, else FALSE
+	 * @todo this is the last monster in this persistence series. refactor!
 	 */
 	public function getUidOfAlreadyPersistedValueObject(\TYPO3\CMS\Extbase\DomainObject\AbstractValueObject $object) {
 		$fields = array();
@@ -484,203 +579,9 @@ class Typo3DbBackend implements \TYPO3\CMS\Extbase\Persistence\Generic\Storage\B
 		$this->checkSqlErrors($statement);
 		$row = $this->databaseHandle->sql_fetch_assoc($res);
 		if ($row !== FALSE) {
-			return (integer) $row['uid'];
+			return (int)$row['uid'];
 		} else {
 			return FALSE;
-		}
-	}
-
-	/**
-	 * Transforms a Query Source into SQL and parameter arrays
-	 *
-	 * @param \TYPO3\CMS\Extbase\Persistence\Generic\Qom\SourceInterface $source The source
-	 * @param array &$sql
-	 * @return void
-	 */
-	protected function parseSource(\TYPO3\CMS\Extbase\Persistence\Generic\Qom\SourceInterface $source, array &$sql) {
-		if ($source instanceof \TYPO3\CMS\Extbase\Persistence\Generic\Qom\SelectorInterface) {
-			$className = $source->getNodeTypeName();
-			$tableName = $this->dataMapper->getDataMap($className)->getTableName();
-			$this->addRecordTypeConstraint($className, $sql);
-			$sql['fields'][$tableName] = $tableName . '.*';
-			$sql['tables'][$tableName] = $tableName;
-		} elseif ($source instanceof \TYPO3\CMS\Extbase\Persistence\Generic\Qom\JoinInterface) {
-			$this->parseJoin($source, $sql);
-		}
-	}
-
-	/**
-	 * Add a constraint to ensure that the record type of the returned tuples is matching the data type of the repository.
-	 *
-	 * @param string $className The class name
-	 * @param array &$sql The query parts
-	 * @return void
-	 */
-	protected function addRecordTypeConstraint($className, &$sql) {
-		if ($className !== NULL) {
-			$dataMap = $this->dataMapper->getDataMap($className);
-			if ($dataMap->getRecordTypeColumnName() !== NULL) {
-				$recordTypes = array();
-				if ($dataMap->getRecordType() !== NULL) {
-					$recordTypes[] = $dataMap->getRecordType();
-				}
-				foreach ($dataMap->getSubclasses() as $subclassName) {
-					$subclassDataMap = $this->dataMapper->getDataMap($subclassName);
-					if ($subclassDataMap->getRecordType() !== NULL) {
-						$recordTypes[] = $subclassDataMap->getRecordType();
-					}
-				}
-				if (count($recordTypes) > 0) {
-					$recordTypeStatements = array();
-					foreach ($recordTypes as $recordType) {
-						$tableName = $dataMap->getTableName();
-						$recordTypeStatements[] = $tableName . '.' . $dataMap->getRecordTypeColumnName() . '=' . $this->databaseHandle->fullQuoteStr($recordType, $tableName);
-					}
-					$sql['additionalWhereClause'][] = '(' . implode(' OR ', $recordTypeStatements) . ')';
-				}
-			}
-		}
-	}
-
-	/**
-	 * Transforms a Join into SQL and parameter arrays
-	 *
-	 * @param \TYPO3\CMS\Extbase\Persistence\Generic\Qom\JoinInterface $join The join
-	 * @param array &$sql The query parts
-	 * @return void
-	 */
-	protected function parseJoin(\TYPO3\CMS\Extbase\Persistence\Generic\Qom\JoinInterface $join, array &$sql) {
-		$leftSource = $join->getLeft();
-		$leftClassName = $leftSource->getNodeTypeName();
-		$this->addRecordTypeConstraint($leftClassName, $sql);
-		$leftTableName = $leftSource->getSelectorName();
-		// $sql['fields'][$leftTableName] = $leftTableName . '.*';
-		$rightSource = $join->getRight();
-		if ($rightSource instanceof \TYPO3\CMS\Extbase\Persistence\Generic\Qom\JoinInterface) {
-			$rightClassName = $rightSource->getLeft()->getNodeTypeName();
-			$rightTableName = $rightSource->getLeft()->getSelectorName();
-		} else {
-			$rightClassName = $rightSource->getNodeTypeName();
-			$rightTableName = $rightSource->getSelectorName();
-			$sql['fields'][$leftTableName] = $rightTableName . '.*';
-		}
-		$this->addRecordTypeConstraint($rightClassName, $sql);
-		$sql['tables'][$leftTableName] = $leftTableName;
-		$sql['unions'][$rightTableName] = 'LEFT JOIN ' . $rightTableName;
-		$joinCondition = $join->getJoinCondition();
-		if ($joinCondition instanceof \TYPO3\CMS\Extbase\Persistence\Generic\Qom\EquiJoinCondition) {
-			$column1Name = $this->dataMapper->convertPropertyNameToColumnName($joinCondition->getProperty1Name(), $leftClassName);
-			$column2Name = $this->dataMapper->convertPropertyNameToColumnName($joinCondition->getProperty2Name(), $rightClassName);
-			$sql['unions'][$rightTableName] .= ' ON ' . $joinCondition->getSelector1Name() . '.' . $column1Name . ' = ' . $joinCondition->getSelector2Name() . '.' . $column2Name;
-		}
-		if ($rightSource instanceof \TYPO3\CMS\Extbase\Persistence\Generic\Qom\JoinInterface) {
-			$this->parseJoin($rightSource, $sql);
-		}
-	}
-
-	/**
-	 * Transforms a constraint into SQL and parameter arrays
-	 *
-	 * @param \TYPO3\CMS\Extbase\Persistence\Generic\Qom\ConstraintInterface $constraint The constraint
-	 * @param \TYPO3\CMS\Extbase\Persistence\Generic\Qom\SourceInterface $source The source
-	 * @param array &$sql The query parts
-	 * @param array &$parameters The parameters that will replace the markers
-	 * @return void
-	 */
-	protected function parseConstraint(\TYPO3\CMS\Extbase\Persistence\Generic\Qom\ConstraintInterface $constraint = NULL, \TYPO3\CMS\Extbase\Persistence\Generic\Qom\SourceInterface $source, array &$sql, array &$parameters) {
-		if ($constraint instanceof \TYPO3\CMS\Extbase\Persistence\Generic\Qom\AndInterface) {
-			$sql['where'][] = '(';
-			$this->parseConstraint($constraint->getConstraint1(), $source, $sql, $parameters);
-			$sql['where'][] = ' AND ';
-			$this->parseConstraint($constraint->getConstraint2(), $source, $sql, $parameters);
-			$sql['where'][] = ')';
-		} elseif ($constraint instanceof \TYPO3\CMS\Extbase\Persistence\Generic\Qom\OrInterface) {
-			$sql['where'][] = '(';
-			$this->parseConstraint($constraint->getConstraint1(), $source, $sql, $parameters);
-			$sql['where'][] = ' OR ';
-			$this->parseConstraint($constraint->getConstraint2(), $source, $sql, $parameters);
-			$sql['where'][] = ')';
-		} elseif ($constraint instanceof \TYPO3\CMS\Extbase\Persistence\Generic\Qom\NotInterface) {
-			$sql['where'][] = 'NOT (';
-			$this->parseConstraint($constraint->getConstraint(), $source, $sql, $parameters);
-			$sql['where'][] = ')';
-		} elseif ($constraint instanceof \TYPO3\CMS\Extbase\Persistence\Generic\Qom\ComparisonInterface) {
-			$this->parseComparison($constraint, $source, $sql, $parameters);
-		}
-	}
-
-	/**
-	 * Parse a Comparison into SQL and parameter arrays.
-	 *
-	 * @param \TYPO3\CMS\Extbase\Persistence\Generic\Qom\ComparisonInterface $comparison The comparison to parse
-	 * @param \TYPO3\CMS\Extbase\Persistence\Generic\Qom\SourceInterface $source The source
-	 * @param array &$sql SQL query parts to add to
-	 * @param array &$parameters Parameters to bind to the SQL
-	 * @throws \TYPO3\CMS\Extbase\Persistence\Generic\Exception\RepositoryException
-	 * @return void
-	 */
-	protected function parseComparison(\TYPO3\CMS\Extbase\Persistence\Generic\Qom\ComparisonInterface $comparison, \TYPO3\CMS\Extbase\Persistence\Generic\Qom\SourceInterface $source, array &$sql, array &$parameters) {
-		$operand1 = $comparison->getOperand1();
-		$operator = $comparison->getOperator();
-		$operand2 = $comparison->getOperand2();
-		if ($operator === \TYPO3\CMS\Extbase\Persistence\QueryInterface::OPERATOR_IN) {
-			$items = array();
-			$hasValue = FALSE;
-			foreach ($operand2 as $value) {
-				$value = $this->getPlainValue($value);
-				if ($value !== NULL) {
-					$items[] = $value;
-					$hasValue = TRUE;
-				}
-			}
-			if ($hasValue === FALSE) {
-				$sql['where'][] = '1<>1';
-			} else {
-				$this->parseDynamicOperand($operand1, $operator, $source, $sql, $parameters, NULL, $operand2);
-				$parameters[] = $items;
-			}
-		} elseif ($operator === \TYPO3\CMS\Extbase\Persistence\QueryInterface::OPERATOR_CONTAINS) {
-			if ($operand2 === NULL) {
-				$sql['where'][] = '1<>1';
-			} else {
-				$className = $source->getNodeTypeName();
-				$tableName = $this->dataMapper->convertClassNameToTableName($className);
-				$propertyName = $operand1->getPropertyName();
-				while (strpos($propertyName, '.') !== FALSE) {
-					$this->addUnionStatement($className, $tableName, $propertyName, $sql);
-				}
-				$columnName = $this->dataMapper->convertPropertyNameToColumnName($propertyName, $className);
-				$dataMap = $this->dataMapper->getDataMap($className);
-				$columnMap = $dataMap->getColumnMap($propertyName);
-				$typeOfRelation = $columnMap instanceof \TYPO3\CMS\Extbase\Persistence\Generic\Mapper\ColumnMap ? $columnMap->getTypeOfRelation() : NULL;
-				if ($typeOfRelation === \TYPO3\CMS\Extbase\Persistence\Generic\Mapper\ColumnMap::RELATION_HAS_AND_BELONGS_TO_MANY) {
-					$relationTableName = $columnMap->getRelationTableName();
-					$sql['where'][] = $tableName . '.uid IN (SELECT ' . $columnMap->getParentKeyFieldName() . ' FROM ' . $relationTableName . ' WHERE ' . $columnMap->getChildKeyFieldName() . '=?)';
-					$parameters[] = intval($this->getPlainValue($operand2));
-				} elseif ($typeOfRelation === \TYPO3\CMS\Extbase\Persistence\Generic\Mapper\ColumnMap::RELATION_HAS_MANY) {
-					$parentKeyFieldName = $columnMap->getParentKeyFieldName();
-					if (isset($parentKeyFieldName)) {
-						$childTableName = $columnMap->getChildTableName();
-						$sql['where'][] = $tableName . '.uid=(SELECT ' . $childTableName . '.' . $parentKeyFieldName . ' FROM ' . $childTableName . ' WHERE ' . $childTableName . '.uid=?)';
-						$parameters[] = intval($this->getPlainValue($operand2));
-					} else {
-						$sql['where'][] = 'FIND_IN_SET(?,' . $tableName . '.' . $columnName . ')';
-						$parameters[] = intval($this->getPlainValue($operand2));
-					}
-				} else {
-					throw new \TYPO3\CMS\Extbase\Persistence\Generic\Exception\RepositoryException('Unsupported or non-existing property name "' . $propertyName . '" used in relation matching.', 1327065745);
-				}
-			}
-		} else {
-			if ($operand2 === NULL) {
-				if ($operator === \TYPO3\CMS\Extbase\Persistence\QueryInterface::OPERATOR_EQUAL_TO) {
-					$operator = self::OPERATOR_EQUAL_TO_NULL;
-				} elseif ($operator === \TYPO3\CMS\Extbase\Persistence\QueryInterface::OPERATOR_NOT_EQUAL_TO) {
-					$operator = self::OPERATOR_NOT_EQUAL_TO_NULL;
-				}
-			}
-			$this->parseDynamicOperand($operand1, $operator, $source, $sql, $parameters);
-			$parameters[] = $this->getPlainValue($operand2);
 		}
 	}
 
@@ -690,6 +591,7 @@ class Typo3DbBackend implements \TYPO3\CMS\Extbase\Persistence\Generic\Storage\B
 	 * @param mixed $input
 	 * @throws \TYPO3\CMS\Extbase\Persistence\Generic\Exception\UnexpectedTypeException
 	 * @return mixed
+	 * @todo remove after getUidOfAlreadyPersistedValueObject is adjusted, this was moved to queryParser
 	 */
 	protected function getPlainValue($input) {
 		if (is_array($input)) {
@@ -697,6 +599,8 @@ class Typo3DbBackend implements \TYPO3\CMS\Extbase\Persistence\Generic\Storage\B
 		}
 		if ($input instanceof \DateTime) {
 			return $input->format('U');
+		} elseif ($input instanceof \TYPO3\CMS\Core\Type\TypeInterface) {
+			return (string) $input;
 		} elseif (is_object($input)) {
 			if ($input instanceof \TYPO3\CMS\Extbase\Persistence\Generic\LazyLoadingProxy) {
 				$realInput = $input->_loadRealInstance();
@@ -709,152 +613,10 @@ class Typo3DbBackend implements \TYPO3\CMS\Extbase\Persistence\Generic\Storage\B
 				throw new \TYPO3\CMS\Extbase\Persistence\Generic\Exception\UnexpectedTypeException('An object of class "' . get_class($realInput) . '" could not be converted to a plain value.', 1274799934);
 			}
 		} elseif (is_bool($input)) {
-			return $input === TRUE ? 1 : 0;
+			return (int)$input;
 		} else {
 			return $input;
 		}
-	}
-
-	/**
-	 * Parse a DynamicOperand into SQL and parameter arrays.
-	 *
-	 * @param \TYPO3\CMS\Extbase\Persistence\Generic\Qom\DynamicOperandInterface $operand
-	 * @param string $operator One of the JCR_OPERATOR_* constants
-	 * @param \TYPO3\CMS\Extbase\Persistence\Generic\Qom\SourceInterface $source The source
-	 * @param array &$sql The query parts
-	 * @param array &$parameters The parameters that will replace the markers
-	 * @param string $valueFunction an optional SQL function to apply to the operand value
-	 * @param null $operand2
-	 * @return void
-	 */
-	protected function parseDynamicOperand(\TYPO3\CMS\Extbase\Persistence\Generic\Qom\DynamicOperandInterface $operand, $operator, \TYPO3\CMS\Extbase\Persistence\Generic\Qom\SourceInterface $source, array &$sql, array &$parameters, $valueFunction = NULL, $operand2 = NULL) {
-		if ($operand instanceof \TYPO3\CMS\Extbase\Persistence\Generic\Qom\LowerCaseInterface) {
-			$this->parseDynamicOperand($operand->getOperand(), $operator, $source, $sql, $parameters, 'LOWER');
-		} elseif ($operand instanceof \TYPO3\CMS\Extbase\Persistence\Generic\Qom\UpperCaseInterface) {
-			$this->parseDynamicOperand($operand->getOperand(), $operator, $source, $sql, $parameters, 'UPPER');
-		} elseif ($operand instanceof \TYPO3\CMS\Extbase\Persistence\Generic\Qom\PropertyValueInterface) {
-			$propertyName = $operand->getPropertyName();
-			if ($source instanceof \TYPO3\CMS\Extbase\Persistence\Generic\Qom\SelectorInterface) {
-				// FIXME Only necessary to differ from  Join
-				$className = $source->getNodeTypeName();
-				$tableName = $this->dataMapper->convertClassNameToTableName($className);
-				while (strpos($propertyName, '.') !== FALSE) {
-					$this->addUnionStatement($className, $tableName, $propertyName, $sql);
-				}
-			} elseif ($source instanceof \TYPO3\CMS\Extbase\Persistence\Generic\Qom\JoinInterface) {
-				$tableName = $source->getJoinCondition()->getSelector1Name();
-			}
-			$columnName = $this->dataMapper->convertPropertyNameToColumnName($propertyName, $className);
-			$operator = $this->resolveOperator($operator);
-			$constraintSQL = '';
-			if ($valueFunction === NULL) {
-				$constraintSQL .= (!empty($tableName) ? $tableName . '.' : '') . $columnName . ' ' . $operator . ' ?';
-			} else {
-				$constraintSQL .= $valueFunction . '(' . (!empty($tableName) ? $tableName . '.' : '') . $columnName . ') ' . $operator . ' ?';
-			}
-			$sql['where'][] = $constraintSQL;
-		}
-	}
-
-	/**
-	 * @param string &$className
-	 * @param string &$tableName
-	 * @param array &$propertyPath
-	 * @param array &$sql
-	 * @throws \TYPO3\CMS\Extbase\Persistence\Generic\Exception
-	 * @throws \TYPO3\CMS\Extbase\Persistence\Generic\Exception\InvalidRelationConfigurationException
-	 * @throws \TYPO3\CMS\Extbase\Persistence\Generic\Exception\MissingColumnMapException
-	 */
-	protected function addUnionStatement(&$className, &$tableName, &$propertyPath, array &$sql) {
-		$explodedPropertyPath = explode('.', $propertyPath, 2);
-		$propertyName = $explodedPropertyPath[0];
-		$columnName = $this->dataMapper->convertPropertyNameToColumnName($propertyName, $className);
-		$tableName = $this->dataMapper->convertClassNameToTableName($className);
-		$columnMap = $this->dataMapper->getDataMap($className)->getColumnMap($propertyName);
-
-		if ($columnMap === NULL) {
-			throw new \TYPO3\CMS\Extbase\Persistence\Generic\Exception\MissingColumnMapException('The ColumnMap for property "' . $propertyName . '" of class "' . $className . '" is missing.', 1355142232);
-		}
-
-		$parentKeyFieldName = $columnMap->getParentKeyFieldName();
-		$childTableName = $columnMap->getChildTableName();
-
-		if ($childTableName === NULL) {
-			throw new \TYPO3\CMS\Extbase\Persistence\Generic\Exception\InvalidRelationConfigurationException('The relation information for property "' . $propertyName . '" of class "' . $className . '" is missing.', 1353170925);
-		}
-
-		if ($columnMap->getTypeOfRelation() === \TYPO3\CMS\Extbase\Persistence\Generic\Mapper\ColumnMap::RELATION_HAS_ONE) {
-			if (isset($parentKeyFieldName)) {
-				$sql['unions'][$childTableName] = 'LEFT JOIN ' . $childTableName . ' ON ' . $tableName . '.uid=' . $childTableName . '.' . $parentKeyFieldName;
-			} else {
-				$sql['unions'][$childTableName] = 'LEFT JOIN ' . $childTableName . ' ON ' . $tableName . '.' . $columnName . '=' . $childTableName . '.uid';
-			}
-			$className = $this->dataMapper->getType($className, $propertyName);
-		} elseif ($columnMap->getTypeOfRelation() === \TYPO3\CMS\Extbase\Persistence\Generic\Mapper\ColumnMap::RELATION_HAS_MANY) {
-			if (isset($parentKeyFieldName)) {
-				$sql['unions'][$childTableName] = 'LEFT JOIN ' . $childTableName . ' ON ' . $tableName . '.uid=' . $childTableName . '.' . $parentKeyFieldName;
-			} else {
-				$onStatement = '(FIND_IN_SET(' . $childTableName . '.uid, ' . $tableName . '.' . $columnName . '))';
-				$sql['unions'][$childTableName] = 'LEFT JOIN ' . $childTableName . ' ON ' . $onStatement;
-			}
-			$className = $this->dataMapper->getType($className, $propertyName);
-		} elseif ($columnMap->getTypeOfRelation() === \TYPO3\CMS\Extbase\Persistence\Generic\Mapper\ColumnMap::RELATION_HAS_AND_BELONGS_TO_MANY) {
-			$relationTableName = $columnMap->getRelationTableName();
-			$sql['unions'][$relationTableName] = 'LEFT JOIN ' . $relationTableName . ' ON ' . $tableName . '.uid=' . $relationTableName . '.' . $columnMap->getParentKeyFieldName();
-			$sql['unions'][$childTableName] = 'LEFT JOIN ' . $childTableName . ' ON ' . $relationTableName . '.' . $columnMap->getChildKeyFieldName() . '=' . $childTableName . '.uid';
-			$className = $this->dataMapper->getType($className, $propertyName);
-		} else {
-			throw new \TYPO3\CMS\Extbase\Persistence\Generic\Exception('Could not determine type of relation.', 1252502725);
-		}
-		// TODO check if there is another solution for this
-		$sql['keywords']['distinct'] = 'DISTINCT';
-		$propertyPath = $explodedPropertyPath[1];
-		$tableName = $childTableName;
-	}
-
-	/**
-	 * Returns the SQL operator for the given JCR operator type.
-	 *
-	 * @param string $operator One of the JCR_OPERATOR_* constants
-	 * @throws \TYPO3\CMS\Extbase\Persistence\Generic\Exception
-	 * @return string an SQL operator
-	 */
-	protected function resolveOperator($operator) {
-		switch ($operator) {
-			case self::OPERATOR_EQUAL_TO_NULL:
-				$operator = 'IS';
-				break;
-			case self::OPERATOR_NOT_EQUAL_TO_NULL:
-				$operator = 'IS NOT';
-				break;
-			case \TYPO3\CMS\Extbase\Persistence\QueryInterface::OPERATOR_IN:
-				$operator = 'IN';
-				break;
-			case \TYPO3\CMS\Extbase\Persistence\QueryInterface::OPERATOR_EQUAL_TO:
-				$operator = '=';
-				break;
-			case \TYPO3\CMS\Extbase\Persistence\QueryInterface::OPERATOR_NOT_EQUAL_TO:
-				$operator = '!=';
-				break;
-			case \TYPO3\CMS\Extbase\Persistence\QueryInterface::OPERATOR_LESS_THAN:
-				$operator = '<';
-				break;
-			case \TYPO3\CMS\Extbase\Persistence\QueryInterface::OPERATOR_LESS_THAN_OR_EQUAL_TO:
-				$operator = '<=';
-				break;
-			case \TYPO3\CMS\Extbase\Persistence\QueryInterface::OPERATOR_GREATER_THAN:
-				$operator = '>';
-				break;
-			case \TYPO3\CMS\Extbase\Persistence\QueryInterface::OPERATOR_GREATER_THAN_OR_EQUAL_TO:
-				$operator = '>=';
-				break;
-			case \TYPO3\CMS\Extbase\Persistence\QueryInterface::OPERATOR_LIKE:
-				$operator = 'LIKE';
-				break;
-			default:
-				throw new \TYPO3\CMS\Extbase\Persistence\Generic\Exception('Unsupported operator encountered.', 1242816073);
-		}
-		return $operator;
 	}
 
 	/**
@@ -866,6 +628,8 @@ class Typo3DbBackend implements \TYPO3\CMS\Extbase\Persistence\Generic\Storage\B
 	 * @param string $tableName
 	 *
 	 * @throws \TYPO3\CMS\Extbase\Persistence\Generic\Exception
+	 * @deprecated since 6.2, will be removed two versions later
+	 * @todo add deprecation notice after getUidOfAlreadyPersistedValueObject is adjusted
 	 */
 	protected function replacePlaceholders(&$sqlString, array $parameters, $tableName = 'foo') {
 		// TODO profile this method again
@@ -894,55 +658,13 @@ class Typo3DbBackend implements \TYPO3\CMS\Extbase\Persistence\Generic\Storage\B
 	}
 
 	/**
-	 * Adds additional WHERE statements according to the query settings.
-	 *
-	 * @param \TYPO3\CMS\Extbase\Persistence\Generic\QuerySettingsInterface $querySettings The TYPO3 CMS specific query settings
-	 * @param string $tableName The table name to add the additional where clause for
-	 * @param string &$sql
-	 * @return void
-	 */
-	protected function addAdditionalWhereClause(\TYPO3\CMS\Extbase\Persistence\Generic\QuerySettingsInterface $querySettings, $tableName, &$sql) {
-		$this->addVisibilityConstraintStatement($querySettings, $tableName, $sql);
-		if ($querySettings->getRespectSysLanguage()) {
-			$this->addSysLanguageStatement($tableName, $sql, $querySettings);
-		}
-		if ($querySettings->getRespectStoragePage()) {
-			$this->addPageIdStatement($tableName, $sql, $querySettings->getStoragePageIds());
-		}
-	}
-
-	/**
-	 * Builds the enable fields statement
-	 *
-	 * @param string $tableName The database table name
-	 * @param array &$sql The query parts
-	 * @return void
-	 * @deprecated since Extbase 6.0, will be removed in Extbase 6.2.
-	 */
-	protected function addEnableFieldsStatement($tableName, array &$sql) {
-		\TYPO3\CMS\Core\Utility\GeneralUtility::logDeprecatedFunction();
-		if (is_array($GLOBALS['TCA'][$tableName]['ctrl'])) {
-			if ($this->environmentService->isEnvironmentInFrontendMode()) {
-				$statement = $this->getPageRepository()->enableFields($tableName);
-			} else {
-				// TYPO3_MODE === 'BE'
-				$statement = \TYPO3\CMS\Backend\Utility\BackendUtility::deleteClause($tableName);
-				$statement .= \TYPO3\CMS\Backend\Utility\BackendUtility::BEenableFields($tableName);
-			}
-			if (!empty($statement)) {
-				$statement = substr($statement, 5);
-				$sql['additionalWhereClause'][] = $statement;
-			}
-		}
-	}
-
-	/**
 	 * Adds enableFields and deletedClause to the query if necessary
 	 *
 	 * @param \TYPO3\CMS\Extbase\Persistence\Generic\QuerySettingsInterface $querySettings
 	 * @param string $tableName The database table name
 	 * @param array &$sql The query parts
 	 * @return void
+	 * @todo remove after getUidOfAlreadyPersistedValueObject is adjusted, this was moved to queryParser
 	 */
 	protected function addVisibilityConstraintStatement(\TYPO3\CMS\Extbase\Persistence\Generic\QuerySettingsInterface $querySettings, $tableName, array &$sql) {
 		$statement = '';
@@ -967,13 +689,14 @@ class Typo3DbBackend implements \TYPO3\CMS\Extbase\Persistence\Generic\Storage\B
 	 * Returns constraint statement for frontend context
 	 *
 	 * @param string $tableName
-	 * @param boolean $ignoreEnableFields A flag indicating whether the enable fields should be ignored
+	 * @param bool $ignoreEnableFields A flag indicating whether the enable fields should be ignored
 	 * @param array $enableFieldsToBeIgnored If $ignoreEnableFields is true, this array specifies enable fields to be ignored. If it is NULL or an empty array (default) all enable fields are ignored.
-	 * @param boolean $includeDeleted A flag indicating whether deleted records should be included
+	 * @param bool $includeDeleted A flag indicating whether deleted records should be included
 	 * @return string
 	 * @throws \TYPO3\CMS\Extbase\Persistence\Generic\Exception\InconsistentQuerySettingsException
+	 * @todo remove after getUidOfAlreadyPersistedValueObject is adjusted, this was moved to queryParser
 	 */
-	protected function getFrontendConstraintStatement($tableName, $ignoreEnableFields, $enableFieldsToBeIgnored = array(), $includeDeleted) {
+	protected function getFrontendConstraintStatement($tableName, $ignoreEnableFields, array $enableFieldsToBeIgnored = array(), $includeDeleted) {
 		$statement = '';
 		if ($ignoreEnableFields && !$includeDeleted) {
 			if (count($enableFieldsToBeIgnored)) {
@@ -994,160 +717,20 @@ class Typo3DbBackend implements \TYPO3\CMS\Extbase\Persistence\Generic\Storage\B
 	 * Returns constraint statement for backend context
 	 *
 	 * @param string $tableName
-	 * @param boolean $ignoreEnableFields A flag indicating whether the enable fields should be ignored
-	 * @param boolean $includeDeleted A flag indicating whether deleted records should be included
+	 * @param bool $ignoreEnableFields A flag indicating whether the enable fields should be ignored
+	 * @param bool $includeDeleted A flag indicating whether deleted records should be included
 	 * @return string
+	 * @todo remove after getUidOfAlreadyPersistedValueObject is adjusted, this was moved to queryParser
 	 */
 	protected function getBackendConstraintStatement($tableName, $ignoreEnableFields, $includeDeleted) {
 		$statement = '';
 		if (!$ignoreEnableFields) {
-			$statement .= \TYPO3\CMS\Backend\Utility\BackendUtility::BEenableFields($tableName);
+			$statement .= BackendUtility::BEenableFields($tableName);
 		}
 		if (!$includeDeleted) {
-			$statement .= \TYPO3\CMS\Backend\Utility\BackendUtility::deleteClause($tableName);
+			$statement .= BackendUtility::deleteClause($tableName);
 		}
 		return $statement;
-	}
-
-	/**
-	 * Builds the language field statement
-	 *
-	 * @param string $tableName The database table name
-	 * @param array &$sql The query parts
-	 * @param \TYPO3\CMS\Extbase\Persistence\Generic\QuerySettingsInterface $querySettings The TYPO3 CMS specific query settings
-	 * @return void
-	 */
-	protected function addSysLanguageStatement($tableName, array &$sql, $querySettings) {
-		if (is_array($GLOBALS['TCA'][$tableName]['ctrl'])) {
-			if (!empty($GLOBALS['TCA'][$tableName]['ctrl']['languageField'])) {
-				// Select all entries for the current language
-				$additionalWhereClause = $tableName . '.' . $GLOBALS['TCA'][$tableName]['ctrl']['languageField'] . ' IN (' . intval($querySettings->getSysLanguageUid()) . ',-1)';
-				// If any language is set -> get those entries which are not translated yet
-				// They will be removed by t3lib_page::getRecordOverlay if not matching overlay mode
-				if (isset($GLOBALS['TCA'][$tableName]['ctrl']['transOrigPointerField'])
-					&& $querySettings->getSysLanguageUid() > 0
-				) {
-					$additionalWhereClause .= ' OR (' . $tableName . '.' . $GLOBALS['TCA'][$tableName]['ctrl']['languageField'] . '=0' .
-						' AND ' . $tableName . '.uid NOT IN (SELECT ' . $tableName . '.' . $GLOBALS['TCA'][$tableName]['ctrl']['transOrigPointerField'] .
-						' FROM ' . $tableName .
-						' WHERE ' . $tableName . '.' . $GLOBALS['TCA'][$tableName]['ctrl']['transOrigPointerField'] . '>0' .
-						' AND ' . $tableName . '.' . $GLOBALS['TCA'][$tableName]['ctrl']['languageField'] . '>0';
-
-					// Add delete clause to ensure all entries are loaded
-					if (isset($GLOBALS['TCA'][$tableName]['ctrl']['delete'])) {
-						$additionalWhereClause .= ' AND ' . $tableName . '.' . $GLOBALS['TCA'][$tableName]['ctrl']['delete'] . '=0';
-					}
-					$additionalWhereClause .= '))';
-				}
-				$sql['additionalWhereClause'][] = '(' . $additionalWhereClause . ')';
-			}
-		}
-	}
-
-	/**
-	 * Builds the page ID checking statement
-	 *
-	 * @param string $tableName The database table name
-	 * @param array &$sql The query parts
-	 * @param array $storagePageIds list of storage page ids
-	 * @return void
-	 */
-	protected function addPageIdStatement($tableName, array &$sql, array $storagePageIds) {
-		$tableColumns = $this->tableColumnCache->get($tableName);
-		if ($tableColumns === FALSE) {
-			$tableColumns = $this->databaseHandle->admin_get_fields($tableName);
-			$this->tableColumnCache->set($tableName, $tableColumns);
-		}
-		if (is_array($GLOBALS['TCA'][$tableName]['ctrl']) && array_key_exists('pid', $tableColumns)) {
-			$rootLevel = (int)$GLOBALS['TCA'][$tableName]['ctrl']['rootLevel'];
-			if ($rootLevel) {
-				if ($rootLevel === 1) {
-					$sql['additionalWhereClause'][] = $tableName . '.pid = 0';
-				}
-			} else {
-				if (empty($storagePageIds)) {
-					throw new \TYPO3\CMS\Extbase\Persistence\Generic\Exception\InconsistentQuerySettingsException('Missing storage page ids.', 1365779762);
-				}
-				$sql['additionalWhereClause'][] = $tableName . '.pid IN (' . implode(', ', $storagePageIds) . ')';
-			}
-		}
-	}
-
-	/**
-	 * Transforms orderings into SQL.
-	 *
-	 * @param array $orderings An array of orderings (Tx_Extbase_Persistence_QOM_Ordering)
-	 * @param \TYPO3\CMS\Extbase\Persistence\Generic\Qom\SourceInterface $source The source
-	 * @param array &$sql The query parts
-	 * @throws \TYPO3\CMS\Extbase\Persistence\Generic\Exception\UnsupportedOrderException
-	 * @return void
-	 */
-	protected function parseOrderings(array $orderings, \TYPO3\CMS\Extbase\Persistence\Generic\Qom\SourceInterface $source, array &$sql) {
-		foreach ($orderings as $propertyName => $order) {
-			switch ($order) {
-				case \TYPO3\CMS\Extbase\Persistence\Generic\Qom\QueryObjectModelConstantsInterface::JCR_ORDER_ASCENDING:
-
-				case \TYPO3\CMS\Extbase\Persistence\QueryInterface::ORDER_ASCENDING:
-					$order = 'ASC';
-					break;
-				case \TYPO3\CMS\Extbase\Persistence\Generic\Qom\QueryObjectModelConstantsInterface::JCR_ORDER_DESCENDING:
-
-				case \TYPO3\CMS\Extbase\Persistence\QueryInterface::ORDER_DESCENDING:
-					$order = 'DESC';
-					break;
-				default:
-					throw new \TYPO3\CMS\Extbase\Persistence\Generic\Exception\UnsupportedOrderException('Unsupported order encountered.', 1242816074);
-			}
-			$className = '';
-			$tableName = '';
-			if ($source instanceof \TYPO3\CMS\Extbase\Persistence\Generic\Qom\SelectorInterface) {
-				$className = $source->getNodeTypeName();
-				$tableName = $this->dataMapper->convertClassNameToTableName($className);
-				while (strpos($propertyName, '.') !== FALSE) {
-					$this->addUnionStatement($className, $tableName, $propertyName, $sql);
-				}
-			} elseif ($source instanceof \TYPO3\CMS\Extbase\Persistence\Generic\Qom\JoinInterface) {
-				$tableName = $source->getLeft()->getSelectorName();
-			}
-			$columnName = $this->dataMapper->convertPropertyNameToColumnName($propertyName, $className);
-			if (strlen($tableName) > 0) {
-				$sql['orderings'][] = $tableName . '.' . $columnName . ' ' . $order;
-			} else {
-				$sql['orderings'][] = $columnName . ' ' . $order;
-			}
-		}
-	}
-
-	/**
-	 * Transforms limit and offset into SQL
-	 *
-	 * @param integer $limit
-	 * @param integer $offset
-	 * @param array &$sql
-	 * @return void
-	 */
-	protected function parseLimitAndOffset($limit, $offset, array &$sql) {
-		if ($limit !== NULL && $offset !== NULL) {
-			$sql['limit'] = intval($offset) . ', ' . intval($limit);
-		} elseif ($limit !== NULL) {
-			$sql['limit'] = intval($limit);
-		}
-	}
-
-	/**
-	 * Transforms a Resource from a database query to an array of rows.
-	 *
-	 * @param resource $result The result
-	 * @return array The result as an array of rows (tuples)
-	 */
-	protected function getRowsFromResult($result) {
-		$rows = array();
-		while ($row = $this->databaseHandle->sql_fetch_assoc($result)) {
-			if (is_array($row)) {
-				$rows[] = $row;
-			}
-		}
-		return $rows;
 	}
 
 	/**
@@ -1160,68 +743,68 @@ class Typo3DbBackend implements \TYPO3\CMS\Extbase\Persistence\Generic\Storage\B
 	 * @param null|integer $workspaceUid
 	 * @return array
 	 */
-	protected function doLanguageAndWorkspaceOverlay(\TYPO3\CMS\Extbase\Persistence\Generic\Qom\SourceInterface $source, array $rows, $querySettings, $workspaceUid = NULL) {
+	protected function doLanguageAndWorkspaceOverlay(\TYPO3\CMS\Extbase\Persistence\Generic\Qom\SourceInterface $source, array $rows, \TYPO3\CMS\Extbase\Persistence\Generic\QuerySettingsInterface $querySettings, $workspaceUid = NULL) {
 		if ($source instanceof \TYPO3\CMS\Extbase\Persistence\Generic\Qom\SelectorInterface) {
 			$tableName = $source->getSelectorName();
 		} elseif ($source instanceof \TYPO3\CMS\Extbase\Persistence\Generic\Qom\JoinInterface) {
 			$tableName = $source->getRight()->getSelectorName();
+		} else {
+			// No proper source, so we do not have a table name here
+			// we cannot do an overlay and return the original rows instead.
+			return $rows;
 		}
-		// If we do not have a table name here, we cannot do an overlay and return the original rows instead.
-		if (isset($tableName)) {
-			$pageRepository = $this->getPageRepository();
-			if (is_object($GLOBALS['TSFE'])) {
-				$languageMode = $GLOBALS['TSFE']->sys_language_mode;
-				if ($workspaceUid !== NULL) {
-					$pageRepository->versioningWorkspaceId = $workspaceUid;
-				}
-			} else {
-				$languageMode = '';
-				if ($workspaceUid === NULL) {
-					$workspaceUid = $GLOBALS['BE_USER']->workspace;
-				}
+
+		$pageRepository = $this->getPageRepository();
+		if (is_object($GLOBALS['TSFE'])) {
+			if ($workspaceUid !== NULL) {
 				$pageRepository->versioningWorkspaceId = $workspaceUid;
 			}
+		} else {
+			if ($workspaceUid === NULL) {
+				$workspaceUid = $GLOBALS['BE_USER']->workspace;
+			}
+			$pageRepository->versioningWorkspaceId = $workspaceUid;
+		}
 
-			$overlayedRows = array();
-			foreach ($rows as $row) {
-				// If current row is a translation select its parent
-				if (isset($tableName) && isset($GLOBALS['TCA'][$tableName])
-					&& isset($GLOBALS['TCA'][$tableName]['ctrl']['languageField'])
-					&& isset($GLOBALS['TCA'][$tableName]['ctrl']['transOrigPointerField'])
+		$overlaidRows = array();
+		foreach ($rows as $row) {
+			// If current row is a translation select its parent
+			if (isset($tableName) && isset($GLOBALS['TCA'][$tableName])
+				&& isset($GLOBALS['TCA'][$tableName]['ctrl']['languageField'])
+				&& isset($GLOBALS['TCA'][$tableName]['ctrl']['transOrigPointerField'])
+				&& !isset($GLOBALS['TCA'][$tableName]['ctrl']['transOrigPointerTable'])
+			) {
+				if (isset($row[$GLOBALS['TCA'][$tableName]['ctrl']['transOrigPointerField']])
+					&& $row[$GLOBALS['TCA'][$tableName]['ctrl']['transOrigPointerField']] > 0
 				) {
-					if (isset($row[$GLOBALS['TCA'][$tableName]['ctrl']['transOrigPointerField']])
-						&& $row[$GLOBALS['TCA'][$tableName]['ctrl']['transOrigPointerField']] > 0
-					) {
-						$row = $this->databaseHandle->exec_SELECTgetSingleRow(
-							$tableName . '.*',
-							$tableName,
-							$tableName . '.uid=' . (integer) $row[$GLOBALS['TCA'][$tableName]['ctrl']['transOrigPointerField']] .
-								' AND ' . $tableName . '.' . $GLOBALS['TCA'][$tableName]['ctrl']['languageField'] . '=0'
-						);
-					}
-				}
-				$pageRepository->versionOL($tableName, $row, TRUE);
-				if ($pageRepository->versioningPreview && isset($row['_ORIG_uid'])) {
-					$row['uid'] = $row['_ORIG_uid'];
-				}
-				if ($tableName == 'pages') {
-					$row = $pageRepository->getPageOverlay($row, $querySettings->getSysLanguageUid());
-				} elseif (isset($GLOBALS['TCA'][$tableName]['ctrl']['languageField'])
-					&& $GLOBALS['TCA'][$tableName]['ctrl']['languageField'] !== ''
-				) {
-					if (in_array($row[$GLOBALS['TCA'][$tableName]['ctrl']['languageField']], array(-1, 0))) {
-						$overlayMode = $languageMode === 'strict' ? 'hideNonTranslated' : '';
-						$row = $pageRepository->getRecordOverlay($tableName, $row, $querySettings->getSysLanguageUid(), $overlayMode);
-					}
-				}
-				if ($row !== NULL && is_array($row)) {
-					$overlayedRows[] = $row;
+					$row = $this->databaseHandle->exec_SELECTgetSingleRow(
+						$tableName . '.*',
+						$tableName,
+						$tableName . '.uid=' . (int)$row[$GLOBALS['TCA'][$tableName]['ctrl']['transOrigPointerField']] .
+							' AND ' . $tableName . '.' . $GLOBALS['TCA'][$tableName]['ctrl']['languageField'] . '=0'
+					);
 				}
 			}
-		} else {
-			$overlayedRows = $rows;
+			$pageRepository->versionOL($tableName, $row, TRUE);
+			if ($pageRepository->versioningPreview && isset($row['_ORIG_uid'])) {
+				$row['uid'] = $row['_ORIG_uid'];
+			}
+			if ($tableName == 'pages') {
+				$row = $pageRepository->getPageOverlay($row, $querySettings->getLanguageUid());
+			} elseif (isset($GLOBALS['TCA'][$tableName]['ctrl']['languageField'])
+				&& $GLOBALS['TCA'][$tableName]['ctrl']['languageField'] !== ''
+				&& !isset($GLOBALS['TCA'][$tableName]['ctrl']['transOrigPointerTable'])
+			) {
+				if (in_array($row[$GLOBALS['TCA'][$tableName]['ctrl']['languageField']], array(-1, 0))) {
+					$overlayMode = $querySettings->getLanguageMode() === 'strict' ? 'hideNonTranslated' : '';
+					$row = $pageRepository->getRecordOverlay($tableName, $row, $querySettings->getLanguageUid(), $overlayMode);
+				}
+			}
+			if ($row !== NULL && is_array($row)) {
+				$overlaidRows[] = $row;
+			}
 		}
-		return $overlayedRows;
+		return $overlaidRows;
 	}
 
 	/**
@@ -1276,7 +859,7 @@ class Typo3DbBackend implements \TYPO3\CMS\Extbase\Persistence\Generic\Storage\B
 		$storagePage = NULL;
 		$columns = $this->databaseHandle->admin_get_fields($tableName);
 		if (array_key_exists('pid', $columns)) {
-			$result = $this->databaseHandle->exec_SELECTquery('pid', $tableName, 'uid=' . intval($uid));
+			$result = $this->databaseHandle->exec_SELECTquery('pid', $tableName, 'uid=' . (int)$uid);
 			if ($row = $this->databaseHandle->sql_fetch_assoc($result)) {
 				$storagePage = $row['pid'];
 				$pageIdsToClear[] = $storagePage;
@@ -1290,10 +873,10 @@ class Typo3DbBackend implements \TYPO3\CMS\Extbase\Persistence\Generic\Storage\B
 			return;
 		}
 		if (!isset($this->pageTSConfigCache[$storagePage])) {
-			$this->pageTSConfigCache[$storagePage] = \TYPO3\CMS\Backend\Utility\BackendUtility::getPagesTSconfig($storagePage);
+			$this->pageTSConfigCache[$storagePage] = BackendUtility::getPagesTSconfig($storagePage);
 		}
 		if (isset($this->pageTSConfigCache[$storagePage]['TCEMAIN.']['clearCacheCmd'])) {
-			$clearCacheCommands = \TYPO3\CMS\Core\Utility\GeneralUtility::trimExplode(',', strtolower($this->pageTSConfigCache[$storagePage]['TCEMAIN.']['clearCacheCmd']), 1);
+			$clearCacheCommands = \TYPO3\CMS\Core\Utility\GeneralUtility::trimExplode(',', strtolower($this->pageTSConfigCache[$storagePage]['TCEMAIN.']['clearCacheCmd']), TRUE);
 			$clearCacheCommands = array_unique($clearCacheCommands);
 			foreach ($clearCacheCommands as $clearCacheCommand) {
 				if (\TYPO3\CMS\Core\Utility\MathUtility::canBeInterpretedAsInteger($clearCacheCommand)) {
@@ -1306,6 +889,29 @@ class Typo3DbBackend implements \TYPO3\CMS\Extbase\Persistence\Generic\Storage\B
 			$this->cacheService->getPageIdStack()->push($pageIdToClear);
 		}
 	}
-}
 
-?>
+	/**
+	 * Finds and returns a variable value from the query cache.
+	 *
+	 * @param string $entryIdentifier Identifier of the cache entry to fetch
+	 * @return mixed The value
+	 */
+	protected function getQueryCacheEntry($entryIdentifier) {
+		if (!isset($this->queryRuntimeCache[$entryIdentifier])) {
+			$this->queryRuntimeCache[$entryIdentifier] = $this->queryCache->get($entryIdentifier);
+		}
+		return $this->queryRuntimeCache[$entryIdentifier];
+	}
+
+	/**
+	 * Saves the value of a PHP variable in the query cache.
+	 *
+	 * @param string $entryIdentifier An identifier used for this cache entry
+	 * @param mixed $variable The query to cache
+	 * @return void
+	 */
+	protected function setQueryCacheEntry($entryIdentifier, $variable) {
+		$this->queryRuntimeCache[$entryIdentifier] = $variable;
+		$this->queryCache->set($entryIdentifier, $variable, array(), 0);
+	}
+}

@@ -1,31 +1,18 @@
 <?php
 namespace TYPO3\CMS\Core\Core;
 
-/***************************************************************
- *  Copyright notice
+/**
+ * This file is part of the TYPO3 CMS project.
  *
- *  (c) 2012-2013 Christian Kuhn <lolli@schwarzbu.ch>
- *  All rights reserved
+ * It is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License, either version 2
+ * of the License, or any later version.
  *
- *  This script is part of the TYPO3 project. The TYPO3 project is
- *  free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
+ * For the full copyright and license information, please read the
+ * LICENSE.txt file that was distributed with this source code.
  *
- *  The GNU General Public License can be found at
- *  http://www.gnu.org/copyleft/gpl.html.
- *  A copy is found in the textfile GPL.txt and important notices to the license
- *  from the author is found in LICENSE.txt distributed with these scripts.
- *
- *
- *  This script is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  This copyright notice MUST APPEAR in all copies of the script!
- ***************************************************************/
+ * The TYPO3 project - inspiring people to share!
+ */
 
 /**
  * Class to encapsulate base setup of bootstrap.
@@ -49,6 +36,21 @@ namespace TYPO3\CMS\Core\Core;
 class SystemEnvironmentBuilder {
 
 	/**
+	 * A list of supported CGI server APIs
+	 * NOTICE: This is a duplicate of the SAME array in GeneralUtility!
+	 *         It is duplicated here as this information is needed early in bootstrap
+	 *         and GeneralUtility is not available yet.
+	 * @var array
+	 */
+	static protected $supportedCgiServerApis = array(
+		'fpm-fcgi',
+		'cgi',
+		'isapi',
+		'cgi-fcgi',
+		'srv', // HHVM with fastcgi
+	);
+
+	/**
 	 * Run base setup.
 	 * This entry method is used in all scopes (FE, BE, eid, ajax, ...)
 	 *
@@ -61,7 +63,6 @@ class SystemEnvironmentBuilder {
 		self::definePaths($relativePathPart);
 		self::checkMainPathsExist();
 		self::requireBaseClasses();
-		self::setupClassAliasForLegacyBaseClasses();
 		self::handleMagicQuotesGpc();
 		self::addCorePearPathToIncludePath();
 		self::initializeGlobalVariables();
@@ -76,9 +77,9 @@ class SystemEnvironmentBuilder {
 	 */
 	static protected function defineBaseConstants() {
 		// This version, branch and copyright
-		define('TYPO3_version', '6.1.7');
-		define('TYPO3_branch', '6.1');
-		define('TYPO3_copyright_year', '1998-2013');
+		define('TYPO3_version', '6.2.4');
+		define('TYPO3_branch', '6.2');
+		define('TYPO3_copyright_year', '1998-2014');
 
 		// TYPO3 external links
 		define('TYPO3_URL_GENERAL', 'http://typo3.org/');
@@ -93,8 +94,9 @@ class SystemEnvironmentBuilder {
 		define('TYPO3_URL_CONTRIBUTE', 'http://typo3.org/contribute/');
 		define('TYPO3_URL_SECURITY', 'http://typo3.org/teams/security/');
 		define('TYPO3_URL_DOWNLOAD', 'http://typo3.org/download/');
-		define('TYPO3_URL_SYSTEMREQUIREMENTS', 'http://typo3.org/about/typo3-the-cms/system-requirements/');
+		define('TYPO3_URL_SYSTEMREQUIREMENTS', 'http://typo3.org/typo3-cms/overview/requirements/');
 		define('TYPO3_URL_DONATE', 'http://typo3.org/donate/online-donation/');
+		define('TYPO3_URL_WIKI_OPCODECACHE', 'http://wiki.typo3.org/Opcode_Cache');
 
 		// A tabulator, a linefeed, a carriage return, a CR-LF combination
 		define('TAB', chr(9));
@@ -106,9 +108,6 @@ class SystemEnvironmentBuilder {
 		define('FILE_DENY_PATTERN_DEFAULT', '\\.(php[3-6]?|phpsh|phtml)(\\..*)?$|^\\.htaccess$');
 		// Security related constant: List of file extensions that should be registered as php script file extensions
 		define('PHP_EXTENSIONS_DEFAULT', 'php,php3,php4,php5,php6,phpsh,inc,phtml');
-
-		// List of extensions required to run the core
-		define('REQUIRED_EXTENSIONS', 'core,backend,frontend,cms,lang,sv,extensionmanager,recordlist,extbase,fluid,cshmanual,install');
 
 		// Operating system identifier
 		// Either "WIN" or empty string
@@ -149,10 +148,14 @@ class SystemEnvironmentBuilder {
 		// All paths are unified between Windows and Unix, so the \ of Windows is substituted to a /
 		// Example "/var/www/instance-name/htdocs/typo3conf/ext/wec_map/mod1/index.php"
 		// Example "c:/var/www/instance-name/htdocs/typo3/backend.php" for a path in Windows
-		define('PATH_thisScript', self::getPathThisScript());
+		if (!defined('PATH_thisScript')) {
+			define('PATH_thisScript', self::getPathThisScript());
+		}
 		// Absolute path of the document root of the instance with trailing slash
 		// Example "/var/www/instance-name/htdocs/"
-		define('PATH_site', self::getPathSite($relativePathPart));
+		if (!defined('PATH_site')) {
+			define('PATH_site', self::getPathSite($relativePathPart));
+		}
 		// Absolute path of the typo3 directory of the instance with trailing slash
 		// Example "/var/www/instance-name/htdocs/typo3/"
 		define('PATH_typo3', PATH_site . TYPO3_mainDir);
@@ -161,9 +164,6 @@ class SystemEnvironmentBuilder {
 		// Example "install/" for the install tool entry script
 		// Example "../typo3conf/ext/templavoila/mod2/ for an extension installed in typo3conf/ext/
 		define('PATH_typo3_mod', defined('TYPO3_MOD_PATH') ? TYPO3_MOD_PATH : '');
-		// Absolute path to the t3lib directory with trailing slash
-		// Example "/var/www/instance-name/htdocs/t3lib/"
-		define('PATH_t3lib', PATH_site . 't3lib/');
 		// Absolute path to the typo3conf directory with trailing slash
 		// Example "/var/www/instance-name/htdocs/typo3conf/"
 		define('PATH_typo3conf', PATH_site . 'typo3conf/');
@@ -181,14 +181,8 @@ class SystemEnvironmentBuilder {
 		if (!is_file(PATH_thisScript)) {
 			die('Unable to determine path to entry script.');
 		}
-		if (!is_dir(PATH_t3lib)) {
-			die('Calculated absolute path to t3lib directory does not exist.');
-		}
 		if (!is_dir(PATH_tslib)) {
 			die('Calculated absolute path to tslib directory does not exist.');
-		}
-		if (!is_dir(PATH_typo3conf)) {
-			die('Calculated absolute path to typo3conf directory does not exist');
 		}
 	}
 
@@ -200,42 +194,21 @@ class SystemEnvironmentBuilder {
 	static protected function requireBaseClasses() {
 		require_once __DIR__ . '/../Utility/GeneralUtility.php';
 		require_once __DIR__ . '/../Utility/ArrayUtility.php';
+		require_once __DIR__ . '/../Utility/PathUtility.php';
 		require_once __DIR__ . '/../SingletonInterface.php';
 		require_once __DIR__ . '/../Configuration/ConfigurationManager.php';
-		require_once __DIR__ . '/../Utility/ExtensionManagementUtility.php';
-		require_once __DIR__ . '/../Cache/Cache.php';
-		require_once __DIR__ . '/../Cache/Exception.php';
-		require_once __DIR__ . '/../Cache/Exception/NoSuchCacheException.php';
-		require_once __DIR__ . '/../Cache/Exception/InvalidDataException.php';
-		require_once __DIR__ . '/../Cache/CacheFactory.php';
-		require_once __DIR__ . '/../Cache/CacheManager.php';
 		require_once __DIR__ . '/../Cache/Frontend/FrontendInterface.php';
 		require_once __DIR__ . '/../Cache/Frontend/AbstractFrontend.php';
 		require_once __DIR__ . '/../Cache/Frontend/StringFrontend.php';
 		require_once __DIR__ . '/../Cache/Frontend/PhpFrontend.php';
+		require_once __DIR__ . '/../Cache/Frontend/VariableFrontend.php';
 		require_once __DIR__ . '/../Cache/Backend/BackendInterface.php';
+		require_once __DIR__ . '/../Cache/Backend/PhpCapableBackendInterface.php';
 		require_once __DIR__ . '/../Cache/Backend/TaggableBackendInterface.php';
 		require_once __DIR__ . '/../Cache/Backend/AbstractBackend.php';
-		require_once __DIR__ . '/../Cache/Backend/PhpCapableBackendInterface.php';
-		require_once __DIR__ . '/../Cache/Backend/SimpleFileBackend.php';
-		require_once __DIR__ . '/../Cache/Backend/NullBackend.php';
-		require_once __DIR__ . '/../Log/LogLevel.php';
-		require_once __DIR__ . '/../Utility/MathUtility.php';
+		require_once __DIR__ . '/../Cache/Backend/TransientMemoryBackend.php';
 		require_once __DIR__ . '/ClassLoader.php';
-		if (PHP_VERSION_ID < 50307) {
-			require_once __DIR__ . '/../Compatibility/CompatbilityClassLoaderPhpBelow50307.php';
-		}
-	}
-
-	/**
-	 * Compatibility layer for early t3lib_div or t3lib_extMgm usage
-	 *
-	 * @return void
-	 * @deprecated since 6.0, will be removed in 6.2
-	 */
-	static public function setupClassAliasForLegacyBaseClasses() {
-		class_alias('TYPO3\\CMS\\Core\\Utility\\GeneralUtility', 't3lib_div');
-		class_alias('TYPO3\\CMS\\Core\\Utility\\ExtensionManagementUtility', 't3lib_extMgm');
+		require_once __DIR__ . '/ClassAliasMap.php';
 	}
 
 	/**
@@ -372,7 +345,7 @@ class SystemEnvironmentBuilder {
 		} elseif (isset($_SERVER['PATH_TRANSLATED'])) {
 			$cgiPath = $_SERVER['PATH_TRANSLATED'];
 		}
-		if ($cgiPath && (PHP_SAPI === 'fpm-fcgi' || PHP_SAPI === 'cgi' || PHP_SAPI === 'isapi' || PHP_SAPI === 'cgi-fcgi')) {
+		if ($cgiPath && in_array(PHP_SAPI, self::$supportedCgiServerApis, TRUE)) {
 			$scriptPath = $cgiPath;
 		} else {
 			if (isset($_SERVER['ORIG_SCRIPT_FILENAME'])) {
@@ -412,7 +385,7 @@ class SystemEnvironmentBuilder {
 				$isRelativePath = TRUE;
 			}
 		} else {
-			if (substr($scriptPath, 0, 1) !== '/') {
+			if ($scriptPath[0] !== '/') {
 				$isRelativePath = TRUE;
 			}
 		}
@@ -517,8 +490,4 @@ class SystemEnvironmentBuilder {
 		}
 		return $directory . '/';
 	}
-
 }
-
-
-?>

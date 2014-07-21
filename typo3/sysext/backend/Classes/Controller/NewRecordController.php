@@ -1,31 +1,23 @@
 <?php
 namespace TYPO3\CMS\Backend\Controller;
 
-/***************************************************************
- *  Copyright notice
+/**
+ * This file is part of the TYPO3 CMS project.
  *
- *  (c) 1999-2013 Kasper Skårhøj (kasperYYYY@typo3.com)
- *  All rights reserved
+ * It is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License, either version 2
+ * of the License, or any later version.
  *
- *  This script is part of the TYPO3 project. The TYPO3 project is
- *  free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
+ * For the full copyright and license information, please read the
+ * LICENSE.txt file that was distributed with this source code.
  *
- *  The GNU General Public License can be found at
- *  http://www.gnu.org/copyleft/gpl.html.
- *  A copy is found in the textfile GPL.txt and important notices to the license
- *  from the author is found in LICENSE.txt distributed with these scripts.
- *
- *
- *  This script is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  This copyright notice MUST APPEAR in all copies of the script!
- ***************************************************************/
+ * The TYPO3 project - inspiring people to share!
+ */
+
+use TYPO3\CMS\Backend\Utility\BackendUtility;
+use TYPO3\CMS\Backend\Utility\IconUtility;
+use TYPO3\CMS\Core\Utility\ExtensionManagementUtility;
+use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
  * Script class for 'db_new'
@@ -62,7 +54,7 @@ class NewRecordController {
 	/**
 	 * Determines, whether "Select Position" for new page should be shown
 	 *
-	 * @var bool $newPagesSelectPosition
+	 * @var boolean $newPagesSelectPosition
 	 */
 	protected $newPagesSelectPosition = TRUE;
 
@@ -152,12 +144,22 @@ class NewRecordController {
 	public $tRows;
 
 	/**
+	 * Constructor
+	 */
+	public function __construct() {
+		$GLOBALS['SOBE'] = $this;
+		$GLOBALS['LANG']->includeLLFile('EXT:lang/locallang_misc.xlf');
+		$GLOBALS['BACK_PATH'] = '';
+
+		$this->init();
+	}
+
+	/**
 	 * Constructor function for the class
 	 *
 	 * @return void
-	 * @todo Define visibility
 	 */
-	public function init() {
+	protected function init() {
 		// Page-selection permission clause (reading)
 		$this->perms_clause = $GLOBALS['BE_USER']->getPagePermsClause(1);
 		// This will hide records from display - it has nothing to do with user rights!!
@@ -168,13 +170,13 @@ class NewRecordController {
 		}
 		// Setting GPvars:
 		// The page id to operate from
-		$this->id = intval(\TYPO3\CMS\Core\Utility\GeneralUtility::_GP('id'));
-		$this->returnUrl = \TYPO3\CMS\Core\Utility\GeneralUtility::sanitizeLocalUrl(\TYPO3\CMS\Core\Utility\GeneralUtility::_GP('returnUrl'));
-		$this->pagesOnly = \TYPO3\CMS\Core\Utility\GeneralUtility::_GP('pagesOnly');
+		$this->id = (int)GeneralUtility::_GP('id');
+		$this->returnUrl = GeneralUtility::sanitizeLocalUrl(GeneralUtility::_GP('returnUrl'));
+		$this->pagesOnly = GeneralUtility::_GP('pagesOnly');
 		// Create instance of template class for output
-		$this->doc = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Backend\\Template\\DocumentTemplate');
+		$this->doc = GeneralUtility::makeInstance('TYPO3\\CMS\\Backend\\Template\\DocumentTemplate');
 		$this->doc->backPath = $GLOBALS['BACK_PATH'];
-		$this->doc->setModuleTemplate('templates/db_new.html');
+		$this->doc->setModuleTemplate('EXT:backend/Resources/Private/Templates/db_new.html');
 		$this->doc->JScode = '';
 		// Setting up the context sensitive menu:
 		$this->doc->getContextMenuCode();
@@ -183,12 +185,12 @@ class NewRecordController {
 		$this->content .= $this->doc->header($GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.xlf:db_new.php.pagetitle'));
 		// Id a positive id is supplied, ask for the page record with permission information contained:
 		if ($this->id > 0) {
-			$this->pageinfo = \TYPO3\CMS\Backend\Utility\BackendUtility::readPageAccess($this->id, $this->perms_clause);
+			$this->pageinfo = BackendUtility::readPageAccess($this->id, $this->perms_clause);
 		}
 		// If a page-record was returned, the user had read-access to the page.
 		if ($this->pageinfo['uid']) {
 			// Get record of parent page
-			$this->pidInfo = \TYPO3\CMS\Backend\Utility\BackendUtility::getRecord('pages', $this->pageinfo['pid']);
+			$this->pidInfo = BackendUtility::getRecord('pages', $this->pageinfo['pid']);
 			// Checking the permissions for the user with regard to the parent page: Can he create new pages, new content record, new page after?
 			if ($GLOBALS['BE_USER']->doesUserHaveAccess($this->pageinfo, 8)) {
 				$this->newPagesInto = 1;
@@ -216,19 +218,18 @@ class NewRecordController {
 	 * Main processing, creating the list of new record tables to select from
 	 *
 	 * @return void
-	 * @todo Define visibility
 	 */
 	public function main() {
 		// If there was a page - or if the user is admin (admins has access to the root) we proceed:
 		if ($this->pageinfo['uid'] || $GLOBALS['BE_USER']->isAdmin()) {
 			// Acquiring TSconfig for this module/current page:
-			$this->web_list_modTSconfig = \TYPO3\CMS\Backend\Utility\BackendUtility::getModTSconfig($this->pageinfo['uid'], 'mod.web_list');
-			$this->allowedNewTables = \TYPO3\CMS\Core\Utility\GeneralUtility::trimExplode(',', $this->web_list_modTSconfig['properties']['allowedNewTables'], 1);
-			$this->deniedNewTables = \TYPO3\CMS\Core\Utility\GeneralUtility::trimExplode(',', $this->web_list_modTSconfig['properties']['deniedNewTables'], 1);
+			$this->web_list_modTSconfig = BackendUtility::getModTSconfig($this->pageinfo['uid'], 'mod.web_list');
+			$this->allowedNewTables = GeneralUtility::trimExplode(',', $this->web_list_modTSconfig['properties']['allowedNewTables'], TRUE);
+			$this->deniedNewTables = GeneralUtility::trimExplode(',', $this->web_list_modTSconfig['properties']['deniedNewTables'], TRUE);
 			// Acquiring TSconfig for this module/parent page:
-			$this->web_list_modTSconfig_pid = \TYPO3\CMS\Backend\Utility\BackendUtility::getModTSconfig($this->pageinfo['pid'], 'mod.web_list');
-			$this->allowedNewTables_pid = \TYPO3\CMS\Core\Utility\GeneralUtility::trimExplode(',', $this->web_list_modTSconfig_pid['properties']['allowedNewTables'], 1);
-			$this->deniedNewTables_pid = \TYPO3\CMS\Core\Utility\GeneralUtility::trimExplode(',', $this->web_list_modTSconfig_pid['properties']['deniedNewTables'], 1);
+			$this->web_list_modTSconfig_pid = BackendUtility::getModTSconfig($this->pageinfo['pid'], 'mod.web_list');
+			$this->allowedNewTables_pid = GeneralUtility::trimExplode(',', $this->web_list_modTSconfig_pid['properties']['allowedNewTables'], TRUE);
+			$this->deniedNewTables_pid = GeneralUtility::trimExplode(',', $this->web_list_modTSconfig_pid['properties']['deniedNewTables'], TRUE);
 			// More init:
 			if (!$this->showNewRecLink('pages')) {
 				$this->newPagesInto = 0;
@@ -238,13 +239,13 @@ class NewRecordController {
 			}
 			// Set header-HTML and return_url
 			if (is_array($this->pageinfo) && $this->pageinfo['uid']) {
-				$iconImgTag = \TYPO3\CMS\Backend\Utility\IconUtility::getSpriteIconForRecord('pages', $this->pageinfo, array('title' => htmlspecialchars($this->pageinfo['_thePath'])));
+				$iconImgTag = IconUtility::getSpriteIconForRecord('pages', $this->pageinfo, array('title' => htmlspecialchars($this->pageinfo['_thePath'])));
 				$title = strip_tags($this->pageinfo[$GLOBALS['TCA']['pages']['ctrl']['label']]);
 			} else {
-				$iconImgTag = \TYPO3\CMS\Backend\Utility\IconUtility::getSpriteIcon('apps-pagetree-root', array('title' => htmlspecialchars($this->pageinfo['_thePath'])));
+				$iconImgTag = IconUtility::getSpriteIcon('apps-pagetree-root', array('title' => htmlspecialchars($this->pageinfo['_thePath'])));
 				$title = $GLOBALS['TYPO3_CONF_VARS']['SYS']['sitename'];
 			}
-			$this->code = '<span class="typo3-moduleHeader">' . $this->doc->wrapClickMenuOnIcon($iconImgTag, 'pages', $this->pageinfo['uid']) . htmlspecialchars(\TYPO3\CMS\Core\Utility\GeneralUtility::fixed_lgd_cs($title, 45)) . '</span><br />';
+			$this->code = '<span class="typo3-moduleHeader">' . $this->doc->wrapClickMenuOnIcon($iconImgTag, 'pages', $this->pageinfo['uid']) . htmlspecialchars(GeneralUtility::fixed_lgd_cs($title, 45)) . '</span><br />';
 			$this->R_URI = $this->returnUrl;
 			// GENERATE the HTML-output depending on mode (pagesOnly is the page wizard)
 			// Regular new element:
@@ -284,22 +285,22 @@ class NewRecordController {
 		if (!$this->pagesOnly) {
 			// New page
 			if ($this->showNewRecLink('pages')) {
-				$buttons['new_page'] = '<a href="' . htmlspecialchars(\TYPO3\CMS\Core\Utility\GeneralUtility::linkThisScript(array('pagesOnly' => '1'))) . '" title="' . $GLOBALS['LANG']->sL('LLL:EXT:cms/layout/locallang.xml:newPage', 1) . '">' . \TYPO3\CMS\Backend\Utility\IconUtility::getSpriteIcon('actions-page-new') . '</a>';
+				$buttons['new_page'] = '<a href="' . htmlspecialchars(GeneralUtility::linkThisScript(array('pagesOnly' => '1'))) . '" title="' . $GLOBALS['LANG']->sL('LLL:EXT:cms/layout/locallang.xlf:newPage', TRUE) . '">' . IconUtility::getSpriteIcon('actions-page-new') . '</a>';
 			}
 			// CSH
-			$buttons['csh'] = \TYPO3\CMS\Backend\Utility\BackendUtility::cshItem('xMOD_csh_corebe', 'new_regular', $GLOBALS['BACK_PATH'], '', TRUE);
+			$buttons['csh'] = BackendUtility::cshItem('xMOD_csh_corebe', 'new_regular', $GLOBALS['BACK_PATH'], '', TRUE);
 		} elseif ($this->showNewRecLink('pages')) {
 			// Pages only wizard
 			// CSH
-			$buttons['csh'] = \TYPO3\CMS\Backend\Utility\BackendUtility::cshItem('xMOD_csh_corebe', 'new_pages', $GLOBALS['BACK_PATH'], '', TRUE);
+			$buttons['csh'] = BackendUtility::cshItem('xMOD_csh_corebe', 'new_pages', $GLOBALS['BACK_PATH'], '', TRUE);
 		}
 		// Back
 		if ($this->R_URI) {
-			$buttons['back'] = '<a href="' . htmlspecialchars($this->R_URI) . '" class="typo3-goBack" title="' . $GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.xlf:labels.goBack', 1) . '">' . \TYPO3\CMS\Backend\Utility\IconUtility::getSpriteIcon('actions-view-go-back') . '</a>';
+			$buttons['back'] = '<a href="' . htmlspecialchars($this->R_URI) . '" class="typo3-goBack" title="' . $GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.xlf:labels.goBack', TRUE) . '">' . IconUtility::getSpriteIcon('actions-view-go-back') . '</a>';
 		}
 		if (is_array($this->pageinfo) && $this->pageinfo['uid']) {
 			// View
-			$buttons['view'] = '<a href="#" onclick="' . htmlspecialchars(\TYPO3\CMS\Backend\Utility\BackendUtility::viewOnClick($this->pageinfo['uid'], $this->backPath, \TYPO3\CMS\Backend\Utility\BackendUtility::BEgetRootLine($this->pageinfo['uid']))) . '" title="' . $GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.xlf:labels.showPage', 1) . '">' . \TYPO3\CMS\Backend\Utility\IconUtility::getSpriteIcon('actions-document-view') . '</a>';
+			$buttons['view'] = '<a href="#" onclick="' . htmlspecialchars(BackendUtility::viewOnClick($this->pageinfo['uid'], $this->backPath, BackendUtility::BEgetRootLine($this->pageinfo['uid']))) . '" title="' . $GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.xlf:labels.showPage', TRUE) . '">' . IconUtility::getSpriteIcon('actions-document-view') . '</a>';
 		}
 		return $buttons;
 	}
@@ -311,17 +312,17 @@ class NewRecordController {
 	 * @todo Define visibility
 	 */
 	public function pagesOnly() {
-		$numberOfPages = $GLOBALS['TYPO3_DB']->exec_SELECTcountRows('*', 'pages', '1=1' . \TYPO3\CMS\Backend\Utility\BackendUtility::deleteClause('pages'));
+		$numberOfPages = $GLOBALS['TYPO3_DB']->exec_SELECTcountRows('*', 'pages', '1=1' . BackendUtility::deleteClause('pages'));
 		if ($numberOfPages > 0) {
 			$this->code .= '
 				<h3>' . htmlspecialchars($GLOBALS['LANG']->getLL('selectPosition')) . ':</h3>
 			';
-			$positionMap = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Backend\\Tree\\View\\PagePositionMap');
-			/** @var \TYPO3\CMS\Backend\Tree\View\PagePositionMap $positionMap */
+			$positionMap = GeneralUtility::makeInstance('TYPO3\\CMS\\Backend\\Tree\\View\\PagePositionMap', 'newRecordLocalPageTree');
+			/** @var $positionMap \TYPO3\CMS\Backend\Tree\View\PagePositionMap */
 			$this->code .= $positionMap->positionTree($this->id, $this->pageinfo, $this->perms_clause, $this->R_URI);
 		} else {
 			// No pages yet, no need to prompt for position, redirect to page creation.
-			$javascript = \TYPO3\CMS\Backend\Utility\BackendUtility::editOnClick('returnUrl=%2Ftypo3%2Fdb_new.php%3Fid%3D0%26pagesOnly%3D1&edit[pages][0]=new&returnNewPageId=1');
+			$javascript = BackendUtility::editOnClick('returnUrl=%2Ftypo3%2Fdb_new.php%3Fid%3D0%26pagesOnly%3D1&edit[pages][0]=new&returnNewPageId=1');
 			$startPos = strpos($javascript, 'href=\'') + 6;
 			$endPos = strpos($javascript, '\';');
 			$url = substr($javascript, $startPos, $endPos - $startPos);
@@ -341,43 +342,43 @@ class NewRecordController {
 		// Initialize array for accumulating table rows:
 		$this->tRows = array();
 		// tree images
-		$halfLine = '<img' . \TYPO3\CMS\Backend\Utility\IconUtility::skinImg($this->doc->backPath, 'gfx/ol/line.gif', 'width="18" height="16"') . ' alt="" />';
-		$firstLevel = '<img' . \TYPO3\CMS\Backend\Utility\IconUtility::skinImg($this->doc->backPath, 'gfx/ol/join.gif', 'width="18" height="16"') . ' alt="" />';
-		$secondLevel = '<img' . \TYPO3\CMS\Backend\Utility\IconUtility::skinImg($this->doc->backPath, 'gfx/ol/line.gif', 'width="18" height="16"') . ' alt="" />
-						<img' . \TYPO3\CMS\Backend\Utility\IconUtility::skinImg($this->doc->backPath, 'gfx/ol/join.gif', 'width="18" height="16"') . ' alt="" />';
-		$secondLevelLast = '<img' . \TYPO3\CMS\Backend\Utility\IconUtility::skinImg($this->doc->backPath, 'gfx/ol/line.gif', 'width="18" height="16"') . ' alt="" />
-						<img' . \TYPO3\CMS\Backend\Utility\IconUtility::skinImg($this->doc->backPath, 'gfx/ol/joinbottom.gif', 'width="18" height="16"') . ' alt="" />';
+		$halfLine = '<img' . IconUtility::skinImg($this->doc->backPath, 'gfx/ol/line.gif', 'width="18" height="16"') . ' alt="" />';
+		$firstLevel = '<img' . IconUtility::skinImg($this->doc->backPath, 'gfx/ol/join.gif', 'width="18" height="16"') . ' alt="" />';
+		$secondLevel = '<img' . IconUtility::skinImg($this->doc->backPath, 'gfx/ol/line.gif', 'width="18" height="16"') . ' alt="" />' .
+						'<img' . IconUtility::skinImg($this->doc->backPath, 'gfx/ol/join.gif', 'width="18" height="16"') . ' alt="" />';
+		$secondLevelLast = '<img' . IconUtility::skinImg($this->doc->backPath, 'gfx/ol/line.gif', 'width="18" height="16"') . ' alt="" />' .
+						'<img' . IconUtility::skinImg($this->doc->backPath, 'gfx/ol/joinbottom.gif', 'width="18" height="16"') . ' alt="" />';
 		// Get TSconfig for current page
-		$pageTS = \TYPO3\CMS\Backend\Utility\BackendUtility::getPagesTSconfig($this->id);
+		$pageTS = BackendUtility::getPagesTSconfig($this->id);
 		// Finish initializing new pages options with TSconfig
 		// Each new page option may be hidden by TSconfig
 		// Enabled option for the position of a new page
 		$this->newPagesSelectPosition = !empty($pageTS['mod.']['wizards.']['newRecord.']['pages.']['show.']['pageSelectPosition']);
 		// Pseudo-boolean (0/1) for backward compatibility
-		$this->newPagesInto = !empty($pageTS['mod.']['wizards.']['newRecord.']['pages.']['show.']['pageInside']) ? 1 : 0;
-		$this->newPagesAfter = !empty($pageTS['mod.']['wizards.']['newRecord.']['pages.']['show.']['pageAfter']) ? 1 : 0;
+		$displayNewPagesIntoLink = $this->newPagesInto && !empty($pageTS['mod.']['wizards.']['newRecord.']['pages.']['show.']['pageInside']) ? 1 : 0;
+		$displayNewPagesAfterLink = $this->newPagesAfter && !empty($pageTS['mod.']['wizards.']['newRecord.']['pages.']['show.']['pageAfter']) ? 1 : 0;
 		// Slight spacer from header:
-		$this->code .= $halfLine;
+		$this->code .= '<div class="typo3-newRecord-treeline">' . $halfLine . '</div>';
 		// New Page
 		$table = 'pages';
 		$v = $GLOBALS['TCA'][$table];
-		$pageIcon = \TYPO3\CMS\Backend\Utility\IconUtility::getSpriteIconForRecord($table, array());
-		$newPageIcon = \TYPO3\CMS\Backend\Utility\IconUtility::getSpriteIcon('actions-page-new');
+		$pageIcon = IconUtility::getSpriteIconForRecord($table, array());
+		$newPageIcon = IconUtility::getSpriteIcon('actions-page-new');
 		$rowContent = '';
 		// New pages INSIDE this pages
 		$newPageLinks = array();
-		if ($this->newPagesInto && $this->isTableAllowedForThisPage($this->pageinfo, 'pages') && $GLOBALS['BE_USER']->check('tables_modify', 'pages') && $GLOBALS['BE_USER']->workspaceCreateNewRecord(($this->pageinfo['_ORIG_uid'] ? $this->pageinfo['_ORIG_uid'] : $this->id), 'pages')) {
+		if ($displayNewPagesIntoLink && $this->isTableAllowedForThisPage($this->pageinfo, 'pages') && $this->getBackendUserAuthentication()->check('tables_modify', 'pages') && $this->getBackendUserAuthentication()->workspaceCreateNewRecord(($this->pageinfo['_ORIG_uid'] ?: $this->id), 'pages')) {
 			// Create link to new page inside:
-			$newPageLinks[] = $this->linkWrap(\TYPO3\CMS\Backend\Utility\IconUtility::getSpriteIconForRecord($table, array()) . $GLOBALS['LANG']->sL($v['ctrl']['title'], 1) . ' (' . $GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.xlf:db_new.php.inside', 1) . ')', $table, $this->id);
+			$newPageLinks[] = $this->linkWrap(IconUtility::getSpriteIconForRecord($table, array()) . $GLOBALS['LANG']->sL($v['ctrl']['title'], TRUE) . ' (' . $GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.xlf:db_new.php.inside', TRUE) . ')', $table, $this->id);
 		}
 		// New pages AFTER this pages
-		if ($this->newPagesAfter && $this->isTableAllowedForThisPage($this->pidInfo, 'pages') && $GLOBALS['BE_USER']->check('tables_modify', 'pages') && $GLOBALS['BE_USER']->workspaceCreateNewRecord($this->pidInfo['uid'], 'pages')) {
-			$newPageLinks[] = $this->linkWrap($pageIcon . $GLOBALS['LANG']->sL($v['ctrl']['title'], 1) . ' (' . $GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.xlf:db_new.php.after', 1) . ')', 'pages', -$this->id);
+		if ($displayNewPagesAfterLink && $this->isTableAllowedForThisPage($this->pidInfo, 'pages') && $this->getBackendUserAuthentication()->check('tables_modify', 'pages') && $this->getBackendUserAuthentication()->workspaceCreateNewRecord($this->pidInfo['uid'], 'pages')) {
+			$newPageLinks[] = $this->linkWrap($pageIcon . $GLOBALS['LANG']->sL($v['ctrl']['title'], TRUE) . ' (' . $GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.xlf:db_new.php.after', TRUE) . ')', 'pages', -$this->id);
 		}
 		// New pages at selection position
 		if ($this->newPagesSelectPosition) {
 			// Link to page-wizard:
-			$newPageLinks[] = '<a href="' . htmlspecialchars(\TYPO3\CMS\Core\Utility\GeneralUtility::linkThisScript(array('pagesOnly' => 1))) . '">' . $pageIcon . htmlspecialchars($GLOBALS['LANG']->getLL('pageSelectPosition')) . '</a>';
+			$newPageLinks[] = '<a href="' . htmlspecialchars(GeneralUtility::linkThisScript(array('pagesOnly' => 1))) . '">' . $pageIcon . htmlspecialchars($GLOBALS['LANG']->getLL('pageSelectPosition')) . '</a>';
 		}
 		// Assemble all new page links
 		$numPageLinks = count($newPageLinks);
@@ -388,12 +389,13 @@ class NewRecordController {
 			} else {
 				$treeComponent = $secondLevel;
 			}
-			$rowContent .= '<br />' . $treeComponent . $newPageLinks[$i];
+			$rowContent .= '<div class="typo3-newRecord-treeline">' . $treeComponent . $newPageLinks[$i] . '</div>';
 		}
 		// Add row header and half-line if not empty
 		if (!empty($rowContent)) {
-			$rowContent .= '<br />' . $halfLine;
-			$rowContent = $firstLevel . $newPageIcon . '&nbsp;<strong>' . $GLOBALS['LANG']->getLL('createNewPage') . '</strong>' . $rowContent;
+			$rowContent .= '<div class="typo3-newRecord-treeline">' . $halfLine . '</div>';
+			$rowContent = '<div class="typo3-newRecord-treeline">' . $firstLevel . $newPageIcon . '&nbsp;<strong>' .
+				$GLOBALS['LANG']->getLL('createNewPage') . '</strong></div>' . $rowContent;
 		}
 		// Compile table row to show the icon for "new page (select position)"
 		$startRows = array();
@@ -401,35 +403,41 @@ class NewRecordController {
 			$startRows[] = '
 				<tr>
 					<td nowrap="nowrap">' . $rowContent . '</td>
-					<td>' . \TYPO3\CMS\Backend\Utility\BackendUtility::wrapInHelp($table, '') . '</td>
+					<td>' . BackendUtility::wrapInHelp($table, '') . '</td>
 				</tr>
 			';
 		}
 		// New tables (but not pages) INSIDE this pages
 		$isAdmin = $GLOBALS['BE_USER']->isAdmin();
-		$newContentIcon = \TYPO3\CMS\Backend\Utility\IconUtility::getSpriteIcon('actions-document-new');
+		$newContentIcon = IconUtility::getSpriteIcon('actions-document-new');
 		if ($this->newContentInto) {
 			if (is_array($GLOBALS['TCA'])) {
 				$groupName = '';
 				foreach ($GLOBALS['TCA'] as $table => $v) {
 					$count = count($GLOBALS['TCA'][$table]);
 					$counter = 1;
-					if ($table != 'pages' && $this->showNewRecLink($table) && $this->isTableAllowedForThisPage($this->pageinfo, $table) && $GLOBALS['BE_USER']->check('tables_modify', $table) && (($v['ctrl']['rootLevel'] xor $this->id) || $v['ctrl']['rootLevel'] == -1) && $GLOBALS['BE_USER']->workspaceCreateNewRecord(($this->pageinfo['_ORIG_uid'] ? $this->pageinfo['_ORIG_uid'] : $this->id), $table)) {
-						$newRecordIcon = \TYPO3\CMS\Backend\Utility\IconUtility::getSpriteIconForRecord($table, array());
+					if ($table != 'pages'
+						&& $this->showNewRecLink($table)
+						&& $this->isTableAllowedForThisPage($this->pageinfo, $table)
+						&& $GLOBALS['BE_USER']->check('tables_modify', $table)
+						&& (($v['ctrl']['rootLevel'] xor $this->id) || $v['ctrl']['rootLevel'] == -1)
+						&& $GLOBALS['BE_USER']->workspaceCreateNewRecord(($this->pageinfo['_ORIG_uid'] ? $this->pageinfo['_ORIG_uid'] : $this->id), $table)
+					) {
+						$newRecordIcon = IconUtility::getSpriteIconForRecord($table, array());
 						$rowContent = '';
 						// Create new link for record:
-						$newLink = $this->linkWrap($newRecordIcon . $GLOBALS['LANG']->sL($v['ctrl']['title'], 1), $table, $this->id);
+						$newLink = $this->linkWrap($newRecordIcon . $GLOBALS['LANG']->sL($v['ctrl']['title'], TRUE), $table, $this->id);
 						// If the table is 'tt_content' (from "cms" extension), create link to wizard
 						if ($table == 'tt_content') {
 							$groupName = $GLOBALS['LANG']->getLL('createNewContent');
-							$rowContent = $firstLevel . $newContentIcon . '&nbsp;<strong>' . $GLOBALS['LANG']->getLL('createNewContent') . '</strong>';
+							$rowContent = '<div class="typo3-newRecord-treeline">' . $firstLevel . $newContentIcon . '&nbsp;<strong>' . $GLOBALS['LANG']->getLL('createNewContent') . '</strong></div>';
 							// If mod.web_list.newContentWiz.overrideWithExtension is set, use that extension's wizard instead:
 							$overrideExt = $this->web_list_modTSconfig['properties']['newContentWiz.']['overrideWithExtension'];
-							$pathToWizard = \TYPO3\CMS\Core\Utility\ExtensionManagementUtility::isLoaded($overrideExt) ? \TYPO3\CMS\Core\Utility\ExtensionManagementUtility::extRelPath($overrideExt) . 'mod1/db_new_content_el.php' : 'sysext/cms/layout/db_new_content_el.php';
-							$href = $pathToWizard . '?id=' . $this->id . '&returnUrl=' . rawurlencode(\TYPO3\CMS\Core\Utility\GeneralUtility::getIndpEnv('REQUEST_URI'));
-							$rowContent .= '<br />' . $secondLevel . $newLink . '<br />' . $secondLevelLast . '<a href="' . htmlspecialchars($href) . '">' . $newContentIcon . htmlspecialchars($GLOBALS['LANG']->getLL('clickForWizard')) . '</a>';
+							$pathToWizard = ExtensionManagementUtility::isLoaded($overrideExt) ? ExtensionManagementUtility::extRelPath($overrideExt) . 'mod1/db_new_content_el.php' : 'sysext/cms/layout/db_new_content_el.php';
+							$href = $pathToWizard . '?id=' . $this->id . '&returnUrl=' . rawurlencode(GeneralUtility::getIndpEnv('REQUEST_URI'));
+							$rowContent .= '<div class="typo3-newRecord-treeline">' . $secondLevel . $newLink . '</div><div class="typo3-newRecord-treeline">' . $secondLevelLast . '<a href="' . htmlspecialchars($href) . '">' . $newContentIcon . htmlspecialchars($GLOBALS['LANG']->getLL('clickForWizard')) . '</a></div>';
 							// Half-line added:
-							$rowContent .= '<br />' . $halfLine;
+							$rowContent .= '<div class="typo3-newRecord-treeline">' . $halfLine . '</div>';
 						} else {
 							// Get the title
 							if ($v['ctrl']['readOnly'] || $v['ctrl']['hideTable'] || $v['ctrl']['is_static']) {
@@ -451,23 +459,22 @@ class NewRecordController {
 										$langFile = $temp[0];
 										$thisTitle = $GLOBALS['LANG']->sL('LLL:EXT:' . $_EXTKEY . '/' . $langFile . ':extension.title');
 										// If no localisation available, read title from ext_emconf.php
-										if (!$thisTitle && is_file(\TYPO3\CMS\Core\Utility\ExtensionManagementUtility::extPath($_EXTKEY) . 'ext_emconf.php')) {
-											include \TYPO3\CMS\Core\Utility\ExtensionManagementUtility::extPath($_EXTKEY) . 'ext_emconf.php';
+										if (!$thisTitle && is_file(ExtensionManagementUtility::extPath($_EXTKEY) . 'ext_emconf.php')) {
+											include ExtensionManagementUtility::extPath($_EXTKEY) . 'ext_emconf.php';
 											$thisTitle = $EM_CONF[$_EXTKEY]['title'];
 										}
-										$iconFile[$_EXTKEY] = '<img ' . 'src="' . \TYPO3\CMS\Core\Utility\ExtensionManagementUtility::extRelPath($_EXTKEY) . $GLOBALS['TYPO3_LOADED_EXT'][$_EXTKEY]['ext_icon'] . '" ' . 'width="16" height="16" ' . 'alt="' . $thisTitle . '" />';
-									} else {
-										$thisTitle = $nameParts[1];
-										$iconFile[$_EXTKEY] = '';
+										$iconFile[$_EXTKEY] = '<img ' . 'src="' . ExtensionManagementUtility::extRelPath($_EXTKEY) . $GLOBALS['TYPO3_LOADED_EXT'][$_EXTKEY]['ext_icon'] . '" ' . 'width="16" height="16" ' . 'alt="' . $thisTitle . '" />';
 									}
-								} else {
+								}
+								if (empty($thisTitle)) {
+									$_EXTKEY = $nameParts[1];
 									$thisTitle = $nameParts[1];
 									$iconFile[$_EXTKEY] = '';
 								}
 							} else {
 								$_EXTKEY = 'system';
 								$thisTitle = $GLOBALS['LANG']->getLL('system_records');
-								$iconFile['system'] = \TYPO3\CMS\Backend\Utility\IconUtility::getSpriteIcon('apps-pagetree-root');
+								$iconFile['system'] = IconUtility::getSpriteIcon('apps-pagetree-root');
 							}
 							if ($groupName == '' || $groupName != $_EXTKEY) {
 								$groupName = empty($v['ctrl']['groupName']) ? $_EXTKEY : $v['ctrl']['groupName'];
@@ -480,7 +487,7 @@ class NewRecordController {
 							$startRows[] = '
 								<tr>
 									<td nowrap="nowrap">' . $rowContent . '</td>
-									<td>' . \TYPO3\CMS\Backend\Utility\BackendUtility::wrapInHelp($table, '') . '</td>
+									<td>' . BackendUtility::wrapInHelp($table, '') . '</td>
 								</tr>';
 						} else {
 							$this->tRows[$groupName]['title'] = $thisTitle;
@@ -493,7 +500,7 @@ class NewRecordController {
 		}
 		// User sort
 		if (isset($pageTS['mod.']['wizards.']['newRecord.']['order'])) {
-			$this->newRecordSortList = \TYPO3\CMS\Core\Utility\GeneralUtility::trimExplode(',', $pageTS['mod.']['wizards.']['newRecord.']['order'], TRUE);
+			$this->newRecordSortList = GeneralUtility::trimExplode(',', $pageTS['mod.']['wizards.']['newRecord.']['order'], TRUE);
 		}
 		uksort($this->tRows, array($this, 'sortNewRecordsByConfig'));
 		// Compile table row:
@@ -501,14 +508,15 @@ class NewRecordController {
 		$finalRows[] = implode('', $startRows);
 		foreach ($this->tRows as $key => $value) {
 			$row = '<tr>
-						<td nowrap="nowrap">' . $halfLine . '<br />' . $firstLevel . '' . $iconFile[$key] . '&nbsp;<strong>' . $value['title'] . '</strong>' . '</td><td>&nbsp;<br />' . \TYPO3\CMS\Backend\Utility\BackendUtility::wrapInHelp($key, '') . '</td>
+						<td nowrap="nowrap"><div class="typo3-newRecord-treeline">' . $halfLine . '</div><div class="typo3-newRecord-treeline">' . $firstLevel .
+				$iconFile[$key] . '&nbsp;<strong>' . $value['title'] . '</strong></div></td><td>&nbsp;<br />' . BackendUtility::wrapInHelp($key, '') . '</td>
 						</tr>';
 			$count = count($value['html']) - 1;
 			foreach ($value['html'] as $recordKey => $record) {
 				$row .= '
 					<tr>
-						<td nowrap="nowrap">' . ($recordKey < $count ? $secondLevel : $secondLevelLast) . $record . '</td>
-						<td>' . \TYPO3\CMS\Backend\Utility\BackendUtility::wrapInHelp($value['table'][$recordKey], '') . '</td>
+						<td nowrap="nowrap"><div class="typo3-newRecord-treeline">' . ($recordKey < $count ? $secondLevel : $secondLevelLast) . $record . '</div></td>
+						<td>' . BackendUtility::wrapInHelp($value['table'][$recordKey], '') . '</td>
 					</tr>';
 			}
 			$finalRows[] = $row;
@@ -516,7 +524,7 @@ class NewRecordController {
 		// end of tree
 		$finalRows[] = '
 			<tr>
-				<td><img' . \TYPO3\CMS\Backend\Utility\IconUtility::skinImg($this->doc->backPath, 'gfx/ol/stopper.gif', 'width="18" height="16"') . ' alt="" /></td>
+				<td><img' . IconUtility::skinImg($this->doc->backPath, 'gfx/ol/stopper.gif', 'width="18" height="16"') . ' alt="" /></td>
 				<td></td>
 			</tr>
 		';
@@ -563,7 +571,6 @@ class NewRecordController {
 	 * Ending page output and echo'ing content to browser.
 	 *
 	 * @return void
-	 * @todo Define visibility
 	 */
 	public function printContent() {
 		echo $this->content;
@@ -584,9 +591,9 @@ class NewRecordController {
 		if ($table == 'pages' && $GLOBALS['TYPO3_CONF_VARS']['SYS']['contentTable'] && isset($GLOBALS['TCA'][$GLOBALS['TYPO3_CONF_VARS']['SYS']['contentTable']]) && $addContentTable) {
 			$parameters .= '&edit[' . $GLOBALS['TYPO3_CONF_VARS']['SYS']['contentTable'] . '][prev]=new&returnNewPageId=1';
 		} elseif ($table == 'pages_language_overlay') {
-			$parameters .= '&overrideVals[pages_language_overlay][doktype]=' . (int) $this->pageinfo['doktype'];
+			$parameters .= '&overrideVals[pages_language_overlay][doktype]=' . (int)$this->pageinfo['doktype'];
 		}
-		$onClick = \TYPO3\CMS\Backend\Utility\BackendUtility::editOnClick($parameters, '', $this->returnUrl);
+		$onClick = BackendUtility::editOnClick($parameters, '', $this->returnUrl);
 		return '<a href="#" onclick="' . htmlspecialchars($onClick) . '">' . $linkText . '</a>';
 	}
 
@@ -611,12 +618,12 @@ class NewRecordController {
 			return FALSE;
 		}
 		// Checking doktype:
-		$doktype = intval($pid_row['doktype']);
+		$doktype = (int)$pid_row['doktype'];
 		if (!($allowedTableList = $GLOBALS['PAGES_TYPES'][$doktype]['allowedTables'])) {
 			$allowedTableList = $GLOBALS['PAGES_TYPES']['default']['allowedTables'];
 		}
 		// If all tables or the table is listed as a allowed type, return TRUE
-		if (strstr($allowedTableList, '*') || \TYPO3\CMS\Core\Utility\GeneralUtility::inList($allowedTableList, $checkTable)) {
+		if (strstr($allowedTableList, '*') || GeneralUtility::inList($allowedTableList, $checkTable)) {
 			return TRUE;
 		}
 	}
@@ -636,8 +643,13 @@ class NewRecordController {
 	 * @todo Define visibility
 	 */
 	public function showNewRecLink($table, array $allowedNewTables = array(), array $deniedNewTables = array()) {
-		$allowedNewTables = $allowedNewTables ? $allowedNewTables : $this->allowedNewTables;
-		$deniedNewTables = $deniedNewTables ? $deniedNewTables : $this->deniedNewTables;
+
+		if (!$this->getBackendUserAuthentication()->check('tables_modify', $table)) {
+			return FALSE;
+		}
+
+		$allowedNewTables = $allowedNewTables ?: $this->allowedNewTables;
+		$deniedNewTables = $deniedNewTables ?: $this->deniedNewTables;
 		// No deny/allow tables are set:
 		if (!count($allowedNewTables) && !count($deniedNewTables)) {
 			return TRUE;
@@ -648,7 +660,12 @@ class NewRecordController {
 		}
 	}
 
+	/**
+	 * Returns the global BackendUserAuthentication object.
+	 *
+	 * @return \TYPO3\CMS\Core\Authentication\BackendUserAuthentication
+	 */
+	protected function getBackendUserAuthentication() {
+		return $GLOBALS['BE_USER'];
+	}
 }
-
-
-?>

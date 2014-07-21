@@ -1,30 +1,18 @@
 <?php
 namespace TYPO3\CMS\Core\Log;
 
-/***************************************************************
- * Copyright notice
+/**
+ * This file is part of the TYPO3 CMS project.
  *
- * (c) 2011-2013 Ingo Renner (ingo@typo3.org)
- * (c) 2011-2013 Steffen Müller (typo3@t3node.com)
- * (c) 2011-2013 Steffen Gebert (steffen.gebert@typo3.org))
- * All rights reserved
+ * It is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License, either version 2
+ * of the License, or any later version.
  *
- * This script is part of the TYPO3 project. The TYPO3 project is
- * free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
+ * For the full copyright and license information, please read the
+ * LICENSE.txt file that was distributed with this source code.
  *
- * The GNU General Public License can be found at
- * http://www.gnu.org/copyleft/gpl.html.
- *
- * This script is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * This copyright notice MUST APPEAR in all copies of the script!
- ***************************************************************/
+ * The TYPO3 project - inspiring people to share!
+ */
 /**
  * Global LogManager that keeps track of global logging information.
  *
@@ -187,7 +175,7 @@ class LogManager implements \TYPO3\CMS\Core\SingletonInterface {
 		// for these keys, for example "writerConfiguration"
 		$configurationKey = $configurationType . 'Configuration';
 		$configuration = $GLOBALS['TYPO3_CONF_VARS']['LOG'];
-		$result = !empty($configuration[$configurationKey]) ? $configuration[$configurationKey] : array();
+		$result = $configuration[$configurationKey] ?: array();
 		// Walk from general to special (t3lib, t3lib.db, t3lib.db.foo)
 		// and search for the most specific configuration
 		foreach ($explodedName as $partOfClassName) {
@@ -208,6 +196,3 @@ class LogManager implements \TYPO3\CMS\Core\SingletonInterface {
 	}
 
 }
-
-
-?>

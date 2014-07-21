@@ -1,31 +1,21 @@
 <?php
 namespace TYPO3\CMS\Backend\Module;
 
-/***************************************************************
- *  Copyright notice
+/**
+ * This file is part of the TYPO3 CMS project.
  *
- *  (c) 1999-2013 Kasper Skårhøj (kasperYYYY@typo3.com)
- *  All rights reserved
+ * It is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License, either version 2
+ * of the License, or any later version.
  *
- *  This script is part of the TYPO3 project. The TYPO3 project is
- *  free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
+ * For the full copyright and license information, please read the
+ * LICENSE.txt file that was distributed with this source code.
  *
- *  The GNU General Public License can be found at
- *  http://www.gnu.org/copyleft/gpl.html.
- *  A copy is found in the textfile GPL.txt and important notices to the license
- *  from the author is found in LICENSE.txt distributed with these scripts.
- *
- *
- *  This script is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  This copyright notice MUST APPEAR in all copies of the script!
- ***************************************************************/
+ * The TYPO3 project - inspiring people to share!
+ */
+
+use TYPO3\CMS\Backend\Utility\BackendUtility;
+use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
  * Parent class for 'ScriptClasses' in backend modules.
@@ -40,7 +30,6 @@ namespace TYPO3\CMS\Backend\Module;
  * unset($MCONF);
  * require ('conf.php');
  * require ($BACK_PATH.'init.php');
- * require ($BACK_PATH.'template.php');
  * $GLOBALS['LANG']->includeLLFile('EXT:prototype/locallang.php');
  * $GLOBALS['BE_USER']->modAccess($MCONF,1);
  *
@@ -68,6 +57,7 @@ namespace TYPO3\CMS\Backend\Module;
  *
  * AFTER INIT THE INTERNAL ARRAY ->include_once MAY HOLD FILENAMES TO INCLUDE
  * foreach($SOBE->include_once as $INC_FILE)	include_once($INC_FILE);
+ * Note: This "include_once" is deprecated since TYPO3 6.2: use auto-loading instead!
  *
  * THEN WE WILL CHECK IF THERE IS A 'SUBMODULE' REGISTERED TO BE INITIALIZED AS WELL:
  * $SOBE->checkExtObj();
@@ -178,6 +168,7 @@ class BaseScriptClass {
 	 * Contains absolute paths to class files to include from the global scope. This is done in the module index.php files after calling the init() function
 	 *
 	 * @see handleExternalFunctionValue()
+	 * @deprecated since 6.2. Instead of this include_once array, extensions should use auto-loading
 	 * @todo Define visibility
 	 */
 	public $include_once = array();
@@ -190,10 +181,7 @@ class BaseScriptClass {
 	public $content = '';
 
 	/**
-	 * Generally used to hold an instance of the 'template' class from typo3/template.php
-	 *
 	 * @var \TYPO3\CMS\Backend\Template\DocumentTemplate
-	 * @todo Define visibility
 	 */
 	public $doc;
 
@@ -217,8 +205,8 @@ class BaseScriptClass {
 		if (!$this->MCONF['name']) {
 			$this->MCONF = $GLOBALS['MCONF'];
 		}
-		$this->id = intval(\TYPO3\CMS\Core\Utility\GeneralUtility::_GP('id'));
-		$this->CMD = \TYPO3\CMS\Core\Utility\GeneralUtility::_GP('CMD');
+		$this->id = (int)GeneralUtility::_GP('id');
+		$this->CMD = GeneralUtility::_GP('CMD');
 		$this->perms_clause = $GLOBALS['BE_USER']->getPagePermsClause(1);
 		$this->menuConfig();
 		$this->handleExternalFunctionValue();
@@ -235,10 +223,10 @@ class BaseScriptClass {
 	 */
 	public function menuConfig() {
 		// Page/be_user TSconfig settings and blinding of menu-items
-		$this->modTSconfig = \TYPO3\CMS\Backend\Utility\BackendUtility::getModTSconfig($this->id, 'mod.' . $this->MCONF['name']);
+		$this->modTSconfig = BackendUtility::getModTSconfig($this->id, 'mod.' . $this->MCONF['name']);
 		$this->MOD_MENU['function'] = $this->mergeExternalItems($this->MCONF['name'], 'function', $this->MOD_MENU['function']);
-		$this->MOD_MENU['function'] = \TYPO3\CMS\Backend\Utility\BackendUtility::unsetMenuItems($this->modTSconfig['properties'], $this->MOD_MENU['function'], 'menu.function');
-		$this->MOD_SETTINGS = \TYPO3\CMS\Backend\Utility\BackendUtility::getModuleData($this->MOD_MENU, \TYPO3\CMS\Core\Utility\GeneralUtility::_GP('SET'), $this->MCONF['name'], $this->modMenu_type, $this->modMenu_dontValidateList, $this->modMenu_setDefaultList);
+		$this->MOD_MENU['function'] = BackendUtility::unsetMenuItems($this->modTSconfig['properties'], $this->MOD_MENU['function'], 'menu.function');
+		$this->MOD_SETTINGS = BackendUtility::getModuleData($this->MOD_MENU, GeneralUtility::_GP('SET'), $this->MCONF['name'], $this->modMenu_type, $this->modMenu_dontValidateList, $this->modMenu_setDefaultList);
 	}
 
 	/**
@@ -256,7 +244,7 @@ class BaseScriptClass {
 		$mergeArray = $GLOBALS['TBE_MODULES_EXT'][$modName]['MOD_MENU'][$menuKey];
 		if (is_array($mergeArray)) {
 			foreach ($mergeArray as $k => $v) {
-				if (((string) $v['ws'] === '' || $GLOBALS['BE_USER']->workspace === 0 && \TYPO3\CMS\Core\Utility\GeneralUtility::inList($v['ws'], 'online')) || $GLOBALS['BE_USER']->workspace === -1 && \TYPO3\CMS\Core\Utility\GeneralUtility::inList($v['ws'], 'offline') || $GLOBALS['BE_USER']->workspace > 0 && \TYPO3\CMS\Core\Utility\GeneralUtility::inList($v['ws'], 'custom')) {
+				if (((string) $v['ws'] === '' || $GLOBALS['BE_USER']->workspace === 0 && GeneralUtility::inList($v['ws'], 'online')) || $GLOBALS['BE_USER']->workspace === -1 && GeneralUtility::inList($v['ws'], 'offline') || $GLOBALS['BE_USER']->workspace > 0 && GeneralUtility::inList($v['ws'], 'custom')) {
 					$menuArr[$k] = $GLOBALS['LANG']->sL($v['title']);
 				}
 			}
@@ -272,10 +260,13 @@ class BaseScriptClass {
 	 * @param string $MS_value The value-key to fetch from the config array. If NULL (default) MOD_SETTINGS[$MM_key] will be used. This is useful if you want to force another function than the one defined in MOD_SETTINGS[function]. Call this in init() function of your Script Class: handleExternalFunctionValue('function', $forcedSubModKey)
 	 * @return void
 	 * @see getExternalItemConfig(), $include_once, init()
+	 * @deprecated since 6.2. Instead of this include_once array, extensions should use auto-loading
 	 * @todo Define visibility
 	 */
 	public function handleExternalFunctionValue($MM_key = 'function', $MS_value = NULL) {
-		$MS_value = is_null($MS_value) ? $this->MOD_SETTINGS[$MM_key] : $MS_value;
+		if ($MS_value === NULL) {
+			$MS_value = $this->MOD_SETTINGS[$MM_key];
+		}
 		$this->extClassConf = $this->getExternalItemConfig($this->MCONF['name'], $MM_key, $MS_value);
 		if (is_array($this->extClassConf) && $this->extClassConf['path']) {
 			$this->include_once[] = $this->extClassConf['path'];
@@ -294,7 +285,7 @@ class BaseScriptClass {
 	 * @todo Define visibility
 	 */
 	public function getExternalItemConfig($modName, $menuKey, $value = '') {
-		return strcmp($value, '') ? $GLOBALS['TBE_MODULES_EXT'][$modName]['MOD_MENU'][$menuKey][$value] : $GLOBALS['TBE_MODULES_EXT'][$modName]['MOD_MENU'][$menuKey];
+		return (string)$value !== '' ? $GLOBALS['TBE_MODULES_EXT'][$modName]['MOD_MENU'][$menuKey][$value] : $GLOBALS['TBE_MODULES_EXT'][$modName]['MOD_MENU'][$menuKey];
 	}
 
 	/**
@@ -310,10 +301,10 @@ class BaseScriptClass {
 	 */
 	public function checkExtObj() {
 		if (is_array($this->extClassConf) && $this->extClassConf['name']) {
-			$this->extObj = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance($this->extClassConf['name']);
+			$this->extObj = GeneralUtility::makeInstance($this->extClassConf['name']);
 			$this->extObj->init($this, $this->extClassConf);
 			// Re-write:
-			$this->MOD_SETTINGS = \TYPO3\CMS\Backend\Utility\BackendUtility::getModuleData($this->MOD_MENU, \TYPO3\CMS\Core\Utility\GeneralUtility::_GP('SET'), $this->MCONF['name'], $this->modMenu_type, $this->modMenu_dontValidateList, $this->modMenu_setDefaultList);
+			$this->MOD_SETTINGS = BackendUtility::getModuleData($this->MOD_MENU, GeneralUtility::_GP('SET'), $this->MCONF['name'], $this->modMenu_type, $this->modMenu_dontValidateList, $this->modMenu_setDefaultList);
 		}
 	}
 
@@ -358,6 +349,3 @@ class BaseScriptClass {
 	}
 
 }
-
-
-?>

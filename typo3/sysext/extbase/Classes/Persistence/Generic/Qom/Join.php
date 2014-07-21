@@ -1,44 +1,30 @@
 <?php
 namespace TYPO3\CMS\Extbase\Persistence\Generic\Qom;
 
-/***************************************************************
- *  Copyright notice
+/**
+ * This file is part of the TYPO3 CMS project.
  *
- *  (c) 2010-2013 Extbase Team (http://forge.typo3.org/projects/typo3v4-mvc)
- *  Extbase is a backport of TYPO3 Flow. All credits go to the TYPO3 Flow team.
- *  All rights reserved
+ * It is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License, either version 2
+ * of the License, or any later version.
  *
- *  This script is part of the TYPO3 project. The TYPO3 project is
- *  free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
+ * For the full copyright and license information, please read the
+ * LICENSE.txt file that was distributed with this source code.
  *
- *  The GNU General Public License can be found at
- *  http://www.gnu.org/copyleft/gpl.html.
- *  A copy is found in the textfile GPL.txt and important notices to the license
- *  from the author is found in LICENSE.txt distributed with these scripts.
- *
- *
- *  This script is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  This copyright notice MUST APPEAR in all copies of the script!
- ***************************************************************/
+ * The TYPO3 project - inspiring people to share!
+ */
 /**
  * Performs a join between two node-tuple sources.
  */
-class Join implements \TYPO3\CMS\Extbase\Persistence\Generic\Qom\JoinInterface {
+class Join implements JoinInterface {
 
 	/**
-	 * @var \TYPO3\CMS\Extbase\Persistence\Generic\Qom\SourceInterface
+	 * @var SourceInterface
 	 */
 	protected $left;
 
 	/**
-	 * @var \TYPO3\CMS\Extbase\Persistence\Generic\Qom\SourceInterface
+	 * @var SourceInterface
 	 */
 	protected $right;
 
@@ -48,19 +34,19 @@ class Join implements \TYPO3\CMS\Extbase\Persistence\Generic\Qom\JoinInterface {
 	protected $joinType;
 
 	/**
-	 * @var \TYPO3\CMS\Extbase\Persistence\Generic\Qom\JoinConditionInterface
+	 * @var JoinConditionInterface
 	 */
 	protected $joinCondition;
 
 	/**
 	 * Constructs the Join instance
 	 *
-	 * @param \TYPO3\CMS\Extbase\Persistence\Generic\Qom\SourceInterface $left the left node-tuple source; non-null
-	 * @param \TYPO3\CMS\Extbase\Persistence\Generic\Qom\SourceInterface $right the right node-tuple source; non-null
-	 * @param string $joinType one of QueryObjectModelConstants.JCR_JOIN_TYPE_*
+	 * @param SourceInterface $left the left node-tuple source; non-null
+	 * @param SourceInterface $right the right node-tuple source; non-null
+	 * @param string $joinType One of Query::JCR_JOIN_TYPE_*
 	 * @param JoinConditionInterface $joinCondition
 	 */
-	public function __construct(\TYPO3\CMS\Extbase\Persistence\Generic\Qom\SourceInterface $left, \TYPO3\CMS\Extbase\Persistence\Generic\Qom\SourceInterface $right, $joinType, \TYPO3\CMS\Extbase\Persistence\Generic\Qom\JoinConditionInterface $joinCondition) {
+	public function __construct(SourceInterface $left, SourceInterface $right, $joinType, JoinConditionInterface $joinCondition) {
 		$this->left = $left;
 		$this->right = $right;
 		$this->joinType = $joinType;
@@ -70,7 +56,7 @@ class Join implements \TYPO3\CMS\Extbase\Persistence\Generic\Qom\JoinInterface {
 	/**
 	 * Gets the left node-tuple source.
 	 *
-	 * @return \TYPO3\CMS\Extbase\Persistence\Generic\Qom\SourceInterface the left source; non-null
+	 * @return SourceInterface the left source; non-null
 	 */
 	public function getLeft() {
 		return $this->left;
@@ -79,7 +65,7 @@ class Join implements \TYPO3\CMS\Extbase\Persistence\Generic\Qom\JoinInterface {
 	/**
 	 * Gets the right node-tuple source.
 	 *
-	 * @return \TYPO3\CMS\Extbase\Persistence\Generic\Qom\SourceInterface the right source; non-null
+	 * @return SourceInterface the right source; non-null
 	 */
 	public function getRight() {
 		return $this->right;
@@ -103,5 +89,3 @@ class Join implements \TYPO3\CMS\Extbase\Persistence\Generic\Qom\JoinInterface {
 		return $this->joinCondition;
 	}
 }
-
-?>

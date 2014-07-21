@@ -1,31 +1,18 @@
 <?php
 namespace TYPO3\CMS\Frontend\MediaWizard;
 
-/***************************************************************
- *  Copyright notice
+/**
+ * This file is part of the TYPO3 CMS project.
  *
- *  (c) 2010-2013 Aishwara M.B. (aishu.moorthy@gmail.com)
- *  All rights reserved
+ * It is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License, either version 2
+ * of the License, or any later version.
  *
- *  This script is part of the TYPO3 project. The TYPO3 project is
- *  free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
+ * For the full copyright and license information, please read the
+ * LICENSE.txt file that was distributed with this source code.
  *
- *  The GNU General Public License can be found at
- *  http://www.gnu.org/copyleft/gpl.html.
- *  A copy is found in the textfile GPL.txt and important notices to the license
- *  from the author is found in LICENSE.txt distributed with these scripts.
- *
- *
- *  This script is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  This copyright notice MUST APPEAR in all copies of the script!
- ***************************************************************/
+ * The TYPO3 project - inspiring people to share!
+ */
 /**
  * Contains an implementation of the mediaWizardProvider supporting some
  * well known providers.
@@ -34,7 +21,7 @@ namespace TYPO3\CMS\Frontend\MediaWizard;
  * @author Steffen Kamper <info@sk-typo3.de>
  * @author Ernesto Baschny <ernst@cron-it.de>
  */
-class MediaWizardProvider implements \TYPO3\CMS\Frontend\MediaWizard\MediaWizardProviderInterface {
+class MediaWizardProvider implements MediaWizardProviderInterface {
 
 	/**
 	 * @var array List of providers we can handle in this class
@@ -67,6 +54,13 @@ class MediaWizardProvider implements \TYPO3\CMS\Frontend\MediaWizard\MediaWizard
 		if ($urlInfo === FALSE) {
 			return NULL;
 		}
+		// The URL passed might not contain http:// prefix
+		if (!isset($urlInfo['host'])) {
+			$urlInfo = @parse_url('http://' . $url);
+		}
+		if (empty($urlInfo['host'])) {
+			return NULL;
+		}
 		$hostName = \TYPO3\CMS\Core\Utility\GeneralUtility::trimExplode('.', $urlInfo['host'], TRUE);
 		foreach ($this->providers as $provider) {
 			$functionName = 'process_' . $provider;
@@ -79,13 +73,13 @@ class MediaWizardProvider implements \TYPO3\CMS\Frontend\MediaWizard\MediaWizard
 
 	/***********************************************
 	 *
-	 * Implementation of tslib_mediaWizardProvider
+	 * Implementation of MediaWizardProviderInterface
 	 *
 	 ***********************************************/
 	/**
 	 * @param string $url
 	 * @return boolean
-	 * @see tslib_mediaWizardProvider::canHandle
+	 * @see MediaWizardProviderInterface::canHandle
 	 */
 	public function canHandle($url) {
 		return $this->getMethod($url) !== NULL;
@@ -94,7 +88,7 @@ class MediaWizardProvider implements \TYPO3\CMS\Frontend\MediaWizard\MediaWizard
 	/**
 	 * @param string $url URL to rewrite
 	 * @return string The rewritten URL
-	 * @see tslib_mediaWizardProvider::rewriteUrl
+	 * @see MediaWizardProviderInterface::rewriteUrl
 	 */
 	public function rewriteUrl($url) {
 		$method = $this->getMethod($url);
@@ -114,13 +108,29 @@ class MediaWizardProvider implements \TYPO3\CMS\Frontend\MediaWizard\MediaWizard
 	 */
 	protected function process_youtube($url) {
 		$videoId = '';
-		if (strpos($url, '/user/') !== FALSE) {
-			// it's a channel
-			$parts = explode('/', $url);
-			$videoId = $parts[count($parts) - 1];
-		} elseif (preg_match('/(v=|v\\/|.be\\/)([^(\\&|$)]*)/', $url, $matches)) {
-			$videoId = $matches[2];
+
+		$pattern = '%
+		^(?:https?://)?									# Optional URL scheme Either http or https
+		(?:www\.)?										# Optional www subdomain
+		(?:												# Group host alternatives:
+			youtu\.be/									#  Either youtu.be/,
+			|youtube(?:									#  or youtube.com/
+				-nocookie								#   optional nocookie domain
+			)?\.com/(?:
+				[^/]+/.+/								#   Either /something/other_params/ for channels,
+				|(?:v|e(?:								#   or v/ or e/,
+					mbed								#    optional mbed for embed/
+				)?)/
+				|.*[?&]v=								#   or ?v= or ?other_param&v=
+			)
+		)												# End host alternatives.
+		([^"&?/ ]{11})									# 11 characters (Length of Youtube video ids).
+		(?:.+)?$										# Optional other ending URL parameters.
+		%xs';
+		if (preg_match($pattern, $url, $matches)) {
+			$videoId = $matches[1];
 		}
+
 		if ($videoId) {
 			$url = $this->getUrlSchema() . 'www.youtube.com/v/' . $videoId . '?fs=1';
 		}
@@ -277,6 +287,3 @@ class MediaWizardProvider implements \TYPO3\CMS\Frontend\MediaWizard\MediaWizard
 	}
 
 }
-
-
-?>

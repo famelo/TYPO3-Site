@@ -1,28 +1,18 @@
 <?php
 namespace TYPO3\CMS\Reports\Report\Status;
 
-/***************************************************************
- *  Copyright notice
+/**
+ * This file is part of the TYPO3 CMS project.
  *
- *  (c) 2009-2013 Ingo Renner <ingo@typo3.org>
- *  All rights reserved
+ * It is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License, either version 2
+ * of the License, or any later version.
  *
- *  This script is part of the TYPO3 project. The TYPO3 project is
- *  free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
+ * For the full copyright and license information, please read the
+ * LICENSE.txt file that was distributed with this source code.
  *
- *  The GNU General Public License can be found at
- *  http://www.gnu.org/copyleft/gpl.html.
- *
- *  This script is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  This copyright notice MUST APPEAR in all copies of the script!
- ***************************************************************/
+ * The TYPO3 project - inspiring people to share!
+ */
 /**
  * The status report
  *
@@ -40,7 +30,7 @@ class Status implements \TYPO3\CMS\Reports\ReportInterface {
 	 */
 	public function __construct() {
 		$this->getStatusProviders();
-		$GLOBALS['LANG']->includeLLFile('EXT:reports/reports/locallang.xml');
+		$GLOBALS['LANG']->includeLLFile('EXT:reports/reports/locallang.xlf');
 	}
 
 	/**
@@ -55,7 +45,7 @@ class Status implements \TYPO3\CMS\Reports\ReportInterface {
 		// Updating the registry
 		$registry = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Registry');
 		$registry->set('tx_reports', 'status.highestSeverity', $highestSeverity);
-		$content .= '<p class="help">' . $GLOBALS['LANG']->getLL('status_report_explanation') . '</p>';
+		$content .= '<p class="lead">' . $GLOBALS['LANG']->getLL('status_report_explanation') . '</p>';
 		return $content . $this->renderStatus($status);
 	}
 
@@ -79,7 +69,7 @@ class Status implements \TYPO3\CMS\Reports\ReportInterface {
 	/**
 	 * Runs through all status providers and returns all statuses collected.
 	 *
-	 * @return array An array of tx_reports_reports_status_Status objects
+	 * @return array An array of \TYPO3\CMS\Reports\Status objects
 	 */
 	public function getSystemStatus() {
 		$status = array();
@@ -96,7 +86,7 @@ class Status implements \TYPO3\CMS\Reports\ReportInterface {
 	/**
 	 * Determines the highest severity from the given statuses.
 	 *
-	 * @param array $statusCollection An array of tx_reports_reports_status_Status objects.
+	 * @param array $statusCollection An array of \TYPO3\CMS\Reports\Status objects.
 	 * @return integer The highest severity found from the statuses.
 	 */
 	public function getHighestSeverity(array $statusCollection) {
@@ -234,6 +224,3 @@ class Status implements \TYPO3\CMS\Reports\ReportInterface {
 	}
 
 }
-
-
-?>

@@ -1,28 +1,18 @@
 <?php
 namespace TYPO3\CMS\Core\Tests;
 
-/***************************************************************
- * Copyright notice
+/**
+ * This file is part of the TYPO3 CMS project.
  *
- * (c) 2005-2013 Robert Lemke (robert@typo3.org)
- * All rights reserved
+ * It is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License, either version 2
+ * of the License, or any later version.
  *
- * This script is part of the TYPO3 project. The TYPO3 project is
- * free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
+ * For the full copyright and license information, please read the
+ * LICENSE.txt file that was distributed with this source code.
  *
- * The GNU General Public License can be found at
- * http://www.gnu.org/copyleft/gpl.html.
- *
- * This script is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * This copyright notice MUST APPEAR in all copies of the script!
- ***************************************************************/
+ * The TYPO3 project - inspiring people to share!
+ */
 
 /**
  * The mother of all test cases.
@@ -58,10 +48,10 @@ abstract class BaseTestCase extends \PHPUnit_Framework_TestCase {
 	 * @param boolean $callOriginalClone whether to call the __clone method
 	 * @param boolean $callAutoload whether to call any autoload function
 	 *
-	 * @return \PHPUnit_Framework_MockObject_MockObject|AccessibleObjectInterface
+	 * @return \PHPUnit_Framework_MockObject_MockObject|\TYPO3\CMS\Core\Tests\AccessibleObjectInterface
 	 *         a mock of $originalClassName with access methods added
 	 *
-	 * @see \TYPO3\CMS\Extbase\Tests\Unit\BaseTestCase::getAccessibleMock
+	 * @throws \InvalidArgumentException
 	 */
 	protected function getAccessibleMock(
 		$originalClassName, array $methods = array(), array $arguments = array(), $mockClassName = '',
@@ -83,14 +73,45 @@ abstract class BaseTestCase extends \PHPUnit_Framework_TestCase {
 	}
 
 	/**
+	 * Returns a mock object which allows for calling protected methods and access
+	 * of protected properties.
+	 *
+	 * @param string $originalClassName Full qualified name of the original class
+	 * @param array $arguments
+	 * @param string $mockClassName
+	 * @param boolean $callOriginalConstructor
+	 * @param boolean $callOriginalClone
+	 * @param boolean $callAutoload
+	 *
+	 * @throws \InvalidArgumentException
+	 *
+	 * @return \PHPUnit_Framework_MockObject_MockObject|\TYPO3\CMS\Core\Tests\AccessibleObjectInterface
+	 *
+	 */
+	protected function getAccessibleMockForAbstractClass(
+		$originalClassName, array $arguments = array(), $mockClassName = '',
+		$callOriginalConstructor = TRUE, $callOriginalClone = TRUE, $callAutoload = TRUE
+	) {
+		if ($originalClassName === '') {
+			throw new \InvalidArgumentException('$originalClassName must not be empty.', 1384268260);
+		}
+
+		return $this->getMockForAbstractClass(
+			$this->buildAccessibleProxy($originalClassName),
+			$arguments,
+			$mockClassName,
+			$callOriginalConstructor,
+			$callOriginalClone,
+			$callAutoload
+		);
+	}
+
+	/**
 	 * Creates a proxy class of the specified class which allows
 	 * for calling even protected methods and access of protected properties.
 	 *
 	 * @param string $className Name of class to make available, must not be empty
-	 *
 	 * @return string Fully qualified name of the built class, will not be empty
-	 *
-	 * @see Tx_Extbase_Tests_Unit_BaseTestCase::buildAccessibleProxy
 	 */
 	protected function buildAccessibleProxy($className) {
 		$accessibleClassName = uniqid('Tx_Phpunit_AccessibleProxy');
@@ -210,5 +231,39 @@ abstract class BaseTestCase extends \PHPUnit_Framework_TestCase {
 		$reflectionMethod->setAccessible(TRUE);
 		return $reflectionMethod->invokeArgs($object, $arguments);
 	}
+
+	/**
+	 * Injects $dependency into property $name of $target
+	 *
+	 * This is a convenience method for setting a protected or private property in
+	 * a test subject for the purpose of injecting a dependency.
+	 *
+	 * @param object $target The instance which needs the dependency
+	 * @param string $name Name of the property to be injected
+	 * @param object $dependency The dependency to inject – usually an object but can also be any other type
+	 * @return void
+	 * @throws \RuntimeException
+	 * @throws \InvalidArgumentException
+	 */
+	protected function inject($target, $name, $dependency) {
+		if (!is_object($target)) {
+			throw new \InvalidArgumentException('Wrong type for argument $target, must be object.');
+		}
+
+		$objectReflection = new \ReflectionObject($target);
+		$methodNamePart = strtoupper($name[0]) . substr($name, 1);
+		if ($objectReflection->hasMethod('set' . $methodNamePart)) {
+			$methodName = 'set' . $methodNamePart;
+			$target->$methodName($dependency);
+		} elseif ($objectReflection->hasMethod('inject' . $methodNamePart)) {
+			$methodName = 'inject' . $methodNamePart;
+			$target->$methodName($dependency);
+		} elseif ($objectReflection->hasProperty($name)) {
+			$property = $objectReflection->getProperty($name);
+			$property->setAccessible(TRUE);
+			$property->setValue($target, $dependency);
+		} else {
+			throw new \RuntimeException('Could not inject ' . $name . ' into object of type ' . get_class($target));
+		}
+	}
 }
-?>

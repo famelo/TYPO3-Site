@@ -1,32 +1,20 @@
 <?php
 namespace TYPO3\CMS\Extbase\Reflection;
 
-/***************************************************************
- *  Copyright notice
+/**
+ * This file is part of the TYPO3 CMS project.
  *
- *  (c) 2010-2013 Extbase Team (http://forge.typo3.org/projects/typo3v4-mvc)
- *  Extbase is a backport of TYPO3 Flow. All credits go to the TYPO3 Flow team.
- *  All rights reserved
+ * It is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License, either version 2
+ * of the License, or any later version.
  *
- *  This script is part of the TYPO3 project. The TYPO3 project is
- *  free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
+ * For the full copyright and license information, please read the
+ * LICENSE.txt file that was distributed with this source code.
  *
- *  The GNU General Public License can be found at
- *  http://www.gnu.org/copyleft/gpl.html.
- *  A copy is found in the textfile GPL.txt and important notices to the license
- *  from the author is found in LICENSE.txt distributed with these scripts.
- *
- *
- *  This script is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  This copyright notice MUST APPEAR in all copies of the script!
- ***************************************************************/
+ * The TYPO3 project - inspiring people to share!
+ */
+use TYPO3\CMS\Core\Utility\MathUtility;
+
 /**
  * Provides methods to call appropriate getter/setter on an object given the
  * property name. It does this following these rules:
@@ -94,7 +82,7 @@ class ObjectAccess {
 	 * @internal
 	 */
 	static public function getPropertyInternal($subject, $propertyName, $forceDirectAccess, &$propertyExists) {
-		if ($subject === NULL) {
+		if ($subject === NULL || is_scalar($subject)) {
 			return NULL;
 		}
 		$propertyExists = TRUE;
@@ -115,11 +103,19 @@ class ObjectAccess {
 				throw new \TYPO3\CMS\Extbase\Reflection\Exception\PropertyNotAccessibleException('The property "' . $propertyName . '" on the subject does not exist.', 1302855001);
 			}
 		}
-		if (
-			$subject instanceof \ArrayAccess
-			&& !($subject instanceof \SplObjectStorage || $subject instanceof \TYPO3\CMS\Extbase\Persistence\ObjectStorage)
-			&& isset($subject[$propertyName])
-		) {
+		if ($subject instanceof \SplObjectStorage || $subject instanceof \TYPO3\CMS\Extbase\Persistence\ObjectStorage) {
+			if (MathUtility::canBeInterpretedAsInteger($propertyName)) {
+				$index = 0;
+				foreach ($subject as $value) {
+					if ($index === (int)$propertyName) {
+						return $value;
+					}
+					$index++;
+				}
+				$propertyExists = FALSE;
+				return NULL;
+			}
+		} elseif ($subject instanceof \ArrayAccess && isset($subject[$propertyName])) {
 			return $subject[$propertyName];
 		}
 		$getterMethodName = 'get' . ucfirst($propertyName);
@@ -154,20 +150,9 @@ class ObjectAccess {
 		$propertyPathSegments = explode('.', $propertyPath);
 		foreach ($propertyPathSegments as $pathSegment) {
 			$propertyExists = FALSE;
-			$propertyValue = self::getPropertyInternal($subject, $pathSegment, FALSE, $propertyExists);
-			if (
-				$propertyExists !== TRUE
-				&& ($subject instanceof \SplObjectStorage || $subject instanceof \TYPO3\CMS\Extbase\Persistence\ObjectStorage)
-			) {
-				$subject = NULL;
-			} elseif (
-				$propertyExists !== TRUE
-				&& (is_array($subject) || $subject instanceof \ArrayAccess)
-				&& isset($subject[$pathSegment])
-			) {
-				$subject = $subject[$pathSegment];
-			} else {
-				$subject = $propertyValue;
+			$subject = self::getPropertyInternal($subject, $pathSegment, FALSE, $propertyExists);
+			if (!$propertyExists || $subject === NULL) {
+				return $subject;
 			}
 		}
 		return $subject;
@@ -377,5 +362,3 @@ class ObjectAccess {
 		return 'set' . ucfirst($propertyName);
 	}
 }
-
-?>

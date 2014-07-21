@@ -1,28 +1,18 @@
 <?php
 namespace TYPO3\CMS\Frontend\Tests\Unit\Page;
 
-/***************************************************************
- *  Copyright notice
+/**
+ * This file is part of the TYPO3 CMS project.
  *
- *  (c) 2009-2013 Christian Kuhn <lolli@schwarzbu.ch>
- *  All rights reserved
+ * It is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License, either version 2
+ * of the License, or any later version.
  *
- *  This script is part of the TYPO3 project. The TYPO3 project is
- *  free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
+ * For the full copyright and license information, please read the
+ * LICENSE.txt file that was distributed with this source code.
  *
- *  The GNU General Public License can be found at
- *  http://www.gnu.org/copyleft/gpl.html.
- *
- *  This script is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  This copyright notice MUST APPEAR in all copies of the script!
- ***************************************************************/
+ * The TYPO3 project - inspiring people to share!
+ */
 /**
  * Test case
  *
@@ -30,11 +20,6 @@ namespace TYPO3\CMS\Frontend\Tests\Unit\Page;
  * @author Oliver Klee <typo3-coding@oliverklee.de>
  */
 class PageRepositoryTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
-
-	/**
-	 * @var \TYPO3\CMS\Core\Database\DatabaseConnection
-	 */
-	protected $typo3DbBackup;
 
 	/**
 	 * @var \TYPO3\CMS\Frontend\Page\PageRepository|\TYPO3\CMS\Core\Tests\AccessibleObjectInterface
@@ -45,18 +30,9 @@ class PageRepositoryTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	 * Sets up this testcase
 	 */
 	public function setUp() {
-		$this->typo3DbBackup = $GLOBALS['TYPO3_DB'];
 		$GLOBALS['TYPO3_DB'] = $this->getMock('TYPO3\\CMS\\Core\\Database\\DatabaseConnection', array('exec_SELECTquery', 'sql_fetch_assoc', 'sql_free_result'));
 		$this->pageSelectObject = $this->getAccessibleMock('TYPO3\\CMS\\Frontend\\Page\\PageRepository', array('getMultipleGroupsWhereClause'));
 		$this->pageSelectObject->expects($this->any())->method('getMultipleGroupsWhereClause')->will($this->returnValue(' AND 1=1'));
-	}
-
-	/**
-	 * Tears down this testcase
-	 */
-	public function tearDown() {
-		$GLOBALS['TYPO3_DB'] = $this->typo3DbBackup;
-		unset($this->pageSelectObject);
 	}
 
 	/**
@@ -258,51 +234,89 @@ class PageRepositoryTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	 * @test
 	 */
 	public function enableFieldsHidesVersionedRecordsAndPlaceholders() {
+		$table = uniqid('aTable');
+		$GLOBALS['TCA'] = array(
+			$table => array(
+				'ctrl' => array(
+					'versioningWS' => 2
+				)
+			)
+		);
+
 		$this->pageSelectObject->versioningPreview = FALSE;
 		$this->pageSelectObject->init(FALSE);
 
-		$conditions = $this->pageSelectObject->enableFields('tt_content');
+		$conditions = $this->pageSelectObject->enableFields($table);
 
-		$this->assertThat($conditions, $this->stringContains(' AND tt_content.t3ver_state<=0'), 'Versioning placeholders');
-		$this->assertThat($conditions, $this->stringContains(' AND tt_content.pid<>-1'), 'Records from page -1');
+		$this->assertThat($conditions, $this->stringContains(' AND ' . $table . '.t3ver_state<=0'), 'Versioning placeholders');
+		$this->assertThat($conditions, $this->stringContains(' AND ' . $table . '.pid<>-1'), 'Records from page -1');
 	}
 
 	/**
 	 * @test
 	 */
 	public function enableFieldsDoesNotHidePlaceholdersInPreview() {
+		$table = uniqid('aTable');
+		$GLOBALS['TCA'] = array(
+			$table => array(
+				'ctrl' => array(
+					'versioningWS' => 2
+				)
+			)
+		);
+
 		$this->pageSelectObject->versioningPreview = TRUE;
 		$this->pageSelectObject->init(FALSE);
 
-		$conditions = $this->pageSelectObject->enableFields('tt_content');
+		$conditions = $this->pageSelectObject->enableFields($table);
 
-		$this->assertThat($conditions, $this->logicalNot($this->stringContains(' AND tt_content.t3ver_state<=0')), 'No versioning placeholders');
-		$this->assertThat($conditions, $this->stringContains(' AND tt_content.pid<>-1'), 'Records from page -1');
+		$this->assertThat($conditions, $this->logicalNot($this->stringContains(' AND ' . $table . '.t3ver_state<=0')), 'No versioning placeholders');
+		$this->assertThat($conditions, $this->stringContains(' AND ' . $table . '.pid<>-1'), 'Records from page -1');
 	}
 
 	/**
 	 * @test
 	 */
 	public function enableFieldsDoesFilterToCurrentAndLiveWorkspaceForRecordsInPreview() {
+		$table = uniqid('aTable');
+		$GLOBALS['TCA'] = array(
+			$table => array(
+				'ctrl' => array(
+					'versioningWS' => 2
+				)
+			)
+		);
+
 		$this->pageSelectObject->versioningPreview = TRUE;
 		$this->pageSelectObject->versioningWorkspaceId = 2;
 		$this->pageSelectObject->init(FALSE);
 
-		$conditions = $this->pageSelectObject->enableFields('tt_content');
+		$conditions = $this->pageSelectObject->enableFields($table);
 
-		$this->assertThat($conditions, $this->stringContains(' AND (tt_content.t3ver_wsid=0 OR tt_content.t3ver_wsid=2)'), 'No versioning placeholders');
+		$this->assertThat($conditions, $this->stringContains(' AND (' . $table . '.t3ver_wsid=0 OR ' . $table . '.t3ver_wsid=2)'), 'No versioning placeholders');
 	}
 
 	/**
 	 * @test
 	 */
 	public function enableFieldsDoesNotHideVersionedRecordsWhenCheckingVersionOverlays() {
+		$table = uniqid('aTable');
+		$GLOBALS['TCA'] = array(
+			$table => array(
+				'ctrl' => array(
+					'versioningWS' => 2
+				)
+			)
+		);
+
 		$this->pageSelectObject->versioningPreview = TRUE;
 		$this->pageSelectObject->init(FALSE);
 
-		$conditions = $this->pageSelectObject->enableFields('tt_content', -1, array(), TRUE	);
+		$conditions = $this->pageSelectObject->enableFields($table, -1, array(), TRUE	);
 
-		$this->assertThat($conditions, $this->logicalNot($this->stringContains(' AND tt_content.t3ver_state<=0')), 'No versioning placeholders');
-		$this->assertThat($conditions, $this->logicalNot($this->stringContains(' AND tt_content.pid<>-1')), 'No ecords from page -1');
+		$this->assertThat($conditions, $this->logicalNot($this->stringContains(' AND ' . $table . '.t3ver_state<=0')), 'No versioning placeholders');
+		$this->assertThat($conditions, $this->logicalNot($this->stringContains(' AND ' . $table . '.pid<>-1')), 'No ecords from page -1');
 	}
+
+
 }

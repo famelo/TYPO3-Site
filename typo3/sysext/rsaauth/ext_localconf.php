@@ -19,15 +19,23 @@ if (!defined('TYPO3_MODE')) {
 ));
 
 // Add a hook to the BE login form
-$GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['typo3/index.php']['loginFormHook'][$_EXTKEY] = 'EXT:' . $_EXTKEY . '/hooks/class.tx_rsaauth_loginformhook.php:TYPO3\\CMS\\Rsaauth\\Hook\\LoginFormHook->getLoginFormTag';
-$GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['typo3/index.php']['loginScriptHook'][$_EXTKEY] = 'EXT:' . $_EXTKEY . '/hooks/class.tx_rsaauth_loginformhook.php:TYPO3\\CMS\\Rsaauth\\Hook\\LoginFormHook->getLoginScripts';
+$GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['typo3/index.php']['loginFormHook'][$_EXTKEY] = 'TYPO3\\CMS\\Rsaauth\\Hook\\LoginFormHook->getLoginFormTag';
 // Add hook for user setup module
-$GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['ext/setup/mod/index.php']['setupScriptHook'][$_EXTKEY] = 'EXT:' . $_EXTKEY . '/hooks/class.tx_rsaauth_usersetuphook.php:TYPO3\\CMS\\Rsaauth\\Hook\\UserSetupHook->getLoginScripts';
-$GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['ext/setup/mod/index.php']['modifyUserDataBeforeSave'][$_EXTKEY] = 'EXT:' . $_EXTKEY . '/hooks/class.tx_rsaauth_usersetuphook.php:TYPO3\\CMS\\Rsaauth\\Hook\\UserSetupHook->decryptPassword';
+$GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['ext/setup/mod/index.php']['setupScriptHook'][$_EXTKEY] = 'TYPO3\\CMS\\Rsaauth\\Hook\\UserSetupHook->getLoginScripts';
+$GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['ext/setup/mod/index.php']['modifyUserDataBeforeSave'][$_EXTKEY] = 'TYPO3\\CMS\\Rsaauth\\Hook\\UserSetupHook->decryptPassword';
 // Add a hook to the FE login form (felogin system extension)
-$GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['felogin']['loginFormOnSubmitFuncs'][$_EXTKEY] = 'EXT:' . $_EXTKEY . '/hooks/class.tx_rsaauth_feloginhook.php:TYPO3\\CMS\\Rsaauth\\Hook\\FrontendLoginHook->loginFormHook';
+$GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['felogin']['loginFormOnSubmitFuncs'][$_EXTKEY] = 'TYPO3\\CMS\\Rsaauth\\Hook\\FrontendLoginHook->loginFormHook';
 // Add a hook to show Backend warnings
-$GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['t3lib/class.t3lib_befunc.php']['displayWarningMessages'][$_EXTKEY] = 'EXT:' . $_EXTKEY . '/hooks/class.tx_rsaauth_backendwarnings.php:TYPO3\\CMS\\Rsaauth\\BackendWarnings';
-// Use popup window to refresh login instead of the AJAX relogin:
-$TYPO3_CONF_VARS['BE']['showRefreshLoginPopup'] = 1;
-?>
+$GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['t3lib/class.t3lib_befunc.php']['displayWarningMessages'][$_EXTKEY] = 'TYPO3\\CMS\\Rsaauth\\BackendWarnings';
+
+\TYPO3\CMS\Core\Utility\ExtensionManagementUtility::registerAjaxHandler(
+	'BackendLogin::getRsaPublicKey',
+	'TYPO3\\CMS\\Rsaauth\\Backend\\AjaxLoginHandler->getRsaPublicKey',
+	FALSE
+);
+
+// eID for FrontendLoginRsaPublicKey
+$GLOBALS['TYPO3_CONF_VARS']['FE']['eID_include']['FrontendLoginRsaPublicKey'] =
+	'EXT:rsaauth/resources/Private/Php/FrontendLoginRsaPublicKey.php';
+
+$GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['typo3/backend.php']['constructPostProcess'][] = 'TYPO3\\CMS\\Rsaauth\\Hook\\BackendHookForAjaxLogin->addRsaJsLibraries';

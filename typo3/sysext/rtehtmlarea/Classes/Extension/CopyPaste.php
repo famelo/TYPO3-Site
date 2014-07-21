@@ -1,28 +1,18 @@
 <?php
 namespace TYPO3\CMS\Rtehtmlarea\Extension;
 
-/***************************************************************
- *  Copyright notice
+/**
+ * This file is part of the TYPO3 CMS project.
  *
- *  (c) 2008-2013 Stanislas Rolland <typo3(arobas)sjbr.ca>
- *  All rights reserved
+ * It is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License, either version 2
+ * of the License, or any later version.
  *
- *  This script is part of the Typo3 project. The Typo3 project is
- *  free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
+ * For the full copyright and license information, please read the
+ * LICENSE.txt file that was distributed with this source code.
  *
- *  The GNU General Public License can be found at
- *  http://www.gnu.org/copyleft/gpl.html.
- *
- *  This script is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  This copyright notice MUST APPEAR in all copies of the script!
- ***************************************************************/
+ * The TYPO3 project - inspiring people to share!
+ */
 /**
  * Copy Paste plugin for htmlArea RTE
  *
@@ -72,7 +62,7 @@ class CopyPaste extends \TYPO3\CMS\Rtehtmlarea\RteHtmlAreaApi {
 		$enabled = parent::main($parentObject);
 		// Hiding some buttons
 		if ($enabled && is_array($this->hideButtonsFromClient[$this->htmlAreaRTE->client['browser']])) {
-			$this->pluginButtons = implode(',', array_diff(\TYPO3\CMS\Core\Utility\GeneralUtility::trimExplode(',', $this->pluginButtons, 1), $this->hideButtonsFromClient[$this->htmlAreaRTE->client['browser']]));
+			$this->pluginButtons = implode(',', array_diff(\TYPO3\CMS\Core\Utility\GeneralUtility::trimExplode(',', $this->pluginButtons, TRUE), $this->hideButtonsFromClient[$this->htmlAreaRTE->client['browser']]));
 		}
 		// Force enabling the plugin even if no button remains in the tool bar, so that hot keys still are enabled
 		$this->pluginAddsButtons = FALSE;
@@ -89,7 +79,7 @@ class CopyPaste extends \TYPO3\CMS\Rtehtmlarea\RteHtmlAreaApi {
 		$registerRTEinJavascriptString = '';
 		$button = 'paste';
 		if ($this->htmlAreaRTE->client['browser'] == 'gecko') {
-			$mozillaAllowClipboardURL = $this->thisConfig['buttons.'][$button . '.']['mozillaAllowClipboardURL'] ? $this->thisConfig['buttons.'][$button . '.']['mozillaAllowClipboardURL'] : $GLOBALS['TYPO3_CONF_VARS']['EXTCONF'][$this->extensionKey]['plugins']['CopyPaste']['mozillaAllowClipboardURL'];
+			$mozillaAllowClipboardURL = $this->thisConfig['buttons.'][$button . '.']['mozillaAllowClipboardURL'] ?: $GLOBALS['TYPO3_CONF_VARS']['EXTCONF'][$this->extensionKey]['plugins']['CopyPaste']['mozillaAllowClipboardURL'];
 			if ($mozillaAllowClipboardURL) {
 				if (!is_array($this->thisConfig['buttons.']) || !is_array($this->thisConfig['buttons.'][($button . '.')])) {
 					$registerRTEinJavascriptString .= '
@@ -118,6 +108,3 @@ class CopyPaste extends \TYPO3\CMS\Rtehtmlarea\RteHtmlAreaApi {
 	}
 
 }
-
-
-?>

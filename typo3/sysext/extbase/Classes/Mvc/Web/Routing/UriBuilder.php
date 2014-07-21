@@ -13,6 +13,8 @@ namespace TYPO3\CMS\Extbase\Mvc\Web\Routing;
  * TABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General      *
  * Public License for more details.                                       *
  *                                                                        */
+use TYPO3\CMS\Backend\Utility\BackendUtility;
+
 /**
  * An URI Builder
  *
@@ -22,11 +24,13 @@ class UriBuilder {
 
 	/**
 	 * @var \TYPO3\CMS\Extbase\Configuration\ConfigurationManagerInterface
+	 * @inject
 	 */
 	protected $configurationManager;
 
 	/**
 	 * @var \TYPO3\CMS\Extbase\Service\ExtensionService
+	 * @inject
 	 */
 	protected $extensionService;
 
@@ -75,6 +79,11 @@ class UriBuilder {
 	protected $addQueryString = FALSE;
 
 	/**
+	 * @var string
+	 */
+	protected $addQueryStringMethod = NULL;
+
+	/**
 	 * @var array
 	 */
 	protected $argumentsToBeExcludedFromQueryString = array();
@@ -116,32 +125,9 @@ class UriBuilder {
 
 	/**
 	 * @var \TYPO3\CMS\Extbase\Service\EnvironmentService
+	 * @inject
 	 */
 	protected $environmentService;
-
-	/**
-	 * @param \TYPO3\CMS\Extbase\Configuration\ConfigurationManagerInterface $configurationManager
-	 * @return void
-	 */
-	public function injectConfigurationManager(\TYPO3\CMS\Extbase\Configuration\ConfigurationManagerInterface $configurationManager) {
-		$this->configurationManager = $configurationManager;
-	}
-
-	/**
-	 * @param \TYPO3\CMS\Extbase\Service\ExtensionService $extensionService
-	 * @return void
-	 */
-	public function injectExtensionService(\TYPO3\CMS\Extbase\Service\ExtensionService $extensionService) {
-		$this->extensionService = $extensionService;
-	}
-
-	/**
-	 * @param \TYPO3\CMS\Extbase\Service\EnvironmentService $environmentService
-	 * @return void
-	 */
-	public function injectEnvironmentService(\TYPO3\CMS\Extbase\Service\EnvironmentService $environmentService) {
-		$this->environmentService = $environmentService;
-	}
 
 	/**
 	 * Life-cycle method that is called by the DI container as soon as this object is completely built
@@ -292,6 +278,28 @@ class UriBuilder {
 	}
 
 	/**
+	 * Sets the method to get the addQueryString parameters. Defaults undefined
+	 * which results in using QUERY_STRING.
+	 *
+	 * @param string $addQueryStringMethod
+	 * @return \TYPO3\CMS\Extbase\Mvc\Web\Routing\UriBuilder the current UriBuilder to allow method chaining
+	 * @api
+	 * @see TSref/typolink.addQueryString.method
+	 */
+	public function setAddQueryStringMethod($addQueryStringMethod) {
+		$this->addQueryStringMethod = $addQueryStringMethod;
+		return $this;
+	}
+
+	/**
+	 * @return string
+	 * @api
+	 */
+	public function getAddQueryStringMethod() {
+		return (string)$this->addQueryStringMethod;
+	}
+
+	/**
 	 * A list of arguments to be excluded from the query parameters
 	 * Only active if addQueryString is set
 	 *
@@ -382,13 +390,12 @@ class UriBuilder {
 	 * @api
 	 */
 	public function setTargetPageType($targetPageType) {
-		$this->targetPageType = (integer) $targetPageType;
+		$this->targetPageType = (int)$targetPageType;
 		return $this;
 	}
 
 	/**
 	 * @return integer
-	 * @api
 	 */
 	public function getTargetPageType() {
 		return $this->targetPageType;
@@ -458,6 +465,7 @@ class UriBuilder {
 		$this->format = '';
 		$this->createAbsoluteUri = FALSE;
 		$this->addQueryString = FALSE;
+		$this->addQueryStringMethod = NULL;
 		$this->argumentsToBeExcludedFromQueryString = array();
 		$this->linkAccessRestrictedPages = FALSE;
 		$this->targetPageUid = NULL;
@@ -514,7 +522,7 @@ class UriBuilder {
 			$pluginNamespace = $this->extensionService->getPluginNamespace($extensionName, $pluginName);
 			$prefixedControllerArguments = array($pluginNamespace => $controllerArguments);
 		}
-		$this->arguments = \TYPO3\CMS\Core\Utility\GeneralUtility::array_merge_recursive_overrule($this->arguments, $prefixedControllerArguments);
+		\TYPO3\CMS\Core\Utility\ArrayUtility::mergeRecursiveWithOverrule($this->arguments, $prefixedControllerArguments);
 		return $this->build();
 	}
 
@@ -570,21 +578,42 @@ class UriBuilder {
 	 */
 	public function buildBackendUri() {
 		if ($this->addQueryString === TRUE) {
-			$arguments = \TYPO3\CMS\Core\Utility\GeneralUtility::_GET();
+			if ($this->addQueryStringMethod) {
+				switch ($this->addQueryStringMethod) {
+					case 'GET':
+						$arguments = \TYPO3\CMS\Core\Utility\GeneralUtility::_GET();
+						break;
+					case 'POST':
+						$arguments = \TYPO3\CMS\Core\Utility\GeneralUtility::_POST();
+						break;
+					case 'GET,POST':
+						$arguments = array_replace_recursive(\TYPO3\CMS\Core\Utility\GeneralUtility::_GET(), \TYPO3\CMS\Core\Utility\GeneralUtility::_POST());
+						break;
+					case 'POST,GET':
+						$arguments = array_replace_recursive(\TYPO3\CMS\Core\Utility\GeneralUtility::_POST(), \TYPO3\CMS\Core\Utility\GeneralUtility::_GET());
+						break;
+					default:
+						$arguments = \TYPO3\CMS\Core\Utility\GeneralUtility::explodeUrl2Array(\TYPO3\CMS\Core\Utility\GeneralUtility::getIndpEnv('QUERY_STRING'), TRUE);
+				}
+			} else {
+				$arguments = \TYPO3\CMS\Core\Utility\GeneralUtility::_GET();
+			}
 			foreach ($this->argumentsToBeExcludedFromQueryString as $argumentToBeExcluded) {
 				$argumentToBeExcluded = \TYPO3\CMS\Core\Utility\GeneralUtility::explodeUrl2Array($argumentToBeExcluded, TRUE);
 				$arguments = \TYPO3\CMS\Core\Utility\GeneralUtility::arrayDiffAssocRecursive($arguments, $argumentToBeExcluded);
 			}
 		} else {
 			$arguments = array(
-				'M' => \TYPO3\CMS\Core\Utility\GeneralUtility::_GET('M'),
-				'id' => \TYPO3\CMS\Core\Utility\GeneralUtility::_GET('id')
+				'M' => \TYPO3\CMS\Core\Utility\GeneralUtility::_GP('M'),
+				'id' => \TYPO3\CMS\Core\Utility\GeneralUtility::_GP('id')
 			);
 		}
-		$arguments = \TYPO3\CMS\Core\Utility\GeneralUtility::array_merge_recursive_overrule($arguments, $this->arguments);
+		\TYPO3\CMS\Core\Utility\ArrayUtility::mergeRecursiveWithOverrule($arguments, $this->arguments);
 		$arguments = $this->convertDomainObjectsToIdentityArrays($arguments);
 		$this->lastArguments = $arguments;
-		$uri = 'mod.php?' . http_build_query($arguments, NULL, '&');
+		$moduleName = $arguments['M'];
+		unset($arguments['M'], $arguments['moduleToken']);
+		$uri = BackendUtility::getModuleUrl($moduleName, $arguments, '');
 		if ($this->section !== '') {
 			$uri .= '#' . $this->section;
 		}
@@ -623,6 +652,9 @@ class UriBuilder {
 		$typolinkConfiguration['parameter'] = $this->targetPageUid !== NULL ? $this->targetPageUid : $GLOBALS['TSFE']->id;
 		if ($this->targetPageType !== 0) {
 			$typolinkConfiguration['parameter'] .= ',' . $this->targetPageType;
+		} elseif ($this->format !== '') {
+			$targetPageType = $this->extensionService->getTargetPageTypeByFormat($this->request->getControllerExtensionKey(), $this->format);
+			$typolinkConfiguration['parameter'] .= ',' . $targetPageType;
 		}
 		if (count($this->arguments) > 0) {
 			$arguments = $this->convertDomainObjectsToIdentityArrays($this->arguments);
@@ -635,6 +667,9 @@ class UriBuilder {
 				$typolinkConfiguration['addQueryString.'] = array(
 					'exclude' => implode(',', $this->argumentsToBeExcludedFromQueryString)
 				);
+			}
+			if ($this->addQueryStringMethod) {
+				$typolinkConfiguration['addQueryString.']['method'] = $this->addQueryStringMethod;
 			}
 		}
 		if ($this->noCache === TRUE) {
@@ -707,6 +742,5 @@ class UriBuilder {
 		}
 		return $result;
 	}
-}
 
-?>
+}

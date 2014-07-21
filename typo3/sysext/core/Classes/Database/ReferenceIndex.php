@@ -1,31 +1,22 @@
 <?php
 namespace TYPO3\CMS\Core\Database;
 
-/***************************************************************
- *  Copyright notice
+/**
+ * This file is part of the TYPO3 CMS project.
  *
- *  (c) 1999-2013 Kasper Skårhøj (kasperYYYY@typo3.com)
- *  All rights reserved
+ * It is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License, either version 2
+ * of the License, or any later version.
  *
- *  This script is part of the TYPO3 project. The TYPO3 project is
- *  free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
+ * For the full copyright and license information, please read the
+ * LICENSE.txt file that was distributed with this source code.
  *
- *  The GNU General Public License can be found at
- *  http://www.gnu.org/copyleft/gpl.html.
- *  A copy is found in the textfile GPL.txt and important notices to the license
- *  from the author is found in LICENSE.txt distributed with these scripts.
- *
- *
- *  This script is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  This copyright notice MUST APPEAR in all copies of the script!
- ***************************************************************/
+ * The TYPO3 project - inspiring people to share!
+ */
+
+use TYPO3\CMS\Backend\Utility\BackendUtility;
+use TYPO3\CMS\Core\Utility\GeneralUtility;
+
 /**
  * Reference index processing and relation extraction
  *
@@ -77,6 +68,29 @@ class ReferenceIndex {
 	public $hashVersion = 1;
 
 	/**
+	 * @var int
+	 */
+	protected $workspaceId = 0;
+
+	/**
+	 * Sets the current workspace id.
+	 *
+	 * @param int $workspaceId
+	 */
+	public function setWorkspaceId($workspaceId) {
+		$this->workspaceId = (int)$workspaceId;
+	}
+
+	/**
+	 * Gets the current workspace id.
+	 *
+	 * @return int
+	 */
+	public function getWorkspaceId() {
+		return $this->workspaceId;
+	}
+
+	/**
 	 * Call this function to update the sys_refindex table for a record (even one just deleted)
 	 * NOTICE: Currently, references updated for a deleted-flagged record will not include those from within flexform fields in some cases where the data structure is defined by another record since the resolving process ignores deleted records! This will also result in bad cleaning up in tcemain I think... Anyway, thats the story of flexforms; as long as the DS can change, lots of references can get lost in no time.
 	 *
@@ -96,9 +110,9 @@ class ReferenceIndex {
 			'addedNodes' => 0
 		);
 		// Get current index from Database:
-		$currentRels = $GLOBALS['TYPO3_DB']->exec_SELECTgetRows('*', 'sys_refindex', 'tablename=' . $GLOBALS['TYPO3_DB']->fullQuoteStr($table, 'sys_refindex') . ' AND recuid=' . intval($uid), '', '', '', 'hash');
+		$currentRels = $GLOBALS['TYPO3_DB']->exec_SELECTgetRows('*', 'sys_refindex', 'tablename=' . $GLOBALS['TYPO3_DB']->fullQuoteStr($table, 'sys_refindex') . ' AND recuid=' . (int)$uid, '', '', '', 'hash');
 		// First, test to see if the record exists (including deleted-flagged)
-		if (\TYPO3\CMS\Backend\Utility\BackendUtility::getRecordRaw($table, 'uid=' . intval($uid), 'uid')) {
+		if (BackendUtility::getRecordRaw($table, 'uid=' . (int)$uid, 'uid')) {
 			// Then, get relations:
 			$relations = $this->generateRefIndexData($table, $uid);
 			if (is_array($relations)) {
@@ -150,7 +164,7 @@ class ReferenceIndex {
 	public function generateRefIndexData($table, $uid) {
 		if (isset($GLOBALS['TCA'][$table])) {
 			// Get raw record from DB:
-			$record = $GLOBALS['TYPO3_DB']->exec_SELECTgetSingleRow('*', $table, 'uid=' . intval($uid));
+			$record = $GLOBALS['TYPO3_DB']->exec_SELECTgetSingleRow('*', $table, 'uid=' . (int)$uid);
 			if (is_array($record)) {
 				// Initialize:
 				$this->words_strings = array();
@@ -164,35 +178,35 @@ class ReferenceIndex {
 				foreach ($dbrels as $fieldname => $dat) {
 					// Based on type,
 					switch ((string) $dat['type']) {
-					case 'db':
-						$this->createEntryData_dbRels($table, $uid, $fieldname, '', $deleted, $dat['itemArray']);
-						break;
-					case 'file_reference':
-
-					case 'file':
-						$this->createEntryData_fileRels($table, $uid, $fieldname, '', $deleted, $dat['newValueFiles']);
-						break;
-					case 'flex':
-						// DB references:
-						if (is_array($dat['flexFormRels']['db'])) {
-							foreach ($dat['flexFormRels']['db'] as $flexpointer => $subList) {
-								$this->createEntryData_dbRels($table, $uid, $fieldname, $flexpointer, $deleted, $subList);
+						case 'db':
+							$this->createEntryData_dbRels($table, $uid, $fieldname, '', $deleted, $dat['itemArray']);
+							break;
+						case 'file_reference':
+							// not used (see getRelations()), but fallback to file
+						case 'file':
+							$this->createEntryData_fileRels($table, $uid, $fieldname, '', $deleted, $dat['newValueFiles']);
+							break;
+						case 'flex':
+							// DB references:
+							if (is_array($dat['flexFormRels']['db'])) {
+								foreach ($dat['flexFormRels']['db'] as $flexpointer => $subList) {
+									$this->createEntryData_dbRels($table, $uid, $fieldname, $flexpointer, $deleted, $subList);
+								}
 							}
-						}
-						// File references (NOT TESTED!)
-						if (is_array($dat['flexFormRels']['file'])) {
-							// Not tested
-							foreach ($dat['flexFormRels']['file'] as $flexpointer => $subList) {
-								$this->createEntryData_fileRels($table, $uid, $fieldname, $flexpointer, $deleted, $subList);
+							// File references (NOT TESTED!)
+							if (is_array($dat['flexFormRels']['file'])) {
+								// Not tested
+								foreach ($dat['flexFormRels']['file'] as $flexpointer => $subList) {
+									$this->createEntryData_fileRels($table, $uid, $fieldname, $flexpointer, $deleted, $subList);
+								}
 							}
-						}
-						// Soft references in flexforms (NOT TESTED!)
-						if (is_array($dat['flexFormRels']['softrefs'])) {
-							foreach ($dat['flexFormRels']['softrefs'] as $flexpointer => $subList) {
-								$this->createEntryData_softreferences($table, $uid, $fieldname, $flexpointer, $deleted, $subList['keys']);
+							// Soft references in flexforms (NOT TESTED!)
+							if (is_array($dat['flexFormRels']['softrefs'])) {
+								foreach ($dat['flexFormRels']['softrefs'] as $flexpointer => $subList) {
+									$this->createEntryData_softreferences($table, $uid, $fieldname, $flexpointer, $deleted, $subList['keys']);
+								}
 							}
-						}
-						break;
+							break;
 					}
 					// Softreferences in the field:
 					if (is_array($dat['softrefs'])) {
@@ -201,7 +215,7 @@ class ReferenceIndex {
 				}
 				// Word indexing:
 				foreach ($GLOBALS['TCA'][$table]['columns'] as $field => $conf) {
-					if (\TYPO3\CMS\Core\Utility\GeneralUtility::inList('input,text', $conf['config']['type']) && strcmp($record[$field], '') && !\TYPO3\CMS\Core\Utility\MathUtility::canBeInterpretedAsInteger($record[$field])) {
+					if (GeneralUtility::inList('input,text', $conf['config']['type']) && (string)$record[$field] !== '' && !\TYPO3\CMS\Core\Utility\MathUtility::canBeInterpretedAsInteger($record[$field])) {
 						$this->words_strings[$field] = $record[$field];
 					}
 				}
@@ -238,6 +252,7 @@ class ReferenceIndex {
 			'softref_id' => $softref_id,
 			'sorting' => $sort,
 			'deleted' => $deleted,
+			'workspace' => $this->getWorkspaceId(),
 			'ref_table' => $ref_table,
 			'ref_uid' => $ref_uid,
 			'ref_string' => $ref_string
@@ -277,8 +292,8 @@ class ReferenceIndex {
 	public function createEntryData_fileRels($table, $uid, $fieldname, $flexpointer, $deleted, $items) {
 		foreach ($items as $sort => $i) {
 			$filePath = $i['ID_absFile'];
-			if (\TYPO3\CMS\Core\Utility\GeneralUtility::isFirstPartOfStr($filePath, PATH_site)) {
-				$filePath = substr($filePath, strlen(PATH_site));
+			if (GeneralUtility::isFirstPartOfStr($filePath, PATH_site)) {
+				$filePath = \TYPO3\CMS\Core\Utility\PathUtility::stripPathSitePrefix($filePath);
 			}
 			$this->relations[] = $this->createEntryData($table, $uid, $fieldname, $flexpointer, $deleted, '_FILE', 0, $filePath, $sort);
 		}
@@ -291,6 +306,7 @@ class ReferenceIndex {
 	 * @param integer $uid UID of source record (where reference is located)
 	 * @param string $fieldname Fieldname of source record (where reference is located)
 	 * @param string $flexpointer Pointer to location inside flexform struc
+	 * @param integer $deleted
 	 * @param array $keys Data array with soft reference keys
 	 * @return void
 	 * @todo Define visibility
@@ -302,18 +318,18 @@ class ReferenceIndex {
 					foreach ($elements as $subKey => $el) {
 						if (is_array($el['subst'])) {
 							switch ((string) $el['subst']['type']) {
-							case 'db':
-								list($tableName, $recordId) = explode(':', $el['subst']['recordRef']);
-								$this->relations[] = $this->createEntryData($table, $uid, $fieldname, $flexpointer, $deleted, $tableName, $recordId, '', -1, $spKey, $subKey);
-								break;
-							case 'file_reference':
-
-							case 'file':
-								$this->relations[] = $this->createEntryData($table, $uid, $fieldname, $flexpointer, $deleted, '_FILE', 0, $el['subst']['relFileName'], -1, $spKey, $subKey);
-								break;
-							case 'string':
-								$this->relations[] = $this->createEntryData($table, $uid, $fieldname, $flexpointer, $deleted, '_STRING', 0, $el['subst']['tokenValue'], -1, $spKey, $subKey);
-								break;
+								case 'db':
+									list($tableName, $recordId) = explode(':', $el['subst']['recordRef']);
+									$this->relations[] = $this->createEntryData($table, $uid, $fieldname, $flexpointer, $deleted, $tableName, $recordId, '', -1, $spKey, $subKey);
+									break;
+								case 'file_reference':
+									// not used (see getRelations()), but fallback to file
+								case 'file':
+									$this->relations[] = $this->createEntryData($table, $uid, $fieldname, $flexpointer, $deleted, '_FILE', 0, $el['subst']['relFileName'], -1, $spKey, $subKey);
+									break;
+								case 'string':
+									$this->relations[] = $this->createEntryData($table, $uid, $fieldname, $flexpointer, $deleted, '_STRING', 0, $el['subst']['tokenValue'], -1, $spKey, $subKey);
+									break;
 							}
 						}
 					}
@@ -348,27 +364,50 @@ class ReferenceIndex {
 			if (!in_array($field, $nonFields) && is_array($GLOBALS['TCA'][$table]['columns'][$field]) && (!$onlyField || $onlyField === $field)) {
 				$conf = $GLOBALS['TCA'][$table]['columns'][$field]['config'];
 				// Add files
-				if ($result = $this->getRelations_procFiles($value, $conf, $uid)) {
-					// Creates an entry for the field with all the files:
-					$outRow[$field] = array(
-						'type' => 'db',
-						'itemArray' => $result
-					);
+				$resultsFromFiles = $this->getRelations_procFiles($value, $conf, $uid);
+				if (!empty($resultsFromFiles)) {
+					// We have to fill different arrays here depending on the result.
+					// internal_type file is still a relation of type file and
+					// since http://forge.typo3.org/issues/49538 internal_type file_reference
+					// is a database relation to a sys_file record
+					$fileResultsFromFiles = array();
+					$dbResultsFromFiles = array();
+					foreach ($resultsFromFiles as $resultFromFiles) {
+						if (isset($resultFromFiles['table']) && $resultFromFiles['table'] === 'sys_file') {
+							$dbResultsFromFiles[] = $resultFromFiles;
+						} else {
+							// Creates an entry for the field with all the files:
+							$fileResultsFromFiles[] = $resultFromFiles;
+						}
+					}
+					if (!empty($fileResultsFromFiles)) {
+						$outRow[$field] = array(
+							'type' => 'file',
+							'newValueFiles' => $fileResultsFromFiles
+						);
+					}
+					if (!empty($dbResultsFromFiles)) {
+						$outRow[$field] = array(
+							'type' => 'db',
+							'itemArray' => $dbResultsFromFiles
+						);
+					}
 				}
 				// Add DB:
-				if ($result = $this->getRelations_procDB($value, $conf, $uid, $table, $field)) {
+				$resultsFromDatabase = $this->getRelations_procDB($value, $conf, $uid, $table, $field);
+				if (!empty($resultsFromDatabase)) {
 					// Create an entry for the field with all DB relations:
 					$outRow[$field] = array(
 						'type' => 'db',
-						'itemArray' => $result
+						'itemArray' => $resultsFromDatabase
 					);
 				}
 				// For "flex" fieldtypes we need to traverse the structure looking for file and db references of course!
 				if ($conf['type'] == 'flex') {
 					// Get current value array:
 					// NOTICE: failure to resolve Data Structures can lead to integrity problems with the reference index. Please look up the note in the JavaDoc documentation for the function \TYPO3\CMS\Backend\Utility\BackendUtility::getFlexFormDS()
-					$dataStructArray = \TYPO3\CMS\Backend\Utility\BackendUtility::getFlexFormDS($conf, $row, $table, $field, $this->WSOL);
-					$currentValueArray = \TYPO3\CMS\Core\Utility\GeneralUtility::xml2array($value);
+					$dataStructArray = BackendUtility::getFlexFormDS($conf, $row, $table, $field, $this->WSOL);
+					$currentValueArray = GeneralUtility::xml2array($value);
 					// Traversing the XML structure, processing files:
 					if (is_array($currentValueArray)) {
 						$this->temp_flexRelations = array(
@@ -377,7 +416,7 @@ class ReferenceIndex {
 							'softrefs' => array()
 						);
 						// Create and call iterator object:
-						$flexObj = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Configuration\\FlexForm\\FlexFormTools');
+						$flexObj = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Configuration\\FlexForm\\FlexFormTools');
 						$flexObj->traverseFlexFormXMLData($table, $field, $row, $this, 'getRelations_flexFormCallBack');
 						// Create an entry for the field:
 						$outRow[$field] = array(
@@ -387,10 +426,10 @@ class ReferenceIndex {
 					}
 				}
 				// Soft References:
-				if (strlen($value) && ($softRefs = \TYPO3\CMS\Backend\Utility\BackendUtility::explodeSoftRefParserList($conf['softref']))) {
+				if (strlen($value) && ($softRefs = BackendUtility::explodeSoftRefParserList($conf['softref']))) {
 					$softRefValue = $value;
 					foreach ($softRefs as $spKey => $spParams) {
-						$softRefObj = \TYPO3\CMS\Backend\Utility\BackendUtility::softRefParserObj($spKey);
+						$softRefObj = BackendUtility::softRefParserObj($spKey);
 						if (is_object($softRefObj)) {
 							$resultArray = $softRefObj->findRef($table, $field, $uid, $softRefValue, $spKey, $spParams);
 							if (is_array($resultArray)) {
@@ -401,7 +440,7 @@ class ReferenceIndex {
 							}
 						}
 					}
-					if (is_array($outRow[$field]['softrefs']) && count($outRow[$field]['softrefs']) && strcmp($value, $softRefValue) && strstr($softRefValue, '{softref:')) {
+					if (is_array($outRow[$field]['softrefs']) && count($outRow[$field]['softrefs']) && (string)$value !== (string)$softRefValue && strstr($softRefValue, '{softref:')) {
 						$outRow[$field]['softrefs']['tokenizedContent'] = $softRefValue;
 					}
 				}
@@ -429,20 +468,39 @@ class ReferenceIndex {
 		// Implode parameter values:
 		list($table, $uid, $field) = array($PA['table'], $PA['uid'], $PA['field']);
 		// Add files
-		if ($result = $this->getRelations_procFiles($dataValue, $dsConf, $uid)) {
-			// Creates an entry for the field with all the files:
-			$this->temp_flexRelations['file'][$structurePath] = $result;
+		$resultsFromFiles = $this->getRelations_procFiles($dataValue, $dsConf, $uid);
+		if (!empty($resultsFromFiles)) {
+			// We have to fill different arrays here depending on the result.
+			// internal_type file is still a relation of type file and
+			// since http://forge.typo3.org/issues/49538 internal_type file_reference
+			// is a database relation to a sys_file record
+			$fileResultsFromFiles = array();
+			$dbResultsFromFiles = array();
+			foreach ($resultsFromFiles as $resultFromFiles) {
+				if (isset($resultFromFiles['table']) && $resultFromFiles['table'] === 'sys_file') {
+					$dbResultsFromFiles[] = $resultFromFiles;
+				} else {
+					$fileResultsFromFiles[] = $resultFromFiles;
+				}
+			}
+			if (!empty($fileResultsFromFiles)) {
+				$this->temp_flexRelations['file'][$structurePath] = $fileResultsFromFiles;
+			}
+			if (!empty($dbResultsFromFiles)) {
+				$this->temp_flexRelations['db'][$structurePath] = $dbResultsFromFiles;
+			}
 		}
 		// Add DB:
-		if ($result = $this->getRelations_procDB($dataValue, $dsConf, $uid, $field)) {
+		$resultsFromDatabase = $this->getRelations_procDB($dataValue, $dsConf, $uid, $field);
+		if (!empty($resultsFromDatabase)) {
 			// Create an entry for the field with all DB relations:
-			$this->temp_flexRelations['db'][$structurePath] = $result;
+			$this->temp_flexRelations['db'][$structurePath] = $resultsFromDatabase;
 		}
 		// Soft References:
-		if (strlen($dataValue) && ($softRefs = \TYPO3\CMS\Backend\Utility\BackendUtility::explodeSoftRefParserList($dsConf['softref']))) {
+		if (strlen($dataValue) && ($softRefs = BackendUtility::explodeSoftRefParserList($dsConf['softref']))) {
 			$softRefValue = $dataValue;
 			foreach ($softRefs as $spKey => $spParams) {
-				$softRefObj = \TYPO3\CMS\Backend\Utility\BackendUtility::softRefParserObj($spKey);
+				$softRefObj = BackendUtility::softRefParserObj($spKey);
 				if (is_object($softRefObj)) {
 					$resultArray = $softRefObj->findRef($table, $field, $uid, $softRefValue, $spKey, $spParams, $structurePath);
 					if (is_array($resultArray) && is_array($resultArray['elements'])) {
@@ -453,7 +511,7 @@ class ReferenceIndex {
 					}
 				}
 			}
-			if (count($this->temp_flexRelations['softrefs']) && strcmp($dataValue, $softRefValue)) {
+			if (count($this->temp_flexRelations['softrefs']) && (string)$dataValue !== (string)$softRefValue) {
 				$this->temp_flexRelations['softrefs'][$structurePath]['tokenizedContent'] = $softRefValue;
 			}
 		}
@@ -465,7 +523,7 @@ class ReferenceIndex {
 	 * @param string $value Field value
 	 * @param array $conf Field configuration array of type "TCA/columns
 	 * @param integer $uid Field uid
-	 * @return array If field type is OK it will return an array with the files inside. Else FALSE
+	 * @return bool|array If field type is OK it will return an array with the files inside. Else FALSE
 	 * @todo Define visibility
 	 */
 	public function getRelations_procFiles($value, $conf, $uid) {
@@ -476,7 +534,7 @@ class ReferenceIndex {
 		// Collect file values in array:
 		if ($conf['MM']) {
 			$theFileValues = array();
-			$dbAnalysis = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Database\\RelationHandler');
+			$dbAnalysis = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Database\\RelationHandler');
 			$dbAnalysis->start('', 'files', $conf['MM'], $uid);
 			foreach ($dbAnalysis->itemArray as $someval) {
 				if ($someval['id']) {
@@ -503,8 +561,12 @@ class ReferenceIndex {
 					try {
 						$file = \TYPO3\CMS\Core\Resource\ResourceFactory::getInstance()->retrieveFileOrFolderObject($file);
 						if ($file instanceof \TYPO3\CMS\Core\Resource\FileInterface) {
-							$newValueFile['table'] = 'sys_file';
-							$newValueFile['id'] = $file->getUid();
+							// For setting this as sys_file relation later, the keys filename, ID and ID_absFile
+							// have not to be included, because the are not evaluated for db relations.
+							$newValueFile = array(
+								'table' => 'sys_file',
+								'id' => $file->getUid()
+							);
 						}
 					} catch (\Exception $e) {
 
@@ -528,20 +590,27 @@ class ReferenceIndex {
 	 * @todo Define visibility
 	 */
 	public function getRelations_procDB($value, $conf, $uid, $table = '', $field = '') {
+		// Get IRRE relations
+		if ($conf['type'] === 'inline' && !empty($conf['foreign_table']) && empty($conf['MM'])) {
+			$dbAnalysis = $this->getRelationHandler();
+			$dbAnalysis->setUseLiveReferenceIds(FALSE);
+			$dbAnalysis->start($value, $conf['foreign_table'], '', $uid, $table, $conf);
+			return $dbAnalysis->itemArray;
 		// DB record lists:
-		if ($this->isReferenceField($conf)) {
+		} elseif ($this->isReferenceField($conf)) {
 			$allowedTables = $conf['type'] == 'group' ? $conf['allowed'] : $conf['foreign_table'] . ',' . $conf['neg_foreign_table'];
 			if ($conf['MM_opposite_field']) {
 				return array();
 			}
-			$dbAnalysis = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Database\\RelationHandler');
+			$dbAnalysis = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Database\\RelationHandler');
 			$dbAnalysis->start($value, $allowedTables, $conf['MM'], $uid, $table, $conf);
 			return $dbAnalysis->itemArray;
 		} elseif ($conf['type'] == 'inline' && $conf['foreign_table'] == 'sys_file_reference') {
-			$files = (array) $GLOBALS['TYPO3_DB']->exec_SELECTgetRows('uid_local', 'sys_file_reference', ('tablenames=\'' . $table . '\' AND fieldname=\'' . $field . '\' AND uid_foreign=' . $uid));
-			$fileArray = array('0' => array());
+			// @todo It looks like this was never called before since isReferenceField also checks for type 'inline' and any 'foreign_table'
+			$files = (array)$GLOBALS['TYPO3_DB']->exec_SELECTgetRows('uid_local', 'sys_file_reference', ('tablenames=\'' . $table . '\' AND fieldname=\'' . $field . '\' AND uid_foreign=' . $uid . ' AND deleted=0'));
+			$fileArray = array();
 			foreach ($files as $fileUid) {
-				$fileArray[0][] = array('table' => 'sys_file', 'id' => $fileUid);
+				$fileArray[] = array('table' => 'sys_file', 'id' => $fileUid['uid_local']);
 			}
 			return $fileArray;
 		} elseif ($conf['type'] == 'input' && isset($conf['wizards']['link']) && trim($value)) {
@@ -589,7 +658,7 @@ class ReferenceIndex {
 			if (is_array($refRec)) {
 				if ($GLOBALS['TCA'][$refRec['tablename']]) {
 					// Get that record from database:
-					$record = $GLOBALS['TYPO3_DB']->exec_SELECTgetSingleRow('*', $refRec['tablename'], 'uid=' . intval($refRec['recuid']));
+					$record = $GLOBALS['TYPO3_DB']->exec_SELECTgetSingleRow('*', $refRec['tablename'], 'uid=' . (int)$refRec['recuid']);
 					if (is_array($record)) {
 						// Get all relations from record, filter with fieldname:
 						$dbrels = $this->getRelations($refRec['tablename'], $record, $refRec['field']);
@@ -598,43 +667,43 @@ class ReferenceIndex {
 							$dataArray = array();
 							// Based on type,
 							switch ((string) $dat['type']) {
-							case 'db':
-								$error = $this->setReferenceValue_dbRels($refRec, $dat['itemArray'], $newValue, $dataArray);
-								if ($error) {
-									return $error;
-								}
-								break;
-							case 'file_reference':
-
-							case 'file':
-								$error = $this->setReferenceValue_fileRels($refRec, $dat['newValueFiles'], $newValue, $dataArray);
-								if ($error) {
-									return $error;
-								}
-								break;
-							case 'flex':
-								// DB references:
-								if (is_array($dat['flexFormRels']['db'][$refRec['flexpointer']])) {
-									$error = $this->setReferenceValue_dbRels($refRec, $dat['flexFormRels']['db'][$refRec['flexpointer']], $newValue, $dataArray, $refRec['flexpointer']);
+								case 'db':
+									$error = $this->setReferenceValue_dbRels($refRec, $dat['itemArray'], $newValue, $dataArray);
 									if ($error) {
 										return $error;
 									}
-								}
-								// File references
-								if (is_array($dat['flexFormRels']['file'][$refRec['flexpointer']])) {
-									$this->setReferenceValue_fileRels($refRec, $dat['flexFormRels']['file'][$refRec['flexpointer']], $newValue, $dataArray, $refRec['flexpointer']);
+									break;
+								case 'file_reference':
+									// not used (see getRelations()), but fallback to file
+								case 'file':
+									$error = $this->setReferenceValue_fileRels($refRec, $dat['newValueFiles'], $newValue, $dataArray);
 									if ($error) {
 										return $error;
 									}
-								}
-								// Soft references in flexforms
-								if ($refRec['softref_key'] && is_array($dat['flexFormRels']['softrefs'][$refRec['flexpointer']]['keys'][$refRec['softref_key']])) {
-									$error = $this->setReferenceValue_softreferences($refRec, $dat['flexFormRels']['softrefs'][$refRec['flexpointer']], $newValue, $dataArray, $refRec['flexpointer']);
-									if ($error) {
-										return $error;
+									break;
+								case 'flex':
+									// DB references:
+									if (is_array($dat['flexFormRels']['db'][$refRec['flexpointer']])) {
+										$error = $this->setReferenceValue_dbRels($refRec, $dat['flexFormRels']['db'][$refRec['flexpointer']], $newValue, $dataArray, $refRec['flexpointer']);
+										if ($error) {
+											return $error;
+										}
 									}
-								}
-								break;
+									// File references
+									if (is_array($dat['flexFormRels']['file'][$refRec['flexpointer']])) {
+										$this->setReferenceValue_fileRels($refRec, $dat['flexFormRels']['file'][$refRec['flexpointer']], $newValue, $dataArray, $refRec['flexpointer']);
+										if ($error) {
+											return $error;
+										}
+									}
+									// Soft references in flexforms
+									if ($refRec['softref_key'] && is_array($dat['flexFormRels']['softrefs'][$refRec['flexpointer']]['keys'][$refRec['softref_key']])) {
+										$error = $this->setReferenceValue_softreferences($refRec, $dat['flexFormRels']['softrefs'][$refRec['flexpointer']], $newValue, $dataArray, $refRec['flexpointer']);
+										if ($error) {
+											return $error;
+										}
+									}
+									break;
 							}
 							// Softreferences in the field:
 							if ($refRec['softref_key'] && is_array($dat['softrefs']['keys'][$refRec['softref_key']])) {
@@ -648,7 +717,7 @@ class ReferenceIndex {
 								return $dataArray;
 							} else {
 								// Execute CMD array:
-								$tce = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\DataHandling\\DataHandler');
+								$tce = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\DataHandling\\DataHandler');
 								$tce->stripslashes_values = FALSE;
 								$tce->dontProcessTransformations = TRUE;
 								$tce->bypassWorkspaceRestrictions = TRUE;
@@ -688,7 +757,7 @@ class ReferenceIndex {
 	 * @todo Define visibility
 	 */
 	public function setReferenceValue_dbRels($refRec, $itemArray, $newValue, &$dataArray, $flexpointer = '') {
-		if (!strcmp($itemArray[$refRec['sorting']]['id'], $refRec['ref_uid']) && !strcmp($itemArray[$refRec['sorting']]['table'], $refRec['ref_table'])) {
+		if ((int)$itemArray[$refRec['sorting']]['id'] === (int)$refRec['ref_uid'] && (string)$itemArray[$refRec['sorting']]['table'] === (string)$refRec['ref_table']) {
 			// Setting or removing value:
 			// Remove value:
 			if ($newValue === NULL) {
@@ -703,7 +772,7 @@ class ReferenceIndex {
 			}
 			// Set in data array:
 			if ($flexpointer) {
-				$flexToolObj = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Configuration\\FlexForm\\FlexFormTools');
+				$flexToolObj = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Configuration\\FlexForm\\FlexFormTools');
 				$dataArray[$refRec['tablename']][$refRec['recuid']][$refRec['field']]['data'] = array();
 				$flexToolObj->setArrayValueByPath(substr($flexpointer, 0, -1), $dataArray[$refRec['tablename']][$refRec['recuid']][$refRec['field']]['data'], implode(',', $saveValue));
 			} else {
@@ -726,7 +795,8 @@ class ReferenceIndex {
 	 * @todo Define visibility
 	 */
 	public function setReferenceValue_fileRels($refRec, $itemArray, $newValue, &$dataArray, $flexpointer = '') {
-		if (!strcmp(substr($itemArray[$refRec['sorting']]['ID_absFile'], strlen(PATH_site)), $refRec['ref_string']) && !strcmp('_FILE', $refRec['ref_table'])) {
+		$ID_absFile = \TYPO3\CMS\Core\Utility\PathUtility::stripPathSitePrefix($itemArray[$refRec['sorting']]['ID_absFile']);
+		if ($ID_absFile === (string)$refRec['ref_string'] && $refRec['ref_table'] === '_FILE') {
 			// Setting or removing value:
 			// Remove value:
 			if ($newValue === NULL) {
@@ -741,7 +811,7 @@ class ReferenceIndex {
 			}
 			// Set in data array:
 			if ($flexpointer) {
-				$flexToolObj = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Configuration\\FlexForm\\FlexFormTools');
+				$flexToolObj = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Configuration\\FlexForm\\FlexFormTools');
 				$dataArray[$refRec['tablename']][$refRec['recuid']][$refRec['field']]['data'] = array();
 				$flexToolObj->setArrayValueByPath(substr($flexpointer, 0, -1), $dataArray[$refRec['tablename']][$refRec['recuid']][$refRec['field']]['data'], implode(',', $saveValue));
 			} else {
@@ -776,7 +846,7 @@ class ReferenceIndex {
 			// Set in data array:
 			if (!strstr($softref['tokenizedContent'], '{softref:')) {
 				if ($flexpointer) {
-					$flexToolObj = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Configuration\\FlexForm\\FlexFormTools');
+					$flexToolObj = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Configuration\\FlexForm\\FlexFormTools');
 					$dataArray[$refRec['tablename']][$refRec['recuid']][$refRec['field']]['data'] = array();
 					$flexToolObj->setArrayValueByPath(substr($flexpointer, 0, -1), $dataArray[$refRec['tablename']][$refRec['recuid']][$refRec['field']]['data'], $softref['tokenizedContent']);
 				} else {
@@ -803,7 +873,13 @@ class ReferenceIndex {
 	 * @todo Define visibility
 	 */
 	public function isReferenceField($conf) {
-		return $conf['type'] == 'group' && $conf['internal_type'] == 'db' || ($conf['type'] == 'select' || $conf['type'] == 'inline') && $conf['foreign_table'] && $conf['foreign_table'] !== 'sys_file_reference';
+		return (
+			($conf['type'] == 'group' && $conf['internal_type'] == 'db')
+			|| (
+				($conf['type'] == 'select' || $conf['type'] == 'inline')
+				&& $conf['foreign_table']
+			)
+		);
 	}
 
 	/**
@@ -837,7 +913,6 @@ class ReferenceIndex {
 	 * @param boolean $testOnly If set, only a test
 	 * @param boolean $cli_echo If set, output CLI status
 	 * @return array Header and body status content
-	 * @todo Define visibility
 	 */
 	public function updateIndex($testOnly, $cli_echo = FALSE) {
 		$errors = array();
@@ -851,17 +926,22 @@ class ReferenceIndex {
 		// Traverse all tables:
 		foreach ($GLOBALS['TCA'] as $tableName => $cfg) {
 			// Traverse all records in tables, including deleted records:
-			$allRecs = $GLOBALS['TYPO3_DB']->exec_SELECTgetRows('uid', $tableName, '1=1');
+			$fieldNames = (BackendUtility::isTableWorkspaceEnabled($tableName) ? 'uid,t3ver_wsid' : 'uid');
+			$allRecs = $GLOBALS['TYPO3_DB']->exec_SELECTgetRows($fieldNames, $tableName, '1=1');
 			if (!is_array($allRecs)) {
 				// Table exists in $TCA but does not exist in the database
-				\TYPO3\CMS\Core\Utility\GeneralUtility::sysLog(sprintf('Table "%s" exists in $TCA but does not exist in the database. You should run the Database Analyzer in the Install Tool to fix this.', $tableName), 'core', \TYPO3\CMS\Core\Utility\GeneralUtility::SYSLOG_SEVERITY_ERROR);
+				GeneralUtility::sysLog(sprintf('Table "%s" exists in $TCA but does not exist in the database. You should run the Database Analyzer in the Install Tool to fix this.', $tableName), 'core', GeneralUtility::SYSLOG_SEVERITY_ERROR);
 				continue;
 			}
 			$tableNames[] = $tableName;
 			$tableCount++;
 			$uidList = array(0);
 			foreach ($allRecs as $recdat) {
-				$refIndexObj = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Database\\ReferenceIndex');
+				/** @var $refIndexObj ReferenceIndex */
+				$refIndexObj = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Database\\ReferenceIndex');
+				if (isset($recdat['t3ver_wsid'])) {
+					$refIndexObj->setWorkspaceId($recdat['t3ver_wsid']);
+				}
 				$result = $refIndexObj->updateRefIndexTable($tableName, $recdat['uid'], $testOnly);
 				$uidList[] = $recdat['uid'];
 				$recCount++;
@@ -906,13 +986,17 @@ class ReferenceIndex {
 			echo $testedHowMuch . (count($errors) ? 'Updates: ' . count($errors) : 'Index Integrity was perfect!') . LF;
 		}
 		if (!$testOnly) {
-			$registry = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Registry');
+			$registry = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Registry');
 			$registry->set('core', 'sys_refindex_lastUpdate', $GLOBALS['EXEC_TIME']);
 		}
 		return array($headerContent, $bodyContent, count($errors));
 	}
 
+	/**
+	 * @return RelationHandler
+	 */
+	protected function getRelationHandler() {
+		return GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Database\\RelationHandler');
+	}
+
 }
-
-
-?>

@@ -1,32 +1,18 @@
 <?php
 namespace TYPO3\CMS\Frontend\ContentObject;
 
-/***************************************************************
- *  Copyright notice
+/**
+ * This file is part of the TYPO3 CMS project.
  *
- *  (c) 2010-2013 Xavier Perseguers <typo3@perseguers.ch>
- *  (c) 2010-2013 Steffen Kamper <steffen@typo3.org>
- *  All rights reserved
+ * It is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License, either version 2
+ * of the License, or any later version.
  *
- *  This script is part of the TYPO3 project. The TYPO3 project is
- *  free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
+ * For the full copyright and license information, please read the
+ * LICENSE.txt file that was distributed with this source code.
  *
- *  The GNU General Public License can be found at
- *  http://www.gnu.org/copyleft/gpl.html.
- *  A copy is found in the textfile GPL.txt and important notices to the license
- *  from the author is found in LICENSE.txt distributed with these scripts.
- *
- *
- *  This script is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  This copyright notice MUST APPEAR in all copies of the script!
- ***************************************************************/
+ * The TYPO3 project - inspiring people to share!
+ */
 /**
  * Contains MEDIA class object.
  *
@@ -45,7 +31,7 @@ class MediaContentObject extends \TYPO3\CMS\Frontend\ContentObject\AbstractConte
 		$content = '';
 		// Add flex parameters to configuration
 		$flexParams = isset($conf['flexParams.']) ? $this->cObj->stdWrap($conf['flexParams'], $conf['flexParams.']) : $conf['flexParams'];
-		if (substr($flexParams, 0, 1) === '<') {
+		if ($flexParams[0] === '<') {
 			// It is a content element rather a TS object
 			$flexParams = \TYPO3\CMS\Core\Utility\GeneralUtility::xml2array($flexParams, 'T3');
 			foreach ($flexParams['data'] as $sheetData) {
@@ -123,11 +109,11 @@ class MediaContentObject extends \TYPO3\CMS\Frontend\ContentObject\AbstractConte
 			}
 		}
 		$mime = $renderType . 'object';
-		$typeConf = $conf['mimeConf.'][$mime . '.'][$conf['type'] . '.'] ? $conf['mimeConf.'][$mime . '.'][$conf['type'] . '.'] : array();
+		$typeConf = $conf['mimeConf.'][$mime . '.'][$conf['type'] . '.'] ?: array();
 		$conf['predefined'] = array();
 		// Width and height
-		$conf['width'] = intval($this->doFlexFormOverlay($conf, 'width'));
-		$conf['height'] = intval($this->doFlexFormOverlay($conf, 'height'));
+		$conf['width'] = (int)$this->doFlexFormOverlay($conf, 'width');
+		$conf['height'] = (int)$this->doFlexFormOverlay($conf, 'height');
 		if (is_array($conf['parameter.']['mmMediaOptions'])) {
 			foreach ($conf['parameter.']['mmMediaOptions'] as $key => $value) {
 				if ($key == 'mmMediaCustomParameterContainer') {
@@ -138,20 +124,20 @@ class MediaContentObject extends \TYPO3\CMS\Frontend\ContentObject\AbstractConte
 						$tmp = \TYPO3\CMS\Core\Utility\GeneralUtility::trimExplode(LF, $rawTS);
 						if (count($tmp)) {
 							foreach ($tmp as $tsLine) {
-								if (substr($tsLine, 0, 1) != '#' && ($pos = strpos($tsLine, '.'))) {
+								if ($tsLine[0] !== '#' && ($pos = strpos($tsLine, '.'))) {
 									$parts[0] = substr($tsLine, 0, $pos);
 									$parts[1] = substr($tsLine, $pos + 1);
 									$valueParts = \TYPO3\CMS\Core\Utility\GeneralUtility::trimExplode('=', $parts[1], TRUE);
 									switch (strtolower($parts[0])) {
-									case 'flashvars':
-										$conf['flashvars.'][$valueParts[0]] = $valueParts[1];
-										break;
-									case 'params':
-										$conf['params.'][$valueParts[0]] = $valueParts[1];
-										break;
-									case 'attributes':
-										$conf['attributes.'][$valueParts[0]] = $valueParts[1];
-										break;
+										case 'flashvars':
+											$conf['flashvars.'][$valueParts[0]] = $valueParts[1];
+											break;
+										case 'params':
+											$conf['params.'][$valueParts[0]] = $valueParts[1];
+											break;
+										case 'attributes':
+											$conf['attributes.'][$valueParts[0]] = $valueParts[1];
+											break;
 									}
 								}
 							}
@@ -195,51 +181,51 @@ class MediaContentObject extends \TYPO3\CMS\Frontend\ContentObject\AbstractConte
 			}
 		}
 		switch ($renderType) {
-		case 'flowplayer':
-			$conf[$conf['type'] . '.'] = array_merge((array) $conf['mimeConf.']['flowplayer.'][($conf['type'] . '.')], $typeConf);
-			$conf = array_merge((array) $conf['mimeConf.']['flowplayer.'], $conf);
-			unset($conf['mimeConf.']);
-			$conf['attributes.'] = array_merge((array) $conf['attributes.'], $conf['predefined']);
-			$conf['params.'] = array_merge((array) $conf['params.'], $conf['predefined']);
-			$conf['flashvars.'] = array_merge((array) $conf['flashvars.'], $conf['predefined']);
-			$content = $this->cObj->FLOWPLAYER($conf);
-			break;
-		case 'swf':
-			$conf[$conf['type'] . '.'] = array_merge((array) $conf['mimeConf.']['swfobject.'][($conf['type'] . '.')], $typeConf);
-			$conf = array_merge((array) $conf['mimeConf.']['swfobject.'], $conf);
-			unset($conf['mimeConf.']);
-			$conf['flashvars.'] = array_merge((array) $conf['flashvars.'], $conf['predefined']);
-			$content = $this->cObj->SWFOBJECT($conf);
-			break;
-		case 'qt':
-			$conf[$conf['type'] . '.'] = array_merge($conf['mimeConf.']['swfobject.'][$conf['type'] . '.'], $typeConf);
-			$conf = array_merge($conf['mimeConf.']['qtobject.'], $conf);
-			unset($conf['mimeConf.']);
-			$conf['params.'] = array_merge((array) $conf['params.'], $conf['predefined']);
-			$content = $this->cObj->QTOBJECT($conf);
-			break;
-		case 'embed':
-			$paramsArray = array_merge((array) $typeConf['default.']['params.'], (array) $conf['params.'], $conf['predefined']);
-			$conf['params'] = '';
-			foreach ($paramsArray as $key => $value) {
-				$conf['params'] .= $key . '=' . $value . LF;
-			}
-			$content = $this->cObj->MULTIMEDIA($conf);
-			break;
-		default:
-			if (is_array($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['tslib/hooks/class.tx_cms_mediaitems.php']['customMediaRender'])) {
-				foreach ($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['tslib/hooks/class.tx_cms_mediaitems.php']['customMediaRender'] as $classRef) {
-					$hookObj = \TYPO3\CMS\Core\Utility\GeneralUtility::getUserObj($classRef);
-					$conf['file'] = $videoFallback;
-					$conf['mode'] = is_file(PATH_site . $videoFallback) ? 'file' : 'url';
-					if (method_exists($hookObj, 'customMediaRender')) {
-						$content = $hookObj->customMediaRender($renderType, $conf, $this);
+			case 'flowplayer':
+				$conf[$conf['type'] . '.'] = array_merge((array) $conf['mimeConf.']['flowplayer.'][($conf['type'] . '.')], $typeConf);
+				$conf = array_merge((array) $conf['mimeConf.']['flowplayer.'], $conf);
+				unset($conf['mimeConf.']);
+				$conf['attributes.'] = array_merge((array) $conf['attributes.'], $conf['predefined']);
+				$conf['params.'] = array_merge((array) $conf['params.'], $conf['predefined']);
+				$conf['flashvars.'] = array_merge((array) $conf['flashvars.'], $conf['predefined']);
+				$content = $this->cObj->FLOWPLAYER($conf);
+				break;
+			case 'swf':
+				$conf[$conf['type'] . '.'] = array_merge((array) $conf['mimeConf.']['swfobject.'][($conf['type'] . '.')], $typeConf);
+				$conf = array_merge((array) $conf['mimeConf.']['swfobject.'], $conf);
+				unset($conf['mimeConf.']);
+				$conf['flashvars.'] = array_merge((array) $conf['flashvars.'], $conf['predefined']);
+				$content = $this->cObj->SWFOBJECT($conf);
+				break;
+			case 'qt':
+				$conf[$conf['type'] . '.'] = array_merge($conf['mimeConf.']['swfobject.'][$conf['type'] . '.'], $typeConf);
+				$conf = array_merge($conf['mimeConf.']['qtobject.'], $conf);
+				unset($conf['mimeConf.']);
+				$conf['params.'] = array_merge((array) $conf['params.'], $conf['predefined']);
+				$content = $this->cObj->QTOBJECT($conf);
+				break;
+			case 'embed':
+				$paramsArray = array_merge((array) $typeConf['default.']['params.'], (array) $conf['params.'], $conf['predefined']);
+				$conf['params'] = '';
+				foreach ($paramsArray as $key => $value) {
+					$conf['params'] .= $key . '=' . $value . LF;
+				}
+				$content = $this->cObj->MULTIMEDIA($conf);
+				break;
+			default:
+				if (is_array($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['tslib/hooks/class.tx_cms_mediaitems.php']['customMediaRender'])) {
+					foreach ($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['tslib/hooks/class.tx_cms_mediaitems.php']['customMediaRender'] as $classRef) {
+						$hookObj = \TYPO3\CMS\Core\Utility\GeneralUtility::getUserObj($classRef);
+						$conf['file'] = $videoFallback;
+						$conf['mode'] = is_file(PATH_site . $videoFallback) ? 'file' : 'url';
+						if (method_exists($hookObj, 'customMediaRender')) {
+							$content = $hookObj->customMediaRender($renderType, $conf, $this);
+						}
 					}
 				}
-			}
-			if (isset($conf['stdWrap.'])) {
-				$content = $this->cObj->stdWrap($content, $conf['stdWrap.']);
-			}
+				if (isset($conf['stdWrap.'])) {
+					$content = $this->cObj->stdWrap($content, $conf['stdWrap.']);
+				}
 		}
 		return $content;
 	}
@@ -259,10 +245,10 @@ class MediaContentObject extends \TYPO3\CMS\Frontend\ContentObject\AbstractConte
 		/** @var $mediaWizard \TYPO3\CMS\Frontend\MediaWizard\MediaWizardProviderInterface */
 		$mediaWizard = \TYPO3\CMS\Frontend\MediaWizard\MediaWizardProviderManager::getValidMediaWizardProvider($fileParts[0]);
 		// Get the path relative to the page currently outputted
-		if (substr($fileParts[0], 0, 5) === "file:") {
+		if (substr($fileParts[0], 0, 5) === 'file:') {
 			$fileUid = substr($fileParts[0], 5);
 
-			if (\TYPO3\CMS\Core\Utility\MathUtility::canBeInterpretedAsInteger($fileUid)) {
+			if (!empty($fileUid) && \TYPO3\CMS\Core\Utility\MathUtility::canBeInterpretedAsInteger($fileUid)) {
 				$fileObject = \TYPO3\CMS\Core\Resource\ResourceFactory::getInstance()->getFileObject($fileUid);
 
 				if ($fileObject instanceof \TYPO3\CMS\Core\Resource\FileInterface) {
@@ -307,6 +293,3 @@ class MediaContentObject extends \TYPO3\CMS\Frontend\ContentObject\AbstractConte
 	}
 
 }
-
-
-?>

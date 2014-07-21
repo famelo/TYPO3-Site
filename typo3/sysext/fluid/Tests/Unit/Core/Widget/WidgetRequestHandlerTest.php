@@ -20,10 +20,11 @@ namespace TYPO3\CMS\Fluid\Tests\Unit\Core\Widget;
  *                                                                        *
  * The TYPO3 project - inspiring people to share!                         *
  *                                                                        */
+
 /**
- * Testcase for WidgetRequestHandler
+ * Test case
  */
-class WidgetRequestHandlerTest extends \TYPO3\CMS\Extbase\Tests\Unit\BaseTestCase {
+class WidgetRequestHandlerTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 
 	/**
 	 * @var \TYPO3\CMS\Fluid\Core\Widget\WidgetRequestHandler
@@ -31,20 +32,10 @@ class WidgetRequestHandlerTest extends \TYPO3\CMS\Extbase\Tests\Unit\BaseTestCas
 	protected $widgetRequestHandler;
 
 	/**
-	 * @var array
-	 */
-	protected $getBackup;
-
-	/**
-
+	 * Set up
 	 */
 	public function setUp() {
-		$this->getBackup = $_GET;
 		$this->widgetRequestHandler = $this->getAccessibleMock('TYPO3\\CMS\\Fluid\\Core\\Widget\\WidgetRequestHandler', array('dummy'), array(), '', FALSE);
-	}
-
-	public function tearDown() {
-		$_GET = $this->getBackup;
 	}
 
 	/**
@@ -71,5 +62,3 @@ class WidgetRequestHandlerTest extends \TYPO3\CMS\Extbase\Tests\Unit\BaseTestCas
 		$this->assertTrue($this->widgetRequestHandler->getPriority() > $defaultWebRequestHandler->getPriority());
 	}
 }
-
-?>

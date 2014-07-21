@@ -1,25 +1,15 @@
-/***************************************************************
-*  Copyright notice
-*
-*  (c) 2009-2010 Julian Kleinhans <typo3@kj187.de>
-*  All rights reserved
-*
-*  This script is part of the TYPO3 project. The TYPO3 project is
-*  free software; you can redistribute it and/or modify
-*  it under the terms of the GNU General Public License as published by
-*  the Free Software Foundation; either version 2 of the License, or
-*  (at your option) any later version.
-*
-*  The GNU General Public License can be found at
-*  http://www.gnu.org/copyleft/gpl.html.
-*
-*  This script is distributed in the hope that it will be useful,
-*  but WITHOUT ANY WARRANTY; without even the implied warranty of
-*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-*  GNU General Public License for more details.
-*
-*  This copyright notice MUST APPEAR in all copies of the script!
-***************************************************************/
+/**
+ * This file is part of the TYPO3 CMS project.
+ *
+ * It is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License, either version 2
+ * of the License, or any later version.
+ *
+ * For the full copyright and license information, please read the
+ * LICENSE.txt file that was distributed with this source code.
+ *
+ * The TYPO3 project - inspiring people to share!
+ */
 
 /**
  * ExtJS for the 'recycler' extension.
@@ -73,7 +63,7 @@ Recycler.MainStore = new Ext.data.Store({
 		direction: "ASC"
 	},
 	groupField: 'table',
-	url: TYPO3.settings.Recycler.ajaxController + '&cmd=getDeletedRecords',
+	url: TYPO3.settings.ajaxUrls['RecyclerAjaxController::init'] + '&cmd=getDeletedRecords',
 	baseParams: {
 		depth: TYPO3.settings.Recycler.depthSelection,
 		startUid: TYPO3.settings.Recycler.startUid,
@@ -87,12 +77,13 @@ Recycler.MainStore = new Ext.data.Store({
  * Simple table store
  ****************************************************/
 Recycler.TableStore = new Ext.data.Store({
-	url: TYPO3.settings.Recycler.ajaxController + '&startUid=' + TYPO3.settings.Recycler.startUid + '&cmd=getTables' + '&depth=' + TYPO3.settings.Recycler.depthSelection,
+	url: TYPO3.settings.ajaxUrls['RecyclerAjaxController::init'] + '&startUid=' + TYPO3.settings.Recycler.startUid + '&cmd=getTables' + '&depth=' + TYPO3.settings.Recycler.depthSelection,
 	reader: new Ext.data.ArrayReader({}, [
 		{name: 'table', type: 'string'},
 		{name: 'records', type: 'int'},
 		{name: 'valueField', type: 'string'},
-		{name: 'tableTitle', type: 'string'}
+		{name: 'tableTitle', type: 'string'},
+		{name: 'tstamp', type: 'int'}
 	]),
 	listeners: {
 		'load': {
@@ -164,7 +155,7 @@ Recycler.ConfirmWindow = Ext.extend(Ext.Window, {
 							tcemainData[i] = [this.records[i].data.table, this.records[i].data.uid];
 						}
 						Ext.Ajax.request({
-							url: TYPO3.settings.Recycler.ajaxController + '&cmd=' + this.command,
+							url: TYPO3.settings.ajaxUrls['RecyclerAjaxController::init'] + '&cmd=' + this.command,
 							params: {
 								'data': Ext.encode(tcemainData),
 								'recursive': this.getComponent('recursiveCheck').getValue()
@@ -347,8 +338,9 @@ Recycler.GridContainer = Ext.extend(Ext.grid.GridPanel, {
 				Recycler.Expander,
 				{header: "UID", width: 10, sortable: true, dataIndex: 'uid'},
 				{header: "PID", width: 10, sortable: true, dataIndex: 'pid'},
-				{id: 'record', header: TYPO3.l10n.localize('records'), width: 60, sortable: true, dataIndex: 'record', renderer: Recycler.Utility.renderTopic},
-				{id: 'table', header: TYPO3.l10n.localize('table'), width: 20, sortable: true, dataIndex: 'tableTitle'}
+				{id: 'record', header: TYPO3.l10n.localize('records'), width: 50, sortable: true, dataIndex: 'record', renderer: Recycler.Utility.renderTopic},
+				{id: 'table', header: TYPO3.l10n.localize('table'), width: 15, sortable: true, dataIndex: 'tableTitle'},
+				{id: 'tstamp', header: TYPO3.l10n.localize('tstamp'), width: 15, sortable: true, dataIndex: 'tstamp'}
 			]),
 			viewConfig: {
 				forceFit: true

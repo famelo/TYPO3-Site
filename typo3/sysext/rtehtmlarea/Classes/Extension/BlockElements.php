@@ -1,28 +1,18 @@
 <?php
 namespace TYPO3\CMS\Rtehtmlarea\Extension;
 
-/***************************************************************
- *  Copyright notice
+/**
+ * This file is part of the TYPO3 CMS project.
  *
- *  (c) 2007-2013 Stanislas Rolland <typo3(arobas)sjbr.ca>
- *  All rights reserved
+ * It is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License, either version 2
+ * of the License, or any later version.
  *
- *  This script is part of the Typo3 project. The Typo3 project is
- *  free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
+ * For the full copyright and license information, please read the
+ * LICENSE.txt file that was distributed with this source code.
  *
- *  The GNU General Public License can be found at
- *  http://www.gnu.org/copyleft/gpl.html.
- *
- *  This script is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  This copyright notice MUST APPEAR in all copies of the script!
- ***************************************************************/
+ * The TYPO3 project - inspiring people to share!
+ */
 /**
  * BlockElements extension for htmlArea RTE
  *
@@ -36,7 +26,7 @@ class BlockElements extends \TYPO3\CMS\Rtehtmlarea\RteHtmlAreaApi {
 	protected $pluginName = 'BlockElements';
 
 	// The name of the plugin registered by the extension
-	protected $relativePathToLocallangFile = 'extensions/BlockElements/locallang.xml';
+	protected $relativePathToLocallangFile = 'extensions/BlockElements/locallang.xlf';
 
 	// Path to this main locallang file of the extension relative to the extension dir.
 	protected $relativePathToSkin = 'extensions/BlockElements/skin/htmlarea.css';
@@ -123,16 +113,16 @@ class BlockElements extends \TYPO3\CMS\Rtehtmlarea\RteHtmlAreaApi {
 					if ($this->htmlAreaRTE->cleanList($this->thisConfig['buttons.']['formatblock.']['removeItems']) == '*') {
 						$hideItems = array_diff(array_keys($defaultBlockElements), array('none'));
 					} else {
-						$hideItems = \TYPO3\CMS\Core\Utility\GeneralUtility::trimExplode(',', $this->htmlAreaRTE->cleanList(\TYPO3\CMS\Core\Utility\GeneralUtility::strtolower($this->thisConfig['buttons.']['formatblock.']['removeItems'])), 1);
+						$hideItems = \TYPO3\CMS\Core\Utility\GeneralUtility::trimExplode(',', $this->htmlAreaRTE->cleanList(\TYPO3\CMS\Core\Utility\GeneralUtility::strtolower($this->thisConfig['buttons.']['formatblock.']['removeItems'])), TRUE);
 					}
 				}
 				// Adding elements
 				if ($this->thisConfig['buttons.']['formatblock.']['addItems']) {
-					$addItems = \TYPO3\CMS\Core\Utility\GeneralUtility::trimExplode(',', $this->htmlAreaRTE->cleanList(\TYPO3\CMS\Core\Utility\GeneralUtility::strtolower($this->thisConfig['buttons.']['formatblock.']['addItems'])), 1);
+					$addItems = \TYPO3\CMS\Core\Utility\GeneralUtility::trimExplode(',', $this->htmlAreaRTE->cleanList(\TYPO3\CMS\Core\Utility\GeneralUtility::strtolower($this->thisConfig['buttons.']['formatblock.']['addItems'])), TRUE);
 				}
 				// Restriction clause
 				if ($this->thisConfig['buttons.']['formatblock.']['restrictToItems']) {
-					$restrictTo = \TYPO3\CMS\Core\Utility\GeneralUtility::trimExplode(',', $this->htmlAreaRTE->cleanList('none,' . \TYPO3\CMS\Core\Utility\GeneralUtility::strtolower($this->thisConfig['buttons.']['formatblock.']['restrictToItems'])), 1);
+					$restrictTo = \TYPO3\CMS\Core\Utility\GeneralUtility::trimExplode(',', $this->htmlAreaRTE->cleanList('none,' . \TYPO3\CMS\Core\Utility\GeneralUtility::strtolower($this->thisConfig['buttons.']['formatblock.']['restrictToItems'])), TRUE);
 				}
 				// Elements order
 				if ($this->thisConfig['buttons.']['formatblock.']['orderItems']) {
@@ -142,7 +132,7 @@ class BlockElements extends \TYPO3\CMS\Rtehtmlarea\RteHtmlAreaApi {
 				$postfixLabelWithTag = $this->thisConfig['buttons.']['formatblock.']['postfixLabelWithTag'] ? TRUE : $postfixLabelWithTag;
 			}
 			// Adding custom items
-			$blockElementsOrder = array_merge(\TYPO3\CMS\Core\Utility\GeneralUtility::trimExplode(',', $this->htmlAreaRTE->cleanList($blockElementsOrder), 1), $addItems);
+			$blockElementsOrder = array_merge(\TYPO3\CMS\Core\Utility\GeneralUtility::trimExplode(',', $this->htmlAreaRTE->cleanList($blockElementsOrder), TRUE), $addItems);
 			// Add div element if indent is configured in the toolbar
 			if (in_array('indent', $this->toolbar) || in_array('outdent', $this->toolbar)) {
 				$blockElementsOrder = array_merge($blockElementsOrder, array('div'));
@@ -196,6 +186,3 @@ class BlockElements extends \TYPO3\CMS\Rtehtmlarea\RteHtmlAreaApi {
 	}
 
 }
-
-
-?>

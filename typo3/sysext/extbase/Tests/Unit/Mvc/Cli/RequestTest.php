@@ -20,13 +20,14 @@ namespace TYPO3\CMS\Extbase\Tests\Unit\Mvc\Cli;
  *                                                                        *
  * The TYPO3 project - inspiring people to share!                         *
  *                                                                        */
+
 /**
- * Testcase for the CLI Request class
+ * Test case
  */
-class RequestTest extends \TYPO3\CMS\Extbase\Tests\Unit\BaseTestCase {
+class RequestTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 
 	/**
-	 * @var \TYPO3\CMS\Extbase\Mvc\Cli\Request
+	 * @var \TYPO3\CMS\Extbase\Mvc\Cli\Request|\PHPUnit_Framework_MockObject_MockObject|\TYPO3\CMS\Core\Tests\AccessibleObjectInterface
 	 */
 	protected $request;
 
@@ -39,9 +40,9 @@ class RequestTest extends \TYPO3\CMS\Extbase\Tests\Unit\BaseTestCase {
 	 * Sets up this test case
 	 */
 	public function setUp() {
-		$this->request = new \TYPO3\CMS\Extbase\Mvc\Cli\Request();
+		$this->request = $this->getAccessibleMock('TYPO3\CMS\Extbase\Mvc\Cli\Request', array('dummy'));
 		$this->mockObjectManager = $this->getMock('TYPO3\\CMS\\Extbase\\Object\\ObjectManagerInterface');
-		$this->request->injectObjectManager($this->mockObjectManager);
+		$this->request->_set('objectManager', $this->mockObjectManager);
 	}
 
 	/**
@@ -89,5 +90,3 @@ class RequestTest extends \TYPO3\CMS\Extbase\Tests\Unit\BaseTestCase {
 		$this->assertSame('Extbase', $mockCliRequest->getControllerExtensionName());
 	}
 }
-
-?>

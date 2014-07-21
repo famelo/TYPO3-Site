@@ -12,9 +12,9 @@ namespace TYPO3\CMS\Fluid\Tests\Unit\ViewHelpers\Format;
  *                                                                        */
 
 /**
- * Test for \TYPO3\CMS\Fluid\ViewHelpers\Format\HtmlentitiesDecodeViewHelper
+ * Test case
  */
-class HtmlentitiesDecodeViewHelperTest extends \TYPO3\CMS\Extbase\Tests\Unit\BaseTestCase {
+class HtmlentitiesDecodeViewHelperTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 
 	/**
 	 * @var \TYPO3\CMS\Fluid\ViewHelpers\Format\HtmlentitiesDecodeViewHelper
@@ -98,5 +98,3 @@ class HtmlentitiesDecodeViewHelperTest extends \TYPO3\CMS\Extbase\Tests\Unit\Bas
 		$this->assertSame($source, $actualResult);
 	}
 }
-
-?>

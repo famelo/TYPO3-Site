@@ -1,29 +1,18 @@
 <?php
 namespace TYPO3\CMS\Extensionmanager\Utility\Parser;
 
-/***************************************************************
- *  Copyright notice
+/**
+ * This file is part of the TYPO3 CMS project.
  *
- *  (c) 2010-2013 Marcus Krause <marcus#exp2010@t3sec.info>
- *		   Steffen Kamper <info@sk-typo3.de>
- *  All rights reserved
+ * It is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License, either version 2
+ * of the License, or any later version.
  *
- *  This script is part of the TYPO3 project. The TYPO3 project is
- *  free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
+ * For the full copyright and license information, please read the
+ * LICENSE.txt file that was distributed with this source code.
  *
- *  The GNU General Public License can be found at
- *  http://www.gnu.org/copyleft/gpl.html.
- *
- *  This script is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  This copyright notice MUST APPEAR in all copies of the script!
- ***************************************************************/
+ * The TYPO3 project - inspiring people to share!
+ */
 /**
  * Module: Extension manager - Extension.xml push-parser
  */
@@ -41,7 +30,7 @@ namespace TYPO3\CMS\Extensionmanager\Utility\Parser;
  * @author Steffen Kamper <info@sk-typo3.de>
  * @since 2010-02-10
  */
-class ExtensionXmlPushParser extends \TYPO3\CMS\Extensionmanager\Utility\Parser\AbstractExtensionXmlParser implements \SplSubject {
+class ExtensionXmlPushParser extends AbstractExtensionXmlParser {
 
 	/**
 	 * Keeps current element to process.
@@ -49,13 +38,6 @@ class ExtensionXmlPushParser extends \TYPO3\CMS\Extensionmanager\Utility\Parser\
 	 * @var string
 	 */
 	protected $element = NULL;
-
-	/**
-	 * Keeps list of attached observers.
-	 *
-	 * @var SplObserver[]
-	 */
-	protected $observers = array();
 
 	/**
 	 * Class constructor.
@@ -113,14 +95,14 @@ class ExtensionXmlPushParser extends \TYPO3\CMS\Extensionmanager\Utility\Parser\
 	 */
 	protected function startElement($parser, $elementName, $attrs) {
 		switch ($elementName) {
-		case 'extension':
-			$this->extensionKey = $attrs['extensionkey'];
-			break;
-		case 'version':
-			$this->version = $attrs['version'];
-			break;
-		default:
-			$this->element = $elementName;
+			case 'extension':
+				$this->extensionKey = $attrs['extensionkey'];
+				break;
+			case 'version':
+				$this->version = $attrs['version'];
+				break;
+			default:
+				$this->element = $elementName;
 		}
 	}
 
@@ -133,115 +115,77 @@ class ExtensionXmlPushParser extends \TYPO3\CMS\Extensionmanager\Utility\Parser\
 	 */
 	protected function endElement($parser, $elementName) {
 		switch ($elementName) {
-		case 'extension':
-			$this->resetProperties(TRUE);
-			break;
-		case 'version':
-			$this->notify();
-			$this->resetProperties();
-			break;
-		default:
-			$this->element = NULL;
+			case 'extension':
+				$this->resetProperties(TRUE);
+				break;
+			case 'version':
+				$this->notify();
+				$this->resetProperties();
+				break;
+			default:
+				$this->element = NULL;
 		}
 	}
 
 	/**
 	 * Method is invoked when parser accesses any character other than elements.
 	 *
-	 * @param resource  $parser: parser resource
-	 * @param string	 $data: an element's value
+	 * @param resource $parser parser resource
+	 * @param string $data: an element's value
 	 * @return void
 	 */
 	protected function characterData($parser, $data) {
 		if (isset($this->element)) {
 			switch ($this->element) {
-			case 'downloadcounter':
-				// downloadcounter could be a child node of
-				// extension or version
-				if ($this->version == NULL) {
-					$this->extensionDownloadCounter = $data;
-				} else {
-					$this->versionDownloadCounter = $data;
-				}
-				break;
-			case 'title':
-				$this->title = $data;
-				break;
-			case 'description':
-				$this->description = $data;
-				break;
-			case 'state':
-				$this->state = $data;
-				break;
-			case 'reviewstate':
-				$this->reviewstate = $data;
-				break;
-			case 'category':
-				$this->category = $data;
-				break;
-			case 'lastuploaddate':
-				$this->lastuploaddate = $data;
-				break;
-			case 'uploadcomment':
-				$this->uploadcomment = $data;
-				break;
-			case 'dependencies':
-				$this->dependencies = $this->convertDependencies($data);
-				break;
-			case 'authorname':
-				$this->authorname = $data;
-				break;
-			case 'authoremail':
-				$this->authoremail = $data;
-				break;
-			case 'authorcompany':
-				$this->authorcompany = $data;
-				break;
-			case 'ownerusername':
-				$this->ownerusername = $data;
-				break;
-			case 't3xfilemd5':
-				$this->t3xfilemd5 = $data;
-				break;
+				case 'downloadcounter':
+					// downloadcounter could be a child node of
+					// extension or version
+					if ($this->version == NULL) {
+						$this->extensionDownloadCounter = $data;
+					} else {
+						$this->versionDownloadCounter = $data;
+					}
+					break;
+				case 'title':
+					$this->title = $data;
+					break;
+				case 'description':
+					$this->description = $data;
+					break;
+				case 'state':
+					$this->state = $data;
+					break;
+				case 'reviewstate':
+					$this->reviewstate = $data;
+					break;
+				case 'category':
+					$this->category = $data;
+					break;
+				case 'lastuploaddate':
+					$this->lastuploaddate = $data;
+					break;
+				case 'uploadcomment':
+					$this->uploadcomment = $data;
+					break;
+				case 'dependencies':
+					$this->dependencies = $this->convertDependencies($data);
+					break;
+				case 'authorname':
+					$this->authorname = $data;
+					break;
+				case 'authoremail':
+					$this->authoremail = $data;
+					break;
+				case 'authorcompany':
+					$this->authorcompany = $data;
+					break;
+				case 'ownerusername':
+					$this->ownerusername = $data;
+					break;
+				case 't3xfilemd5':
+					$this->t3xfilemd5 = $data;
+					break;
 			}
 		}
 	}
-
-	/**
-	 * Method attaches an observer.
-	 *
-	 * @param SplObserver  $observer: an observer to attach
-	 * @return void
-	 */
-	public function attach(\SplObserver $observer) {
-		$this->observers[] = $observer;
-	}
-
-	/**
-	 * Method detaches an attached observer
-	 *
-	 * @param SplObserver  $observer: an observer to detach
-	 * @return void
-	 */
-	public function detach(\SplObserver $observer) {
-		$key = array_search($observer, $this->observers, TRUE);
-		if (!($key === FALSE)) {
-			unset($this->observers[$key]);
-		}
-	}
-
-	/**
-	 * Method notifies attached observers.
-	 *
-	 * @return void
-	 */
-	public function notify() {
-		foreach ($this->observers as $observer) {
-			$observer->update($this);
-		}
-	}
-
 }
-
-
-?>

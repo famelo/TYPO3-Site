@@ -1,32 +1,18 @@
 <?php
 namespace TYPO3\CMS\Extbase\Command;
 
-/***************************************************************
- *  Copyright notice
+/**
+ * This file is part of the TYPO3 CMS project.
  *
- *  (c) 2010-2013 Extbase Team (http://forge.typo3.org/projects/typo3v4-mvc)
- *  Extbase is a backport of TYPO3 Flow. All credits go to the TYPO3 Flow team.
- *  All rights reserved
+ * It is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License, either version 2
+ * of the License, or any later version.
  *
- *  This script is part of the TYPO3 project. The TYPO3 project is
- *  free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
+ * For the full copyright and license information, please read the
+ * LICENSE.txt file that was distributed with this source code.
  *
- *  The GNU General Public License can be found at
- *  http://www.gnu.org/copyleft/gpl.html.
- *  A copy is found in the textfile GPL.txt and important notices to the license
- *  from the author is found in LICENSE.txt distributed with these scripts.
- *
- *
- *  This script is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  This copyright notice MUST APPEAR in all copies of the script!
- ***************************************************************/
+ * The TYPO3 project - inspiring people to share!
+ */
 /**
  * A Command Controller which provides help for available commands
  *
@@ -36,6 +22,7 @@ class HelpCommandController extends \TYPO3\CMS\Extbase\Mvc\Controller\CommandCon
 
 	/**
 	 * @var \TYPO3\CMS\Extbase\Mvc\Cli\CommandManager
+	 * @inject
 	 */
 	protected $commandManager;
 
@@ -43,14 +30,6 @@ class HelpCommandController extends \TYPO3\CMS\Extbase\Mvc\Controller\CommandCon
 	 * @var array
 	 */
 	protected $commandsByExtensionsAndControllers = array();
-
-	/**
-	 * @param \TYPO3\CMS\Extbase\Mvc\Cli\CommandManager $commandManager
-	 * @return void
-	 */
-	public function injectCommandManager(\TYPO3\CMS\Extbase\Mvc\Cli\CommandManager $commandManager) {
-		$this->commandManager = $commandManager;
-	}
 
 	/**
 	 * Displays a short, general help message
@@ -63,9 +42,9 @@ class HelpCommandController extends \TYPO3\CMS\Extbase\Mvc\Controller\CommandCon
 	 */
 	public function helpStubCommand() {
 		$this->outputLine('Extbase %s', array(\TYPO3\CMS\Core\Utility\ExtensionManagementUtility::getExtensionVersion('extbase')));
-		$this->outputLine('usage: ./cli_dispatch.phpsh extbase <command identifier>');
+		$this->outputLine('usage: ' . $this->request->getCallingScript() . ' <command identifier>');
 		$this->outputLine();
-		$this->outputLine('See \'./cli_dispatch.phpsh extbase help\' for a list of all available commands.');
+		$this->outputLine('See \'' . $this->request->getCallingScript() . ' help\' for a list of all available commands.');
 		$this->outputLine();
 	}
 
@@ -98,7 +77,7 @@ class HelpCommandController extends \TYPO3\CMS\Extbase\Mvc\Controller\CommandCon
 	protected function displayHelpIndex() {
 		$this->buildCommandsIndex();
 		$this->outputLine('Extbase %s', array(\TYPO3\CMS\Core\Utility\ExtensionManagementUtility::getExtensionVersion('extbase')));
-		$this->outputLine('usage: ./cli_dispatch.phpsh extbase <command identifier>');
+		$this->outputLine('usage: ' . $this->request->getCallingScript() . ' <command identifier>');
 		$this->outputLine();
 		$this->outputLine('The following commands are currently available:');
 		foreach ($this->commandsByExtensionsAndControllers as $extensionKey => $commandControllers) {
@@ -114,7 +93,7 @@ class HelpCommandController extends \TYPO3\CMS\Extbase\Mvc\Controller\CommandCon
 				$this->outputLine();
 			}
 		}
-		$this->outputLine('See \'./cli_dispatch.phpsh extbase help <command identifier>\' for more information about a specific command.');
+		$this->outputLine('See \'' . $this->request->getCallingScript() . ' help <command identifier>\' for more information about a specific command.');
 		$this->outputLine();
 	}
 
@@ -140,7 +119,7 @@ class HelpCommandController extends \TYPO3\CMS\Extbase\Mvc\Controller\CommandCon
 				$usage .= sprintf(' <%s>', strtolower(preg_replace('/([A-Z])/', ' $1', $commandArgumentDefinition->getName())));
 			}
 		}
-		$usage = './cli_dispatch.phpsh extbase ' . $this->commandManager->getShortestIdentifierForCommand($command) . ($hasOptions ? ' [<options>]' : '') . $usage;
+		$usage = $this->request->getCallingScript() . ' ' . $this->commandManager->getShortestIdentifierForCommand($command) . ($hasOptions ? ' [<options>]' : '') . $usage;
 		$this->outputLine();
 		$this->outputLine('USAGE:');
 		$this->outputLine('  ' . $usage);
@@ -207,8 +186,8 @@ class HelpCommandController extends \TYPO3\CMS\Extbase\Mvc\Controller\CommandCon
 			}
 		}
 		$this->outputLine('');
-		$this->outputLine('Enter "./cli_dispatch.phpsh extbase help" for an overview of all available commands');
-		$this->outputLine('or "./cli_dispatch.phpsh extbase help <command identifier>" for a detailed description of the corresponding command.');
+		$this->outputLine('Enter "' . $this->request->getCallingScript() . ' help" for an overview of all available commands');
+		$this->outputLine('or "' . $this->request->getCallingScript() . ' help <command identifier>" for a detailed description of the corresponding command.');
 	}
 
 	/**
@@ -231,5 +210,3 @@ class HelpCommandController extends \TYPO3\CMS\Extbase\Mvc\Controller\CommandCon
 		}
 	}
 }
-
-?>

@@ -1,31 +1,18 @@
 <?php
 namespace TYPO3\CMS\Core\Resource;
 
-/***************************************************************
- *  Copyright notice
+/**
+ * This file is part of the TYPO3 CMS project.
  *
- *  (c) 2011-2013 Ingmar Schlecht <ingmar@typo3.org>
- *  All rights reserved
+ * It is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License, either version 2
+ * of the License, or any later version.
  *
- *  This script is part of the TYPO3 project. The TYPO3 project is
- *  free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
+ * For the full copyright and license information, please read the
+ * LICENSE.txt file that was distributed with this source code.
  *
- *  The GNU General Public License can be found at
- *  http://www.gnu.org/copyleft/gpl.html.
- *  A copy is found in the textfile GPL.txt and important notices to the license
- *  from the author is found in LICENSE.txt distributed with these scripts.
- *
- *
- *  This script is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  This copyright notice MUST APPEAR in all copies of the script!
- ***************************************************************/
+ * The TYPO3 project - inspiring people to share!
+ */
 /**
  * Representation of a specific usage of a file with possibilities to override certain
  * properties of the original file just for this usage of the file.
@@ -67,14 +54,6 @@ class FileReference implements FileInterface {
 	protected $name;
 
 	/**
-	 * The FileRepository object. Is needed e.g. for the delete() method to delete the usage record
-	 * (sys_file_reference record) of this file usage.
-	 *
-	 * @var FileRepository
-	 */
-	protected $fileRepository;
-
-	/**
 	 * Reference to the original File object underlying this FileReference.
 	 *
 	 * @var File
@@ -107,10 +86,9 @@ class FileReference implements FileInterface {
 		}
 		if (!$factory) {
 			/** @var $factory ResourceFactory */
-			$factory = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Resource\\ResourceFactory');
+			$factory = ResourceFactory::getInstance();
 		}
 		$this->originalFile = $factory->getFileObject($fileReferenceData['uid_local']);
-		$this->fileRepository = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Resource\\FileRepository');
 		if (!is_object($this->originalFile)) {
 			throw new \RuntimeException('Original File not found for FileReference.', 1300098529);
 		}
@@ -166,10 +144,11 @@ class FileReference implements FileInterface {
 	 */
 	public function getProperties() {
 		if (empty($this->mergedProperties)) {
-			$this->mergedProperties = \TYPO3\CMS\Core\Utility\GeneralUtility::array_merge_recursive_overrule(
-				$this->propertiesOfFileReference,
+			$this->mergedProperties = $this->propertiesOfFileReference;
+			\TYPO3\CMS\Core\Utility\ArrayUtility::mergeRecursiveWithOverrule(
+				$this->mergedProperties,
 				$this->originalFile->getProperties(),
-				FALSE,
+				TRUE,
 				TRUE,
 				FALSE
 			);
@@ -259,7 +238,7 @@ class FileReference implements FileInterface {
 	 * @return integer
 	 */
 	public function getUid() {
-		return (int) $this->propertiesOfFileReference['uid'];
+		return (int)$this->propertiesOfFileReference['uid'];
 	}
 
 	/**
@@ -268,7 +247,7 @@ class FileReference implements FileInterface {
 	 * @return integer
 	 */
 	public function getSize() {
-		return (int) $this->originalFile->getSize();
+		return (int)$this->originalFile->getSize();
 	}
 
 	/**
@@ -313,7 +292,7 @@ class FileReference implements FileInterface {
 	 * @return integer
 	 */
 	public function getModificationTime() {
-		return (int) $this->originalFile->getModificationTime();
+		return (int)$this->originalFile->getModificationTime();
 	}
 
 	/**
@@ -322,7 +301,7 @@ class FileReference implements FileInterface {
 	 * @return integer
 	 */
 	public function getCreationTime() {
-		return (int) $this->originalFile->getCreationTime();
+		return (int)$this->originalFile->getCreationTime();
 	}
 
 	/**
@@ -331,7 +310,16 @@ class FileReference implements FileInterface {
 	 * @return integer $fileType
 	 */
 	public function getType() {
-		return (int) $this->originalFile->getType();
+		return (int)$this->originalFile->getType();
+	}
+
+	/**
+	 * Check if file is marked as missing by indexer
+	 *
+	 * @return boolean
+	 */
+	public function isMissing() {
+		return (bool) $this->originalFile->getProperty('missing');
 	}
 
 	/******************
@@ -397,7 +385,7 @@ class FileReference implements FileInterface {
 		// TODO: Implement this function. This should only delete the
 		// FileReference (sys_file_reference) record, not the file itself.
 		throw new \BadMethodCallException('Function not implemented FileReference::delete().', 1333754461);
-		return $this->fileRepository->removeUsageRecord($this);
+		//return $this->fileRepository->removeUsageRecord($this);
 	}
 
 	/**
@@ -412,7 +400,7 @@ class FileReference implements FileInterface {
 		// TODO: Implement this function. This should only rename the
 		// FileReference (sys_file_reference) record, not the file itself.
 		throw new \BadMethodCallException('Function not implemented FileReference::rename().', 1333754473);
-		return $this->fileRepository->renameUsageRecord($this, $newName);
+		//return $this->fileRepository->renameUsageRecord($this, $newName);
 	}
 
 	/*****************
@@ -475,7 +463,21 @@ class FileReference implements FileInterface {
 		return $this->originalFile;
 	}
 
+	/**
+	 * Get hashed identifier
+	 *
+	 * @return string
+	 */
+	public function getHashedIdentifier() {
+		return $this->getStorage()->hashFileIdentifier($this->getIdentifier());
+	}
+
+	/**
+	 * Returns the parent folder.
+	 *
+	 * @return FolderInterface
+	 */
+	public function getParentFolder() {
+		return $this->originalFile->getParentFolder();
+	}
 }
-
-
-?>

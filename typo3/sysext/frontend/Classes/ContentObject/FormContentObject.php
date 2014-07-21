@@ -1,32 +1,21 @@
 <?php
 namespace TYPO3\CMS\Frontend\ContentObject;
 
-/***************************************************************
- *  Copyright notice
+/**
+ * This file is part of the TYPO3 CMS project.
  *
- *  (c) 2010-2013 Xavier Perseguers <typo3@perseguers.ch>
- *  (c) 2010-2013 Steffen Kamper <steffen@typo3.org>
- *  All rights reserved
+ * It is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License, either version 2
+ * of the License, or any later version.
  *
- *  This script is part of the TYPO3 project. The TYPO3 project is
- *  free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
+ * For the full copyright and license information, please read the
+ * LICENSE.txt file that was distributed with this source code.
  *
- *  The GNU General Public License can be found at
- *  http://www.gnu.org/copyleft/gpl.html.
- *  A copy is found in the textfile GPL.txt and important notices to the license
- *  from the author is found in LICENSE.txt distributed with these scripts.
- *
- *
- *  This script is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  This copyright notice MUST APPEAR in all copies of the script!
- ***************************************************************/
+ * The TYPO3 project - inspiring people to share!
+ */
+
+use TYPO3\CMS\Core\Utility\GeneralUtility;
+
 /**
  * Contains FORM class object.
  *
@@ -89,7 +78,7 @@ class FormContentObject extends \TYPO3\CMS\Frontend\ContentObject\AbstractConten
 						if (is_array($singleKeyArray['valueArray.'])) {
 							$temp_accumulated = array();
 							foreach ($singleKeyArray['valueArray.'] as $singleKey => $singleKey_valueArray) {
-								if (is_array($singleKey_valueArray) && !strcmp((intval($singleKey) . '.'), $singleKey)) {
+								if (is_array($singleKey_valueArray) && (int)$singleKey . '.' === (string) $singleKey) {
 									$temp_valueArray = array();
 									$valueArrayLabel = isset($singleKey_valueArray['label.']) ? $this->cObj->stdWrap($singleKey_valueArray['label'], $singleKey_valueArray['label.']) : $singleKey_valueArray['label'];
 									list($temp_valueArray[0]) = explode('=', $valueArrayLabel);
@@ -118,7 +107,7 @@ class FormContentObject extends \TYPO3\CMS\Frontend\ContentObject\AbstractConten
 		$propertyOverride = array();
 		$fieldname_hashArray = array();
 		$counter = 0;
-		$xhtmlStrict = \TYPO3\CMS\Core\Utility\GeneralUtility::inList('xhtml_strict,xhtml_11,xhtml_2', $GLOBALS['TSFE']->xhtmlDoctype);
+		$xhtmlStrict = GeneralUtility::inList('xhtml_strict,xhtml_11,xhtml_2', $GLOBALS['TSFE']->xhtmlDoctype);
 		// Formname
 		$formName = isset($conf['formName.']) ? $this->cObj->stdWrap($conf['formName'], $conf['formName.']) : $conf['formName'];
 		$formName = $this->cObj->cleanFormName($formName);
@@ -147,11 +136,11 @@ class FormContentObject extends \TYPO3\CMS\Frontend\ContentObject\AbstractConten
 			}
 			if ($dataValue && strcspn($dataValue, '#/')) {
 				// label:
-				$confData['label'] = \TYPO3\CMS\Core\Utility\GeneralUtility::removeXSS(trim($parts[0]));
+				$confData['label'] = GeneralUtility::removeXSS(trim($parts[0]));
 				// field:
 				$fParts = explode(',', $parts[1]);
 				$fParts[0] = trim($fParts[0]);
-				if (substr($fParts[0], 0, 1) == '*') {
+				if ($fParts[0][0] === '*') {
 					$confData['required'] = 1;
 					$fParts[0] = substr($fParts[0], 1);
 				}
@@ -170,7 +159,7 @@ class FormContentObject extends \TYPO3\CMS\Frontend\ContentObject\AbstractConten
 					// Attachment names...
 					if ($confData['type'] == 'file') {
 						$confData['fieldname'] = 'attachment' . $attachmentCounter;
-						$attachmentCounter = intval($attachmentCounter) + 1;
+						$attachmentCounter = (int)$attachmentCounter + 1;
 					}
 				} else {
 					$confData['fieldname'] = str_replace(' ', '_', trim($typeParts[0]));
@@ -190,7 +179,7 @@ class FormContentObject extends \TYPO3\CMS\Frontend\ContentObject\AbstractConten
 					} else {
 						$addParams = isset($conf['params.']) ? trim($this->cObj->stdWrap($conf['params'], $conf['params.'])) : trim($conf['params']);
 					}
-					if (strcmp('', $addParams)) {
+					if ((string)$addParams !== '') {
 						$addParams = ' ' . $addParams;
 					}
 				} else {
@@ -211,255 +200,253 @@ class FormContentObject extends \TYPO3\CMS\Frontend\ContentObject\AbstractConten
 				}
 				// Create form field based on configuration/type:
 				switch ($confData['type']) {
-				case 'textarea':
-					$cols = trim($fParts[1]) ? intval($fParts[1]) : 20;
-					$compensateFieldWidth = isset($conf['compensateFieldWidth.']) ? $this->cObj->stdWrap($conf['compensateFieldWidth'], $conf['compensateFieldWidth.']) : $conf['compensateFieldWidth'];
-					$compWidth = doubleval($compensateFieldWidth ? $compensateFieldWidth : $GLOBALS['TSFE']->compensateFieldWidth);
-					$compWidth = $compWidth ? $compWidth : 1;
-					$cols = \TYPO3\CMS\Core\Utility\MathUtility::forceIntegerInRange($cols * $compWidth, 1, 120);
-					$rows = trim($fParts[2]) ? \TYPO3\CMS\Core\Utility\MathUtility::forceIntegerInRange($fParts[2], 1, 30) : 5;
-					$wrap = trim($fParts[3]);
-					$noWrapAttr = isset($conf['noWrapAttr.']) ? $this->cObj->stdWrap($conf['noWrapAttr'], $conf['noWrapAttr.']) : $conf['noWrapAttr'];
-					if ($noWrapAttr || $wrap === 'disabled') {
-						$wrap = '';
-					} else {
-						$wrap = $wrap ? ' wrap="' . $wrap . '"' : ' wrap="virtual"';
-					}
-					$noValueInsert = isset($conf['noValueInsert.']) ? $this->cObj->stdWrap($conf['noValueInsert'], $conf['noValueInsert.']) : $conf['noValueInsert'];
-					$default = $this->cObj->getFieldDefaultValue($noValueInsert, $confData['fieldname'], str_replace('\\n', LF, trim($parts[2])));
-					$fieldCode = sprintf('<textarea name="%s"%s cols="%s" rows="%s"%s%s>%s</textarea>', $confData['fieldname'], $elementIdAttribute, $cols, $rows, $wrap, $addParams, \TYPO3\CMS\Core\Utility\GeneralUtility::formatForTextarea($default));
-					break;
-				case 'input':
-
-				case 'password':
-					$size = trim($fParts[1]) ? intval($fParts[1]) : 20;
-					$compensateFieldWidth = isset($conf['compensateFieldWidth.']) ? $this->cObj->stdWrap($conf['compensateFieldWidth'], $conf['compensateFieldWidth.']) : $conf['compensateFieldWidth'];
-					$compWidth = doubleval($compensateFieldWidth ? $compensateFieldWidth : $GLOBALS['TSFE']->compensateFieldWidth);
-					$compWidth = $compWidth ? $compWidth : 1;
-					$size = \TYPO3\CMS\Core\Utility\MathUtility::forceIntegerInRange($size * $compWidth, 1, 120);
-					$noValueInsert = isset($conf['noValueInsert.']) ? $this->cObj->stdWrap($conf['noValueInsert'], $conf['noValueInsert.']) : $conf['noValueInsert'];
-					$default = $this->cObj->getFieldDefaultValue($noValueInsert, $confData['fieldname'], trim($parts[2]));
-					if ($confData['type'] == 'password') {
-						$default = '';
-					}
-					$max = trim($fParts[2]) ? ' maxlength="' . \TYPO3\CMS\Core\Utility\MathUtility::forceIntegerInRange($fParts[2], 1, 1000) . '"' : '';
-					$theType = $confData['type'] == 'input' ? 'text' : 'password';
-					$fieldCode = sprintf('<input type="%s" name="%s"%s size="%s"%s value="%s"%s />', $theType, $confData['fieldname'], $elementIdAttribute, $size, $max, htmlspecialchars($default), $addParams);
-					break;
-				case 'file':
-					$size = trim($fParts[1]) ? \TYPO3\CMS\Core\Utility\MathUtility::forceIntegerInRange($fParts[1], 1, 60) : 20;
-					$fieldCode = sprintf('<input type="file" name="%s"%s size="%s"%s />', $confData['fieldname'], $elementIdAttribute, $size, $addParams);
-					break;
-				case 'check':
-					// alternative default value:
-					$noValueInsert = isset($conf['noValueInsert.']) ? $this->cObj->stdWrap($conf['noValueInsert'], $conf['noValueInsert.']) : $conf['noValueInsert'];
-					$default = $this->cObj->getFieldDefaultValue($noValueInsert, $confData['fieldname'], trim($parts[2]));
-					$checked = $default ? ' checked="checked"' : '';
-					$fieldCode = sprintf('<input type="checkbox" value="%s" name="%s"%s%s%s />', 1, $confData['fieldname'], $elementIdAttribute, $checked, $addParams);
-					break;
-				case 'select':
-					$option = '';
-					$valueParts = explode(',', $parts[2]);
-					// size
-					if (strtolower(trim($fParts[1])) == 'auto') {
-						$fParts[1] = count($valueParts);
-					}
-					// Auto size set here. Max 20
-					$size = trim($fParts[1]) ? \TYPO3\CMS\Core\Utility\MathUtility::forceIntegerInRange($fParts[1], 1, 20) : 1;
-					// multiple
-					$multiple = strtolower(trim($fParts[2])) == 'm' ? ' multiple="multiple"' : '';
-					// Where the items will be
-					$items = array();
-					//RTF
-					$defaults = array();
-					$pCount = count($valueParts);
-					for ($a = 0; $a < $pCount; $a++) {
-						$valueParts[$a] = trim($valueParts[$a]);
-						// Finding default value
-						if (substr($valueParts[$a], 0, 1) == '*') {
-							$sel = 'selected';
-							$valueParts[$a] = substr($valueParts[$a], 1);
+					case 'textarea':
+						$cols = trim($fParts[1]) ? (int)$fParts[1] : 20;
+						$compensateFieldWidth = isset($conf['compensateFieldWidth.']) ? $this->cObj->stdWrap($conf['compensateFieldWidth'], $conf['compensateFieldWidth.']) : $conf['compensateFieldWidth'];
+						$compWidth = doubleval($compensateFieldWidth ? $compensateFieldWidth : $GLOBALS['TSFE']->compensateFieldWidth);
+						$compWidth = $compWidth ? $compWidth : 1;
+						$cols = \TYPO3\CMS\Core\Utility\MathUtility::forceIntegerInRange($cols * $compWidth, 1, 120);
+						$rows = trim($fParts[2]) ? \TYPO3\CMS\Core\Utility\MathUtility::forceIntegerInRange($fParts[2], 1, 30) : 5;
+						$wrap = trim($fParts[3]);
+						$noWrapAttr = isset($conf['noWrapAttr.']) ? $this->cObj->stdWrap($conf['noWrapAttr'], $conf['noWrapAttr.']) : $conf['noWrapAttr'];
+						if ($noWrapAttr || $wrap === 'disabled') {
+							$wrap = '';
 						} else {
-							$sel = '';
+							$wrap = $wrap ? ' wrap="' . $wrap . '"' : ' wrap="virtual"';
 						}
-						// Get value/label
-						$subParts = explode('=', $valueParts[$a]);
-						// Sets the value
-						$subParts[1] = isset($subParts[1]) ? trim($subParts[1]) : trim($subParts[0]);
-						// Adds the value/label pair to the items-array
-						$items[] = $subParts;
-						if ($sel) {
-							$defaults[] = $subParts[1];
-						}
-					}
-					// alternative default value:
-					$noValueInsert = isset($conf['noValueInsert.']) ? $this->cObj->stdWrap($conf['noValueInsert'], $conf['noValueInsert.']) : $conf['noValueInsert'];
-					$default = $this->cObj->getFieldDefaultValue($noValueInsert, $confData['fieldname'], $defaults);
-					if (!is_array($default)) {
-						$defaults = array();
-						$defaults[] = $default;
-					} else {
-						$defaults = $default;
-					}
-					// Create the select-box:
-					$iCount = count($items);
-					for ($a = 0; $a < $iCount; $a++) {
-						$option .= '<option value="' . $items[$a][1] . '"' . (in_array($items[$a][1], $defaults) ? ' selected="selected"' : '') . '>' . trim($items[$a][0]) . '</option>';
-					}
-					if ($multiple) {
-						// The fieldname must be prepended '[]' if multiple select. And the reason why it's prepended is, because the required-field list later must also have [] prepended.
-						$confData['fieldname'] .= '[]';
-					}
-					$fieldCode = sprintf('<select name="%s"%s size="%s"%s%s>%s</select>', $confData['fieldname'], $elementIdAttribute, $size, $multiple, $addParams, $option);
-					//RTF
-					break;
-				case 'radio':
-					$option = '';
-					$valueParts = explode(',', $parts[2]);
-					// Where the items will be
-					$items = array();
-					$default = '';
-					$pCount = count($valueParts);
-					for ($a = 0; $a < $pCount; $a++) {
-						$valueParts[$a] = trim($valueParts[$a]);
-						if (substr($valueParts[$a], 0, 1) == '*') {
-							$sel = 'checked';
-							$valueParts[$a] = substr($valueParts[$a], 1);
-						} else {
-							$sel = '';
-						}
-						// Get value/label
-						$subParts = explode('=', $valueParts[$a]);
-						// Sets the value
-						$subParts[1] = isset($subParts[1]) ? trim($subParts[1]) : trim($subParts[0]);
-						// Adds the value/label pair to the items-array
-						$items[] = $subParts;
-						if ($sel) {
-							$default = $subParts[1];
-						}
-					}
-					// alternative default value:
-					$noValueInsert = isset($conf['noValueInsert.']) ? $this->cObj->stdWrap($conf['noValueInsert'], $conf['noValueInsert.']) : $conf['noValueInsert'];
-					$default = $this->cObj->getFieldDefaultValue($noValueInsert, $confData['fieldname'], $default);
-					// Create the select-box:
-					$iCount = count($items);
-					for ($a = 0; $a < $iCount; $a++) {
-						$optionParts = '';
-						$radioId = $prefix . $fName . $this->cObj->cleanFormName($items[$a][0]);
-						if ($accessibility) {
-							$radioLabelIdAttribute = ' id="' . $radioId . '"';
-						} else {
-							$radioLabelIdAttribute = '';
-						}
-						$optionParts .= '<input type="radio" name="' . $confData['fieldname'] . '"' . $radioLabelIdAttribute . ' value="' . $items[$a][1] . '"' . (!strcmp($items[$a][1], $default) ? ' checked="checked"' : '') . $addParams . ' />';
-						if ($accessibility) {
-							$label = isset($conf['radioWrap.']) ? $this->cObj->stdWrap(trim($items[$a][0]), $conf['radioWrap.']) : trim($items[$a][0]);
-							$optionParts .= '<label for="' . $radioId . '">' . $label . '</label>';
-						} else {
-							$optionParts .= isset($conf['radioWrap.']) ? $this->cObj->stdWrap(trim($items[$a][0]), $conf['radioWrap.']) : trim($items[$a][0]);
-						}
-						$option .= isset($conf['radioInputWrap.']) ? $this->cObj->stdWrap($optionParts, $conf['radioInputWrap.']) : $optionParts;
-					}
-					if ($accessibility) {
-						$accessibilityWrap = isset($conf['radioWrap.']['accessibilityWrap.']) ? $this->cObj->stdWrap($conf['radioWrap.']['accessibilityWrap'], $conf['radioWrap.']['accessibilityWrap.']) : $conf['radioWrap.']['accessibilityWrap'];
-						if ($accessibilityWrap) {
-							$search = array(
-								'###RADIO_FIELD_ID###',
-								'###RADIO_GROUP_LABEL###'
-							);
-							$replace = array(
-								$elementIdAttribute,
-								$confData['label']
-							);
-							$accessibilityWrap = str_replace($search, $replace, $accessibilityWrap);
-							$option = $this->cObj->wrap($option, $accessibilityWrap);
-						}
-					}
-					$fieldCode = $option;
-					break;
-				case 'hidden':
-					$value = trim($parts[2]);
-					// If this form includes an auto responder message, include a HMAC checksum field
-					// in order to verify potential abuse of this feature.
-					if (strlen($value) && \TYPO3\CMS\Core\Utility\GeneralUtility::inList($confData['fieldname'], 'auto_respond_msg')) {
-						$hmacChecksum = \TYPO3\CMS\Core\Utility\GeneralUtility::hmac($value, 'content_form');
-						$hiddenfields .= sprintf('<input type="hidden" name="auto_respond_checksum" id="%sauto_respond_checksum" value="%s" />', $prefix, $hmacChecksum);
-					}
-					if (strlen($value) && \TYPO3\CMS\Core\Utility\GeneralUtility::inList('recipient_copy,recipient', $confData['fieldname']) && $GLOBALS['TYPO3_CONF_VARS']['FE']['secureFormmail']) {
+						$noValueInsert = isset($conf['noValueInsert.']) ? $this->cObj->stdWrap($conf['noValueInsert'], $conf['noValueInsert.']) : $conf['noValueInsert'];
+						$default = $this->cObj->getFieldDefaultValue($noValueInsert, $confData['fieldname'], str_replace('\\n', LF, trim($parts[2])));
+						$fieldCode = sprintf('<textarea name="%s"%s cols="%s" rows="%s"%s%s>%s</textarea>', $confData['fieldname'], $elementIdAttribute, $cols, $rows, $wrap, $addParams, GeneralUtility::formatForTextarea($default));
 						break;
-					}
-					if (strlen($value) && \TYPO3\CMS\Core\Utility\GeneralUtility::inList('recipient_copy,recipient', $confData['fieldname'])) {
-						$value = $GLOBALS['TSFE']->codeString($value);
-					}
-					$hiddenfields .= sprintf('<input type="hidden" name="%s"%s value="%s" />', $confData['fieldname'], $elementIdAttribute, htmlspecialchars($value));
-					break;
-				case 'property':
-					if (\TYPO3\CMS\Core\Utility\GeneralUtility::inList('type,locationData,goodMess,badMess,emailMess', $confData['fieldname'])) {
+					case 'input':
+
+					case 'password':
+						$size = trim($fParts[1]) ? (int)$fParts[1] : 20;
+						$compensateFieldWidth = isset($conf['compensateFieldWidth.']) ? $this->cObj->stdWrap($conf['compensateFieldWidth'], $conf['compensateFieldWidth.']) : $conf['compensateFieldWidth'];
+						$compWidth = doubleval($compensateFieldWidth ? $compensateFieldWidth : $GLOBALS['TSFE']->compensateFieldWidth);
+						$compWidth = $compWidth ? $compWidth : 1;
+						$size = \TYPO3\CMS\Core\Utility\MathUtility::forceIntegerInRange($size * $compWidth, 1, 120);
+						$noValueInsert = isset($conf['noValueInsert.']) ? $this->cObj->stdWrap($conf['noValueInsert'], $conf['noValueInsert.']) : $conf['noValueInsert'];
+						$default = $this->cObj->getFieldDefaultValue($noValueInsert, $confData['fieldname'], trim($parts[2]));
+						if ($confData['type'] == 'password') {
+							$default = '';
+						}
+						$max = trim($fParts[2]) ? ' maxlength="' . \TYPO3\CMS\Core\Utility\MathUtility::forceIntegerInRange($fParts[2], 1, 1000) . '"' : '';
+						$theType = $confData['type'] == 'input' ? 'text' : 'password';
+						$fieldCode = sprintf('<input type="%s" name="%s"%s size="%s"%s value="%s"%s />', $theType, $confData['fieldname'], $elementIdAttribute, $size, $max, htmlspecialchars($default), $addParams);
+						break;
+					case 'file':
+						$size = trim($fParts[1]) ? \TYPO3\CMS\Core\Utility\MathUtility::forceIntegerInRange($fParts[1], 1, 60) : 20;
+						$fieldCode = sprintf('<input type="file" name="%s"%s size="%s"%s />', $confData['fieldname'], $elementIdAttribute, $size, $addParams);
+						break;
+					case 'check':
+						// alternative default value:
+						$noValueInsert = isset($conf['noValueInsert.']) ? $this->cObj->stdWrap($conf['noValueInsert'], $conf['noValueInsert.']) : $conf['noValueInsert'];
+						$default = $this->cObj->getFieldDefaultValue($noValueInsert, $confData['fieldname'], trim($parts[2]));
+						$checked = $default ? ' checked="checked"' : '';
+						$fieldCode = sprintf('<input type="checkbox" value="%s" name="%s"%s%s%s />', 1, $confData['fieldname'], $elementIdAttribute, $checked, $addParams);
+						break;
+					case 'select':
+						$option = '';
+						$valueParts = explode(',', $parts[2]);
+						// size
+						if (strtolower(trim($fParts[1])) == 'auto') {
+							$fParts[1] = count($valueParts);
+						}
+						// Auto size set here. Max 20
+						$size = trim($fParts[1]) ? \TYPO3\CMS\Core\Utility\MathUtility::forceIntegerInRange($fParts[1], 1, 20) : 1;
+						// multiple
+						$multiple = strtolower(trim($fParts[2])) == 'm' ? ' multiple="multiple"' : '';
+						// Where the items will be
+						$items = array();
+						//RTF
+						$defaults = array();
+						$pCount = count($valueParts);
+						for ($a = 0; $a < $pCount; $a++) {
+							$valueParts[$a] = trim($valueParts[$a]);
+							// Finding default value
+							if ($valueParts[$a][0] === '*') {
+								$sel = 'selected';
+								$valueParts[$a] = substr($valueParts[$a], 1);
+							} else {
+								$sel = '';
+							}
+							// Get value/label
+							$subParts = explode('=', $valueParts[$a]);
+							// Sets the value
+							$subParts[1] = isset($subParts[1]) ? trim($subParts[1]) : trim($subParts[0]);
+							// Adds the value/label pair to the items-array
+							$items[] = $subParts;
+							if ($sel) {
+								$defaults[] = $subParts[1];
+							}
+						}
+						// alternative default value:
+						$noValueInsert = isset($conf['noValueInsert.']) ? $this->cObj->stdWrap($conf['noValueInsert'], $conf['noValueInsert.']) : $conf['noValueInsert'];
+						$default = $this->cObj->getFieldDefaultValue($noValueInsert, $confData['fieldname'], $defaults);
+						if (!is_array($default)) {
+							$defaults = array();
+							$defaults[] = $default;
+						} else {
+							$defaults = $default;
+						}
+						// Create the select-box:
+						$iCount = count($items);
+						for ($a = 0; $a < $iCount; $a++) {
+							$option .= '<option value="' . $items[$a][1] . '"' . (in_array($items[$a][1], $defaults) ? ' selected="selected"' : '') . '>' . trim($items[$a][0]) . '</option>';
+						}
+						if ($multiple) {
+							// The fieldname must be prepended '[]' if multiple select. And the reason why it's prepended is, because the required-field list later must also have [] prepended.
+							$confData['fieldname'] .= '[]';
+						}
+						$fieldCode = sprintf('<select name="%s"%s size="%s"%s%s>%s</select>', $confData['fieldname'], $elementIdAttribute, $size, $multiple, $addParams, $option);
+						//RTF
+						break;
+					case 'radio':
+						$option = '';
+						$valueParts = explode(',', $parts[2]);
+						// Where the items will be
+						$items = array();
+						$default = '';
+						$pCount = count($valueParts);
+						for ($a = 0; $a < $pCount; $a++) {
+							$valueParts[$a] = trim($valueParts[$a]);
+							if ($valueParts[$a][0] === '*') {
+								$sel = 'checked';
+								$valueParts[$a] = substr($valueParts[$a], 1);
+							} else {
+								$sel = '';
+							}
+							// Get value/label
+							$subParts = explode('=', $valueParts[$a]);
+							// Sets the value
+							$subParts[1] = isset($subParts[1]) ? trim($subParts[1]) : trim($subParts[0]);
+							// Adds the value/label pair to the items-array
+							$items[] = $subParts;
+							if ($sel) {
+								$default = $subParts[1];
+							}
+						}
+						// alternative default value:
+						$noValueInsert = isset($conf['noValueInsert.']) ? $this->cObj->stdWrap($conf['noValueInsert'], $conf['noValueInsert.']) : $conf['noValueInsert'];
+						$default = $this->cObj->getFieldDefaultValue($noValueInsert, $confData['fieldname'], $default);
+						// Create the select-box:
+						$iCount = count($items);
+						for ($a = 0; $a < $iCount; $a++) {
+							$optionParts = '';
+							$radioId = $prefix . $fName . $this->cObj->cleanFormName($items[$a][0]);
+							if ($accessibility) {
+								$radioLabelIdAttribute = ' id="' . $radioId . '"';
+							} else {
+								$radioLabelIdAttribute = '';
+							}
+							$optionParts .= '<input type="radio" name="' . $confData['fieldname'] . '"' . $radioLabelIdAttribute . ' value="' . $items[$a][1] . '"' . ((string)$items[$a][1] === (string)$default ? ' checked="checked"' : '') . $addParams . ' />';
+							if ($accessibility) {
+								$label = isset($conf['radioWrap.']) ? $this->cObj->stdWrap(trim($items[$a][0]), $conf['radioWrap.']) : trim($items[$a][0]);
+								$optionParts .= '<label for="' . $radioId . '">' . $label . '</label>';
+							} else {
+								$optionParts .= isset($conf['radioWrap.']) ? $this->cObj->stdWrap(trim($items[$a][0]), $conf['radioWrap.']) : trim($items[$a][0]);
+							}
+							$option .= isset($conf['radioInputWrap.']) ? $this->cObj->stdWrap($optionParts, $conf['radioInputWrap.']) : $optionParts;
+						}
+						if ($accessibility) {
+							$accessibilityWrap = isset($conf['radioWrap.']['accessibilityWrap.']) ? $this->cObj->stdWrap($conf['radioWrap.']['accessibilityWrap'], $conf['radioWrap.']['accessibilityWrap.']) : $conf['radioWrap.']['accessibilityWrap'];
+							if ($accessibilityWrap) {
+								$search = array(
+									'###RADIO_FIELD_ID###',
+									'###RADIO_GROUP_LABEL###'
+								);
+								$replace = array(
+									$elementIdAttribute,
+									$confData['label']
+								);
+								$accessibilityWrap = str_replace($search, $replace, $accessibilityWrap);
+								$option = $this->cObj->wrap($option, $accessibilityWrap);
+							}
+						}
+						$fieldCode = $option;
+						break;
+					case 'hidden':
 						$value = trim($parts[2]);
-						$propertyOverride[$confData['fieldname']] = $value;
-						$conf[$confData['fieldname']] = $value;
-					}
-					break;
-				case 'submit':
-					$value = trim($parts[2]);
-					if ($conf['image.']) {
-						$this->cObj->data[$this->cObj->currentValKey] = $value;
-						$image = $this->cObj->IMG_RESOURCE($conf['image.']);
-						$params = $conf['image.']['params'] ? ' ' . $conf['image.']['params'] : '';
-						$params .= $this->cObj->getAltParam($conf['image.'], FALSE);
-						$params .= $addParams;
-					} else {
-						$image = '';
-					}
-					if ($image) {
-						$fieldCode = sprintf('<input type="image" name="%s"%s src="%s"%s />', $confData['fieldname'], $elementIdAttribute, $image, $params);
-					} else {
-						$fieldCode = sprintf('<input type="submit" name="%s"%s value="%s"%s />', $confData['fieldname'], $elementIdAttribute, \TYPO3\CMS\Core\Utility\GeneralUtility::deHSCentities(htmlspecialchars($value)), $addParams);
-					}
-					break;
-				case 'reset':
-					$value = trim($parts[2]);
-					$fieldCode = sprintf('<input type="reset" name="%s"%s value="%s"%s />', $confData['fieldname'], $elementIdAttribute, \TYPO3\CMS\Core\Utility\GeneralUtility::deHSCentities(htmlspecialchars($value)), $addParams);
-					break;
-				case 'label':
-					$fieldCode = nl2br(htmlspecialchars(trim($parts[2])));
-					break;
-				default:
-					$confData['type'] = 'comment';
-					$fieldCode = trim($parts[2]) . '&nbsp;';
-					break;
+						// If this form includes an auto responder message, include a HMAC checksum field
+						// in order to verify potential abuse of this feature.
+						if (strlen($value) && GeneralUtility::inList($confData['fieldname'], 'auto_respond_msg')) {
+							$hmacChecksum = GeneralUtility::hmac($value, 'content_form');
+							$hiddenfields .= sprintf('<input type="hidden" name="auto_respond_checksum" id="%sauto_respond_checksum" value="%s" />', $prefix, $hmacChecksum);
+						}
+						if (strlen($value) && GeneralUtility::inList('recipient_copy,recipient', $confData['fieldname']) && $GLOBALS['TYPO3_CONF_VARS']['FE']['secureFormmail']) {
+							break;
+						}
+						if (strlen($value) && GeneralUtility::inList('recipient_copy,recipient', $confData['fieldname'])) {
+							$value = $GLOBALS['TSFE']->codeString($value);
+						}
+						$hiddenfields .= sprintf('<input type="hidden" name="%s"%s value="%s" />', $confData['fieldname'], $elementIdAttribute, htmlspecialchars($value));
+						break;
+					case 'property':
+						if (GeneralUtility::inList('type,locationData,goodMess,badMess,emailMess', $confData['fieldname'])) {
+							$value = trim($parts[2]);
+							$propertyOverride[$confData['fieldname']] = $value;
+							$conf[$confData['fieldname']] = $value;
+						}
+						break;
+					case 'submit':
+						$value = trim($parts[2]);
+						if ($conf['image.']) {
+							$this->cObj->data[$this->cObj->currentValKey] = $value;
+							$image = $this->cObj->IMG_RESOURCE($conf['image.']);
+							$params = $conf['image.']['params'] ? ' ' . $conf['image.']['params'] : '';
+							$params .= $this->cObj->getAltParam($conf['image.'], FALSE);
+							$params .= $addParams;
+						} else {
+							$image = '';
+						}
+						if ($image) {
+							$fieldCode = sprintf('<input type="image" name="%s"%s src="%s"%s />', $confData['fieldname'], $elementIdAttribute, $image, $params);
+						} else {
+							$fieldCode = sprintf('<input type="submit" name="%s"%s value="%s"%s />', $confData['fieldname'], $elementIdAttribute, htmlspecialchars($value, ENT_COMPAT, 'UTF-8', FALSE), $addParams);
+						}
+						break;
+					case 'reset':
+						$value = trim($parts[2]);
+						$fieldCode = sprintf('<input type="reset" name="%s"%s value="%s"%s />', $confData['fieldname'], $elementIdAttribute, htmlspecialchars($value, ENT_COMPAT, 'UTF-8', FALSE), $addParams);
+						break;
+					case 'label':
+						$fieldCode = nl2br(htmlspecialchars(trim($parts[2])));
+						break;
+					default:
+						$confData['type'] = 'comment';
+						$fieldCode = trim($parts[2]) . '&nbsp;';
 				}
 				if ($fieldCode) {
 					// Checking for special evaluation modes:
-					if (\TYPO3\CMS\Core\Utility\GeneralUtility::inList('textarea,input,password', $confData['type']) && strlen(trim($parts[3]))) {
-						$modeParameters = \TYPO3\CMS\Core\Utility\GeneralUtility::trimExplode(':', $parts[3]);
+					if (GeneralUtility::inList('textarea,input,password', $confData['type']) && strlen(trim($parts[3]))) {
+						$modeParameters = GeneralUtility::trimExplode(':', $parts[3]);
 					} else {
 						$modeParameters = array();
 					}
 					// Adding evaluation based on settings:
 					switch ((string) $modeParameters[0]) {
-					case 'EREG':
-						$fieldlist[] = '_EREG';
-						$fieldlist[] = $modeParameters[1];
-						$fieldlist[] = $modeParameters[2];
-						$fieldlist[] = $confData['fieldname'];
-						$fieldlist[] = $confData['label'];
-						// Setting this so "required" layout is used.
-						$confData['required'] = 1;
-						break;
-					case 'EMAIL':
-						$fieldlist[] = '_EMAIL';
-						$fieldlist[] = $confData['fieldname'];
-						$fieldlist[] = $confData['label'];
-						// Setting this so "required" layout is used.
-						$confData['required'] = 1;
-						break;
-					default:
-						if ($confData['required']) {
+						case 'EREG':
+							$fieldlist[] = '_EREG';
+							$fieldlist[] = $modeParameters[1];
+							$fieldlist[] = $modeParameters[2];
 							$fieldlist[] = $confData['fieldname'];
 							$fieldlist[] = $confData['label'];
-						}
-						break;
+							// Setting this so "required" layout is used.
+							$confData['required'] = 1;
+							break;
+						case 'EMAIL':
+							$fieldlist[] = '_EMAIL';
+							$fieldlist[] = $confData['fieldname'];
+							$fieldlist[] = $confData['label'];
+							// Setting this so "required" layout is used.
+							$confData['required'] = 1;
+							break;
+						default:
+							if ($confData['required']) {
+								$fieldlist[] = $confData['fieldname'];
+								$fieldlist[] = $confData['label'];
+							}
 					}
 					// Field:
 					$fieldLabel = $confData['label'];
@@ -510,11 +497,20 @@ class FormContentObject extends \TYPO3\CMS\Frontend\ContentObject\AbstractConten
 							$result = $labelLayout;
 						}
 					}
-					$result = str_replace('###FIELD###', $fieldCode, $result);
-					$result = str_replace('###LABEL###', $labelCode, $result);
-					$result = str_replace('###COMMENT###', $commentCode, $result);
 					//RTF
-					$content .= $result;
+					$content .= str_replace(
+						array(
+							'###FIELD###',
+							'###LABEL###',
+							'###COMMENT###'
+						),
+						array(
+							$fieldCode,
+							$labelCode,
+							$commentCode
+						),
+						$result
+					);
 				}
 			}
 		}
@@ -575,7 +571,7 @@ class FormContentObject extends \TYPO3\CMS\Frontend\ContentObject\AbstractConten
 		$location = isset($conf['locationData.']) ? $this->cObj->stdWrap($conf['locationData'], $conf['locationData.']) : $conf['locationData'];
 		if ($location) {
 			if ($location == 'HTTP_POST_VARS' && isset($_POST['locationData'])) {
-				$locationData = \TYPO3\CMS\Core\Utility\GeneralUtility::_POST('locationData');
+				$locationData = GeneralUtility::_POST('locationData');
 			} else {
 				// locationData is [the page id]:[tablename]:[uid of record]. Indicates on which page the record (from tablename with uid) is shown. Used to check access.
 				if (isset($this->data['_LOCALIZED_UID'])) {
@@ -591,7 +587,7 @@ class FormContentObject extends \TYPO3\CMS\Frontend\ContentObject\AbstractConten
 			foreach ($conf['hiddenFields.'] as $hF_key => $hF_conf) {
 				if (substr($hF_key, -1) != '.') {
 					$hF_value = $this->cObj->cObjGetSingle($hF_conf, $conf['hiddenFields.'][$hF_key . '.'], 'hiddenfields');
-					if (strlen($hF_value) && \TYPO3\CMS\Core\Utility\GeneralUtility::inList('recipient_copy,recipient', $hF_key)) {
+					if (strlen($hF_value) && GeneralUtility::inList('recipient_copy,recipient', $hF_key)) {
 						if ($GLOBALS['TYPO3_CONF_VARS']['FE']['secureFormmail']) {
 							continue;
 						}
@@ -601,14 +597,14 @@ class FormContentObject extends \TYPO3\CMS\Frontend\ContentObject\AbstractConten
 				}
 			}
 		}
-		// Wrap all hidden fields in a div tag (see http://bugs.typo3.org/view.php?id=678)
+		// Wrap all hidden fields in a div tag (see http://forge.typo3.org/issues/14491)
 		$hiddenfields = isset($conf['hiddenFields.']['stdWrap.']) ? $this->cObj->stdWrap($hiddenfields, $conf['hiddenFields.']['stdWrap.']) : '<div style="display:none;">' . $hiddenfields . '</div>';
 		if ($conf['REQ']) {
 			$goodMess = isset($conf['goodMess.']) ? $this->cObj->stdWrap($conf['goodMess'], $conf['goodMess.']) : $conf['goodMess'];
 			$badMess = isset($conf['badMess.']) ? $this->cObj->stdWrap($conf['badMess'], $conf['badMess.']) : $conf['badMess'];
 			$emailMess = isset($conf['emailMess.']) ? $this->cObj->stdWrap($conf['emailMess'], $conf['emailMess.']) : $conf['emailMess'];
-			$validateForm = ' onsubmit="return validateForm(' . \TYPO3\CMS\Core\Utility\GeneralUtility::quoteJSvalue($formName) . ',' . \TYPO3\CMS\Core\Utility\GeneralUtility::quoteJSvalue(implode(',', $fieldlist)) . ',' . \TYPO3\CMS\Core\Utility\GeneralUtility::quoteJSvalue($goodMess) . ',' . \TYPO3\CMS\Core\Utility\GeneralUtility::quoteJSvalue($badMess) . ',' . \TYPO3\CMS\Core\Utility\GeneralUtility::quoteJSvalue($emailMess) . ')"';
-			$GLOBALS['TSFE']->additionalHeaderData['JSFormValidate'] = '<script type="text/javascript" src="' . \TYPO3\CMS\Core\Utility\GeneralUtility::createVersionNumberedFilename(($GLOBALS['TSFE']->absRefPrefix . 't3lib/jsfunc.validateform.js')) . '"></script>';
+			$validateForm = ' onsubmit="return validateForm(' . GeneralUtility::quoteJSvalue($formName) . ',' . GeneralUtility::quoteJSvalue(implode(',', $fieldlist)) . ',' . GeneralUtility::quoteJSvalue($goodMess) . ',' . GeneralUtility::quoteJSvalue($badMess) . ',' . GeneralUtility::quoteJSvalue($emailMess) . ')"';
+			$GLOBALS['TSFE']->additionalHeaderData['JSFormValidate'] = '<script type="text/javascript" src="' . GeneralUtility::createVersionNumberedFilename(($GLOBALS['TSFE']->absRefPrefix . 'typo3/sysext/frontend/Resources/Public/JavaScript/jsfunc.validateform.js')) . '"></script>';
 		} else {
 			$validateForm = '';
 		}
@@ -631,6 +627,3 @@ class FormContentObject extends \TYPO3\CMS\Frontend\ContentObject\AbstractConten
 	}
 
 }
-
-
-?>

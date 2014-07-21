@@ -1,31 +1,18 @@
 <?php
 namespace TYPO3\CMS\Core\TimeTracker;
 
-/***************************************************************
- *  Copyright notice
+/**
+ * This file is part of the TYPO3 CMS project.
  *
- *  (c) 1999-2013 Kasper Skårhøj (kasperYYYY@typo3.com)
- *  All rights reserved
+ * It is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License, either version 2
+ * of the License, or any later version.
  *
- *  This script is part of the TYPO3 project. The TYPO3 project is
- *  free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
+ * For the full copyright and license information, please read the
+ * LICENSE.txt file that was distributed with this source code.
  *
- *  The GNU General Public License can be found at
- *  http://www.gnu.org/copyleft/gpl.html.
- *  A copy is found in the textfile GPL.txt and important notices to the license
- *  from the author is found in LICENSE.txt distributed with these scripts.
- *
- *
- *  This script is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  This copyright notice MUST APPEAR in all copies of the script!
- ***************************************************************/
+ * The TYPO3 project - inspiring people to share!
+ */
 
 /**
  * Frontend Timetracking functions
@@ -137,7 +124,7 @@ class TimeTracker {
 		$this->wrapIcon = array(
 			0 => '',
 			1 => '<img src="' . TYPO3_mainDir . 'gfx/icon_note.gif" width="18" height="16" align="absmiddle" alt="" />',
-			2 => '<img src="' . TYPO3_mainDir . 'gfx/icon_warning.gif" width="18" height="16" align="absmiddle" alt="" />',
+			2 => '<img src="' . TYPO3_mainDir . 'gfx/icon_warning2.gif" width="18" height="16" align="absmiddle" alt="" />',
 			3 => '<img src="' . TYPO3_mainDir . 'gfx/icon_fatalerror.gif" width="18" height="16" align="absmiddle" alt="" />'
 		);
 		$this->starttime = $this->getMilliseconds();
@@ -149,7 +136,7 @@ class TimeTracker {
 	 * @param string $tslabel Label string for the entry, eg. TypoScript property name
 	 * @param string $value Additional value(?)
 	 * @return void
-	 * @see tslib_cObj::cObjGetSingle(), pull()
+	 * @see \TYPO3\CMS\Frontend\ContentObject\ContentObjectRenderer::cObjGetSingle(), pull()
 	 */
 	public function push($tslabel, $value = '') {
 		array_push($this->tsStack[$this->tsStackPointer], $tslabel);
@@ -172,7 +159,7 @@ class TimeTracker {
 	 *
 	 * @param string $content The content string generated within the push/pull part.
 	 * @return void
-	 * @see tslib_cObj::cObjGetSingle(), push()
+	 * @see \TYPO3\CMS\Frontend\ContentObject\ContentObjectRenderer::cObjGetSingle(), push()
 	 */
 	public function pull($content = '') {
 		$k = end($this->currentHashPointer);
@@ -189,7 +176,7 @@ class TimeTracker {
 	 * @param string $content The message string
 	 * @param integer $num Message type: 0: information, 1: message, 2: warning, 3: error
 	 * @return void
-	 * @see tslib_cObj::CONTENT()
+	 * @see \TYPO3\CMS\Frontend\ContentObject\ContentObjectRenderer::CONTENT()
 	 */
 	public function setTSlogMessage($content, $num = 0) {
 		end($this->currentHashPointer);
@@ -221,7 +208,7 @@ class TimeTracker {
 	 * Increases the stack pointer
 	 *
 	 * @return void
-	 * @see decStackPointer(), TSpagegen::renderContent(), tslib_cObj::cObjGetSingle()
+	 * @see decStackPointer(), TSpagegen::renderContent(), \TYPO3\CMS\Frontend\ContentObject\ContentObjectRenderer::cObjGetSingle()
 	 */
 	public function incStackPointer() {
 		$this->tsStackPointer++;
@@ -232,7 +219,7 @@ class TimeTracker {
 	 * Decreases the stack pointer
 	 *
 	 * @return void
-	 * @see incStackPointer(), TSpagegen::renderContent(), tslib_cObj::cObjGetSingle()
+	 * @see incStackPointer(), TSpagegen::renderContent(), \TYPO3\CMS\Frontend\ContentObject\ContentObjectRenderer::cObjGetSingle()
 	 */
 	public function decStackPointer() {
 		unset($this->tsStack[$this->tsStackPointer]);
@@ -319,10 +306,10 @@ class TimeTracker {
 		$highlight_col = $this->printConf['highlight_col'];
 		$c = 0;
 		foreach ($this->tsStackLog as $uniqueId => $data) {
-			if ($this->highlightLongerThan && intval($data['owntime']) > intval($this->highlightLongerThan)) {
+			if ($this->highlightLongerThan && (int)$data['owntime'] > (int)$this->highlightLongerThan) {
 				$logRowClass = 'typo3-adminPanel-logRow-highlight';
 			} else {
-				$logRowClass = $c % 2 ? 'typo3-adminPanel-logRow-odd' : 'typo3-adminPanel-logRow-even';
+				$logRowClass = $c % 2 ? 'line-odd' : 'line-even';
 			}
 			$item = '';
 			// If first...
@@ -346,7 +333,7 @@ class TimeTracker {
 				}
 			}
 			if ($flag_tree) {
-				$tmp = \TYPO3\CMS\Core\Utility\GeneralUtility::trimExplode('.', $data['key'], 1);
+				$tmp = \TYPO3\CMS\Core\Utility\GeneralUtility::trimExplode('.', $data['key'], TRUE);
 				$theLabel = end($tmp);
 			} else {
 				$theLabel = $data['key'];
@@ -354,7 +341,7 @@ class TimeTracker {
 			$theLabel = \TYPO3\CMS\Core\Utility\GeneralUtility::fixed_lgd_cs($theLabel, -$keyLgd);
 			$theLabel = $data['stackPointer'] ? '<span class="stackPointer">' . $theLabel . '</span>' : $theLabel;
 			$keyLabel = $theLabel . $keyLabel;
-			$item .= '<td class="' . $logRowClass . '" style="padding-left:2px;">' . ($flag_tree ? $data['icons'] : '') . $this->fw($keyLabel) . '</td>';
+			$item .= '<td class="' . $logRowClass . '">' . ($flag_tree ? $data['icons'] : '') . $this->fw($keyLabel) . '</td>';
 			// Key value:
 			$keyValue = $data['value'];
 			$item .= '<td class="' . $logRowClass . ' typo3-adminPanel-tsLogTime">' . $this->fw(htmlspecialchars($keyValue)) . '</td>';
@@ -377,7 +364,7 @@ class TimeTracker {
 			if ($flag_queries && is_array($data['selectQuery'])) {
 				$msgArr[] = \TYPO3\CMS\Core\Utility\DebugUtility::viewArray($data['selectQuery']);
 			}
-			if ($flag_content && strcmp($data['content'], '')) {
+			if ($flag_content && (string)$data['content'] !== '') {
 				$maxlen = 120;
 				// Break lines which are too longer than $maxlen chars (can happen if content contains long paths...)
 				if (preg_match_all('/(\\S{' . $maxlen . ',})/', $data['content'], $reg)) {
@@ -395,7 +382,7 @@ class TimeTracker {
 			$out .= '<tr>' . $item . '</tr>';
 			$c++;
 		}
-		$out = '<table id="typo3-adminPanel-tsLog">' . $out . '</table>';
+		$out = '<table class="admin-panel-table typo3-adminPanel-tsLog">' . $out . '</table>';
 		return $out;
 	}
 
@@ -478,13 +465,13 @@ class TimeTracker {
 	}
 
 	/**
-	 * Wraps input string in a <span> tag with black verdana font
+	 * Wraps input string in a <span> tag
 	 *
 	 * @param string $str The string to be wrapped
 	 * @return string
 	 */
 	protected function fw($str) {
-		return '<span style="font-family:Verdana,Arial,Helvetica,sans-serif; font-size:10px; color:black; vertical-align:top;">' . $str . '&nbsp;</span>';
+		return '<span>' . $str . '</span>';
 	}
 
 	/**
@@ -504,13 +491,10 @@ class TimeTracker {
 		if ($pointer > 0) {
 			end($arr);
 			$k = key($arr);
-			$this->createHierarchyArray($arr[intval($k) . '.'], $pointer - 1, $uniqueId);
+			$this->createHierarchyArray($arr[(int)$k . '.'], $pointer - 1, $uniqueId);
 		} else {
 			$arr[] = $uniqueId;
 		}
 	}
 
 }
-
-
-?>

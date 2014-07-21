@@ -1,28 +1,18 @@
 <?php
 namespace TYPO3\CMS\Backend\Tests\Unit\Form\Element;
 
-/***************************************************************
- *  Copyright notice
+/**
+ * This file is part of the TYPO3 CMS project.
  *
- *  (c) 2013 Sebastian Michaelsen <michaelsen@t3seo.de>
- *  All rights reserved
+ * It is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License, either version 2
+ * of the License, or any later version.
  *
- *  This script is part of the TYPO3 project. The TYPO3 project is
- *  free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
+ * For the full copyright and license information, please read the
+ * LICENSE.txt file that was distributed with this source code.
  *
- *  The GNU General Public License can be found at
- *  http://www.gnu.org/copyleft/gpl.html.
- *
- *  This script is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- *  GNU General Public License for more details.
- *
- *  This copyright notice MUST APPEAR in all copies of the script!
- ***************************************************************/
+ * The TYPO3 project - inspiring people to share!
+ */
 
 /**
  * Test case
@@ -39,13 +29,6 @@ class ElementConditionMatcherTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	 */
 	protected function setUp() {
 		$this->fixture = new \TYPO3\CMS\Backend\Form\ElementConditionMatcher();
-	}
-
-	/**
-	 * Tears down this test case.
-	 */
-	protected function tearDown() {
-		unset($this->fixture);
 	}
 
 	/**
@@ -108,6 +91,24 @@ class ElementConditionMatcherTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 				NULL,
 				TRUE,
 			),
+			'Field value comparison of 1 against multi-value field of 5 returns true' => array(
+				'FIELD:content:BIT:1',
+				array('content' => '5'),
+				NULL,
+				TRUE
+			),
+			'Field value comparison of 2 against multi-value field of 5 returns false' => array(
+				'FIELD:content:BIT:2',
+				array('content' => '5'),
+				NULL,
+				FALSE
+			),
+			'Field value of 5 negated comparison against multi-value field of 5 returns false' => array(
+				'FIELD:content:!BIT:5',
+				array('content' => '5'),
+				NULL,
+				FALSE
+			),
 			'Field value comparison for required value is false for different value' => array(
 				'FIELD:foo:REQ:FALSE',
 				array('foo' => 'bar'),
@@ -152,19 +153,19 @@ class ElementConditionMatcherTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 				'vDEF',
 				TRUE,
 			),
-			'Field is value for default languge without flexform' => array(
+			'Field is value for default language without flexform' => array(
 				'HIDE_L10N_SIBLINGS',
 				array(),
 				NULL,
 				FALSE,
 			),
-			'Field is value for default languge with flexform' => array(
+			'Field is value for default language with flexform' => array(
 				'HIDE_L10N_SIBLINGS',
 				array(),
 				'vDEF',
 				TRUE,
 			),
-			'Field is value for default languge with sibling' => array(
+			'Field is value for default language with sibling' => array(
 				'HIDE_L10N_SIBLINGS',
 				array(),
 				'vEN',
@@ -389,4 +390,3 @@ class ElementConditionMatcherTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 		$this->assertFalse($this->fixture->match('HIDE_L10N_SIBLINGS:except_admin'), array(), 'vEN');
 	}
 }
-?>

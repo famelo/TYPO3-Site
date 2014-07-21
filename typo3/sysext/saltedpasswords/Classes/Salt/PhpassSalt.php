@@ -1,49 +1,31 @@
 <?php
 namespace TYPO3\CMS\Saltedpasswords\Salt;
 
-/***************************************************************
- *  Copyright notice
- *
- *  (c) 2009-2013 Marcus Krause <marcus#exp2009@t3sec.info>
- *  All rights reserved
- *
- *  This script is part of the TYPO3 project. The TYPO3 project is
- *  free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
- *
- *  The GNU General Public License can be found at
- *  http://www.gnu.org/copyleft/gpl.html.
- *  A copy is found in the textfile GPL.txt and important notices to the license
- *  from the author is found in LICENSE.txt distributed with these scripts.
- *
- *
- *  This script is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  This copyright notice MUST APPEAR in all copies of the script!
- ***************************************************************/
 /**
- * Contains class "tx_saltedpasswords_salts_phpass"
- * that provides PHPass salted hashing.
+ * This file is part of the TYPO3 CMS project.
  *
- * Derived from Drupal CMS
- * original license: GNU General Public License (GPL)
+ * It is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License, either version 2
+ * of the License, or any later version.
  *
- * @see http://drupal.org/node/29706/
- * @see http://www.openwall.com/phpass/
+ * For the full copyright and license information, please read the
+ * LICENSE.txt file that was distributed with this source code.
+ *
+ * The TYPO3 project - inspiring people to share!
  */
+
 /**
  * Class that implements PHPass salted hashing based on Drupal's
  * modified Openwall implementation.
  *
+ * Derived from Drupal CMS
+ * original license: GNU General Public License (GPL)
+ *
  * PHPass should work on every system.
  *
  * @author Marcus Krause <marcus#exp2009@t3sec.info>
- * @since 2009-09-06
+ * @see http://drupal.org/node/29706/
+ * @see http://www.openwall.com/phpass/
  */
 class PhpassSalt extends \TYPO3\CMS\Saltedpasswords\Salt\AbstractSalt implements \TYPO3\CMS\Saltedpasswords\Salt\SaltInterface {
 
@@ -107,7 +89,7 @@ class PhpassSalt extends \TYPO3\CMS\Saltedpasswords\Salt\AbstractSalt implements
 	/**
 	 * Method applies settings (prefix, hash count) to a salt.
 	 *
-	 * Overwrites {@link tx_saltedpasswords_salts_md5::applySettingsToSalt()}
+	 * Overwrites {@link Md5Salt::applySettingsToSalt()}
 	 * with Blowfish specifics.
 	 *
 	 * @param string $salt A salt to apply setting to
@@ -140,7 +122,7 @@ class PhpassSalt extends \TYPO3\CMS\Saltedpasswords\Salt\AbstractSalt implements
 	}
 
 	/**
-	 * Returns wether all prequesites for the hashing methods are matched
+	 * Returns whether all prerequisites for the hashing methods are matched
 	 *
 	 * @return boolean Method available
 	 */
@@ -395,6 +377,3 @@ class PhpassSalt extends \TYPO3\CMS\Saltedpasswords\Salt\AbstractSalt implements
 	}
 
 }
-
-
-?>

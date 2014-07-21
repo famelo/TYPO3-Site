@@ -1,31 +1,18 @@
 <?php
 namespace TYPO3\CMS\Core\Controller;
 
-/***************************************************************
- *  Copyright notice
+/**
+ * This file is part of the TYPO3 CMS project.
  *
- *  (c) 2006-2013 Kasper Skårhøj (kasperYYYY@typo3.com)
- *  All rights reserved
+ * It is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License, either version 2
+ * of the License, or any later version.
  *
- *  This script is part of the TYPO3 project. The TYPO3 project is
- *  free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
+ * For the full copyright and license information, please read the
+ * LICENSE.txt file that was distributed with this source code.
  *
- *  The GNU General Public License can be found at
- *  http://www.gnu.org/copyleft/gpl.html.
- *  A copy is found in the textfile GPL.txt and important notices to the license
- *  from the author is found in LICENSE.txt distributed with these scripts.
- *
- *
- *  This script is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  This copyright notice MUST APPEAR in all copies of the script!
- ***************************************************************/
+ * The TYPO3 project - inspiring people to share!
+ */
 /**
  * Contains base class for TYPO3 cli scripts
  *
@@ -93,10 +80,10 @@ class CommandLineController {
 	 * @todo Define visibility
 	 */
 	public function cli_getArgArray($option, $argv) {
-		while (count($argv) && strcmp($argv[0], $option)) {
+		while (count($argv) && (string)$argv[0] !== (string)$option) {
 			array_shift($argv);
 		}
-		if (!strcmp($argv[0], $option)) {
+		if ((string)$argv[0] === (string)$option) {
 			array_shift($argv);
 			return count($argv) ? $argv : array('');
 		}
@@ -168,13 +155,13 @@ class CommandLineController {
 		$allOptions = array();
 		foreach ($this->cli_options as $cfg) {
 			$allOptions[] = $cfg[0];
-			$argSplit = \TYPO3\CMS\Core\Utility\GeneralUtility::trimExplode(' ', $cfg[0], 1);
+			$argSplit = \TYPO3\CMS\Core\Utility\GeneralUtility::trimExplode(' ', $cfg[0], TRUE);
 			if (isset($cli_args_copy[$argSplit[0]])) {
 				foreach ($argSplit as $i => $v) {
 					$ii = $i;
 					if ($i > 0) {
 						if (!isset($cli_args_copy[$argSplit[0]][($i - 1)]) && $v[0] != '[') {
-							// Using "[]" around a paramter makes it optional
+							// Using "[]" around a parameter makes it optional
 							echo 'ERROR: Option "' . $argSplit[0] . '" requires a value ("' . $v . '") on position ' . $i . LF;
 							die;
 						}
@@ -268,33 +255,32 @@ class CommandLineController {
 			$this->cli_echo(strtoupper($key) . ':
 ');
 			switch ($key) {
-			case 'synopsis':
-				$optStr = '';
-				foreach ($this->cli_options as $v) {
-					$optStr .= ' [' . $v[0] . ']';
-				}
-				$this->cli_echo($this->cli_indent(str_replace('###OPTIONS###', trim($optStr), $value), 4) . '
-
-');
-				break;
-			case 'options':
-				$this->cli_echo($this->cli_indent($value, 4) . LF);
-				$maxLen = 0;
-				foreach ($this->cli_options as $v) {
-					if (strlen($v[0]) > $maxLen) {
-						$maxLen = strlen($v[0]);
+				case 'synopsis':
+					$optStr = '';
+					foreach ($this->cli_options as $v) {
+						$optStr .= ' [' . $v[0] . ']';
 					}
-				}
-				foreach ($this->cli_options as $v) {
-					$this->cli_echo($v[0] . substr($this->cli_indent(rtrim(($v[1] . LF . $v[2])), ($maxLen + 4)), strlen($v[0])) . LF);
-				}
-				$this->cli_echo(LF);
-				break;
-			default:
-				$this->cli_echo($this->cli_indent($value, 4) . '
+					$this->cli_echo($this->cli_indent(str_replace('###OPTIONS###', trim($optStr), $value), 4) . '
 
 ');
-				break;
+					break;
+				case 'options':
+					$this->cli_echo($this->cli_indent($value, 4) . LF);
+					$maxLen = 0;
+					foreach ($this->cli_options as $v) {
+						if (strlen($v[0]) > $maxLen) {
+							$maxLen = strlen($v[0]);
+						}
+					}
+					foreach ($this->cli_options as $v) {
+						$this->cli_echo($v[0] . substr($this->cli_indent(rtrim(($v[1] . LF . $v[2])), ($maxLen + 4)), strlen($v[0])) . LF);
+					}
+					$this->cli_echo(LF);
+					break;
+				default:
+					$this->cli_echo($this->cli_indent($value, 4) . '
+
+');
 			}
 		}
 	}
@@ -317,6 +303,3 @@ class CommandLineController {
 	}
 
 }
-
-
-?>

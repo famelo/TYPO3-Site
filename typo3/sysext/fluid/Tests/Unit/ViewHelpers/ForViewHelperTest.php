@@ -11,9 +11,6 @@ namespace TYPO3\CMS\Fluid\Tests\Unit\ViewHelpers;
  * The TYPO3 project - inspiring people to share!                         *
  *                                                                        */
 
-include_once(__DIR__ . '/Fixtures/ConstraintSyntaxTreeNode.php');
-require_once(__DIR__ . '/ViewHelperBaseTestcase.php');
-
 /**
  * Testcase for ForViewHelper
  */
@@ -398,5 +395,3 @@ class ForViewHelperTest extends \TYPO3\CMS\Fluid\Tests\Unit\ViewHelpers\ViewHelp
 		$this->assertSame($expectedCallProtocol, $viewHelperNode->callProtocol, 'The call protocol differs -> The for loop does not work as it should!');
 	}
 }
-
-?>

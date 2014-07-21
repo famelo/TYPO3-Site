@@ -1,30 +1,20 @@
 <?php
 namespace TYPO3\CMS\Backend\Form;
 
-/***************************************************************
- *  Copyright notice
+/**
+ * This file is part of the TYPO3 CMS project.
  *
- *  (c) 2013 Sebastian Michaelsen (michaelsen@t3seo.de)
- *  All rights reserved
+ * It is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License, either version 2
+ * of the License, or any later version.
  *
- *  This script is part of the TYPO3 project. The TYPO3 project is
- *  free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
+ * For the full copyright and license information, please read the
+ * LICENSE.txt file that was distributed with this source code.
  *
- *  The GNU General Public License can be found at
- *  http://www.gnu.org/copyleft/gpl.html.
- *  A copy is found in the textfile GPL.txt and important notices to the license
- *  from the author is found in LICENSE.txt distributed with these scripts.
- *
- *  This script is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  This copyright notice MUST APPEAR in all copies of the script!
- ***************************************************************/
+ * The TYPO3 project - inspiring people to share!
+ */
+
+use TYPO3\CMS\Core\Utility\ExtensionManagementUtility;
 
 /**
  * Class ElementConditionMatcher implements the TCA 'displayCond' option.
@@ -169,9 +159,9 @@ class ElementConditionMatcher {
 		list($extensionKey, $operator, $operand) = explode(':', $condition, 3);
 		if ($operator === 'LOADED') {
 			if (strtoupper($operand) === 'TRUE') {
-				$result = \TYPO3\CMS\Core\Utility\ExtensionManagementUtility::isLoaded($extensionKey);
+				$result = ExtensionManagementUtility::isLoaded($extensionKey);
 			} elseif (strtoupper($operand) === 'FALSE') {
-				$result = !\TYPO3\CMS\Core\Utility\ExtensionManagementUtility::isLoaded($extensionKey);
+				$result = !ExtensionManagementUtility::isLoaded($extensionKey);
 			}
 		}
 		return $result;
@@ -225,7 +215,7 @@ class ElementConditionMatcher {
 			case '!-':
 				list($minimum, $maximum) = explode('-', $operand);
 				$result = $fieldValue >= $minimum && $fieldValue <= $maximum;
-				if ($operator{0} === '!') {
+				if ($operator[0] === '!') {
 					$result = !$result;
 				}
 				break;
@@ -234,7 +224,14 @@ class ElementConditionMatcher {
 			case '=':
 			case '!=':
 				$result = \TYPO3\CMS\Core\Utility\GeneralUtility::inList($operand, $fieldValue);
-				if ($operator{0} === '!') {
+				if ($operator[0] === '!') {
+					$result = !$result;
+				}
+				break;
+			case 'BIT':
+			case '!BIT':
+				$result = ((int)$fieldValue & $operand) ? TRUE : FALSE;
+				if ($operator[0] === '!') {
 					$result = !$result;
 				}
 				break;
@@ -283,9 +280,9 @@ class ElementConditionMatcher {
 		list($operator, $operand) = explode(':', $condition, 2);
 		if ($operator === 'NEW') {
 			if (strtoupper($operand) === 'TRUE') {
-				$result = !(intval($this->record['uid']) > 0);
+				$result = !((int)$this->record['uid'] > 0);
 			} elseif (strtoupper($operand) === 'FALSE') {
-				$result = (intval($this->record['uid']) > 0);
+				$result = ((int)$this->record['uid'] > 0);
 			}
 		}
 		return $result;
@@ -302,10 +299,10 @@ class ElementConditionMatcher {
 		$result = FALSE;
 		list($operator, $operand) = explode(':', $condition, 2);
 		if ($operator === 'IS') {
-			$isNewRecord = !(intval($this->record['uid']) > 0);
+			$isNewRecord = !((int)$this->record['uid'] > 0);
 			// Detection of version can be done be detecting the workspace of the user
 			$isUserInWorkspace = $this->getBackendUser()->workspace > 0;
-			if (intval($this->record['pid']) == -1 || intval($this->record['_ORIG_pid']) == -1) {
+			if ((int)$this->record['pid'] === -1 || (int)$this->record['_ORIG_pid'] === -1) {
 				$isRecordDetectedAsVersion = TRUE;
 			} else {
 				$isRecordDetectedAsVersion = FALSE;
@@ -333,5 +330,3 @@ class ElementConditionMatcher {
 		return $GLOBALS['BE_USER'];
 	}
 }
-
-?>

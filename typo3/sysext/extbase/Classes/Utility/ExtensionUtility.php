@@ -1,32 +1,18 @@
 <?php
 namespace TYPO3\CMS\Extbase\Utility;
 
-/***************************************************************
- *  Copyright notice
+/**
+ * This file is part of the TYPO3 CMS project.
  *
- *  (c) 2010-2013 Extbase Team (http://forge.typo3.org/projects/typo3v4-mvc)
- *  Extbase is a backport of TYPO3 Flow. All credits go to the TYPO3 Flow team.
- *  All rights reserved
+ * It is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License, either version 2
+ * of the License, or any later version.
  *
- *  This script is part of the TYPO3 project. The TYPO3 project is
- *  free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
+ * For the full copyright and license information, please read the
+ * LICENSE.txt file that was distributed with this source code.
  *
- *  The GNU General Public License can be found at
- *  http://www.gnu.org/copyleft/gpl.html.
- *  A copy is found in the textfile GPL.txt and important notices to the license
- *  from the author is found in LICENSE.txt distributed with these scripts.
- *
- *
- *  This script is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  This copyright notice MUST APPEAR in all copies of the script!
- ***************************************************************/
+ * The TYPO3 project - inspiring people to share!
+ */
 /**
  * Utilities to manage plugins and  modules of an extension. Also useful to auto-generate the autoloader registry
  * file ext_autoload.php.
@@ -71,7 +57,8 @@ class ExtensionUtility {
 			$extensionName = substr($extensionName, $delimiterPosition + 1);
 		}
 		$extensionName = str_replace(' ', '', ucwords(str_replace('_', ' ', $extensionName)));
-		$pluginSignature = strtolower($extensionName) . '_' . strtolower($pluginName);
+
+		$pluginSignature = strtolower($extensionName . '_' . $pluginName);
 		if (!is_array($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['extbase']['extensions'][$extensionName]['plugins'][$pluginName])) {
 			$GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['extbase']['extensions'][$extensionName]['plugins'][$pluginName] = array();
 		}
@@ -81,25 +68,7 @@ class ExtensionUtility {
 				$GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['extbase']['extensions'][$extensionName]['plugins'][$pluginName]['controllers'][$controllerName]['nonCacheableActions'] = \TYPO3\CMS\Core\Utility\GeneralUtility::trimExplode(',', $nonCacheableControllerActions[$controllerName]);
 			}
 		}
-		$pluginTemplate = 'plugin.tx_' . strtolower($extensionName) . ' {
-	settings {
-	}
-	persistence {
-		storagePid =
-		classes {
-		}
-	}
-	view {
-		templateRootPath =
-		layoutRootPath =
-		partialRootPath =
-		 # with defaultPid you can specify the default page uid of this plugin. If you set this to the string "auto" the target page will be determined automatically. Defaults to an empty string that expects the target page to be the current page.
-		defaultPid =
-	}
-}';
-		\TYPO3\CMS\Core\Utility\ExtensionManagementUtility::addTypoScript($extensionName, 'setup', '
-# Setting ' . $extensionName . ' plugin TypoScript
-' . $pluginTemplate);
+
 		switch ($pluginType) {
 			case self::PLUGIN_TYPE_PLUGIN:
 				$pluginContent = trim('
@@ -145,10 +114,10 @@ tt_content.' . $pluginSignature . ' {
 	 */
 	static public function registerPlugin($extensionName, $pluginName, $pluginTitle, $pluginIconPathAndFilename = NULL) {
 		if (empty($pluginName)) {
-			throw new \InvalidArgumentException('The plugin name must not be empty', 1239891987);
+			throw new \InvalidArgumentException('The plugin name must not be empty', 1239891988);
 		}
 		if (empty($extensionName)) {
-			throw new \InvalidArgumentException('The extension name was invalid (must not be empty and must match /[A-Za-z][_A-Za-z0-9]/)', 1239891989);
+			throw new \InvalidArgumentException('The extension name was invalid (must not be empty and must match /[A-Za-z][_A-Za-z0-9]/)', 1239891991);
 		}
 		$delimiterPosition = strrpos($extensionName, '.');
 		if ($delimiterPosition !== FALSE) {
@@ -156,7 +125,21 @@ tt_content.' . $pluginSignature . ' {
 		}
 		$extensionName = str_replace(' ', '', ucwords(str_replace('_', ' ', $extensionName)));
 		$pluginSignature = strtolower($extensionName) . '_' . strtolower($pluginName);
-		\TYPO3\CMS\Core\Utility\ExtensionManagementUtility::addPlugin(array($pluginTitle, $pluginSignature, $pluginIconPathAndFilename), $GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['extbase']['extensions'][$extensionName]['plugins'][$pluginName]['pluginType']);
+
+		// At this point $extensionName is normalized, no matter which format the method was feeded with.
+		// Calculate the original extensionKey from this again.
+		$extensionKey = \TYPO3\CMS\Core\Utility\GeneralUtility::camelCaseToLowerCaseUnderscored($extensionName);
+
+		// pluginType is usually defined by configurePlugin() in the global array. Use this or fall back to default "list_type".
+		$pluginType = isset($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['extbase']['extensions'][$extensionName]['plugins'][$pluginName]['pluginType'])
+			? $GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['extbase']['extensions'][$extensionName]['plugins'][$pluginName]['pluginType']
+			: 'list_type';
+
+		\TYPO3\CMS\Core\Utility\ExtensionManagementUtility::addPlugin(
+			array($pluginTitle, $pluginSignature, $pluginIconPathAndFilename),
+			$pluginType,
+			$extensionKey
+		);
 	}
 
 	/**
@@ -200,13 +183,13 @@ tt_content.' . $pluginSignature . ' {
 	 * @param string $subModuleName The submodule key.
 	 * @param string $position This can be used to set the position of the $sub module within the list of existing submodules for the main module. $position has this syntax: [cmd]:[submodule-key]. cmd can be "after", "before" or "top" (or blank which is default). If "after"/"before" then submodule will be inserted after/before the existing submodule with [submodule-key] if found. If not found, the bottom of list. If "top" the module is inserted in the top of the submodule list.
 	 * @param array $controllerActions is an array of allowed combinations of controller and action stored in an array (controller name as key and a comma separated list of action names as value, the first controller and its first action is chosen as default)
-	 * @param array $moduleConfiguration The configuration options of the module (icon, locallang.xml file)
+	 * @param array $moduleConfiguration The configuration options of the module (icon, locallang.xlf file)
 	 * @throws \InvalidArgumentException
 	 * @return void
 	 */
-	static public function registerModule($extensionName, $mainModuleName = '', $subModuleName = '', $position = '', array $controllerActions, array $moduleConfiguration = array()) {
+	static public function registerModule($extensionName, $mainModuleName = '', $subModuleName = '', $position = '', array $controllerActions = array(), array $moduleConfiguration = array()) {
 		if (empty($extensionName)) {
-			throw new \InvalidArgumentException('The extension name must not be empty', 1239891989);
+			throw new \InvalidArgumentException('The extension name must not be empty', 1239891990);
 		}
 		// Check if vendor name is prepended to extensionName in the format {vendorName}.{extensionName}
 		$vendorName = NULL;
@@ -231,14 +214,14 @@ tt_content.' . $pluginSignature . ' {
 		if ($mainModuleName === 'web') {
 			$defaultModuleConfiguration['navigationComponentId'] = 'typo3-pagetree';
 		}
-		$moduleConfiguration = \TYPO3\CMS\Core\Utility\GeneralUtility::array_merge_recursive_overrule($defaultModuleConfiguration, $moduleConfiguration);
+		\TYPO3\CMS\Core\Utility\ArrayUtility::mergeRecursiveWithOverrule($defaultModuleConfiguration, $moduleConfiguration);
+		$moduleConfiguration = $defaultModuleConfiguration;
 		$moduleSignature = $mainModuleName;
 		if (strlen($subModuleName) > 0) {
 			$subModuleName = $extensionName . \TYPO3\CMS\Core\Utility\GeneralUtility::underscoredToUpperCamelCase($subModuleName);
 			$moduleSignature .= '_' . $subModuleName;
 		}
 		$moduleConfiguration['name'] = $moduleSignature;
-		$moduleConfiguration['script'] = 'mod.php?M=' . rawurlencode($moduleSignature);
 		if (NULL !== $vendorName) {
 			$moduleConfiguration['vendorName'] = $vendorName;
 		}
@@ -270,5 +253,3 @@ tt_content.' . $pluginSignature . ' {
 		$GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['extbase']['typeConverters'][] = $typeConverterClassName;
 	}
 }
-
-?>

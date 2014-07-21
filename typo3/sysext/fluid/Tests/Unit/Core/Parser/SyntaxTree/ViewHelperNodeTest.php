@@ -11,13 +11,10 @@ namespace TYPO3\CMS\Fluid\Tests\Unit\Core\Parser\SyntaxTree;
  * The TYPO3 project - inspiring people to share!                         *
  *                                                                        */
 
-require_once __DIR__ . '/../Fixtures/ChildNodeAccessFacetViewHelper.php';
-require_once __DIR__ . '/../../Fixtures/TestViewHelper.php';
-
 /**
- * Testcase for \TYPO3\CMS\Fluid\Core\Parser\SyntaxTree\ViewHelperNode
+ * Test case
  */
-class ViewHelperNodeTest extends \TYPO3\CMS\Extbase\Tests\Unit\BaseTestCase {
+class ViewHelperNodeTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 
 	/**
 	 * Rendering Context
@@ -54,10 +51,10 @@ class ViewHelperNodeTest extends \TYPO3\CMS\Extbase\Tests\Unit\BaseTestCase {
 	 * Setup fixture
 	 */
 	public function setUp() {
-		$this->renderingContext = new \TYPO3\CMS\Fluid\Core\Rendering\RenderingContext();
+		$this->renderingContext = $this->getAccessibleMock('TYPO3\\CMS\\Fluid\\Core\\Rendering\\RenderingContext');
 
 		$this->mockObjectManager = $this->getMock('TYPO3\\CMS\\Extbase\\Object\\ObjectManagerInterface');
-		$this->renderingContext->injectObjectManager($this->mockObjectManager);
+		$this->renderingContext->_set('objectManager', $this->mockObjectManager);
 
 		$this->templateVariableContainer = $this->getMock('TYPO3\\CMS\\Fluid\\Core\\ViewHelper\\TemplateVariableContainer');
 		$this->renderingContext->injectTemplateVariableContainer($this->templateVariableContainer);
@@ -66,7 +63,7 @@ class ViewHelperNodeTest extends \TYPO3\CMS\Extbase\Tests\Unit\BaseTestCase {
 		$this->renderingContext->setControllerContext($this->controllerContext);
 
 		$this->viewHelperVariableContainer = $this->getMock('TYPO3\\CMS\\Fluid\\Core\\ViewHelper\\ViewHelperVariableContainer');
-		$this->renderingContext->injectViewHelperVariableContainer($this->viewHelperVariableContainer);
+		$this->renderingContext->_set('viewHelperVariableContainer', $this->viewHelperVariableContainer);
 	}
 
 	/**
@@ -87,7 +84,7 @@ class ViewHelperNodeTest extends \TYPO3\CMS\Extbase\Tests\Unit\BaseTestCase {
 	public function childNodeAccessFacetWorksAsExpected() {
 		$childNode = $this->getMock('TYPO3\\CMS\\Fluid\\Core\\Parser\\SyntaxTree\\TextNode', array(), array('foo'));
 
-		$mockViewHelper = $this->getMock('TYPO3\\CMS\\Fluid\\Core\\Parser\\Fixtures\\ChildNodeAccessFacetViewHelper', array('setChildNodes', 'initializeArguments', 'render', 'prepareArguments'));
+		$mockViewHelper = $this->getMock('TYPO3\\CMS\\Fluid\\Tests\\Unit\\Core\\Parser\\Fixtures\\ChildNodeAccessFacetViewHelper', array('setChildNodes', 'initializeArguments', 'render', 'prepareArguments'));
 
 		$viewHelperNode = new \TYPO3\CMS\Fluid\Core\Parser\SyntaxTree\ViewHelperNode($mockViewHelper, array());
 		$viewHelperNode->addChildNode($childNode);
@@ -156,5 +153,3 @@ class ViewHelperNodeTest extends \TYPO3\CMS\Extbase\Tests\Unit\BaseTestCase {
 		$viewHelperNode->evaluate($this->renderingContext);
 	}
 }
-
-?>

@@ -1,29 +1,18 @@
 <?php
 namespace TYPO3\CMS\Extensionmanager\Utility\Importer;
 
-/***************************************************************
- * Copyright notice
+/**
+ * This file is part of the TYPO3 CMS project.
  *
- * (c) 2010-2013 Marcus Krause <marcus#exp2010@t3sec.info>
- * Steffen Kamper <info@sk-typo3.de>
- * All rights reserved
+ * It is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License, either version 2
+ * of the License, or any later version.
  *
- * This script is part of the TYPO3 project. The TYPO3 project is
- * free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
+ * For the full copyright and license information, please read the
+ * LICENSE.txt file that was distributed with this source code.
  *
- * The GNU General Public License can be found at
- * http://www.gnu.org/copyleft/gpl.html.
- *
- * This script is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU General Public License for more details.
- *
- * This copyright notice MUST APPEAR in all copies of the script!
- ***************************************************************/
+ * The TYPO3 project - inspiring people to share!
+ */
 /**
  * Module: Extension manager - Extension list importer
  *
@@ -69,6 +58,7 @@ class ExtensionListUtility implements \SplObserver {
 		'extension_key',
 		'version',
 		'integer_version',
+		'current_version',
 		'alldownloadcounter',
 		'downloadcounter',
 		'title',
@@ -92,7 +82,7 @@ class ExtensionListUtility implements \SplObserver {
 	 *
 	 * @var array
 	 */
-	static protected $fieldIndicesNoQuote = array(2, 3, 4, 10, 12, 13, 14, 15);
+	static protected $fieldIndicesNoQuote = array(2, 3, 5, 11, 13, 14, 15, 16);
 
 	/**
 	 * Keeps repository UID.
@@ -166,7 +156,7 @@ class ExtensionListUtility implements \SplObserver {
 	/**
 	 * Method collects and stores extension version details into the database.
 	 *
-	 * @param SplSubject &$subject a subject notifying this observer
+	 * @param \SplSubject|\TYPO3\CMS\Extensionmanager\Utility\Parser\AbstractExtensionXmlParser &$subject a subject notifying this observer
 	 * @return void
 	 */
 	protected function loadIntoDatabase(\SplSubject &$subject) {
@@ -176,27 +166,29 @@ class ExtensionListUtility implements \SplObserver {
 			$this->arrRows = array();
 		}
 		$versionRepresentations = \TYPO3\CMS\Core\Utility\VersionNumberUtility::convertVersionStringToArray($subject->getVersion());
-		// order must match that of self::$fieldNamses!
+		// order must match that of self::$fieldNames!
 		$this->arrRows[] = array(
 			$subject->getExtkey(),
 			$subject->getVersion(),
 			$versionRepresentations['version_int'],
-			intval($subject->getAlldownloadcounter()),
-			intval($subject->getDownloadcounter()),
+			// initialize current_version, correct value computed later:
+			0,
+			(int)$subject->getAlldownloadcounter(),
+			(int)$subject->getDownloadcounter(),
 			!is_null($subject->getTitle()) ? $subject->getTitle() : '',
 			$subject->getOwnerusername(),
 			!is_null($subject->getAuthorname()) ? $subject->getAuthorname() : '',
 			!is_null($subject->getAuthoremail()) ? $subject->getAuthoremail() : '',
 			!is_null($subject->getAuthorcompany()) ? $subject->getAuthorcompany() : '',
-			intval($subject->getLastuploaddate()),
+			(int)$subject->getLastuploaddate(),
 			$subject->getT3xfilemd5(),
 			$this->repositoryUid,
-			$this->extensionModel->getDefaultState($subject->getState() ? $subject->getState() : ''),
-			intval($subject->getReviewstate()),
-			$this->extensionModel->getCategoryIndexFromStringOrNumber($subject->getCategory() ? $subject->getCategory() : ''),
-			$subject->getDescription() ? $subject->getDescription() : '',
-			$subject->getDependencies() ? $subject->getDependencies() : '',
-			$subject->getUploadcomment() ? $subject->getUploadcomment() : ''
+			$this->extensionModel->getDefaultState($subject->getState() ?: ''),
+			(int)$subject->getReviewstate(),
+			$this->extensionModel->getCategoryIndexFromStringOrNumber($subject->getCategory() ?: ''),
+			$subject->getDescription() ?: '',
+			$subject->getDependencies() ?: '',
+			$subject->getUploadcomment() ?: ''
 		);
 		++$this->sumRecords;
 	}
@@ -204,7 +196,7 @@ class ExtensionListUtility implements \SplObserver {
 	/**
 	 * Method receives an update from a subject.
 	 *
-	 * @param SplSubject $subject a subject notifying this observer
+	 * @param \SplSubject $subject a subject notifying this observer
 	 * @return void
 	 */
 	public function update(\SplSubject $subject) {
@@ -214,6 +206,3 @@ class ExtensionListUtility implements \SplObserver {
 	}
 
 }
-
-
-?>

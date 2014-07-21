@@ -1,28 +1,18 @@
 <?php
 namespace TYPO3\CMS\Rtehtmlarea;
 
-/***************************************************************
- *  Copyright notice
+/**
+ * This file is part of the TYPO3 CMS project.
  *
- *  (c) 2007-2013 Stanislas Rolland <typo3(arobas)sjbr.ca>
- *  All rights reserved
+ * It is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License, either version 2
+ * of the License, or any later version.
  *
- *  This script is part of the Typo3 project. The Typo3 project is
- *  free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
+ * For the full copyright and license information, please read the
+ * LICENSE.txt file that was distributed with this source code.
  *
- *  The GNU General Public License can be found at
- *  http://www.gnu.org/copyleft/gpl.html.
- *
- *  This script is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  This copyright notice MUST APPEAR in all copies of the script!
- ***************************************************************/
+ * The TYPO3 project - inspiring people to share!
+ */
 /**
  * API for extending htmlArea RTE
  *
@@ -103,7 +93,13 @@ abstract class RteHtmlAreaApi {
 		// Localization array must be initialized here
 		if ($this->relativePathToLocallangFile) {
 			if ($this->htmlAreaRTE->is_FE()) {
-				$this->LOCAL_LANG = \TYPO3\CMS\Core\Utility\GeneralUtility::array_merge_recursive_overrule($this->LOCAL_LANG, \TYPO3\CMS\Core\Utility\GeneralUtility::readLLfile('EXT:' . $this->extensionKey . '/' . $this->relativePathToLocallangFile, $this->htmlAreaRTE->language));
+				\TYPO3\CMS\Core\Utility\ArrayUtility::mergeRecursiveWithOverrule(
+					$this->LOCAL_LANG,
+					\TYPO3\CMS\Core\Utility\GeneralUtility::readLLfile(
+						'EXT:' . $this->extensionKey . '/' . $this->relativePathToLocallangFile,
+						$this->htmlAreaRTE->language
+					)
+				);
 			} else {
 				$LANG->includeLLFile('EXT:' . $this->extensionKey . '/' . $this->relativePathToLocallangFile);
 			}
@@ -118,7 +114,7 @@ abstract class RteHtmlAreaApi {
 	 */
 	public function addButtonsToToolbar() {
 		//Add only buttons not yet in the default toolbar order
-		$addButtons = implode(',', array_diff(\TYPO3\CMS\Core\Utility\GeneralUtility::trimExplode(',', $this->pluginButtons, 1), \TYPO3\CMS\Core\Utility\GeneralUtility::trimExplode(',', $this->htmlAreaRTE->defaultToolbarOrder, 1)));
+		$addButtons = implode(',', array_diff(\TYPO3\CMS\Core\Utility\GeneralUtility::trimExplode(',', $this->pluginButtons, TRUE), \TYPO3\CMS\Core\Utility\GeneralUtility::trimExplode(',', $this->htmlAreaRTE->defaultToolbarOrder, TRUE)));
 		return ($addButtons ? 'bar,' . $addButtons . ',linebreak,' : '') . $this->htmlAreaRTE->defaultToolbarOrder;
 	}
 
@@ -145,7 +141,7 @@ abstract class RteHtmlAreaApi {
 	public function buildJavascriptConfiguration($RTEcounter) {
 		global $TSFE, $LANG;
 		$registerRTEinJavascriptString = '';
-		$pluginButtons = \TYPO3\CMS\Core\Utility\GeneralUtility::trimExplode(',', $this->pluginButtons, 1);
+		$pluginButtons = \TYPO3\CMS\Core\Utility\GeneralUtility::trimExplode(',', $this->pluginButtons, TRUE);
 		foreach ($pluginButtons as $button) {
 			if (in_array($button, $this->toolbar)) {
 				if (!is_array($this->thisConfig['buttons.']) || !is_array($this->thisConfig['buttons.'][($button . '.')])) {
@@ -249,6 +245,3 @@ abstract class RteHtmlAreaApi {
 	}
 
 }
-
-
-?>

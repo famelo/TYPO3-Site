@@ -1,33 +1,25 @@
 <?php
 namespace TYPO3\CMS\Perm\Controller;
 
-/***************************************************************
- *  Copyright notice
+/**
+ * This file is part of the TYPO3 CMS project.
  *
- *  (c) 2007-2013 mehrwert (typo3@mehrwert.de)
- *  All rights reserved
+ * It is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License, either version 2
+ * of the License, or any later version.
  *
- *  This script is part of the TYPO3 project. The TYPO3 project is
- *  free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
+ * For the full copyright and license information, please read the
+ * LICENSE.txt file that was distributed with this source code.
  *
- *  The GNU General Public License can be found at
- *  http://www.gnu.org/copyleft/gpl.html.
- *
- *  This script is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  This copyright notice MUST APPEAR in all copies of the script!
- ***************************************************************/
+ * The TYPO3 project - inspiring people to share!
+ */
+
+use TYPO3\CMS\Backend\Utility\BackendUtility;
 
 /**
  * This class extends the permissions module in the TYPO3 Backend to provide
  * convenient methods of editing of page permissions (including page ownership
- * (user and group)) via new TYPO3AJAX facility
+ * (user and group)) via new AjaxRequestHandler facility
  *
  * @author Andreas Kundoch <typo3@mehrwert.de>
  * @license GPL
@@ -50,25 +42,26 @@ class PermissionAjaxController {
 	 * The constructor of this class
 	 */
 	public function __construct() {
+		$GLOBALS['LANG']->includeLLFile('EXT:lang/locallang_mod_web_perm.xlf');
 		// Configuration, variable assignment
 		$this->conf['page'] = \TYPO3\CMS\Core\Utility\GeneralUtility::_POST('page');
 		$this->conf['who'] = \TYPO3\CMS\Core\Utility\GeneralUtility::_POST('who');
 		$this->conf['mode'] = \TYPO3\CMS\Core\Utility\GeneralUtility::_POST('mode');
-		$this->conf['bits'] = intval(\TYPO3\CMS\Core\Utility\GeneralUtility::_POST('bits'));
-		$this->conf['permissions'] = intval(\TYPO3\CMS\Core\Utility\GeneralUtility::_POST('permissions'));
+		$this->conf['bits'] = (int)\TYPO3\CMS\Core\Utility\GeneralUtility::_POST('bits');
+		$this->conf['permissions'] = (int)\TYPO3\CMS\Core\Utility\GeneralUtility::_POST('permissions');
 		$this->conf['action'] = \TYPO3\CMS\Core\Utility\GeneralUtility::_POST('action');
-		$this->conf['ownerUid'] = intval(\TYPO3\CMS\Core\Utility\GeneralUtility::_POST('ownerUid'));
+		$this->conf['ownerUid'] = (int)\TYPO3\CMS\Core\Utility\GeneralUtility::_POST('ownerUid');
 		$this->conf['username'] = \TYPO3\CMS\Core\Utility\GeneralUtility::_POST('username');
-		$this->conf['groupUid'] = intval(\TYPO3\CMS\Core\Utility\GeneralUtility::_POST('groupUid'));
+		$this->conf['groupUid'] = (int)\TYPO3\CMS\Core\Utility\GeneralUtility::_POST('groupUid');
 		$this->conf['groupname'] = \TYPO3\CMS\Core\Utility\GeneralUtility::_POST('groupname');
-		$this->conf['editLockState'] = intval(\TYPO3\CMS\Core\Utility\GeneralUtility::_POST('editLockState'));
+		$this->conf['editLockState'] = (int)\TYPO3\CMS\Core\Utility\GeneralUtility::_POST('editLockState');
 		// User: Replace some parts of the posted values
-		$this->conf['new_owner_uid'] = intval(\TYPO3\CMS\Core\Utility\GeneralUtility::_POST('newOwnerUid'));
-		$temp_owner_data = \TYPO3\CMS\Backend\Utility\BackendUtility::getUserNames('username, uid', ' AND uid = ' . $this->conf['new_owner_uid']);
+		$this->conf['new_owner_uid'] = (int)\TYPO3\CMS\Core\Utility\GeneralUtility::_POST('newOwnerUid');
+		$temp_owner_data = BackendUtility::getUserNames('username, uid', ' AND uid = ' . $this->conf['new_owner_uid']);
 		$this->conf['new_owner_username'] = htmlspecialchars($temp_owner_data[$this->conf['new_owner_uid']]['username']);
 		// Group: Replace some parts of the posted values
-		$this->conf['new_group_uid'] = intval(\TYPO3\CMS\Core\Utility\GeneralUtility::_POST('newGroupUid'));
-		$temp_group_data = \TYPO3\CMS\Backend\Utility\BackendUtility::getGroupNames('title,uid', ' AND uid = ' . $this->conf['new_group_uid']);
+		$this->conf['new_group_uid'] = (int)\TYPO3\CMS\Core\Utility\GeneralUtility::_POST('newGroupUid');
+		$temp_group_data = BackendUtility::getGroupNames('title,uid', ' AND uid = ' . $this->conf['new_group_uid']);
 		$this->conf['new_group_username'] = htmlspecialchars($temp_group_data[$this->conf['new_group_uid']]['title']);
 	}
 
@@ -81,7 +74,7 @@ class PermissionAjaxController {
 	 * The main dispatcher function. Collect data and prepare HTML output.
 	 *
 	 * @param array $params array of parameters from the AJAX interface, currently unused
-	 * @param \TYPO3\CMS\Core\Http\AjaxRequestHandler $ajaxObj object of type TYPO3AJAX
+	 * @param \TYPO3\CMS\Core\Http\AjaxRequestHandler $ajaxObj object of type AjaxRequestHandler
 	 * @return void
 	 */
 	public function dispatch($params = array(), \TYPO3\CMS\Core\Http\AjaxRequestHandler &$ajaxObj = NULL) {
@@ -94,60 +87,60 @@ class PermissionAjaxController {
 			$tce->stripslashes_values = 1;
 			// Determine the scripts to execute
 			switch ($this->conf['action']) {
-			case 'show_change_owner_selector':
-				$content = $this->renderUserSelector($this->conf['page'], $this->conf['ownerUid'], $this->conf['username']);
-				break;
-			case 'change_owner':
-				if (is_int($this->conf['new_owner_uid'])) {
+				case 'show_change_owner_selector':
+					$content = $this->renderUserSelector($this->conf['page'], $this->conf['ownerUid'], $this->conf['username']);
+					break;
+				case 'change_owner':
+					if (is_int($this->conf['new_owner_uid'])) {
+						// Prepare data to change
+						$data = array();
+						$data['pages'][$this->conf['page']]['perms_userid'] = $this->conf['new_owner_uid'];
+						// Execute TCE Update
+						$tce->start($data, array());
+						$tce->process_datamap();
+						$content = self::renderOwnername($this->conf['page'], $this->conf['new_owner_uid'], $this->conf['new_owner_username']);
+					} else {
+						$ajaxObj->setError('An error occurred: No page owner uid specified.');
+					}
+					break;
+				case 'show_change_group_selector':
+					$content = $this->renderGroupSelector($this->conf['page'], $this->conf['groupUid'], $this->conf['groupname']);
+					break;
+				case 'change_group':
+					if (is_int($this->conf['new_group_uid'])) {
+						// Prepare data to change
+						$data = array();
+						$data['pages'][$this->conf['page']]['perms_groupid'] = $this->conf['new_group_uid'];
+						// Execute TCE Update
+						$tce->start($data, array());
+						$tce->process_datamap();
+						$content = self::renderGroupname($this->conf['page'], $this->conf['new_group_uid'], $this->conf['new_group_username']);
+					} else {
+						$ajaxObj->setError('An error occurred: No page group uid specified.');
+					}
+					break;
+				case 'toggle_edit_lock':
 					// Prepare data to change
 					$data = array();
-					$data['pages'][$this->conf['page']]['perms_userid'] = $this->conf['new_owner_uid'];
+					$data['pages'][$this->conf['page']]['editlock'] = $this->conf['editLockState'] === 1 ? 0 : 1;
 					// Execute TCE Update
 					$tce->start($data, array());
 					$tce->process_datamap();
-					$content = self::renderOwnername($this->conf['page'], $this->conf['new_owner_uid'], $this->conf['new_owner_username']);
-				} else {
-					$ajaxObj->setError('An error occured: No page owner uid specified.');
-				}
-				break;
-			case 'show_change_group_selector':
-				$content = $this->renderGroupSelector($this->conf['page'], $this->conf['groupUid'], $this->conf['groupname']);
-				break;
-			case 'change_group':
-				if (is_int($this->conf['new_group_uid'])) {
+					$content = $this->renderToggleEditLock($this->conf['page'], $data['pages'][$this->conf['page']]['editlock']);
+					break;
+				default:
+					if ($this->conf['mode'] == 'delete') {
+						$this->conf['permissions'] = (int)($this->conf['permissions'] - $this->conf['bits']);
+					} else {
+						$this->conf['permissions'] = (int)($this->conf['permissions'] + $this->conf['bits']);
+					}
 					// Prepare data to change
 					$data = array();
-					$data['pages'][$this->conf['page']]['perms_groupid'] = $this->conf['new_group_uid'];
+					$data['pages'][$this->conf['page']]['perms_' . $this->conf['who']] = $this->conf['permissions'];
 					// Execute TCE Update
 					$tce->start($data, array());
 					$tce->process_datamap();
-					$content = self::renderGroupname($this->conf['page'], $this->conf['new_group_uid'], $this->conf['new_group_username']);
-				} else {
-					$ajaxObj->setError('An error occured: No page group uid specified.');
-				}
-				break;
-			case 'toggle_edit_lock':
-				// Prepare data to change
-				$data = array();
-				$data['pages'][$this->conf['page']]['editlock'] = $this->conf['editLockState'] === 1 ? 0 : 1;
-				// Execute TCE Update
-				$tce->start($data, array());
-				$tce->process_datamap();
-				$content = $this->renderToggleEditLock($this->conf['page'], $data['pages'][$this->conf['page']]['editlock']);
-				break;
-			default:
-				if ($this->conf['mode'] == 'delete') {
-					$this->conf['permissions'] = intval($this->conf['permissions'] - $this->conf['bits']);
-				} else {
-					$this->conf['permissions'] = intval($this->conf['permissions'] + $this->conf['bits']);
-				}
-				// Prepare data to change
-				$data = array();
-				$data['pages'][$this->conf['page']]['perms_' . $this->conf['who']] = $this->conf['permissions'];
-				// Execute TCE Update
-				$tce->start($data, array());
-				$tce->process_datamap();
-				$content = self::renderPermissions($this->conf['permissions'], $this->conf['page'], $this->conf['who']);
+					$content = self::renderPermissions($this->conf['permissions'], $this->conf['page'], $this->conf['who']);
 			}
 		} else {
 			$ajaxObj->setError('This script cannot be called directly.');
@@ -170,11 +163,11 @@ class PermissionAjaxController {
 	 */
 	protected function renderUserSelector($page, $ownerUid, $username = '') {
 		// Get usernames
-		$beUsers = \TYPO3\CMS\Backend\Utility\BackendUtility::getUserNames();
+		$beUsers = BackendUtility::getUserNames();
 		// Init groupArray
 		$groups = array();
 		if (!$GLOBALS['BE_USER']->isAdmin()) {
-			$beUsers = \TYPO3\CMS\Backend\Utility\BackendUtility::blindUserNames($beUsers, $groups, 1);
+			$beUsers = BackendUtility::blindUserNames($beUsers, $groups, 1);
 		}
 		// Owner selector:
 		$options = '';
@@ -202,11 +195,11 @@ class PermissionAjaxController {
 	 */
 	protected function renderGroupSelector($page, $groupUid, $groupname = '') {
 		// Get usernames
-		$beGroups = \TYPO3\CMS\Backend\Utility\BackendUtility::getListGroupNames('title,uid');
+		$beGroups = BackendUtility::getListGroupNames('title,uid');
 		$beGroupKeys = array_keys($beGroups);
-		$beGroupsO = ($beGroups = \TYPO3\CMS\Backend\Utility\BackendUtility::getGroupNames());
+		$beGroupsO = ($beGroups = BackendUtility::getGroupNames());
 		if (!$GLOBALS['BE_USER']->isAdmin()) {
-			$beGroups = \TYPO3\CMS\Backend\Utility\BackendUtility::blindGroupNames($beGroupsO, $beGroupKeys, 1);
+			$beGroups = BackendUtility::blindGroupNames($beGroupsO, $beGroupKeys, 1);
 		}
 		// Group selector:
 		$options = '';
@@ -313,6 +306,3 @@ class PermissionAjaxController {
 	}
 
 }
-
-
-?>

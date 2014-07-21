@@ -1,32 +1,18 @@
 <?php
 namespace TYPO3\CMS\Extbase\Utility;
 
-/***************************************************************
- *  Copyright notice
+/**
+ * This file is part of the TYPO3 CMS project.
  *
- *  (c) 2010-2013 Extbase Team (http://forge.typo3.org/projects/typo3v4-mvc)
- *  Extbase is a backport of TYPO3 Flow. All credits go to the TYPO3 Flow team.
- *  All rights reserved
+ * It is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License, either version 2
+ * of the License, or any later version.
  *
- *  This script is part of the TYPO3 project. The TYPO3 project is
- *  free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
+ * For the full copyright and license information, please read the
+ * LICENSE.txt file that was distributed with this source code.
  *
- *  The GNU General Public License can be found at
- *  http://www.gnu.org/copyleft/gpl.html.
- *  A copy is found in the textfile GPL.txt and important notices to the license
- *  from the author is found in LICENSE.txt distributed with these scripts.
- *
- *
- *  This script is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  This copyright notice MUST APPEAR in all copies of the script!
- ***************************************************************/
+ * The TYPO3 project - inspiring people to share!
+ */
 
 /**
  * The array functions from good old GeneralUtility plus new code.
@@ -36,7 +22,7 @@ namespace TYPO3\CMS\Extbase\Utility;
 class ArrayUtility {
 
 	/**
-	 * Explodes a $string delimited by $delimeter and passes each item in the array through intval().
+	 * Explodes a $string delimited by $delimeter and casts each item in the array to (int).
 	 * Corresponds to explode(), but with conversion to integers for all values.
 	 *
 	 * @param string $delimiter Delimiter string to explode with
@@ -45,8 +31,12 @@ class ArrayUtility {
 	 * @api
 	 */
 	static public function integerExplode($delimiter, $string) {
-		$explodedValues = self::trimExplode($delimiter, $string);
-		return array_map('intval', $explodedValues);
+		$explodedValues = explode($delimiter, $string);
+		foreach ($explodedValues as &$value) {
+			$value = (int)$value;
+		}
+		unset($value);
+		return $explodedValues;
 	}
 
 	/**
@@ -63,7 +53,7 @@ class ArrayUtility {
 		$chunksArr = explode($delimiter, $string);
 		$newChunksArr = array();
 		foreach ($chunksArr as $value) {
-			if ($onlyNonEmptyValues === FALSE || strcmp('', trim($value))) {
+			if ($onlyNonEmptyValues === FALSE || trim($value) !== '') {
 				$newChunksArr[] = trim($value);
 			}
 		}
@@ -312,6 +302,25 @@ class ArrayUtility {
 		}
 		return $result;
 	}
-}
 
-?>
+	/**
+	 * If the array contains numerical keys only, sort it in ascending order
+	 *
+	 * @param array $array
+	 *
+	 * @return array
+	 */
+	public static function sortArrayWithIntegerKeys($array) {
+		$containsNumericalKeysOnly = TRUE;
+		array_walk($array, function($value, $key) use (&$containsNumericalKeysOnly) {
+			if (!is_integer($key)) {
+				$containsNumericalKeysOnly = FALSE;
+				return;
+			}
+		});
+		if ($containsNumericalKeysOnly === TRUE) {
+			ksort($array);
+		}
+		return $array;
+	}
+}

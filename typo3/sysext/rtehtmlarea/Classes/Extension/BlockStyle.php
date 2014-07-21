@@ -1,28 +1,18 @@
 <?php
 namespace TYPO3\CMS\Rtehtmlarea\Extension;
 
-/***************************************************************
- *  Copyright notice
+/**
+ * This file is part of the TYPO3 CMS project.
  *
- *  (c) 2007-2013 Stanislas Rolland <typo3(arobas)sjbr.ca>
- *  All rights reserved
+ * It is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License, either version 2
+ * of the License, or any later version.
  *
- *  This script is part of the Typo3 project. The Typo3 project is
- *  free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
+ * For the full copyright and license information, please read the
+ * LICENSE.txt file that was distributed with this source code.
  *
- *  The GNU General Public License can be found at
- *  http://www.gnu.org/copyleft/gpl.html.
- *
- *  This script is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  This copyright notice MUST APPEAR in all copies of the script!
- ***************************************************************/
+ * The TYPO3 project - inspiring people to share!
+ */
 /**
  * Block Style extension for htmlArea RTE
  *
@@ -36,7 +26,7 @@ class BlockStyle extends \TYPO3\CMS\Rtehtmlarea\RteHtmlAreaApi {
 	protected $pluginName = 'BlockStyle';
 
 	// The name of the plugin registered by the extension
-	protected $relativePathToLocallangFile = 'extensions/BlockStyle/locallang.xml';
+	protected $relativePathToLocallangFile = 'extensions/BlockStyle/locallang.xlf';
 
 	// Path to this main locallang file of the extension relative to the extension dir.
 	protected $relativePathToSkin = '';
@@ -56,10 +46,10 @@ class BlockStyle extends \TYPO3\CMS\Rtehtmlarea\RteHtmlAreaApi {
 	// Frontend language array
 	protected $pluginButtons = 'blockstyle';
 
-	// The comma-seperated list of button names that the extension id adding to the htmlArea RTE tollbar
+	// The comma-separated list of button names that the extension id adding to the htmlArea RTE tollbar
 	protected $pluginLabels = 'blockstylelabel';
 
-	// The comma-seperated list of label names that the extension id adding to the htmlArea RTE tollbar
+	// The comma-separated list of label names that the extension id adding to the htmlArea RTE tollbar
 	// The name-converting array, converting the button names used in the RTE PageTSConfing to the button id's used by the JS scripts
 	protected $convertToolbarForHtmlAreaArray = array(
 		'blockstylelabel' => 'I[Block style label]',
@@ -69,6 +59,3 @@ class BlockStyle extends \TYPO3\CMS\Rtehtmlarea\RteHtmlAreaApi {
 	protected $requiresClassesConfiguration = TRUE;
 
 }
-
-
-?>

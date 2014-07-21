@@ -1,30 +1,20 @@
 <?php
 namespace TYPO3\CMS\Scheduler\Tests\Unit\CronCommand;
 
-/***************************************************************
- *  Copyright notice
- *
- *  (c) 2010-2013 Christian Kuhn <lolli@schwarzbu.ch>
- *  All rights reserved
- *
- *  This script is part of the TYPO3 project. The TYPO3 project is
- *  free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
- *
- *  The GNU General Public License can be found at
- *  http://www.gnu.org/copyleft/gpl.html.
- *
- *  This script is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  This copyright notice MUST APPEAR in all copies of the script!
- ***************************************************************/
 /**
- * Testcase for class "tx_scheduler_CronCmd"
+ * This file is part of the TYPO3 CMS project.
+ *
+ * It is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License, either version 2
+ * of the License, or any later version.
+ *
+ * For the full copyright and license information, please read the
+ * LICENSE.txt file that was distributed with this source code.
+ *
+ * The TYPO3 project - inspiring people to share!
+ */
+/**
+ * Test case
  *
  * @author Christian Kuhn <lolli@schwarzbu.ch>
  */
@@ -53,6 +43,7 @@ class CronCommandTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 
 	public function tearDown() {
 		date_default_timezone_set($this->timezoneBackup);
+		parent::tearDown();
 	}
 
 	/**
@@ -278,8 +269,8 @@ class CronCommandTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	 * @dataProvider expectedCalculatedTimestampDataProvider
 	 * @param string $cronCommand Cron command
 	 * @param integer $startTimestamp [unused] Timestamp for start of calculation
-	 * @param string $firstTimestamp Timestamp of the next execution, to be feeded to strtotime
-	 * @param string $secondTimestamp Timestamp of the further execution, to be feeded to strtotime
+	 * @param string $firstTimestamp Timestamp of the next execution, to be fed to strtotime
+	 * @param string $secondTimestamp Timestamp of the further execution, to be fed to strtotime
 	 */
 	public function calculateNextValueDeterminesCorrectNextCalculatedTimestampOnConsecutiveCall($cronCommand, $startTimestamp, $firstTimestamp, $secondTimestamp) {
 		$instance = new \TYPO3\CMS\Scheduler\CronCommand\CronCommand($cronCommand, strtotime($firstTimestamp));
@@ -325,4 +316,3 @@ class CronCommandTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	}
 
 }
-?>

@@ -1,35 +1,22 @@
 <?php
 namespace TYPO3\CMS\Saltedpasswords\Task;
 
-/***************************************************************
- *  Copyright notice
+/**
+ * This file is part of the TYPO3 CMS project.
  *
- *  (c) 2012-2013 Philipp Gampe (typo3@philippgampe.info)
- *  All rights reserved
+ * It is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License, either version 2
+ * of the License, or any later version.
  *
- *  This script is part of the TYPO3 project. The TYPO3 project is
- *  free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
+ * For the full copyright and license information, please read the
+ * LICENSE.txt file that was distributed with this source code.
  *
- *  The GNU General Public License can be found at
- *  http://www.gnu.org/copyleft/gpl.html.
- *  A copy is found in the textfile GPL.txt and important notices to the license
- *  from the author is found in LICENSE.txt distributed with these scripts.
- *
- *
- *  This script is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  This copyright notice MUST APPEAR in all copies of the script!
- ***************************************************************/
+ * The TYPO3 project - inspiring people to share!
+ */
 /**
  * Additional field for salted passwords bulk update task
  *
- * @autor Philipp Gampe <typo3@philippgampe.info>
+ * @author Philipp Gampe <typo3@philippgampe.info>
  */
 class BulkUpdateFieldProvider implements \TYPO3\CMS\Scheduler\AdditionalFieldProviderInterface {
 
@@ -78,18 +65,18 @@ class BulkUpdateFieldProvider implements \TYPO3\CMS\Scheduler\AdditionalFieldPro
 		$fieldHtml = '<input type="checkbox"' . ' name="' . $fieldName . '"' . ' id="' . $fieldId . '"' . ' value="' . $fieldValue . '"' . ($fieldChecked ? ' checked="checked"' : '') . ' />';
 		$additionalFields[$fieldId] = array(
 			'code' => $fieldHtml,
-			'label' => 'LLL:EXT:saltedpasswords/locallang.xml:ext.saltedpasswords.tasks.bulkupdate.label.canDeactivateSelf',
+			'label' => 'LLL:EXT:saltedpasswords/locallang.xlf:ext.saltedpasswords.tasks.bulkupdate.label.canDeactivateSelf',
 			'cshKey' => '_txsaltedpasswords',
 			'cshLabel' => $fieldId
 		);
 		// Configuration for numberOfRecords
 		$fieldName = 'tx_scheduler[scheduler_saltedpasswordsBulkUpdateNumberOfRecords]';
 		$fieldId = 'task_saltedpasswordsBulkUpdateNumberOfRecords';
-		$fieldValue = intval($taskInfo['scheduler_saltedpasswordsBulkUpdateNumberOfRecords']);
+		$fieldValue = (int)$taskInfo['scheduler_saltedpasswordsBulkUpdateNumberOfRecords'];
 		$fieldHtml = '<input type="text" name="' . $fieldName . '" id="' . $fieldId . '" value="' . htmlspecialchars($fieldValue) . '" />';
 		$additionalFields[$fieldId] = array(
 			'code' => $fieldHtml,
-			'label' => 'LLL:EXT:saltedpasswords/locallang.xml:ext.saltedpasswords.tasks.bulkupdate.label.numberOfRecords',
+			'label' => 'LLL:EXT:saltedpasswords/locallang.xlf:ext.saltedpasswords.tasks.bulkupdate.label.numberOfRecords',
 			'cshKey' => '_txsaltedpasswords',
 			'cshLabel' => $fieldId
 		);
@@ -107,9 +94,9 @@ class BulkUpdateFieldProvider implements \TYPO3\CMS\Scheduler\AdditionalFieldPro
 		$result = TRUE;
 		// Check if number of records is indeed a number and greater or equals to 0
 		// If not, fail validation and issue error message
-		if (!is_numeric($submittedData['scheduler_saltedpasswordsBulkUpdateNumberOfRecords']) || intval($submittedData['scheduler_saltedpasswordsBulkUpdateNumberOfRecords']) < 0) {
+		if (!is_numeric($submittedData['scheduler_saltedpasswordsBulkUpdateNumberOfRecords']) || (int)$submittedData['scheduler_saltedpasswordsBulkUpdateNumberOfRecords'] < 0) {
 			$result = FALSE;
-			$parentObject->addMessage($GLOBALS['LANG']->sL('LLL:EXT:saltedpasswords/locallang.xml:ext.saltedpasswords.tasks.bulkupdate.invalidNumberOfRecords'), \TYPO3\CMS\Core\Messaging\FlashMessage::ERROR);
+			$parentObject->addMessage($GLOBALS['LANG']->sL('LLL:EXT:saltedpasswords/locallang.xlf:ext.saltedpasswords.tasks.bulkupdate.invalidNumberOfRecords'), \TYPO3\CMS\Core\Messaging\FlashMessage::ERROR);
 		}
 		return $result;
 	}
@@ -127,10 +114,7 @@ class BulkUpdateFieldProvider implements \TYPO3\CMS\Scheduler\AdditionalFieldPro
 		} else {
 			$task->setCanDeactivateSelf(FALSE);
 		}
-		$task->setNumberOfRecords(intval($submittedData['scheduler_saltedpasswordsBulkUpdateNumberOfRecords']));
+		$task->setNumberOfRecords((int)$submittedData['scheduler_saltedpasswordsBulkUpdateNumberOfRecords']);
 	}
 
 }
-
-
-?>

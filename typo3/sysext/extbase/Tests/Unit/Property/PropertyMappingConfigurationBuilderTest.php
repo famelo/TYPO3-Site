@@ -2,7 +2,7 @@
 namespace TYPO3\CMS\Extbase\Tests\Unit\Property;
 
 /*                                                                        *
- * This script belongs to the Extbase framework.                            *
+ * This script belongs to the Extbase framework.                          *
  *                                                                        *
  * It is free software; you can redistribute it and/or modify it under    *
  * the terms of the GNU Lesser General Public License as published by the *
@@ -21,14 +21,10 @@ namespace TYPO3\CMS\Extbase\Tests\Unit\Property;
  * The TYPO3 project - inspiring people to share!                         *
  *                                                                        */
 
-require_once __DIR__ . '/../../Fixture/ClassWithSetters.php';
-
 /**
- * Testcase for the Property Mapper
- *
- * @covers \TYPO3\CMS\Extbase\Property\PropertyMappingConfigurationBuilder
+ * Test case
  */
-class PropertyMappingConfigurationBuilderTest extends \TYPO3\CMS\Extbase\Tests\Unit\BaseTestCase {
+class PropertyMappingConfigurationBuilderTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 
 	/**
 	 * @var \TYPO3\CMS\Extbase\Property\PropertyMappingConfigurationBuilder
@@ -51,5 +47,3 @@ class PropertyMappingConfigurationBuilderTest extends \TYPO3\CMS\Extbase\Tests\U
 		$this->assertNull($defaultConfiguration->getConfigurationFor('foo')->getConfigurationValue('TYPO3\\CMS\\Extbase\\Property\\TypeConverter\\PersistentObjectConverter', \TYPO3\CMS\Extbase\Property\TypeConverter\PersistentObjectConverter::CONFIGURATION_MODIFICATION_ALLOWED));
 	}
 }
-
-?>

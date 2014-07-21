@@ -1,32 +1,18 @@
 <?php
 namespace TYPO3\CMS\Extbase\Security\Channel;
 
-/***************************************************************
- *  Copyright notice
+/**
+ * This file is part of the TYPO3 CMS project.
  *
- *  (c) 2010-2013 Extbase Team (http://forge.typo3.org/projects/typo3v4-mvc)
- *  Extbase is a backport of TYPO3 Flow. All credits go to the TYPO3 Flow team.
- *  All rights reserved
+ * It is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License, either version 2
+ * of the License, or any later version.
  *
- *  This script is part of the TYPO3 project. The TYPO3 project is
- *  free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
+ * For the full copyright and license information, please read the
+ * LICENSE.txt file that was distributed with this source code.
  *
- *  The GNU General Public License can be found at
- *  http://www.gnu.org/copyleft/gpl.html.
- *  A copy is found in the textfile GPL.txt and important notices to the license
- *  from the author is found in LICENSE.txt distributed with these scripts.
- *
- *
- *  This script is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  This copyright notice MUST APPEAR in all copies of the script!
- ***************************************************************/
+ * The TYPO3 project - inspiring people to share!
+ */
 /**
  * This is a Service which can generate a request hash and check whether the currently given arguments
  * fit to the request hash.
@@ -49,16 +35,9 @@ class RequestHashService implements \TYPO3\CMS\Core\SingletonInterface {
 
 	/**
 	 * @var \TYPO3\CMS\Extbase\Security\Cryptography\HashService
+	 * @inject
 	 */
 	protected $hashService;
-
-	/**
-	 * @param \TYPO3\CMS\Extbase\Security\Cryptography\HashService $hashService
-	 * @return void
-	 */
-	public function injectHashService(\TYPO3\CMS\Extbase\Security\Cryptography\HashService $hashService) {
-		$this->hashService = $hashService;
-	}
 
 	/**
 	 * Generate a request hash for a list of form fields
@@ -81,11 +60,11 @@ class RequestHashService implements \TYPO3\CMS\Core\SingletonInterface {
 				}
 				// Strip off closing ] if needed
 				if (!is_array($currentPosition)) {
-					throw new \TYPO3\CMS\Extbase\Security\Exception\InvalidArgumentForRequestHashGenerationException('The form field name "' . $formField . '" collides with a previous form field name which declared the field as string. (String overridden by Array)', 1255072196);
+					throw new \TYPO3\CMS\Extbase\Security\Exception\InvalidArgumentForRequestHashGenerationException('The form field name "' . $formField . '" collides with a previous form field name which declared the field as string. (String overridden by Array)', 1255072197);
 				}
 				if ($i == count($formFieldParts) - 1) {
 					if (isset($currentPosition[$formFieldPart]) && is_array($currentPosition[$formFieldPart])) {
-						throw new \TYPO3\CMS\Extbase\Security\Exception\InvalidArgumentForRequestHashGenerationException('The form field name "' . $formField . '" collides with a previous form field name which declared the field as array. (Array overridden by String)', 1255072587);
+						throw new \TYPO3\CMS\Extbase\Security\Exception\InvalidArgumentForRequestHashGenerationException('The form field name "' . $formField . '" collides with a previous form field name which declared the field as array. (Array overridden by String)', 1255072588);
 					}
 					// Last iteration - add a string
 					if ($formFieldPart === '') {
@@ -95,7 +74,7 @@ class RequestHashService implements \TYPO3\CMS\Core\SingletonInterface {
 					}
 				} else {
 					if ($formFieldPart === '') {
-						throw new \TYPO3\CMS\Extbase\Security\Exception\InvalidArgumentForRequestHashGenerationException('The form field name "' . $formField . '" is invalid. Reason: "[]" used not as last argument.', 1255072832);
+						throw new \TYPO3\CMS\Extbase\Security\Exception\InvalidArgumentForRequestHashGenerationException('The form field name "' . $formField . '" is invalid. Reason: "[]" used not as last argument.', 1255072833);
 					}
 					if (!isset($currentPosition[$formFieldPart])) {
 						$currentPosition[$formFieldPart] = array();
@@ -183,5 +162,3 @@ class RequestHashService implements \TYPO3\CMS\Core\SingletonInterface {
 		return TRUE;
 	}
 }
-
-?>

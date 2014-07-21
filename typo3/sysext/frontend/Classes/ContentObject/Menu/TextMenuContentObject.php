@@ -1,31 +1,18 @@
 <?php
 namespace TYPO3\CMS\Frontend\ContentObject\Menu;
 
-/***************************************************************
- *  Copyright notice
+/**
+ * This file is part of the TYPO3 CMS project.
  *
- *  (c) 1999-2013 Kasper Skårhøj (kasperYYYY@typo3.com)
- *  All rights reserved
+ * It is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License, either version 2
+ * of the License, or any later version.
  *
- *  This script is part of the TYPO3 project. The TYPO3 project is
- *  free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
+ * For the full copyright and license information, please read the
+ * LICENSE.txt file that was distributed with this source code.
  *
- *  The GNU General Public License can be found at
- *  http://www.gnu.org/copyleft/gpl.html.
- *  A copy is found in the textfile GPL.txt and important notices to the license
- *  from the author is found in LICENSE.txt distributed with these scripts.
- *
- *
- *  This script is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  This copyright notice MUST APPEAR in all copies of the script!
- ***************************************************************/
+ * The TYPO3 project - inspiring people to share!
+ */
 
 /**
  * Extension class creating text based menus
@@ -39,7 +26,7 @@ class TextMenuContentObject extends \TYPO3\CMS\Frontend\ContentObject\Menu\Abstr
 	 * Sets the result for the new "normal state" in $this->result
 	 *
 	 * @return void
-	 * @see tslib_menu::procesItemStates()
+	 * @see AbstractMenuContentObject::procesItemStates()
 	 * @todo Define visibility
 	 */
 	public function generate() {
@@ -57,14 +44,14 @@ class TextMenuContentObject extends \TYPO3\CMS\Frontend\ContentObject\Menu\Abstr
 	/**
 	 * Traverses the ->result array of menu items configuration (made by ->generate()) and renders each item.
 	 * During the execution of this function many internal methods prefixed "extProc_" from this class is called and many of these are for now dummy functions. But they can be used for processing as they are used by the TMENU_LAYERS
-	 * An instance of tslib_cObj is also made and for each menu item rendered it is loaded with the record for that page so that any stdWrap properties that applies will have the current menu items record available.
+	 * An instance of ContentObjectRenderer is also made and for each menu item rendered it is loaded with the record for that page so that any stdWrap properties that applies will have the current menu items record available.
 	 *
 	 * @return string The HTML for the menu (returns result through $this->extProc_finish(); )
 	 * @todo Define visibility
 	 */
 	public function writeMenu() {
 		if (is_array($this->result) && count($this->result)) {
-			// Create new tslib_cObj for our use
+			// Create new \TYPO3\CMS\Frontend\ContentObject\ContentObjectRenderer for our use
 			$this->WMcObj = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Frontend\\ContentObject\\ContentObjectRenderer');
 			$this->WMresult = '';
 			$this->INPfixMD5 = substr(md5(microtime() . 'tmenu'), 0, 4);
@@ -102,33 +89,7 @@ class TextMenuContentObject extends \TYPO3\CMS\Frontend\ContentObject\Menu\Abstr
 				if (strlen($titleAttrValue)) {
 					$this->I['linkHREF']['title'] = $titleAttrValue;
 				}
-				// Make link:
-				if ($this->I['val']['RO']) {
-					$this->I['theName'] = $this->imgNamePrefix . $this->I['uid'] . $this->I['INPfix'];
-					$over = '';
-					$out = '';
-					if ($this->I['val']['beforeROImg']) {
-						$over .= $this->WMfreezePrefix . 'over(\'' . $this->I['theName'] . 'before\');';
-						$out .= $this->WMfreezePrefix . 'out(\'' . $this->I['theName'] . 'before\');';
-					}
-					if ($this->I['val']['afterROImg']) {
-						$over .= $this->WMfreezePrefix . 'over(\'' . $this->I['theName'] . 'after\');';
-						$out .= $this->WMfreezePrefix . 'out(\'' . $this->I['theName'] . 'after\');';
-					}
-					$this->I['linkHREF']['onMouseover'] = $over;
-					$this->I['linkHREF']['onMouseout'] = $out;
-					if ($over || $out) {
-						$GLOBALS['TSFE']->setJS('mouseOver');
-					}
-					// Change background color:
-					if ($this->I['val']['RO_chBgColor']) {
-						$this->addJScolorShiftFunction();
-						$chBgP = \TYPO3\CMS\Core\Utility\GeneralUtility::trimExplode('|', $this->I['val']['RO_chBgColor']);
-						$this->I['linkHREF']['onMouseover'] .= 'changeBGcolor(\'' . $chBgP[2] . $this->I['uid'] . '\', \'' . $chBgP[0] . '\');';
-						$this->I['linkHREF']['onMouseout'] .= 'changeBGcolor(\'' . $chBgP[2] . $this->I['uid'] . '\', \'' . $chBgP[1] . '\');';
-					}
-					$this->extProc_RO($key);
-				}
+
 				// Calling extra processing function
 				$this->extProc_beforeLinking($key);
 				// stdWrap for doNotLinkIt
@@ -213,18 +174,10 @@ class TextMenuContentObject extends \TYPO3\CMS\Frontend\ContentObject\Menu\Abstr
 		$res = '';
 		if ($imgInfo = $this->WMcObj->getImgResource($this->I['val'][$pref . 'Img'], $this->I['val'][$pref . 'Img.'])) {
 			$imgInfo[3] = \TYPO3\CMS\Core\Utility\GeneralUtility::png_to_gif_by_imagemagick($imgInfo[3]);
-			if ($this->I['val']['RO'] && $this->I['val'][$pref . 'ROImg'] && !$this->I['spacer']) {
-				$imgROInfo = $this->WMcObj->getImgResource($this->I['val'][$pref . 'ROImg'], $this->I['val'][$pref . 'ROImg.']);
-				$imgROInfo[3] = \TYPO3\CMS\Core\Utility\GeneralUtility::png_to_gif_by_imagemagick($imgROInfo[3]);
-				if ($imgROInfo) {
-					$theName = $this->imgNamePrefix . $this->I['uid'] . $this->I['INPfix'] . $pref;
-					$name = ' ' . $this->nameAttribute . '="' . $theName . '"';
-					$GLOBALS['TSFE']->JSImgCode .= LF . $theName . '_n=new Image(); ' . $theName . '_n.src = "' . $GLOBALS['TSFE']->absRefPrefix . $imgInfo[3] . '"; ';
-					$GLOBALS['TSFE']->JSImgCode .= LF . $theName . '_h=new Image(); ' . $theName . '_h.src = "' . $GLOBALS['TSFE']->absRefPrefix . $imgROInfo[3] . '"; ';
-				}
-			}
+			$theName = $this->imgNamePrefix . $this->I['uid'] . $this->I['INPfix'] . $pref;
+			$name = ' ' . $this->nameAttribute . '="' . $theName . '"';
 			$GLOBALS['TSFE']->imagesOnPage[] = $imgInfo[3];
-			$res = '<img' . ' src="' . $GLOBALS['TSFE']->absRefPrefix . $imgInfo[3] . '"' . ' width="' . $imgInfo[0] . '"' . ' height="' . $imgInfo[1] . '"' . $name . ($this->I['val'][$pref . 'ImgTagParams'] ? ' ' . $this->I['val'][($pref . 'ImgTagParams')] : '') . \TYPO3\CMS\Frontend\ContentObject\ContentObjectRenderer::getBorderAttr(' border="0"');
+			$res = '<img' . ' src="' . $GLOBALS['TSFE']->absRefPrefix . $imgInfo[3] . '"' . ' width="' . $imgInfo[0] . '"' . ' height="' . $imgInfo[1] . '"' . $name . ($this->I['val'][$pref . 'ImgTagParams'] ? ' ' . $this->I['val'][($pref . 'ImgTagParams')] : '') . $this->parent_cObj->getBorderAttr(' border="0"');
 			if (!strstr($res, 'alt="')) {
 				// Adding alt attribute if not set.
 				$res .= ' alt=""';
@@ -243,50 +196,15 @@ class TextMenuContentObject extends \TYPO3\CMS\Frontend\ContentObject\Menu\Abstr
 	}
 
 	/**
-	 * Adds a JavaScript function to the $GLOBALS['TSFE']->additionalJavaScript array
+	 * Called right before the traversing of $this->result begins.
+	 * Can be used for various initialization
 	 *
 	 * @return void
 	 * @access private
 	 * @see writeMenu()
 	 * @todo Define visibility
 	 */
-	public function addJScolorShiftFunction() {
-		$GLOBALS['TSFE']->additionalJavaScript['TMENU:changeBGcolor()'] = '
-			function changeBGcolor(id,color) {	//
-				if (document.getElementById && document.getElementById(id)) {
-					document.getElementById(id).style.background = color;
-					return true;
-				} else if (document.layers && document.layers[id]) {
-					document.layers[id].bgColor = color;
-					return true;
-				}
-			}
-		';
-	}
-
-	/**
-	 * Called right before the traversing of $this->result begins.
-	 * Can be used for various initialization
-	 *
-	 * @return void
-	 * @access private
-	 * @see writeMenu(), tslib_tmenu_layers::extProc_init()
-	 * @todo Define visibility
-	 */
 	public function extProc_init() {
-
-	}
-
-	/**
-	 * Called after all processing for RollOver of an element has been done.
-	 *
-	 * @param integer Pointer to $this->menuArr[$key] where the current menu element record is found
-	 * @return void
-	 * @access private
-	 * @see writeMenu(), tslib_tmenu_layers::extProc_RO()
-	 * @todo Define visibility
-	 */
-	public function extProc_RO($key) {
 
 	}
 
@@ -296,7 +214,7 @@ class TextMenuContentObject extends \TYPO3\CMS\Frontend\ContentObject\Menu\Abstr
 	 * @param integer Pointer to $this->menuArr[$key] where the current menu element record is found
 	 * @return void
 	 * @access private
-	 * @see writeMenu(), tslib_tmenu_layers::extProc_beforeLinking()
+	 * @see writeMenu()
 	 * @todo Define visibility
 	 */
 	public function extProc_beforeLinking($key) {
@@ -310,7 +228,7 @@ class TextMenuContentObject extends \TYPO3\CMS\Frontend\ContentObject\Menu\Abstr
 	 * @param integer Pointer to $this->menuArr[$key] where the current menu element record is found
 	 * @return void
 	 * @access private
-	 * @see writeMenu(), tslib_tmenu_layers::extProc_afterLinking()
+	 * @see writeMenu()
 	 * @todo Define visibility
 	 */
 	public function extProc_afterLinking($key) {
@@ -329,7 +247,7 @@ class TextMenuContentObject extends \TYPO3\CMS\Frontend\ContentObject\Menu\Abstr
 	 * @param integer $key Pointer to $this->menuArr[$key] where the current menu element record is found
 	 * @return string The modified version of $item, going back into $this->I['theItem']
 	 * @access private
-	 * @see writeMenu(), tslib_tmenu_layers::extProc_beforeAllWrap()
+	 * @see writeMenu()
 	 * @todo Define visibility
 	 */
 	public function extProc_beforeAllWrap($item, $key) {
@@ -341,7 +259,7 @@ class TextMenuContentObject extends \TYPO3\CMS\Frontend\ContentObject\Menu\Abstr
 	 *
 	 * @return string The total menu content should be returned by this function
 	 * @access private
-	 * @see writeMenu(), tslib_tmenu_layers::extProc_finish()
+	 * @see writeMenu()
 	 * @todo Define visibility
 	 */
 	public function extProc_finish() {
@@ -353,6 +271,3 @@ class TextMenuContentObject extends \TYPO3\CMS\Frontend\ContentObject\Menu\Abstr
 	}
 
 }
-
-
-?>

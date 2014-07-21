@@ -11,12 +11,10 @@ namespace TYPO3\CMS\Fluid\Tests\Unit\Core\ViewHelper;
  * The TYPO3 project - inspiring people to share!                         *
  *                                                                        */
 
-require_once(__DIR__ . '/../Fixtures/TestViewHelper.php');
-
 /**
- * Testcase for AbstractViewHelper
+ * Test case
  */
-class ViewHelperVariableContainerTest extends \TYPO3\CMS\Extbase\Tests\Unit\BaseTestCase {
+class ViewHelperVariableContainerTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 
 	/**
 	 * @var \TYPO3\CMS\Fluid\Core\ViewHelper\ViewHelperVariableContainer
@@ -91,5 +89,3 @@ class ViewHelperVariableContainerTest extends \TYPO3\CMS\Extbase\Tests\Unit\Base
 		$this->assertSame($view, $this->viewHelperVariableContainer->getView());
 	}
 }
-
-?>

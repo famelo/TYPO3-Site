@@ -1,58 +1,54 @@
 <?php
 namespace TYPO3\CMS\Version\Controller;
 
-/***************************************************************
- *  Copyright notice
+/**
+ * This file is part of the TYPO3 CMS project.
  *
- *  (c) 2004-2013 Kasper Skårhøj (kasperYYYY@typo3.com)
- *  All rights reserved
+ * It is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License, either version 2
+ * of the License, or any later version.
  *
- *  This script is part of the TYPO3 project. The TYPO3 project is
- *  free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
+ * For the full copyright and license information, please read the
+ * LICENSE.txt file that was distributed with this source code.
  *
- *  The GNU General Public License can be found at
- *  http://www.gnu.org/copyleft/gpl.html.
- *
- *  This script is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  This copyright notice MUST APPEAR in all copies of the script!
- ***************************************************************/
+ * The TYPO3 project - inspiring people to share!
+ */
 
-use \TYPO3\CMS\Core\Utility\GeneralUtility;
-use \TYPO3\CMS\Backend\Utility\BackendUtility;
+use TYPO3\CMS\Core\Utility\GeneralUtility;
+use TYPO3\CMS\Backend\Utility\BackendUtility;
+use TYPO3\CMS\Backend\Utility\IconUtility;
 
 /**
  * Versioning module, including workspace management
  *
- * @author 	Kasper Skårhøj <kasperYYYY@typo3.com>
+ * @author Kasper Skårhøj <kasperYYYY@typo3.com>
  */
 class VersionModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClass {
 
-	// Default variables for backend modules
 	/**
+	 * Module configuration
+	 *
+	 * @var array
 	 * @todo Define visibility
 	 */
 	public $MCONF = array();
 
-	// Module configuration
 	/**
+	 * Module menu items
+	 *
+	 * @var array
 	 * @todo Define visibility
 	 */
 	public $MOD_MENU = array();
 
-	// Module menu items
 	/**
+	 * Module session settings
+	 *
+	 * @var array
 	 * @todo Define visibility
 	 */
 	public $MOD_SETTINGS = array();
 
-	// Module session settings
 	/**
 	 * document template object
 	 *
@@ -62,69 +58,82 @@ class VersionModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClass 
 	public $doc;
 
 	/**
+	 * @var string
 	 * @todo Define visibility
 	 */
 	public $content;
 
-	// Accumulated content
-	// Internal:
 	/**
+	 * Accumulated content
+	 *
+	 * @var int
 	 * @todo Define visibility
 	 */
 	public $showWorkspaceCol = 0;
 
 	/**
+	 * @var array
 	 * @todo Define visibility
 	 */
 	public $formatWorkspace_cache = array();
 
 	/**
+	 * @var array
 	 * @todo Define visibility
 	 */
 	public $formatCount_cache = array();
 
 	/**
+	 * @var array
 	 * @todo Define visibility
 	 */
 	public $targets = array();
 
-	// Accumulation of online targets.
 	/**
+	 * Accumulation of online targets.
+	 *
+	 * @var string
 	 * @todo Define visibility
 	 */
 	public $pageModule = '';
 
-	// Name of page module
 	/**
+	 * Name of page module
+	 *
+	 * @var bool
 	 * @todo Define visibility
 	 */
 	public $publishAccess = FALSE;
 
 	/**
+	 * @var array
 	 * @todo Define visibility
 	 */
 	public $be_user_Array = array();
 
 	/**
+	 * @var array
 	 * @todo Define visibility
 	 */
 	public $stageIndex = array();
 
 	/**
+	 * @var array
 	 * @todo Define visibility
 	 */
 	public $recIndex = array();
 
-	// Determines whether to show the dummy draft workspace
-	/*********************************
-	 *
-	 * Standard module initialization
-	 *
-	 *********************************/
+	/**
+	 * Initialize language files
+	 */
+	public function __construct() {
+		$GLOBALS['LANG']->includeLLFile('EXT:version/locallang.xlf');
+	}
+
 	/**
 	 * Initialize menu configuration
 	 *
-	 * @return 	void
+	 * @return void
 	 * @todo Define visibility
 	 */
 	public function menuConfig() {
@@ -135,7 +144,7 @@ class VersionModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClass 
 	/**
 	 * Main function of the module. Write the content to $this->content
 	 *
-	 * @return 	void
+	 * @return void
 	 * @todo Define visibility
 	 */
 	public function main() {
@@ -152,7 +161,7 @@ class VersionModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClass 
 		// Draw the header.
 		$this->doc = GeneralUtility::makeInstance('TYPO3\\CMS\\Backend\\Template\\DocumentTemplate');
 		$this->doc->backPath = $GLOBALS['BACK_PATH'];
-		$this->doc->setModuleTemplate('templates/version.html');
+		$this->doc->setModuleTemplate('EXT:version/Resources/Private/Templates/version.html');
 		// Add styles
 		$this->doc->inDocStylesArray[$GLOBALS['MCONF']['name']] = '
 .version-diff-1 { background-color: green; }
@@ -161,10 +170,10 @@ class VersionModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClass 
 		// Setting up the context sensitive menu:
 		$this->doc->getContextMenuCode();
 		// Getting input data:
-		$this->id = intval(GeneralUtility::_GP('id'));
+		$this->id = (int)GeneralUtility::_GP('id');
 
 		// Record uid. Goes with table name to indicate specific record
-		$this->uid = intval(GeneralUtility::_GP('uid'));
+		$this->uid = (int)GeneralUtility::_GP('uid');
 		// // Record table. Goes with uid to indicate specific record
 		$this->table = GeneralUtility::_GP('table');
 
@@ -193,12 +202,7 @@ class VersionModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClass 
 			$access = is_array($this->pageinfo) ? 1 : 0;
 			if ($pidValue && $access || $GLOBALS['BE_USER']->user['admin'] && !$pidValue) {
 				// JavaScript
-				$this->doc->JScode .= '
-					<script language="javascript" type="text/javascript">
-						script_ended = 0;
-						function jumpToUrl(URL) {
-							window.location.href = URL;
-						}
+				$this->doc->JScode .= $this->doc->wrapScriptTags('
 
 						function hlSubelements(origId, verId, over, diffLayer)	{	//
 							if (over) {
@@ -215,8 +219,7 @@ class VersionModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClass 
 								}
 							}
 						}
-					</script>
-				';
+				');
 				// If another page module was specified, replace the default Page module with the new one
 				$newPageModule = trim($GLOBALS['BE_USER']->getTSConfigVal('options.overridePageModule'));
 				$this->pageModule = BackendUtility::isModuleSetInTBE_MODULES($newPageModule) ? $newPageModule : 'web_layout';
@@ -247,8 +250,7 @@ class VersionModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClass 
 	/**
 	 * Outputs accumulated module content to browser.
 	 *
-	 * @return 	void
-	 * @todo Define visibility
+	 * @return void
 	 */
 	public function printContent() {
 		echo $this->content;
@@ -257,7 +259,7 @@ class VersionModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClass 
 	/**
 	 * Create the panel of buttons for submitting the form or otherwise perform operations.
 	 *
-	 * @return 	array	all available buttons as an assoc. array
+	 * @return array All available buttons as an assoc. array
 	 */
 	protected function getButtons() {
 		$buttons = array(
@@ -269,7 +271,7 @@ class VersionModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClass 
 		// CSH
 		if ($this->recordFound && $GLOBALS['TCA'][$this->table]['ctrl']['versioningWS']) {
 			// View page
-			$buttons['view'] = '<a href="#" onclick="' . htmlspecialchars(BackendUtility::viewOnClick($this->pageinfo['uid'], $GLOBALS['BACK_PATH'], BackendUtility::BEgetRootLine($this->pageinfo['uid']))) . '" title="' . $GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.php:labels.showPage', TRUE) . '">' . \TYPO3\CMS\Backend\Utility\IconUtility::getSpriteIcon('actions-document-view') . '</a>';
+			$buttons['view'] = '<a href="#" onclick="' . htmlspecialchars(BackendUtility::viewOnClick($this->pageinfo['uid'], $GLOBALS['BACK_PATH'], BackendUtility::BEgetRootLine($this->pageinfo['uid']))) . '" title="' . $GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.xlf:labels.showPage', TRUE) . '">' . IconUtility::getSpriteIcon('actions-document-view') . '</a>';
 			// Shortcut
 			if ($GLOBALS['BE_USER']->mayMakeShortcut()) {
 				$buttons['shortcut'] = $this->doc->makeShortcutIcon('id, edit_record, pointer, new_unique_uid, search_field, search_levels, showLimit', implode(',', array_keys($this->MOD_MENU)), $this->MCONF['name']);
@@ -278,7 +280,7 @@ class VersionModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClass 
 			$buttons['record_list'] = BackendUtility::getListViewLink(array(
 				'id' => $this->pageinfo['uid'],
 				'returnUrl' => GeneralUtility::getIndpEnv('REQUEST_URI')
-			), '', $GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.php:labels.showList'));
+			), '', $GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.xlf:labels.showList'));
 		}
 		return $buttons;
 	}
@@ -291,7 +293,7 @@ class VersionModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClass 
 	/**
 	 * Management of versions for record
 	 *
-	 * @return 	void
+	 * @return void
 	 * @todo Define visibility
 	 */
 	public function versioningMgm() {
@@ -315,7 +317,7 @@ class VersionModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClass 
 								';
 					foreach ($diff_1_record as $fN => $fV) {
 						if ($GLOBALS['TCA'][$this->table]['columns'][$fN] && $GLOBALS['TCA'][$this->table]['columns'][$fN]['config']['type'] !== 'passthrough' && !GeneralUtility::inList('t3ver_label', $fN)) {
-							if (strcmp($diff_1_record[$fN], $diff_2_record[$fN])) {
+							if ((string)$diff_1_record[$fN] !== (string)$diff_2_record[$fN]) {
 								$diffres = $t3lib_diff_Obj->makeDiffDisplay(BackendUtility::getProcessedValue($this->table, $fN, $diff_2_record[$fN], 0, 1), BackendUtility::getProcessedValue($this->table, $fN, $diff_1_record[$fN], 0, 1));
 								$tRows[] = '
 									<tr class="bgColor4">
@@ -340,7 +342,7 @@ class VersionModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClass 
 		}
 		// Element:
 		$record = BackendUtility::getRecord($this->table, $this->uid);
-		$recordIcon = \TYPO3\CMS\Backend\Utility\IconUtility::getSpriteIconForRecord($this->table, $record);
+		$recordIcon = IconUtility::getSpriteIconForRecord($this->table, $record);
 		$recTitle = BackendUtility::getRecordTitle($this->table, $record, TRUE);
 		// Display versions:
 		$content .= '
@@ -369,8 +371,8 @@ class VersionModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClass 
 			$content .= '
 				<tr class="' . ($row['uid'] != $this->uid ? 'bgColor4' : 'bgColor2 tableheader') . '">
 					<td>' . ($row['uid'] != $this->uid ?
-						'<a href="' . $this->doc->issueCommand(('&cmd[' . $this->table . '][' . $this->uid . '][version][swapWith]=' . $row['uid'] . '&cmd[' . $this->table . '][' . $this->uid . '][version][action]=swap')) . '" title="' . $GLOBALS['LANG']->getLL('swapWithCurrent', TRUE) . '">' . \TYPO3\CMS\Backend\Utility\IconUtility::getSpriteIcon('actions-version-swap-version') . '</a>' :
-							\TYPO3\CMS\Backend\Utility\IconUtility::getSpriteIcon('status-status-current', array('title' => $GLOBALS['LANG']->getLL('currentOnlineVersion', TRUE)))) . '</td>
+						'<a href="' . $this->doc->issueCommand(('&cmd[' . $this->table . '][' . $this->uid . '][version][swapWith]=' . $row['uid'] . '&cmd[' . $this->table . '][' . $this->uid . '][version][action]=swap')) . '" title="' . $GLOBALS['LANG']->getLL('swapWithCurrent', TRUE) . '">' . IconUtility::getSpriteIcon('actions-version-swap-version') . '</a>' :
+							IconUtility::getSpriteIcon('status-status-current', array('title' => $GLOBALS['LANG']->getLL('currentOnlineVersion', TRUE)))) . '</td>
 					<td nowrap="nowrap">' . $adminLinks . '</td>
 					<td nowrap="nowrap">' . BackendUtility::getRecordTitle($this->table, $row, TRUE) . '</td>
 					<td>' . $row['uid'] . '</td>
@@ -381,7 +383,7 @@ class VersionModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClass 
 					<td>' . $row['t3ver_stage'] . '</td>
 					<td>' . $row['t3ver_count'] . '</td>
 					<td>' . $row['pid'] . '</td>
-					<td nowrap="nowrap"><a href="#" onclick="' . htmlspecialchars(BackendUtility::editOnClick(('&edit[' . $this->table . '][' . $row['uid'] . ']=edit&columnsOnly=t3ver_label'), $this->doc->backPath)) . '" title="' . $GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.xml:cm.edit', TRUE) . '">' . \TYPO3\CMS\Backend\Utility\IconUtility::getSpriteIcon('actions-document-open') . '</a>' . htmlspecialchars($row['t3ver_label']) . '</td>
+					<td nowrap="nowrap"><a href="#" onclick="' . htmlspecialchars(BackendUtility::editOnClick(('&edit[' . $this->table . '][' . $row['uid'] . ']=edit&columnsOnly=t3ver_label'), $this->doc->backPath)) . '" title="' . $GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.xlf:cm.edit', TRUE) . '">' . IconUtility::getSpriteIcon('actions-document-open') . '</a>' . htmlspecialchars($row['t3ver_label']) . '</td>
 					<td class="version-diff-1"><input type="radio" name="diff_1" value="' . $row['uid'] . '"' . ($diff_1 == $row['uid'] ? ' checked="checked"' : '') . '/></td>
 					<td class="version-diff-2"><input type="radio" name="diff_2" value="' . $row['uid'] . '"' . ($diff_2 == $row['uid'] ? ' checked="checked"' : '') . '/></td>
 				</tr>';
@@ -421,17 +423,18 @@ class VersionModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClass 
 	/**
 	 * Recursively look for children for page version with $pid
 	 *
-	 * @param 	integer		UID of page record for which to look up sub-elements following that version
-	 * @param 	integer		Counter, do not set (limits to 100 levels)
-	 * @return 	string		Table with content if any
+	 * @param integer $pid UID of page record for which to look up sub-elements following that version
+	 * @param integer $c Counter, do not set (limits to 100 levels)
+	 * @return string Table with content if any
 	 * @todo Define visibility
 	 */
 	public function pageSubContent($pid, $c = 0) {
 		$tableNames = GeneralUtility::removeArrayEntryByValue(array_keys($GLOBALS['TCA']), 'pages');
 		$tableNames[] = 'pages';
+		$content = '';
 		foreach ($tableNames as $tN) {
 			// Basically list ALL tables - not only those being copied might be found!
-			$mres = $GLOBALS['TYPO3_DB']->exec_SELECTquery('*', $tN, 'pid=' . intval($pid) . BackendUtility::deleteClause($tN), '', $GLOBALS['TCA'][$tN]['ctrl']['sortby'] ? $GLOBALS['TCA'][$tN]['ctrl']['sortby'] : '');
+			$mres = $GLOBALS['TYPO3_DB']->exec_SELECTquery('*', $tN, 'pid=' . (int)$pid . BackendUtility::deleteClause($tN), '', $GLOBALS['TCA'][$tN]['ctrl']['sortby'] ? $GLOBALS['TCA'][$tN]['ctrl']['sortby'] : '');
 			if ($GLOBALS['TYPO3_DB']->sql_num_rows($mres)) {
 				$content .= '
 					<tr>
@@ -443,7 +446,9 @@ class VersionModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClass 
 						<tr>
 							<td>' . $this->adminLinks($tN, $subrow) . '</td>
 							<td>' . $subrow['uid'] . '</td>
-							' . ($ownVer > 1 ? '<td style="font-weight: bold; background-color: yellow;"><a href="index.php?table=' . rawurlencode($tN) . '&uid=' . $subrow['uid'] . '">' . ($ownVer - 1) . '</a></td>' : '<td></td>') . '
+							' . ($ownVer > 1 ? '<td style="font-weight: bold; background-color: yellow;"><a href="' .
+							BackendUtility::getModuleUrl('web_txversionM1', array('table' => $tN, 'uid' => $subrow['uid'])) .
+							'">' . ($ownVer - 1) . '</a></td>' : '<td></td>') . '
 							<td width="98%">' . BackendUtility::getRecordTitle($tN, $subrow, TRUE) . '</td>
 						</tr>';
 					if ($tN == 'pages' && $c < 100) {
@@ -460,6 +465,7 @@ class VersionModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClass 
 					}
 				}
 			}
+			$GLOBALS['TYPO3_DB']->sql_free_result($mres);
 		}
 		return $content ? '<table border="1" cellpadding="1" cellspacing="0" width="100%">' . $content . '</table>' : '';
 	}
@@ -467,9 +473,9 @@ class VersionModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClass 
 	/**
 	 * Look for number of versions of a record
 	 *
-	 * @param 	string		Table name
-	 * @param 	integer		Record uid
-	 * @return 	integer		Number of versions for record, FALSE if none.
+	 * @param string $table Table name
+	 * @param integer $uid Record uid
+	 * @return integer Number of versions for record, FALSE if none.
 	 * @todo Define visibility
 	 */
 	public function lookForOwnVersions($table, $uid) {
@@ -483,36 +489,34 @@ class VersionModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClass 
 	/**
 	 * Administrative links for a table / record
 	 *
-	 * @param 	string		Table name
-	 * @param 	array		Record for which administrative links are generated.
-	 * @return 	string		HTML link tags.
+	 * @param string $table Table name
+	 * @param array $row Record for which administrative links are generated.
+	 * @return string HTML link tags.
 	 * @todo Define visibility
 	 */
 	public function adminLinks($table, $row) {
 		// Edit link:
-		$adminLink = '<a href="#" onclick="' . htmlspecialchars(BackendUtility::editOnClick(('&edit[' . $table . '][' . $row['uid'] . ']=edit'), $this->doc->backPath)) . '" title="' . $GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.xml:cm.edit', TRUE) . '">' . \TYPO3\CMS\Backend\Utility\IconUtility::getSpriteIcon('actions-document-open') . '</a>';
+		$adminLink = '<a href="#" onclick="' . htmlspecialchars(BackendUtility::editOnClick(('&edit[' . $table . '][' . $row['uid'] . ']=edit'), $this->doc->backPath)) . '" title="' . $GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.xlf:cm.edit', TRUE) . '">' . IconUtility::getSpriteIcon('actions-document-open') . '</a>';
 		// Delete link:
-		$adminLink .= '<a href="' . htmlspecialchars($this->doc->issueCommand(('&cmd[' . $table . '][' . $row['uid'] . '][delete]=1'))) . '" title="' . $GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.php:cm.delete', TRUE) . '">' . \TYPO3\CMS\Backend\Utility\IconUtility::getSpriteIcon('actions-edit-delete') . '</a>';
-		if ($table == 'pages') {
+		$adminLink .= '<a href="' . htmlspecialchars($this->doc->issueCommand(('&cmd[' . $table . '][' . $row['uid'] . '][delete]=1'))) . '" title="' . $GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.xlf:cm.delete', TRUE) . '">' . IconUtility::getSpriteIcon('actions-edit-delete') . '</a>';
+		if ($table === 'pages') {
 			// If another page module was specified, replace the default Page module with the new one
 			$newPageModule = trim($GLOBALS['BE_USER']->getTSConfigVal('options.overridePageModule'));
 			$pageModule = BackendUtility::isModuleSetInTBE_MODULES($newPageModule) ? $newPageModule : 'web_layout';
 			// Perform some acccess checks:
 			$a_wl = $GLOBALS['BE_USER']->check('modules', 'web_list');
-			$a_wp = \TYPO3\CMS\Core\Utility\ExtensionManagementUtility::isLoaded('cms') && $GLOBALS['BE_USER']->check('modules', $pageModule);
-			$adminLink .= '<a href="#" onclick="top.loadEditId(' . $row['uid'] . ');top.goToModule(\'' . $pageModule . '\'); return false;">' . \TYPO3\CMS\Backend\Utility\IconUtility::getSpriteIcon('actions-page-open') . '</a>';
-			$adminLink .= '<a href="#" onclick="top.loadEditId(' . $row['uid'] . ');top.goToModule(\'web_list\'); return false;">' . \TYPO3\CMS\Backend\Utility\IconUtility::getSpriteIcon('actions-system-list-open') . '</a>';
+			$a_wp = $GLOBALS['BE_USER']->check('modules', $pageModule);
+			$adminLink .= '<a href="#" onclick="top.loadEditId(' . $row['uid'] . ');top.goToModule(\'' . $pageModule . '\'); return false;">' . IconUtility::getSpriteIcon('actions-page-open') . '</a>';
+			$adminLink .= '<a href="#" onclick="top.loadEditId(' . $row['uid'] . ');top.goToModule(\'web_list\'); return false;">' . IconUtility::getSpriteIcon('actions-system-list-open') . '</a>';
 			// "View page" icon is added:
-			$adminLink .= '<a href="#" onclick="' . htmlspecialchars(BackendUtility::viewOnClick($row['uid'], $this->doc->backPath, BackendUtility::BEgetRootLine($row['uid']))) . '">' . \TYPO3\CMS\Backend\Utility\IconUtility::getSpriteIcon('actions-document-view') . '</a>';
+			$adminLink .= '<a href="#" onclick="' . htmlspecialchars(BackendUtility::viewOnClick($row['uid'], $this->doc->backPath, BackendUtility::BEgetRootLine($row['uid']))) . '">' . IconUtility::getSpriteIcon('actions-document-view') . '</a>';
 		} else {
 			if ($row['pid'] == -1) {
 				$getVars = '&ADMCMD_vPrev[' . rawurlencode(($table . ':' . $row['t3ver_oid'])) . ']=' . $row['uid'];
 				// "View page" icon is added:
-				$adminLink .= '<a href="#" onclick="' . htmlspecialchars(BackendUtility::viewOnClick($row['_REAL_PID'], $this->doc->backPath, BackendUtility::BEgetRootLine($row['_REAL_PID']), '', '', $getVars)) . '">' . \TYPO3\CMS\Backend\Utility\IconUtility::getSpriteIcon('actions-document-view') . '</a>';
+				$adminLink .= '<a href="#" onclick="' . htmlspecialchars(BackendUtility::viewOnClick($row['_REAL_PID'], $this->doc->backPath, BackendUtility::BEgetRootLine($row['_REAL_PID']), '', '', $getVars)) . '">' . IconUtility::getSpriteIcon('actions-document-view') . '</a>';
 			}
 		}
 		return $adminLink;
 	}
 }
-
-?>

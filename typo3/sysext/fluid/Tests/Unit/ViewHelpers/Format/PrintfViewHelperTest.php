@@ -12,9 +12,9 @@ namespace TYPO3\CMS\Fluid\Tests\Unit\ViewHelpers\Format;
  *                                                                        */
 
 /**
- * Test for TYPO3\CMS\Fluid\ViewHelpers\Format\PrintfViewHelper
+ * Test case
  */
-class PrintfViewHelperTest extends \TYPO3\CMS\Extbase\Tests\Unit\BaseTestCase {
+class PrintfViewHelperTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 
 	/**
 	 * @test
@@ -36,5 +36,3 @@ class PrintfViewHelperTest extends \TYPO3\CMS\Extbase\Tests\Unit\BaseTestCase {
 		$this->assertEquals('foo 123 bar foo', $actualResult);
 	}
 }
-
-?>

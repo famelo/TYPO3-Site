@@ -1,31 +1,23 @@
 <?php
 namespace TYPO3\CMS\Core\Tests\Unit\Utility;
 
-/***************************************************************
- *  Copyright notice
+/**
+ * This file is part of the TYPO3 CMS project.
  *
- *  (c) 2011-2013 Susanne Moog <typo3@susanne-moog.de>
- *  All rights reserved
+ * It is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License, either version 2
+ * of the License, or any later version.
  *
- *  This script is part of the TYPO3 project. The TYPO3 project is
- *  free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
+ * For the full copyright and license information, please read the
+ * LICENSE.txt file that was distributed with this source code.
  *
- *  The GNU General Public License can be found at
- *  http://www.gnu.org/copyleft/gpl.html.
- *
- *  This script is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  This copyright notice MUST APPEAR in all copies of the script!
- ***************************************************************/
+ * The TYPO3 project - inspiring people to share!
+ */
+
+use \TYPO3\CMS\Core\Utility\ArrayUtility;
 
 /**
- * Testcase for class \TYPO3\CMS\Core\Utility\ArrayUtility
+ * Test case
  *
  * @author Susanne Moog <typo3@susanne-moog.de>
  * @author Christian Kuhn <lolli@schwarzbu.ch>
@@ -171,7 +163,7 @@ class ArrayUtilityTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	public function filterByValueRecursiveCorrectlyFiltersArray($needle, $haystack, $expectedResult) {
 		$this->assertEquals(
 			$expectedResult,
-			\TYPO3\CMS\Core\Utility\ArrayUtility::filterByValueRecursive($needle, $haystack)
+			ArrayUtility::filterByValueRecursive($needle, $haystack)
 		);
 	}
 
@@ -182,7 +174,7 @@ class ArrayUtilityTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 		$instance = new \stdClass();
 		$this->assertEquals(
 			array($instance),
-			\TYPO3\CMS\Core\Utility\ArrayUtility::filterByValueRecursive($instance, array($instance))
+			ArrayUtility::filterByValueRecursive($instance, array($instance))
 		);
 	}
 
@@ -192,7 +184,7 @@ class ArrayUtilityTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	public function filterByValueRecursiveDoesNotMatchDifferentInstancesOfSameClass() {
 		$this->assertEquals(
 			array(),
-			\TYPO3\CMS\Core\Utility\ArrayUtility::filterByValueRecursive(new \stdClass(), array(new \stdClass()))
+			ArrayUtility::filterByValueRecursive(new \stdClass(), array(new \stdClass()))
 		);
 	}
 
@@ -208,17 +200,16 @@ class ArrayUtilityTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	 * @test
 	 */
 	public function isValidPathReturnsTrueIfPathExists() {
-		$namespace = 'TYPO3\\CMS\\Core\\Utility';
 		$className = uniqid('ArrayUtility');
 		eval(
-			'namespace ' . $namespace . ';' .
+			'namespace ' . __NAMESPACE__ . ';' .
 			'class ' . $className . ' extends \\TYPO3\\CMS\\Core\\Utility\\ArrayUtility {' .
 			'  public static function getValueByPath() {' .
 			'    return 42;' .
 			'  }' .
 			'}'
 		);
-		$className = $namespace . '\\' . $className;
+		$className = __NAMESPACE__ . '\\' . $className;
 		$this->assertTrue($className::isValidPath(array('foo'), 'foo'));
 	}
 
@@ -226,17 +217,16 @@ class ArrayUtilityTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	 * @test
 	 */
 	public function isValidPathReturnsFalseIfPathDoesNotExist() {
-		$namespace = 'TYPO3\\CMS\\Core\\Utility';
 		$className = uniqid('ArrayUtility');
 		eval(
-			'namespace ' . $namespace . ';' .
+			'namespace ' . __NAMESPACE__ . ';' .
 			'class ' . $className . ' extends \\TYPO3\\CMS\\Core\\Utility\\ArrayUtility {' .
 			'  public static function getValueByPath() {' .
 			'    throw new \RuntimeException(\'foo\', 123);' .
 			'  }' .
 			'}'
 		);
-		$className = $namespace . '\\' . $className;
+		$className = __NAMESPACE__ . '\\' . $className;
 		$this->assertFalse($className::isValidPath(array('foo'), 'foo'));
 	}
 
@@ -248,7 +238,7 @@ class ArrayUtilityTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	 * @expectedException \RuntimeException
 	 */
 	public function getValueByPathThrowsExceptionIfPathIsEmpty() {
-		\TYPO3\CMS\Core\Utility\ArrayUtility::getValueByPath(array(), '');
+		ArrayUtility::getValueByPath(array(), '');
 	}
 
 	/**
@@ -308,7 +298,7 @@ class ArrayUtilityTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	 * @expectedException \RuntimeException
 	 */
 	public function getValueByPathThrowsExceptionIfPathNotExists(array $array, $path) {
-		\TYPO3\CMS\Core\Utility\ArrayUtility::getValueByPath($array, $path);
+		ArrayUtility::getValueByPath($array, $path);
 	}
 
 	/**
@@ -408,7 +398,7 @@ class ArrayUtilityTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	 * @dataProvider getValueByPathValidDataProvider
 	 */
 	public function getValueByPathGetsCorrectValue(array $array, $path, $expectedResult) {
-		$this->assertEquals($expectedResult, \TYPO3\CMS\Core\Utility\ArrayUtility::getValueByPath($array, $path));
+		$this->assertEquals($expectedResult, ArrayUtility::getValueByPath($array, $path));
 	}
 
 	/**
@@ -428,7 +418,7 @@ class ArrayUtilityTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 		$delimeter = '%';
 		$this->assertEquals(
 			$expected,
-			\TYPO3\CMS\Core\Utility\ArrayUtility::getValueByPath($input, $searchPath, $delimeter)
+			ArrayUtility::getValueByPath($input, $searchPath, $delimeter)
 		);
 	}
 
@@ -440,7 +430,7 @@ class ArrayUtilityTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	 * @expectedException \RuntimeException
 	 */
 	public function setValueByPathThrowsExceptionIfPathIsEmpty() {
-		\TYPO3\CMS\Core\Utility\ArrayUtility::setValueByPath(array(), '', NULL);
+		ArrayUtility::setValueByPath(array(), '', NULL);
 	}
 
 	/**
@@ -448,7 +438,7 @@ class ArrayUtilityTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	 * @expectedException \RuntimeException
 	 */
 	public function setValueByPathThrowsExceptionIfPathIsNotAString() {
-		\TYPO3\CMS\Core\Utility\ArrayUtility::setValueByPath(array(), array('foo'), NULL);
+		ArrayUtility::setValueByPath(array(), array('foo'), NULL);
 	}
 
 	/**
@@ -629,7 +619,133 @@ class ArrayUtilityTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	public function setValueByPathSetsCorrectValue(array $array, $path, $value, $expectedResult) {
 		$this->assertEquals(
 			$expectedResult,
-			\TYPO3\CMS\Core\Utility\ArrayUtility::setValueByPath($array, $path, $value)
+			ArrayUtility::setValueByPath($array, $path, $value)
+		);
+	}
+
+	/**********************
+	/* Tests concerning removeByPath
+	 ***********************/
+
+	/**
+	 * @test
+	 * @expectedException \RuntimeException
+	 */
+	public function removeByPathThrowsExceptionIfPathIsEmpty() {
+		ArrayUtility::removeByPath(array(), '');
+	}
+
+	/**
+	 * @test
+	 * @expectedException \RuntimeException
+	 */
+	public function removeByPathThrowsExceptionIfPathIsNotAString() {
+		ArrayUtility::removeByPath(array(), array('foo'));
+	}
+
+	/**
+	 * @test
+	 * @expectedException \RuntimeException
+	 */
+	public function removeByPathThrowsExceptionWithEmptyPathSegment() {
+		$inputArray = array(
+			'foo' => array(
+				'bar' => 42,
+			),
+		);
+		ArrayUtility::removeByPath($inputArray, 'foo//bar');
+	}
+
+	/**
+	 * @test
+	 * @expectedException \RuntimeException
+	 */
+	public function removeByPathThrowsExceptionIfPathDoesNotExistInArray() {
+		$inputArray = array(
+			'foo' => array(
+				'bar' => 42,
+			),
+		);
+		ArrayUtility::removeByPath($inputArray, 'foo/baz');
+	}
+
+	/**
+	 * @test
+	 */
+	public function removeByPathAcceptsGivenDelimiter() {
+		$inputArray = array(
+			'foo' => array(
+				'toRemove' => 42,
+				'keep' => 23
+			),
+		);
+		$path = 'foo.toRemove';
+		$expected = array(
+			'foo' => array(
+				'keep' => 23,
+			),
+		);
+		$this->assertEquals(
+			$expected,
+			ArrayUtility::removeByPath($inputArray, $path, '.')
+		);
+	}
+
+	/**
+	 * Data provider for removeByPathRemovesCorrectPath
+	 */
+	public function removeByPathRemovesCorrectPathDataProvider() {
+		return array(
+			'single value' => array(
+				array(
+					'foo' => array(
+						'toRemove' => 42,
+						'keep' => 23
+					),
+				),
+				'foo/toRemove',
+				array(
+					'foo' => array(
+						'keep' => 23,
+					),
+				),
+			),
+			'whole array' => array(
+				array(
+					'foo' => array(
+						'bar' => 42
+					),
+				),
+				'foo',
+				array(),
+			),
+			'sub array' => array(
+				array(
+					'foo' => array(
+						'keep' => 23,
+						'toRemove' => array(
+							'foo' => 'bar',
+						),
+					),
+				),
+				'foo/toRemove',
+				array(
+					'foo' => array(
+						'keep' => 23,
+					),
+				),
+			),
+		);
+	}
+
+	/**
+	 * @test
+	 * @dataProvider removeByPathRemovesCorrectPathDataProvider
+	 */
+	public function removeByPathRemovesCorrectPath(array $array, $path, $expectedResult) {
+		$this->assertEquals(
+			$expectedResult,
+			ArrayUtility::removeByPath($array, $path)
 		);
 	}
 
@@ -660,7 +776,149 @@ class ArrayUtilityTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 			),
 			'z' => NULL
 		);
-		$this->assertSame($expectedResult, \TYPO3\CMS\Core\Utility\ArrayUtility::sortByKeyRecursive($unsortedArray));
+		$this->assertSame($expectedResult, ArrayUtility::sortByKeyRecursive($unsortedArray));
+	}
+
+	///////////////////////
+	// Tests concerning sortArraysByKey
+	///////////////////////
+	/**
+	 * Data provider for sortArraysByKeyCheckIfSortingIsCorrect
+	 */
+	public function sortArraysByKeyCheckIfSortingIsCorrectDataProvider() {
+		return array(
+			'assoc array index' => array(
+				array(
+					'22' => array(
+						'uid' => '22',
+						'title' => 'b',
+						'dummy' => 2
+					),
+					'24' => array(
+						'uid' => '24',
+						'title' => 'a',
+						'dummy' => 3
+					),
+					'23' => array(
+						'uid' => '23',
+						'title' => 'a',
+						'dummy' => 4
+					),
+				),
+				'title',
+				TRUE,
+				array(
+					'23' => array(
+						'uid' => '23',
+						'title' => 'a',
+						'dummy' => 4
+					),
+					'24' => array(
+						'uid' => '24',
+						'title' => 'a',
+						'dummy' => 3
+					),
+					'22' => array(
+						'uid' => '22',
+						'title' => 'b',
+						'dummy' => 2
+					),
+				),
+			),
+			'numeric array index' => array(
+				array(
+					22 => array(
+						'uid' => '22',
+						'title' => 'b',
+						'dummy' => 2
+					),
+					24 => array(
+						'uid' => '24',
+						'title' => 'a',
+						'dummy' => 3
+					),
+					23 => array(
+						'uid' => '23',
+						'title' => 'a',
+						'dummy' => 4
+					),
+				),
+				'title',
+				TRUE,
+				array(
+					23 => array(
+						'uid' => '23',
+						'title' => 'a',
+						'dummy' => 4
+					),
+					24 => array(
+						'uid' => '24',
+						'title' => 'a',
+						'dummy' => 3
+					),
+					22 => array(
+						'uid' => '22',
+						'title' => 'b',
+						'dummy' => 2
+					),
+				),
+			),
+			'numeric array index DESC' => array(
+				array(
+					23 => array(
+						'uid' => '23',
+						'title' => 'a',
+						'dummy' => 4
+					),
+					22 => array(
+						'uid' => '22',
+						'title' => 'b',
+						'dummy' => 2
+					),
+					24 => array(
+						'uid' => '24',
+						'title' => 'a',
+						'dummy' => 3
+					),
+				),
+				'title',
+				FALSE,
+				array(
+					22 => array(
+						'uid' => '22',
+						'title' => 'b',
+						'dummy' => 2
+					),
+					24 => array(
+						'uid' => '24',
+						'title' => 'a',
+						'dummy' => 3
+					),
+					23 => array(
+						'uid' => '23',
+						'title' => 'a',
+						'dummy' => 4
+					),
+				),
+			),
+		);
+	}
+
+	/**
+	 * @test
+	 * @dataProvider sortArraysByKeyCheckIfSortingIsCorrectDataProvider
+	 */
+	public function sortArraysByKeyCheckIfSortingIsCorrect(array $array, $key, $ascending, $expectedResult) {
+		$sortedArray = ArrayUtility::sortArraysByKey($array, $key, $ascending);
+		$this->assertSame($sortedArray, $expectedResult);
+	}
+
+	/**
+	 * @test
+	 * @expectedException \RuntimeException
+	 */
+	public function sortArraysByKeyThrowsExceptionForNonExistingKey() {
+		ArrayUtility::sortArraysByKey(array(array('a'), array('a')), 'dummy');
 	}
 
 	///////////////////////
@@ -701,7 +959,7 @@ class ArrayUtilityTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 				TAB . '\'qux\' => 0.1,' . LF .
 				TAB . '\'qux2\' => 1.0E-9,' . LF .
 			')';
-		$this->assertSame($expected, \TYPO3\CMS\Core\Utility\ArrayUtility::arrayExport($array));
+		$this->assertSame($expected, ArrayUtility::arrayExport($array));
 	}
 
 	/**
@@ -714,7 +972,7 @@ class ArrayUtilityTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 				'bar' => new \stdClass()
 			)
 		);
-		\TYPO3\CMS\Core\Utility\ArrayUtility::arrayExport($array);
+		ArrayUtility::arrayExport($array);
 	}
 
 	/**
@@ -732,7 +990,7 @@ class ArrayUtilityTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 				TAB . '23 => \'integer key\',' . LF .
 				TAB . '42 => \'string key representing integer\',' . LF .
 			')';
-		$this->assertSame($expected, \TYPO3\CMS\Core\Utility\ArrayUtility::arrayExport($array));
+		$this->assertSame($expected, ArrayUtility::arrayExport($array));
 	}
 
 	/**
@@ -750,7 +1008,7 @@ class ArrayUtilityTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 				TAB . '\'one\',' . LF .
 				TAB . '\'two\',' . LF .
 			')';
-		$this->assertSame($expected, \TYPO3\CMS\Core\Utility\ArrayUtility::arrayExport($array));
+		$this->assertSame($expected, ArrayUtility::arrayExport($array));
 	}
 
 	/**
@@ -770,7 +1028,7 @@ class ArrayUtilityTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 				TAB . '3 => \'three\',' . LF .
 				TAB . '4 => \'four\',' . LF .
 			')';
-		$this->assertSame($expected, \TYPO3\CMS\Core\Utility\ArrayUtility::arrayExport($array));
+		$this->assertSame($expected, ArrayUtility::arrayExport($array));
 	}
 
 
@@ -877,7 +1135,7 @@ class ArrayUtilityTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	 * @dataProvider flattenCalculatesExpectedResultDataProvider
 	 */
 	public function flattenCalculatesExpectedResult(array $array, array $expected) {
-		$this->assertEquals($expected, \TYPO3\CMS\Core\Utility\ArrayUtility::flatten($array));
+		$this->assertEquals($expected, ArrayUtility::flatten($array));
 	}
 
 
@@ -1089,7 +1347,7 @@ class ArrayUtilityTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	 * @dataProvider intersectRecursiveCalculatesExpectedResultDataProvider
 	 */
 	public function intersectRecursiveCalculatesExpectedResult(array $source, array $mask, array $expected) {
-		$this->assertSame($expected, \TYPO3\CMS\Core\Utility\ArrayUtility::intersectRecursive($source, $mask));
+		$this->assertSame($expected, ArrayUtility::intersectRecursive($source, $mask));
 	}
 
 
@@ -1221,9 +1479,36 @@ class ArrayUtilityTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	 * @dataProvider renumberKeysToAvoidLeapsIfKeysAreAllNumericDataProvider
 	 */
 	public function renumberKeysToAvoidLeapsIfKeysAreAllNumeric(array $inputArray, array $expected) {
-		$this->assertEquals($expected, \TYPO3\CMS\Core\Utility\ArrayUtility::renumberKeysToAvoidLeapsIfKeysAreAllNumeric($inputArray));
+		$this->assertEquals($expected, ArrayUtility::renumberKeysToAvoidLeapsIfKeysAreAllNumeric($inputArray));
 	}
 
-}
 
-?>
+	/**
+	 * @test
+	 */
+	public function arrayMergeRecursiveOverruleDoesConsiderUnsetValues() {
+		$array1 = array(
+			'first' => array(
+				'second' => 'second',
+				'third' => 'third'
+			),
+			'fifth' => array()
+		);
+		$array2 = array(
+			'first' => array(
+				'second' => 'overrule',
+				'third' => '__UNSET',
+				'fourth' => 'overrile'
+			),
+			'fifth' => '__UNSET'
+		);
+		$expected = array(
+			'first' => array(
+				'second' => 'overrule',
+				'fourth' => 'overrile'
+			)
+		);
+		ArrayUtility::mergeRecursiveWithOverrule($array1, $array2);
+		$this->assertEquals($expected, $array1);
+	}
+}

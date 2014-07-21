@@ -1,28 +1,21 @@
 <?php
 namespace TYPO3\CMS\Core\Database;
 
-/***************************************************************
- *  Copyright notice
+/**
+ * This file is part of the TYPO3 CMS project.
  *
- *  (c) 2003-2013 Kasper Skårhøj (kasperYYYY@typo3.com)
- *  All rights reserved
+ * It is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License, either version 2
+ * of the License, or any later version.
  *
- *  This script is part of the Typo3 project. The Typo3 project is
- *  free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
+ * For the full copyright and license information, please read the
+ * LICENSE.txt file that was distributed with this source code.
  *
- *  The GNU General Public License can be found at
- *  http://www.gnu.org/copyleft/gpl.html.
- *
- *  This script is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  This copyright notice MUST APPEAR in all copies of the script!
- ***************************************************************/
+ * The TYPO3 project - inspiring people to share!
+ */
+
+use TYPO3\CMS\Core\Utility\GeneralUtility;
+
 /**
  * Soft Reference processing class
  * "Soft References" are references to database elements, files, email addresses, URls etc.
@@ -116,61 +109,60 @@ class SoftReferenceIndex {
 		$retVal = FALSE;
 		$this->tokenID_basePrefix = $table . ':' . $uid . ':' . $field . ':' . $structurePath . ':' . $spKey;
 		switch ($spKey) {
-		case 'notify':
-			// Simple notification
-			$resultArray = array(
-				'elements' => array(
-					array(
-						'matchString' => $content
-					)
-				)
-			);
-			$retVal = $resultArray;
-			break;
-		case 'substitute':
-			$tokenID = $this->makeTokenID();
-			$resultArray = array(
-				'content' => '{softref:' . $tokenID . '}',
-				'elements' => array(
-					array(
-						'matchString' => $content,
-						'subst' => array(
-							'type' => 'string',
-							'tokenID' => $tokenID,
-							'tokenValue' => $content
+			case 'notify':
+				// Simple notification
+				$resultArray = array(
+					'elements' => array(
+						array(
+							'matchString' => $content
 						)
 					)
-				)
-			);
-			$retVal = $resultArray;
-			break;
-		case 'images':
-			$retVal = $this->findRef_images($content, $spParams);
-			break;
-		case 'typolink':
-			$retVal = $this->findRef_typolink($content, $spParams);
-			break;
-		case 'typolink_tag':
-			$retVal = $this->findRef_typolink_tag($content, $spParams);
-			break;
-		case 'ext_fileref':
-			$retVal = $this->findRef_extension_fileref($content, $spParams);
-			break;
-		case 'TStemplate':
-			$retVal = $this->findRef_TStemplate($content, $spParams);
-			break;
-		case 'TSconfig':
-			$retVal = $this->findRef_TSconfig($content, $spParams);
-			break;
-		case 'email':
-			$retVal = $this->findRef_email($content, $spParams);
-			break;
-		case 'url':
-			$retVal = $this->findRef_url($content, $spParams);
-			break;
-		default:
-			$retVal = FALSE;
-			break;
+				);
+				$retVal = $resultArray;
+				break;
+			case 'substitute':
+				$tokenID = $this->makeTokenID();
+				$resultArray = array(
+					'content' => '{softref:' . $tokenID . '}',
+					'elements' => array(
+						array(
+							'matchString' => $content,
+							'subst' => array(
+								'type' => 'string',
+								'tokenID' => $tokenID,
+								'tokenValue' => $content
+							)
+						)
+					)
+				);
+				$retVal = $resultArray;
+				break;
+			case 'images':
+				$retVal = $this->findRef_images($content, $spParams);
+				break;
+			case 'typolink':
+				$retVal = $this->findRef_typolink($content, $spParams);
+				break;
+			case 'typolink_tag':
+				$retVal = $this->findRef_typolink_tag($content, $spParams);
+				break;
+			case 'ext_fileref':
+				$retVal = $this->findRef_extension_fileref($content, $spParams);
+				break;
+			case 'TStemplate':
+				$retVal = $this->findRef_TStemplate($content, $spParams);
+				break;
+			case 'TSconfig':
+				$retVal = $this->findRef_TSconfig($content, $spParams);
+				break;
+			case 'email':
+				$retVal = $this->findRef_email($content, $spParams);
+				break;
+			case 'url':
+				$retVal = $this->findRef_url($content, $spParams);
+				break;
+			default:
+				$retVal = FALSE;
 		}
 		return $retVal;
 	}
@@ -188,7 +180,7 @@ class SoftReferenceIndex {
 	 */
 	public function findRef_images($content, $spParams) {
 		// Start HTML parser and split content by image tag:
-		$htmlParser = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Html\\HtmlParser');
+		$htmlParser = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Html\\HtmlParser');
 		$splitContent = $htmlParser->splitTags('img', $content);
 		$elements = array();
 		// Traverse splitted parts:
@@ -196,17 +188,17 @@ class SoftReferenceIndex {
 			if ($k % 2) {
 				// Get file reference:
 				$attribs = $htmlParser->get_tag_attributes($v);
-				$srcRef = \TYPO3\CMS\Core\Utility\GeneralUtility::htmlspecialchars_decode($attribs[0]['src']);
+				$srcRef = htmlspecialchars_decode($attribs[0]['src']);
 				$pI = pathinfo($srcRef);
 				// If it looks like a local image, continue. Otherwise ignore it.
-				$absPath = \TYPO3\CMS\Core\Utility\GeneralUtility::getFileAbsFileName(PATH_site . $srcRef);
+				$absPath = GeneralUtility::getFileAbsFileName(PATH_site . $srcRef);
 				if (!$pI['scheme'] && !$pI['query'] && $absPath && $srcRef !== 'clear.gif') {
 					// Initialize the element entry with info text here:
 					$tokenID = $this->makeTokenID($k);
 					$elements[$k] = array();
 					$elements[$k]['matchString'] = $v;
 					// If the image seems to be from fileadmin/ folder or an RTE image, then proceed to set up substitution token:
-					if (\TYPO3\CMS\Core\Utility\GeneralUtility::isFirstPartOfStr($srcRef, $this->fileAdminDir . '/') || \TYPO3\CMS\Core\Utility\GeneralUtility::isFirstPartOfStr($srcRef, 'uploads/') && preg_match('/^RTEmagicC_/', basename($srcRef))) {
+					if (GeneralUtility::isFirstPartOfStr($srcRef, $this->fileAdminDir . '/') || GeneralUtility::isFirstPartOfStr($srcRef, 'uploads/') && preg_match('/^RTEmagicC_/', basename($srcRef))) {
 						// Token and substitute value:
 						// Make sure the value we work on is found and will get substituted in the content (Very important that the src-value is not DeHSC'ed)
 						if (strstr($splitContent[$k], $attribs[0]['src'])) {
@@ -287,7 +279,7 @@ class SoftReferenceIndex {
 	 */
 	public function findRef_typolink_tag($content, $spParams) {
 		// Parse string for special TYPO3 <link> tag:
-		$htmlParser = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Html\\HtmlParser');
+		$htmlParser = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Html\\HtmlParser');
 		$linkTags = $htmlParser->splitTags('link', $content);
 		// Traverse result:
 		$elements = array();
@@ -320,7 +312,7 @@ class SoftReferenceIndex {
 	public function findRef_TStemplate($content, $spParams) {
 		$elements = array();
 		// First, try to find images and links:
-		$htmlParser = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Html\\HtmlParser');
+		$htmlParser = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Html\\HtmlParser');
 		$splitContent = $htmlParser->splitTags('img,a,form', $content);
 		// Traverse splitted parts:
 		foreach ($splitContent as $k => $v) {
@@ -328,27 +320,27 @@ class SoftReferenceIndex {
 				$attribs = $htmlParser->get_tag_attributes($v);
 				$attributeName = '';
 				switch ($htmlParser->getFirstTagName($v)) {
-				case 'img':
-					$attributeName = 'src';
-					break;
-				case 'a':
-					$attributeName = 'href';
-					break;
-				case 'form':
-					$attributeName = 'action';
-					break;
+					case 'img':
+						$attributeName = 'src';
+						break;
+					case 'a':
+						$attributeName = 'href';
+						break;
+					case 'form':
+						$attributeName = 'action';
+						break;
 				}
 				// Get file reference:
 				if (isset($attribs[0][$attributeName])) {
-					$srcRef = \TYPO3\CMS\Core\Utility\GeneralUtility::htmlspecialchars_decode($attribs[0][$attributeName]);
+					$srcRef = htmlspecialchars_decode($attribs[0][$attributeName]);
 					// Set entry:
 					$tokenID = $this->makeTokenID($k);
 					$elements[$k] = array();
 					$elements[$k]['matchString'] = $v;
 					// OK, if it looks like a local file from fileadmin/, include it:
 					$pI = pathinfo($srcRef);
-					$absPath = \TYPO3\CMS\Core\Utility\GeneralUtility::getFileAbsFileName(PATH_site . $srcRef);
-					if (\TYPO3\CMS\Core\Utility\GeneralUtility::isFirstPartOfStr($srcRef, $this->fileAdminDir . '/') && !$pI['query'] && $absPath) {
+					$absPath = GeneralUtility::getFileAbsFileName(PATH_site . $srcRef);
+					if (GeneralUtility::isFirstPartOfStr($srcRef, $this->fileAdminDir . '/') && !$pI['query'] && $absPath) {
 						// Token and substitute value:
 						// Very important that the src-value is not DeHSC'ed
 						if (strstr($splitContent[$k], $attribs[0][$attributeName])) {
@@ -543,7 +535,7 @@ class SoftReferenceIndex {
 				);
 				$parts[$idx] = '{softref:' . $tokenID . '}';
 				// Check if the file actually exists:
-				$absPath = \TYPO3\CMS\Core\Utility\GeneralUtility::getFileAbsFileName(PATH_site . $value);
+				$absPath = GeneralUtility::getFileAbsFileName(PATH_site . $value);
 				if (!@is_file($absPath)) {
 					$elements['fileadminReferences.' . $idx]['error'] = 'File does not exist!';
 				}
@@ -555,96 +547,129 @@ class SoftReferenceIndex {
 
 	/**
 	 * Analyse content as a TypoLink value and return an array with properties.
-	 * TypoLinks format is: <link [typolink] [browser target] [css class]>. See tslib_content::typolink()
+	 * TypoLinks format is: <link [typolink] [browser target] [css class] [title attribute] [additionalParams]>.
+	 * See TYPO3\CMS\Frontend\ContentObject\ContentObjectRenderer::typolink()
 	 * The syntax of the [typolink] part is: [typolink] = [page id or alias][,[type value]][#[anchor, if integer = tt_content uid]]
 	 * The extraction is based on how tslib_content::typolink() behaves.
 	 *
 	 * @param string $typolinkValue TypoLink value.
 	 * @return array Array with the properties of the input link specified. The key "LINK_TYPE" will reveal the type. If that is blank it could not be determined.
-	 * @see tslib_content::typolink(), setTypoLinkPartsElement()
+	 * @see TYPO3\CMS\Frontend\ContentObject\ContentObjectRenderer::typolink(), setTypoLinkPartsElement()
 	 * @todo Define visibility
 	 */
 	public function getTypoLinkParts($typolinkValue) {
 		$finalTagParts = array();
-		// Split by space into link / target / class
-		list($link_param, $browserTarget, $cssClass) = \TYPO3\CMS\Core\Utility\GeneralUtility::trimExplode(' ', $typolinkValue, 1);
-		if (strlen($browserTarget)) {
-			$finalTagParts['target'] = $browserTarget;
+		$browserTarget = '';
+		$cssClass = '';
+		$titleAttribute = '';
+		$additionalParams = '';
+		// Split into link / target / class / title / additionalParams
+		$linkParameter = GeneralUtility::unQuoteFilenames($typolinkValue, TRUE);
+		// Link parameter value
+		$link_param = trim($linkParameter[0]);
+		// Target value
+		if (isset($linkParameter[1])) {
+			$browserTarget = trim($linkParameter[1]);
 		}
-		if (strlen($cssClass)) {
-			$finalTagParts['class'] = $cssClass;
+		// Link class
+		if (isset($linkParameter[2])) {
+			$cssClass = trim($linkParameter[2]);
 		}
+		// Title value
+		if (isset($linkParameter[3])) {
+			$titleAttribute = trim($linkParameter[3]);
+		}
+		if (isset($linkParameter[4]) && trim($linkParameter[4]) !== '') {
+			$additionalParams = trim($linkParameter[4]);
+		}
+		// set all tag parts because setTypoLinkPartsElement() rely on them
+		$finalTagParts['target'] = $browserTarget;
+		$finalTagParts['class'] = $cssClass;
+		$finalTagParts['title'] = $titleAttribute;
+		$finalTagParts['additionalParams'] = $additionalParams;
+
 		// Parse URL:
 		$pU = @parse_url($link_param);
-		// Detecting the kind of reference:
+
+		// If it's a mail address:
 		if (strstr($link_param, '@') && !$pU['scheme']) {
-			// If it's a mail address:
 			$link_param = preg_replace('/^mailto:/i', '', $link_param);
 			$finalTagParts['LINK_TYPE'] = 'mailto';
 			$finalTagParts['url'] = trim($link_param);
-		} else {
-			// Check for FAL link-handler keyword
-			list ($linkHandlerKeyword, $linkHandlerValue) = explode(':', trim($link_param), 2);
-			if ($linkHandlerKeyword === 'file') {
+			return $finalTagParts;
+		}
+
+		list ($linkHandlerKeyword, $linkHandlerValue) = explode(':', trim($link_param), 2);
+
+		// Dispatch available signal slots.
+		$linkHandlerFound = FALSE;
+		list($linkHandlerFound, $finalTagParts) = $this->emitGetTypoLinkParts($linkHandlerFound, $finalTagParts, $linkHandlerKeyword, $linkHandlerValue);
+		if ($linkHandlerFound) {
+			return $finalTagParts;
+		}
+
+		// Check for FAL link-handler keyword
+		if ($linkHandlerKeyword === 'file') {
+			$finalTagParts['LINK_TYPE'] = 'file';
+			$finalTagParts['identifier'] = trim($link_param);
+			return $finalTagParts;
+		}
+
+		$isLocalFile = 0;
+		$fileChar = (int)strpos($link_param, '/');
+		$urlChar = (int)strpos($link_param, '.');
+
+		// Detects if a file is found in site-root and if so it will be treated like a normal file.
+		list($rootFileDat) = explode('?', rawurldecode($link_param));
+		$containsSlash = strstr($rootFileDat, '/');
+		$rFD_fI = pathinfo($rootFileDat);
+		if (trim($rootFileDat) && !$containsSlash && (@is_file(PATH_site . $rootFileDat) || GeneralUtility::inList('php,html,htm', strtolower($rFD_fI['extension'])))) {
+			$isLocalFile = 1;
+		} elseif ($containsSlash) {
+			// Adding this so realurl directories are linked right (non-existing).
+			$isLocalFile = 2;
+		}
+		if ($pU['scheme'] || ($isLocalFile != 1 && $urlChar && (!$containsSlash || $urlChar < $fileChar))) { // url (external): If doubleSlash or if a '.' comes before a '/'.
+			$finalTagParts['LINK_TYPE'] = 'url';
+			$finalTagParts['url'] = $link_param;
+		} elseif ($containsSlash || $isLocalFile) { // file (internal)
+			$splitLinkParam = explode('?', $link_param);
+			if (file_exists(rawurldecode($splitLinkParam[0])) || $isLocalFile) {
 				$finalTagParts['LINK_TYPE'] = 'file';
-				$finalTagParts['identifier'] = trim($link_param);
-			} else {
-				$isLocalFile = 0;
-				$fileChar = intval(strpos($link_param, '/'));
-				$urlChar = intval(strpos($link_param, '.'));
+				$finalTagParts['filepath'] = rawurldecode($splitLinkParam[0]);
+				$finalTagParts['query'] = $splitLinkParam[1];
+			}
+		} else {
+			// integer or alias (alias is without slashes or periods or commas, that is
+			// 'nospace,alphanum_x,lower,unique' according to definition in $GLOBALS['TCA']!)
+			$finalTagParts['LINK_TYPE'] = 'page';
 
-					// Detects if a file is found in site-root and if so it will be treated like a normal file.
-				list($rootFileDat) = explode('?', rawurldecode($link_param));
-				$containsSlash = strstr($rootFileDat, '/');
-				$rFD_fI = pathinfo($rootFileDat);
-				if (trim($rootFileDat) && !$containsSlash && (@is_file(PATH_site . $rootFileDat) || \TYPO3\CMS\Core\Utility\GeneralUtility::inList('php,html,htm', strtolower($rFD_fI['extension'])))) {
-					$isLocalFile = 1;
-				} elseif ($containsSlash) {
-					// Adding this so realurl directories are linked right (non-existing).
-					$isLocalFile = 2;
+			$link_params_parts = explode('#', $link_param);
+			// Link-data del
+			$link_param = trim($link_params_parts[0]);
+
+			if (strlen($link_params_parts[1])) {
+				$finalTagParts['anchor'] = trim($link_params_parts[1]);
+			}
+
+			// Splitting the parameter by ',' and if the array counts more than 1 element it's a id/type/? pair
+			$pairParts = GeneralUtility::trimExplode(',', $link_param);
+			if (count($pairParts) > 1) {
+				$link_param = $pairParts[0];
+				$finalTagParts['type'] = $pairParts[1]; // Overruling 'type'
+			}
+
+			// Checking if the id-parameter is an alias.
+			if (strlen($link_param)) {
+				if (!\TYPO3\CMS\Core\Utility\MathUtility::canBeInterpretedAsInteger($link_param)) {
+					$finalTagParts['alias'] = $link_param;
+					$link_param = $this->getPageIdFromAlias($link_param);
 				}
-				if ($pU['scheme'] || ($isLocalFile != 1 && $urlChar && (!$containsSlash || $urlChar < $fileChar))) { // url (external): If doubleSlash or if a '.' comes before a '/'.
-					$finalTagParts['LINK_TYPE'] = 'url';
-					$finalTagParts['url'] = $link_param;
-				} elseif ($containsSlash || $isLocalFile) { // file (internal)
-					$splitLinkParam = explode('?', $link_param);
-					if (file_exists(rawurldecode($splitLinkParam[0])) || $isLocalFile) {
-						$finalTagParts['LINK_TYPE'] = 'file';
-						$finalTagParts['filepath'] = rawurldecode($splitLinkParam[0]);
-						$finalTagParts['query'] = $splitLinkParam[1];
-					}
-				} else {
-					// integer or alias (alias is without slashes or periods or commas, that is
-					// 'nospace,alphanum_x,lower,unique' according to definition in $GLOBALS['TCA']!)
-					$finalTagParts['LINK_TYPE'] = 'page';
 
-					$link_params_parts = explode('#', $link_param);
-					// Link-data del
-					$link_param = trim($link_params_parts[0]);
-
-					if (strlen($link_params_parts[1])) {
-						$finalTagParts['anchor'] = trim($link_params_parts[1]);
-					}
-
-					// Splitting the parameter by ',' and if the array counts more than 1 element it's a id/type/? pair
-					$pairParts = \TYPO3\CMS\Core\Utility\GeneralUtility::trimExplode(',', $link_param);
-					if (count($pairParts) > 1) {
-						$link_param = $pairParts[0];
-						$finalTagParts['type'] = $pairParts[1]; // Overruling 'type'
-					}
-
-					// Checking if the id-parameter is an alias.
-					if (strlen($link_param)) {
-						if (!\TYPO3\CMS\Core\Utility\MathUtility::canBeInterpretedAsInteger($link_param)) {
-							$finalTagParts['alias'] = $link_param;
-							$link_param = $this->getPageIdFromAlias($link_param);
-						}
-
-						$finalTagParts['page_id'] = intval($link_param);
-					}
-				}
+				$finalTagParts['page_id'] = (int)$link_param;
 			}
 		}
+
 		return $finalTagParts;
 	}
 
@@ -666,111 +691,123 @@ class SoftReferenceIndex {
 		$elements[$tokenID . ':' . $idx]['matchString'] = $content;
 		// Based on link type, maybe do more:
 		switch ((string) $tLP['LINK_TYPE']) {
-		case 'mailto':
+			case 'mailto':
 
-		case 'url':
-			// Mail addresses and URLs can be substituted manually:
-			$elements[$tokenID . ':' . $idx]['subst'] = array(
-				'type' => 'string',
-				'tokenID' => $tokenID,
-				'tokenValue' => $tLP['url']
-			);
-			// Output content will be the token instead:
-			$content = '{softref:' . $tokenID . '}';
-			break;
-		case 'file':
-				// Process files referenced by their FAL uid
-			if ($tLP['identifier']) {
-				list ($linkHandlerKeyword, $linkHandlerValue) = explode(':', trim($tLP['identifier']), 2);
-				if (\TYPO3\CMS\Core\Utility\MathUtility::canBeInterpretedAsInteger($linkHandlerValue)) {
-						// Token and substitute value
-					$elements[$tokenID . ':' . $idx]['subst'] = array(
-						'type' => 'db',
-						'recordRef' => 'sys_file:' . $linkHandlerValue,
-						'tokenID' => $tokenID,
-						'tokenValue' => $tLP['identifier'],
-					);
-						// Output content will be the token instead:
-					$content = '{softref:' . $tokenID . '}';
-				} else {
-						// This is a link to a folder...
-					return $content;
-				}
-
-			// Process files found in fileadmin directory:
-			} elseif (!$tLP['query']) {
-				// We will not process files which has a query added to it. That will look like a script we don't want to move.
-				// File must be inside fileadmin/
-				if (\TYPO3\CMS\Core\Utility\GeneralUtility::isFirstPartOfStr($tLP['filepath'], $this->fileAdminDir . '/')) {
-					// Set up the basic token and token value for the relative file:
-					$elements[$tokenID . ':' . $idx]['subst'] = array(
-						'type' => 'file',
-						'relFileName' => $tLP['filepath'],
-						'tokenID' => $tokenID,
-						'tokenValue' => $tLP['filepath']
-					);
-					// Depending on whether the file exists or not we will set the
-					$absPath = \TYPO3\CMS\Core\Utility\GeneralUtility::getFileAbsFileName(PATH_site . $tLP['filepath']);
-					if (!@is_file($absPath)) {
-						$elements[$tokenID . ':' . $idx]['error'] = 'File does not exist!';
-					}
-					// Output content will be the token instead
-					$content = '{softref:' . $tokenID . '}';
-				} else {
-					return $content;
-				}
-			} else {
-				return $content;
-			}
-			break;
-		case 'page':
-			// Rebuild page reference typolink part:
-			$content = '';
-			// Set page id:
-			if ($tLP['page_id']) {
-				$content .= '{softref:' . $tokenID . '}';
+			case 'url':
+				// Mail addresses and URLs can be substituted manually:
 				$elements[$tokenID . ':' . $idx]['subst'] = array(
-					'type' => 'db',
-					'recordRef' => 'pages:' . $tLP['page_id'],
+					'type' => 'string',
 					'tokenID' => $tokenID,
-					'tokenValue' => $tLP['alias'] ? $tLP['alias'] : $tLP['page_id']
+					'tokenValue' => $tLP['url']
 				);
-			}
-			// Add type if applicable
-			if (strlen($tLP['type'])) {
-				$content .= ',' . $tLP['type'];
-			}
-			// Add anchor if applicable
-			if (strlen($tLP['anchor'])) {
-				// Anchor is assumed to point to a content elements:
-				if (\TYPO3\CMS\Core\Utility\MathUtility::canBeInterpretedAsInteger($tLP['anchor'])) {
-					// Initialize a new entry because we have a new relation:
-					$newTokenID = $this->makeTokenID('setTypoLinkPartsElement:anchor:' . $idx);
-					$elements[$newTokenID . ':' . $idx] = array();
-					$elements[$newTokenID . ':' . $idx]['matchString'] = 'Anchor Content Element: ' . $tLP['anchor'];
-					$content .= '#{softref:' . $newTokenID . '}';
-					$elements[$newTokenID . ':' . $idx]['subst'] = array(
-						'type' => 'db',
-						'recordRef' => 'tt_content:' . $tLP['anchor'],
-						'tokenID' => $newTokenID,
-						'tokenValue' => $tLP['anchor']
-					);
+				// Output content will be the token instead:
+				$content = '{softref:' . $tokenID . '}';
+				break;
+			case 'file':
+				// Process files referenced by their FAL uid
+				if ($tLP['identifier']) {
+					list ($linkHandlerKeyword, $linkHandlerValue) = explode(':', trim($tLP['identifier']), 2);
+					if (\TYPO3\CMS\Core\Utility\MathUtility::canBeInterpretedAsInteger($linkHandlerValue)) {
+						// Token and substitute value
+						$elements[$tokenID . ':' . $idx]['subst'] = array(
+							'type' => 'db',
+							'recordRef' => 'sys_file:' . $linkHandlerValue,
+							'tokenID' => $tokenID,
+							'tokenValue' => $tLP['identifier'],
+						);
+						// Output content will be the token instead:
+						$content = '{softref:' . $tokenID . '}';
+					} else {
+						// This is a link to a folder...
+						return $content;
+					}
+
+					// Process files found in fileadmin directory:
+				} elseif (!$tLP['query']) {
+					// We will not process files which has a query added to it. That will look like a script we don't want to move.
+					// File must be inside fileadmin/
+					if (GeneralUtility::isFirstPartOfStr($tLP['filepath'], $this->fileAdminDir . '/')) {
+						// Set up the basic token and token value for the relative file:
+						$elements[$tokenID . ':' . $idx]['subst'] = array(
+							'type' => 'file',
+							'relFileName' => $tLP['filepath'],
+							'tokenID' => $tokenID,
+							'tokenValue' => $tLP['filepath']
+						);
+						// Depending on whether the file exists or not we will set the
+						$absPath = GeneralUtility::getFileAbsFileName(PATH_site . $tLP['filepath']);
+						if (!@is_file($absPath)) {
+							$elements[$tokenID . ':' . $idx]['error'] = 'File does not exist!';
+						}
+						// Output content will be the token instead
+						$content = '{softref:' . $tokenID . '}';
+					} else {
+						return $content;
+					}
 				} else {
-					// Anchor is a hardcoded string
-					$content .= '#' . $tLP['type'];
+					return $content;
 				}
-			}
-			break;
-		default:
-			$elements[$tokenID . ':' . $idx]['error'] = 'Couldn\\t decide typolink mode.';
-			return $content;
-			break;
+				break;
+			case 'page':
+				// Rebuild page reference typolink part:
+				$content = '';
+				// Set page id:
+				if ($tLP['page_id']) {
+					$content .= '{softref:' . $tokenID . '}';
+					$elements[$tokenID . ':' . $idx]['subst'] = array(
+						'type' => 'db',
+						'recordRef' => 'pages:' . $tLP['page_id'],
+						'tokenID' => $tokenID,
+						'tokenValue' => $tLP['alias'] ? $tLP['alias'] : $tLP['page_id']
+					);
+				}
+				// Add type if applicable
+				if (strlen($tLP['type'])) {
+					$content .= ',' . $tLP['type'];
+				}
+				// Add anchor if applicable
+				if (strlen($tLP['anchor'])) {
+					// Anchor is assumed to point to a content elements:
+					if (\TYPO3\CMS\Core\Utility\MathUtility::canBeInterpretedAsInteger($tLP['anchor'])) {
+						// Initialize a new entry because we have a new relation:
+						$newTokenID = $this->makeTokenID('setTypoLinkPartsElement:anchor:' . $idx);
+						$elements[$newTokenID . ':' . $idx] = array();
+						$elements[$newTokenID . ':' . $idx]['matchString'] = 'Anchor Content Element: ' . $tLP['anchor'];
+						$content .= '#{softref:' . $newTokenID . '}';
+						$elements[$newTokenID . ':' . $idx]['subst'] = array(
+							'type' => 'db',
+							'recordRef' => 'tt_content:' . $tLP['anchor'],
+							'tokenID' => $newTokenID,
+							'tokenValue' => $tLP['anchor']
+						);
+					} else {
+						// Anchor is a hardcoded string
+						$content .= '#' . $tLP['type'];
+					}
+				}
+				break;
+			default:
+				$linkHandlerFound = FALSE;
+				list($linkHandlerFound, $tLP, $content, $newElements) = $this->emitSetTypoLinkPartsElement($linkHandlerFound, $tLP, $content, $elements, $idx, $tokenID);
+				// We need to merge the array, otherwise we would loose the reference.
+				\TYPO3\CMS\Core\Utility\ArrayUtility::mergeRecursiveWithOverrule($elements, $newElements);
+
+				if (!$linkHandlerFound) {
+					$elements[$tokenID . ':' . $idx]['error'] = 'Couldn\'t decide typolink mode.';
+					return $content;
+				}
 		}
-		// Finally, for all entries that was rebuild with tokens, add target and class in the end:
-		if (strlen($content) && strlen($tLP['target'])) {
+		// Finally, for all entries that was rebuild with tokens, add target, class, title and additionalParams in the end:
+		if (strlen($content) && isset($tLP['target']) && $tLP['target'] !== '') {
 			$content .= ' ' . $tLP['target'];
-			if (strlen($tLP['class'])) {
-				$content .= ' ' . $tLP['class'];
+			if (isset($tLP['class']) && $tLP['class'] !== '') {
+				$content .= ' "' . $tLP['class'] . '"';
+				if (isset($tLP['title']) && $tLP['title'] !== '') {
+					$content .= ' "' . $tLP['title'] . '"';
+					if (isset($tLP['additionalParams']) && $tLP['additionalParams'] !== '') {
+						$content .= ' ' . $tLP['additionalParams'];
+					}
+				}
 			}
 		}
 		// Return rebuilt typolink value:
@@ -800,7 +837,35 @@ class SoftReferenceIndex {
 		return md5($this->tokenID_basePrefix . ':' . $index);
 	}
 
+	/**
+	 * @return \TYPO3\CMS\Extbase\SignalSlot\Dispatcher
+	 */
+	protected function getSignalSlotDispatcher() {
+		return GeneralUtility::makeInstance('TYPO3\\CMS\\Extbase\\SignalSlot\Dispatcher');
+	}
+
+	/**
+	 * @param bool $linkHandlerFound
+	 * @param array $finalTagParts
+	 * @param string $linkHandlerKeyword
+	 * @param string $linkHandlerValue
+	 * @return array
+	 */
+	protected function emitGetTypoLinkParts($linkHandlerFound, $finalTagParts, $linkHandlerKeyword, $linkHandlerValue) {
+		return $this->getSignalSlotDispatcher()->dispatch(get_class($this), 'getTypoLinkParts', array($linkHandlerFound, $finalTagParts, $linkHandlerKeyword, $linkHandlerValue));
+	}
+
+	/**
+	 * @param bool $linkHandlerFound
+	 * @param array $tLP
+	 * @param string $content
+	 * @param array $elements
+	 * @param int $idx
+	 * @param string $tokenID
+	 * @return array
+	 */
+	protected function emitSetTypoLinkPartsElement($linkHandlerFound, $tLP, $content, $elements, $idx, $tokenID) {
+		return $this->getSignalSlotDispatcher()->dispatch(get_class($this), 'setTypoLinkPartsElement', array($linkHandlerFound, $tLP, $content, $elements, $idx, $tokenID, $this));
+	}
+
 }
-
-
-?>

@@ -12,9 +12,9 @@ namespace TYPO3\CMS\Fluid\Tests\Unit\ViewHelpers\Format;
  *                                                                        */
 
 /**
- * Test for \TYPO3\CMS\Fluid\ViewHelpers\Format\UrlencodeViewHelper
+ * Test case
  */
-class UrlencodeViewHelperTest extends \TYPO3\CMS\Extbase\Tests\Unit\BaseTestCase {
+class UrlencodeViewHelperTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 
 	/**
 	 * @var \TYPO3\CMS\Fluid\ViewHelpers\Format\UrlencodeViewHelper
@@ -78,5 +78,3 @@ class UrlencodeViewHelperTest extends \TYPO3\CMS\Extbase\Tests\Unit\BaseTestCase
 		$this->assertSame($source, $actualResult);
 	}
 }
-
-?>

@@ -1,31 +1,19 @@
 <?php
 namespace TYPO3\CMS\Version\Dependency;
 
-/***************************************************************
- * Copyright notice
+/**
+ * This file is part of the TYPO3 CMS project.
  *
- * (c) 2010-2013 Oliver Hader <oliver@typo3.org>
- * All rights reserved
+ * It is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License, either version 2
+ * of the License, or any later version.
  *
- * This script is part of the TYPO3 project. The TYPO3 project is
- * free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
+ * For the full copyright and license information, please read the
+ * LICENSE.txt file that was distributed with this source code.
  *
- * The GNU General Public License can be found at
- * http://www.gnu.org/copyleft/gpl.html.
- * A copy is found in the textfile GPL.txt and important notices to the license
- * from the author is found in LICENSE.txt distributed with these scripts.
- *
- *
- * This script is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * This copyright notice MUST APPEAR in all copies of the script!
- ***************************************************************/
+ * The TYPO3 project - inspiring people to share!
+ */
+
 /**
  * Object to hold information on a dependent database element in abstract.
  */
@@ -37,6 +25,12 @@ class ElementEntity {
 	const EVENT_CreateChildReference = 'TYPO3\\CMS\\Version\\Dependency\\ElementEntity::createChildReference';
 	const EVENT_CreateParentReference = 'TYPO3\\CMS\\Version\\Dependency\\ElementEntity::createParentReference';
 	const RESPONSE_Skip = 'TYPO3\\CMS\\Version\\Dependency\\ElementEntity->skip';
+
+	/**
+	 * @var bool
+	 */
+	protected $invalid = FALSE;
+
 	/**
 	 * @var string
 	 */
@@ -97,10 +91,24 @@ class ElementEntity {
 	 */
 	public function __construct($table, $id, array $data = array(), \TYPO3\CMS\Version\Dependency\DependencyResolver $dependency) {
 		$this->table = $table;
-		$this->id = intval($id);
+		$this->id = (int)$id;
 		$this->data = $data;
 		$this->dependency = $dependency;
 		$this->dependency->executeEventCallback(self::EVENT_Construct, $this);
+	}
+
+	/**
+	 * @param bool $invalid
+	 */
+	public function setInvalid($invalid) {
+		$this->invalid = (bool)$invalid;
+	}
+
+	/**
+	 * @return bool
+	 */
+	public function isInvalid() {
+		return $this->invalid;
 	}
 
 	/**
@@ -119,6 +127,15 @@ class ElementEntity {
 	 */
 	public function getId() {
 		return $this->id;
+	}
+
+	/**
+	 * Sets the id.
+	 *
+	 * @param int $id
+	 */
+	public function setId($id) {
+		$this->id = (int)$id;
 	}
 
 	/**
@@ -159,7 +176,7 @@ class ElementEntity {
 	 * Determines whether a particular key holds data.
 	 *
 	 * @param string $key
-	 * @return
+	 * @return bool
 	 */
 	public function hasDataValue($key) {
 		return isset($this->data[$key]);
@@ -186,18 +203,26 @@ class ElementEntity {
 	/**
 	 * Gets all child references.
 	 *
-	 * @return array
+	 * @return array|ReferenceEntity[]
 	 */
 	public function getChildren() {
 		if (!isset($this->children)) {
 			$this->children = array();
-			$rows = $GLOBALS['TYPO3_DB']->exec_SELECTgetRows('*', 'sys_refindex', 'tablename=' . $GLOBALS['TYPO3_DB']->fullQuoteStr($this->table, 'sys_refindex') . ' AND recuid=' . $this->id);
+			$where = 'tablename=' . $GLOBALS['TYPO3_DB']->fullQuoteStr($this->table, 'sys_refindex') . ' AND recuid='
+				. $this->id . ' AND workspace=' . $this->dependency->getWorkspace();
+			$rows = $GLOBALS['TYPO3_DB']->exec_SELECTgetRows('*', 'sys_refindex', $where, '', 'sorting');
 			if (is_array($rows)) {
 				foreach ($rows as $row) {
-					$reference = $this->getDependency()->getFactory()->getReferencedElement($row['ref_table'], $row['ref_uid'], $row['field'], array(), $this->getDependency());
-					$callbackResponse = $this->dependency->executeEventCallback(self::EVENT_CreateChildReference, $this, array('reference' => $reference));
+					$arguments = array('table' => $row['ref_table'], 'id' => $row['ref_uid'], 'field' => $row['field'], 'scope' => self::REFERENCES_ChildOf);
+					$callbackResponse = $this->dependency->executeEventCallback(self::EVENT_CreateChildReference, $this, $arguments);
 					if ($callbackResponse !== self::RESPONSE_Skip) {
-						$this->children[] = $reference;
+						$this->children[] = $this->getDependency()->getFactory()->getReferencedElement(
+							$row['ref_table'],
+							$row['ref_uid'],
+							$row['field'],
+							array(),
+							$this->getDependency()
+						);
 					}
 				}
 			}
@@ -208,18 +233,26 @@ class ElementEntity {
 	/**
 	 * Gets all parent references.
 	 *
-	 * @return array
+	 * @return array|ReferenceEntity[]
 	 */
 	public function getParents() {
 		if (!isset($this->parents)) {
 			$this->parents = array();
-			$rows = $GLOBALS['TYPO3_DB']->exec_SELECTgetRows('*', 'sys_refindex', 'ref_table=' . $GLOBALS['TYPO3_DB']->fullQuoteStr($this->table, 'sys_refindex') . ' AND deleted=0 AND ref_uid=' . $this->id);
+			$where = 'ref_table=' . $GLOBALS['TYPO3_DB']->fullQuoteStr($this->table, 'sys_refindex')
+				. ' AND deleted=0 AND ref_uid=' . $this->id . ' AND workspace=' . $this->dependency->getWorkspace();
+			$rows = $GLOBALS['TYPO3_DB']->exec_SELECTgetRows('*', 'sys_refindex', $where, '', 'sorting');
 			if (is_array($rows)) {
 				foreach ($rows as $row) {
-					$reference = $this->getDependency()->getFactory()->getReferencedElement($row['tablename'], $row['recuid'], $row['field'], array(), $this->getDependency());
-					$callbackResponse = $this->dependency->executeEventCallback(self::EVENT_CreateParentReference, $this, array('reference' => $reference));
+					$arguments = array('table' => $row['tablename'], 'id' => $row['recuid'], 'field' => $row['field'], 'scope' => self::REFERENCES_ParentOf);
+					$callbackResponse = $this->dependency->executeEventCallback(self::EVENT_CreateParentReference, $this, $arguments);
 					if ($callbackResponse !== self::RESPONSE_Skip) {
-						$this->parents[] = $reference;
+						$this->parents[] = $this->getDependency()->getFactory()->getReferencedElement(
+							$row['tablename'],
+							$row['recuid'],
+							$row['field'],
+							array(),
+							$this->getDependency()
+						);
 					}
 				}
 			}
@@ -239,7 +272,7 @@ class ElementEntity {
 	/**
 	 * Gets the outermost parent element.
 	 *
-	 * @return \TYPO3\CMS\Version\Dependency\ElementEntity
+	 * @return ElementEntity
 	 */
 	public function getOuterMostParent() {
 		if (!isset($this->outerMostParent)) {
@@ -266,7 +299,7 @@ class ElementEntity {
 	/**
 	 * Gets nested children accumulated.
 	 *
-	 * @return array
+	 * @return array|ReferenceEntity[]
 	 */
 	public function getNestedChildren() {
 		if (!isset($this->nestedChildren)) {
@@ -297,9 +330,9 @@ class ElementEntity {
 	 * @return array
 	 */
 	public function getRecord() {
-		if (!isset($this->record)) {
+		if (empty($this->record['uid']) || (int)$this->record['uid'] !== $this->id) {
 			$this->record = array();
-			$rows = $GLOBALS['TYPO3_DB']->exec_SELECTgetRows('*', $this->getTable(), 'uid=' . $this->getId());
+			$rows = $GLOBALS['TYPO3_DB']->exec_SELECTgetRows('uid,pid,t3ver_wsid,t3ver_state,t3ver_oid', $this->getTable(), 'uid=' . $this->getId());
 			if (is_array($rows)) {
 				$this->record = $rows[0];
 			}
@@ -308,6 +341,3 @@ class ElementEntity {
 	}
 
 }
-
-
-?>

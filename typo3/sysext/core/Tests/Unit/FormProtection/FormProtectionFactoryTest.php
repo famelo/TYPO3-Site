@@ -1,30 +1,18 @@
 <?php
 namespace TYPO3\CMS\Core\Tests\Unit\FormProtection;
 
-/***************************************************************
- * Copyright notice
+/**
+ * This file is part of the TYPO3 CMS project.
  *
- * (c) 2010-2013 Oliver Klee (typo3-coding@oliverklee.de)
- * All rights reserved
+ * It is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License, either version 2
+ * of the License, or any later version.
  *
- * This script is part of the TYPO3 project. The TYPO3 project is
- * free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
+ * For the full copyright and license information, please read the
+ * LICENSE.txt file that was distributed with this source code.
  *
- * The GNU General Public License can be found at
- * http://www.gnu.org/copyleft/gpl.html.
- *
- * This script is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * This copyright notice MUST APPEAR in all copies of the script!
- ***************************************************************/
-
-require_once 'Fixtures/FormProtectionTesting.php';
+ * The TYPO3 project - inspiring people to share!
+ */
 
 /**
  * Testcase
@@ -32,7 +20,7 @@ require_once 'Fixtures/FormProtectionTesting.php';
  * @author Oliver Klee <typo3-coding@oliverklee.de>
  * @author Ernesto Baschny <ernst@cron-it.de>
  */
-class FormprotectionFactoryTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
+class FormProtectionFactoryTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 
 	public function setUp() {
 
@@ -40,6 +28,7 @@ class FormprotectionFactoryTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 
 	public function tearDown() {
 		\TYPO3\CMS\Core\FormProtection\FormProtectionFactory::purgeInstances();
+		parent::tearDown();
 	}
 
 	/////////////////////////
@@ -65,6 +54,8 @@ class FormprotectionFactoryTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	 * @test
 	 */
 	public function getForTypeBackEndWithExistingBackEndReturnsBackEndFormProtection() {
+		$GLOBALS['BE_USER'] = $this->getMock('TYPO3\CMS\Core\Authentication\BackendUserAuthentication', array(), array(), '', FALSE);
+		$GLOBALS['BE_USER']->user = array('uid' => uniqid());
 		$this->assertTrue(\TYPO3\CMS\Core\FormProtection\FormProtectionFactory::get('TYPO3\\CMS\\Core\\FormProtection\\BackendFormProtection') instanceof \TYPO3\CMS\Core\FormProtection\BackendFormProtection);
 	}
 
@@ -72,6 +63,8 @@ class FormprotectionFactoryTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	 * @test
 	 */
 	public function getForTypeBackEndCalledTwoTimesReturnsTheSameInstance() {
+		$GLOBALS['BE_USER'] = $this->getMock('TYPO3\CMS\Core\Authentication\BackendUserAuthentication', array(), array(), '', FALSE);
+		$GLOBALS['BE_USER']->user = array('uid' => uniqid());
 		$this->assertSame(\TYPO3\CMS\Core\FormProtection\FormProtectionFactory::get('TYPO3\\CMS\\Core\\FormProtection\\BackendFormProtection'), \TYPO3\CMS\Core\FormProtection\FormProtectionFactory::get('TYPO3\\CMS\\Core\\FormProtection\\BackendFormProtection'));
 	}
 
@@ -93,6 +86,8 @@ class FormprotectionFactoryTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	 * @test
 	 */
 	public function getForTypesInstallToolAndBackEndReturnsDifferentInstances() {
+		$GLOBALS['BE_USER'] = $this->getMock('TYPO3\CMS\Core\Authentication\BackendUserAuthentication', array(), array(), '', FALSE);
+		$GLOBALS['BE_USER']->user = array('uid' => uniqid());
 		$this->assertNotSame(\TYPO3\CMS\Core\FormProtection\FormProtectionFactory::get('TYPO3\\CMS\\Core\\FormProtection\\InstallToolFormProtection'), \TYPO3\CMS\Core\FormProtection\FormProtectionFactory::get('TYPO3\\CMS\\Core\\FormProtection\\BackendFormProtection'));
 	}
 
@@ -118,5 +113,3 @@ class FormprotectionFactoryTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	}
 
 }
-
-?>

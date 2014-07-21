@@ -223,17 +223,6 @@ lib.stdheader {
 		prefixComment = 2 | Header date:
 	}
 
-	# HTML5 <hgroup> open
-	7 = TEXT
-	7 {
-		value = <hgroup>
-		fieldRequired = subheader
-		if {
-			value = html5
-			equals.data = TSFE:config|config|doctype
-		}
-	}
-
 	# This CASE cObject renders the header content:
 	# currentValue is set to the header data, possibly wrapped in link-tags.
 	10 = CASE
@@ -306,12 +295,6 @@ lib.stdheader {
 		}
 	}
 
-	# HTML5 <hgroup> close
-	30 < lib.stdheader.7
-	30 {
-		value = </hgroup>
-	}
-
 	# HTML5 Date
 	40 = COA
 	40 {
@@ -374,6 +357,9 @@ lib.stdheader {
 			override = <header class="csc-header csc-header-n{cObj:parentRecordNumber}">|</header>
 			override {
 				if {
+					isTrue {
+						field = date
+					}
 					value = html5
 					equals.data = TSFE:config|config|doctype
 				}
@@ -385,22 +371,6 @@ lib.stdheader {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-#******************************************************
-# Including library for processing of some elements:
-#******************************************************
-includeLibs.tx_cssstyledcontent_pi1 = EXT:css_styled_content/pi1/class.tx_cssstyledcontent_pi1.php
 
 
 #**********************************
@@ -458,7 +428,7 @@ tt_content.stdWrap {
 				# Create class for space before content
 				20 = USER
 				20 {
-					userFunc = tx_cssstyledcontent_pi1->renderSpace
+					userFunc = TYPO3\CMS\CssStyledContent\Controller\CssStyledContentController->renderSpace
 					space = before
 					constant = {$content.spaceBefore}
 					classStdWrap {
@@ -468,7 +438,7 @@ tt_content.stdWrap {
 				# Create class for space after content
 				30 = USER
 				30 {
-					userFunc = tx_cssstyledcontent_pi1->renderSpace
+					userFunc = TYPO3\CMS\CssStyledContent\Controller\CssStyledContentController->renderSpace
 					space = after
 					constant = {$content.spaceAfter}
 					classStdWrap {
@@ -543,7 +513,7 @@ tt_content.stdWrap {
 			20 {
 				10 = USER
 				10 {
-					userFunc = tx_cssstyledcontent_pi1->renderSpace
+					userFunc = TYPO3\CMS\CssStyledContent\Controller\CssStyledContentController->renderSpace
 					space = before
 					constant = {$content.spaceBefore}
 					classStdWrap {
@@ -662,18 +632,90 @@ tt_content.image = COA
 tt_content.image.10 = < lib.stdheader
 tt_content.image.20 = USER
 tt_content.image.20 {
-	userFunc = tx_cssstyledcontent_pi1->render_textpic
+	userFunc = TYPO3\CMS\CssStyledContent\Controller\CssStyledContentController->render_textpic
+
+	preRenderRegisters {
+		// To optimize performance we load all image captions into a register
+		// because we need to know if at least one image has a caption at
+		// multiple places to determine the render method.
+		allImageCaptions.cObject = FILES
+		allImageCaptions.cObject {
+			references {
+				table = tt_content
+				fieldName = image
+			}
+			renderObj = TEXT
+			renderObj.data = file:current:description
+		}
+	}
 
 	# Image source
-	imgList.field = image
-	imgList.override.field = image_fileUids
+	imgList.cObject = FILES
+	imgList.cObject {
+		references < tt_content.image.20.preRenderRegisters.allImageCaptions.cObject.references
+		renderObj = TEXT
+		renderObj.data = file:current:uid
+		renderObj.wrap = |,
+	}
 	imgPath = uploads/pics/
+
+	// This needs to be set because the UID list generated in the imgList
+	// setting contains UIDs of file references (not files).
+	imgListContainsReferenceUids = 1
 
 	# Single image rendering
 	imgObjNum = 1
 	1 {
-		file.import.current = 1
+		file.import.data = file:current:uid
+		file.treatIdAsReference = 1
 		file.width.field = imagewidth
+
+		layoutKey = {$styles.content.imgtext.layoutKey}
+		layout {
+			default {
+				element = <img src="###SRC###" width="###WIDTH###" height="###HEIGHT###"###PARAMS######ALTPARAMS######BORDER######SELFCLOSINGTAGSLASH###>
+			}
+			srcset {
+				element = <img src="###SRC###" srcset="###SOURCECOLLECTION###"###PARAMS######ALTPARAMS######SELFCLOSINGTAGSLASH###>
+				source = |*|###SRC### ###SRCSETCANDIDATE###,|*|###SRC### ###SRCSETCANDIDATE###
+			}
+			picture {
+				element = <picture>###SOURCECOLLECTION###<img src="###SRC###"###PARAMS######ALTPARAMS######SELFCLOSINGTAGSLASH###></picture>
+				source = <source src="###SRC###" media="###MEDIAQUERY###"###SELFCLOSINGTAGSLASH###>
+			}
+			data {
+				element = <img src="###SRC###"###SOURCECOLLECTION######PARAMS######ALTPARAMS######SELFCLOSINGTAGSLASH###>
+				source = data-###DATAKEY###="###SRC###"
+				source.noTrimWrap = ; ;;
+				source.noTrimWrap.splitChar = ;
+			}
+		}
+		# Default sourceCollection as an example
+		# Please write your own sourceCollection (highly recommended)
+		sourceCollection {
+			small {
+				width = 200
+
+				srcsetCandidate = 600w
+				mediaQuery = (max-device-width: 600px)
+				dataKey = small
+			}
+			smallRetina {
+				if {
+					value = {$styles.content.imgtext.layoutKey}
+					equals = default
+					negate = 1
+				}
+
+				width = 200
+				pixelDensity = 2
+
+				srcsetCandidate = 600w 2x
+				mediaQuery = (max-device-width: 600px) AND (min-resolution: 192dpi)
+				dataKey = smallRetina
+			}
+		}
+
 		imageLinkWrap = 1
 		imageLinkWrap {
 			bodyTag = <body style="margin:0; background:#fff;">
@@ -689,14 +731,10 @@ tt_content.image.20 {
 			directImageLink = {$styles.content.imgtext.linkWrap.lightboxEnabled}
 
 			enable.field = image_zoom
-			enable.ifEmpty.typolink.parameter.field = image_link
-			enable.ifEmpty.typolink.parameter.listNum.splitChar = 10
-			enable.ifEmpty.typolink.parameter.listNum.stdWrap.data = register : IMAGE_NUM_CURRENT
+			enable.ifEmpty.typolink.parameter.data = file:current:link
 			enable.ifEmpty.typolink.returnLast = url
 
-			typolink.parameter.field = image_link
-			typolink.parameter.listNum.splitChar = 10
-			typolink.parameter.listNum.stdWrap.data = register : IMAGE_NUM_CURRENT
+			typolink.parameter.data = file:current:link
 
 			typolink.target < lib.parseTarget
 			typolink.target =
@@ -711,59 +749,12 @@ tt_content.image.20 {
 
 		altText = TEXT
 		altText {
-			field = altText
+			data = file:current:alternative
 			stripHtml = 1
-			split.token.char = 10
-			split.token.if.isTrue = {$styles.content.imgtext.imageTextSplit}
-			split.returnKey.data = register : IMAGE_NUM_CURRENT
-		}
-
-		params =
-		params {
-			override {
-				dataWrap = aria-describedby="csc-longdesc-{field:uid}-{register:IMAGE_NUM_CURRENT}"
-				if {
-					isTrue {
-						cObject = TEXT
-						cObject {
-							field = imagecaption
-							required = 1
-							parseFunc =< lib.parseFunc
-							split {
-								token {
-									char = 10
-									if.isPositive = {$styles.content.imgtext.imageTextSplit} + {$styles.content.imgtext.captionSplit}
-								}
-								returnKey.data = register : IMAGE_NUM_CURRENT
-							}
-						}
-					}
-					isFalse = 1
-					isFalse {
-						if {
-							isFalse {
-								cObject = TEXT
-								cObject {
-									field = longdescURL
-									split {
-										token {
-											char = 10
-										}
-										returnKey.data = register : IMAGE_NUM_CURRENT
-									}
-								}
-							}
-						}
-					}
-					isPositive = {$styles.content.imgtext.imageTextSplit} + {$styles.content.imgtext.captionSplit}
-					value = html5
-					equals.data = TSFE:config|config|doctype
-				}
-			}
 		}
 
 		titleText < .altText
-		titleText.field = titleText
+		titleText.data = file:current:title
 
 		longdescURL {
 			parameter {
@@ -803,46 +794,19 @@ tt_content.image.20 {
 		1 {
 			1 = TEXT
 			1 {
-				field = imagecaption
+				data = file:current:description
 				required = 1
 				parseFunc =< lib.parseFunc
 				br = 1
-				split.token.char = 10
-				split.token.if.isPositive = {$styles.content.imgtext.imageTextSplit} + {$styles.content.imgtext.captionSplit}
-				split.returnKey.data = register : IMAGE_NUM_CURRENT
-			}
-			stdWrap {
-				required = 1
-				typolink {
-					parameter {
-						field = longdescURL
-						trim = 1
-						split {
-							token {
-								char = 10
-							}
-							returnKey.data = register : IMAGE_NUM_CURRENT
-						}
-						if {
-							value = html5
-							equals.data = TSFE:config|config|doctype
-						}
-					}
-					ATagParams {
-						dataWrap = id="csc-longdesc-{field:uid}-{register:IMAGE_NUM_CURRENT}"
-					}
-					target = {$styles.content.links.target}
-					extTarget = {$styles.content.links.extTarget}
-				}
 			}
 		}
 	}
 
-	# captionSplit is deprecated, use imageTextSplit instead
-	captionSplit = {$styles.content.imgtext.captionSplit}
 	captionAlign.field = imagecaption_position
-	# caption/alttext/title/longdescURL splitting
-	imageTextSplit = {$styles.content.imgtext.imageTextSplit}
+
+	// This needs to be set to TRUE because otherwise render_textpic will
+	// render a global caption which we do not have.
+	imageTextSplit = 1
 
 	borderThick = {$styles.content.imgtext.borderThick}
 	borderClass = {$styles.content.imgtext.borderClass}
@@ -874,34 +838,134 @@ tt_content.image.20 {
 		key.field = imageorient
 		# above-center
 		default = TEXT
-		default.value = <div class="csc-textpic csc-textpic-center csc-textpic-above###CLASSES###">###IMAGES######TEXT###</div>
+		default {
+			value = <div class="csc-textpic csc-textpic-center csc-textpic-above###CLASSES###">###IMAGES######TEXT###</div>
+			override = <div class="csc-textpic csc-textpic-responsive csc-textpic-center csc-textpic-above###CLASSES###">###IMAGES######TEXT###</div>
+			override {
+				if {
+					value = default
+					equals = {$styles.content.imgtext.layoutKey}
+					negate = 1
+				}
+			}
+		}
 		# above-right
 		1 = TEXT
-		1.value = <div class="csc-textpic csc-textpic-right csc-textpic-above###CLASSES###">###IMAGES######TEXT###</div>
+		1 {
+			value = <div class="csc-textpic csc-textpic-right csc-textpic-above###CLASSES###">###IMAGES######TEXT###</div>
+			override = <div class="csc-textpic csc-textpic-responsive csc-textpic-right csc-textpic-above###CLASSES###">###IMAGES######TEXT###</div>
+			override {
+				if {
+					value = default
+					equals = {$styles.content.imgtext.layoutKey}
+					negate = 1
+				}
+			}
+		}
 		# above-left
 		2 = TEXT
-		2.value = <div class="csc-textpic csc-textpic-left csc-textpic-above###CLASSES###">###IMAGES######TEXT###</div>
+		2 {
+			value = <div class="csc-textpic csc-textpic-left csc-textpic-above###CLASSES###">###IMAGES######TEXT###</div>
+			override = <div class="csc-textpic csc-textpic-responsive csc-textpic-left csc-textpic-above###CLASSES###">###IMAGES######TEXT###</div>
+			override {
+				if {
+					value = default
+					equals = {$styles.content.imgtext.layoutKey}
+					negate = 1
+				}
+			}
+		}
 		# below-center
 		8 = TEXT
-		8.value = <div class="csc-textpic csc-textpic-center csc-textpic-below###CLASSES###">###TEXT######IMAGES###</div>
+		8 {
+			value = <div class="csc-textpic csc-textpic-center csc-textpic-below###CLASSES###">###TEXT######IMAGES###</div>
+			override = <div class="csc-textpic csc-textpic-responsive csc-textpic-center csc-textpic-below###CLASSES###">###TEXT######IMAGES###</div>
+			override {
+				if {
+					value = default
+					equals = {$styles.content.imgtext.layoutKey}
+					negate = 1
+				}
+			}
+		}
 		# below-right
 		9 = TEXT
-		9.value = <div class="csc-textpic csc-textpic-right csc-textpic-below###CLASSES###">###TEXT######IMAGES###</div>
+		9 {
+			value = <div class="csc-textpic csc-textpic-right csc-textpic-below###CLASSES###">###TEXT######IMAGES###</div>
+			override = <div class="csc-textpic csc-textpic-responsive csc-textpic-right csc-textpic-below###CLASSES###">###TEXT######IMAGES###</div>
+			override {
+				if {
+					value = default
+					equals = {$styles.content.imgtext.layoutKey}
+					negate = 1
+				}
+			}
+		}
 		# below-left
 		10 = TEXT
-		10.value = <div class="csc-textpic csc-textpic-left csc-textpic-below###CLASSES###">###TEXT######IMAGES###</div>
+		10 {
+			value = <div class="csc-textpic csc-textpic-left csc-textpic-below###CLASSES###">###TEXT######IMAGES###</div>
+			override = <div class="csc-textpic csc-textpic-responsive csc-textpic-left csc-textpic-below###CLASSES###">###TEXT######IMAGES###</div>
+			override {
+				if {
+					value = default
+					equals = {$styles.content.imgtext.layoutKey}
+					negate = 1
+				}
+			}
+		}
 		# intext-right
 		17 = TEXT
-		17.value = <div class="csc-textpic csc-textpic-intext-right###CLASSES###">###IMAGES######TEXT###</div>
+		17 {
+			value = <div class="csc-textpic csc-textpic-intext-right###CLASSES###">###IMAGES######TEXT###</div>
+			override = <div class="csc-textpic csc-textpic-responsive csc-textpic-intext-right###CLASSES###">###IMAGES######TEXT###</div>
+			override {
+				if {
+					value = default
+					equals = {$styles.content.imgtext.layoutKey}
+					negate = 1
+				}
+			}
+		}
 		# intext-left
 		18 = TEXT
-		18.value = <div class="csc-textpic csc-textpic-intext-left###CLASSES###">###IMAGES######TEXT###</div>
+		18 {
+			value = <div class="csc-textpic csc-textpic-intext-left###CLASSES###">###IMAGES######TEXT###</div>
+			override = <div class="csc-textpic csc-textpic-responsive csc-textpic-intext-left###CLASSES###">###IMAGES######TEXT###</div>
+			override {
+				if {
+					value = default
+					equals = {$styles.content.imgtext.layoutKey}
+					negate = 1
+				}
+			}
+		}
 		# intext-right-nowrap
 		25 = TEXT
-		25.value = <div class="csc-textpic csc-textpic-intext-right-nowrap###CLASSES###">###IMAGES######TEXT###</div>
+		25 {
+			value = <div class="csc-textpic csc-textpic-intext-right-nowrap###CLASSES###">###IMAGES######TEXT###</div>
+			override = <div class="csc-textpic csc-textpic-responsive csc-textpic-intext-right-nowrap###CLASSES###">###IMAGES######TEXT###</div>
+			override {
+				if {
+					value = default
+					equals = {$styles.content.imgtext.layoutKey}
+					negate = 1
+				}
+			}
+		}
 		# intext-left-nowrap
 		26 = TEXT
-		26.value = <div class="csc-textpic csc-textpic-intext-left-nowrap###CLASSES###">###IMAGES######TEXT###</div>
+		26 {
+			value = <div class="csc-textpic csc-textpic-intext-left-nowrap###CLASSES###">###IMAGES######TEXT###</div>
+			override = <div class="csc-textpic csc-textpic-responsive csc-textpic-intext-left-nowrap###CLASSES###">###IMAGES######TEXT###</div>
+			override {
+				if {
+					value = default
+					equals = {$styles.content.imgtext.layoutKey}
+					negate = 1
+				}
+			}
+		}
 	}
 
 	rendering {
@@ -914,7 +978,7 @@ tt_content.image.20 {
 				10 = TEXT
 				10 {
 					if {
-						isTrue.field = imagecaption
+						isTrue.data = file:current:description
 						value = 1
 						equals.data = register:imageCount
 					}
@@ -928,21 +992,9 @@ tt_content.image.20 {
 						value = 1
 						isGreaterThan.data = register:imageCount
 						isTrue.if.isFalse.data = register:renderGlobalCaption
-						isTrue.field = imagecaption
+						isTrue.data = register:allImageCaptions
 					}
 					value = splitCaption
-				}
-
-				# Multiple images and one global caption
-				30 = TEXT
-				30 {
-					if {
-						value = 1
-						isGreaterThan.data = register:imageCount
-						isTrue.if.isTrue.data = register:renderGlobalCaption
-						isTrue.field = imagecaption
-					}
-					value = globalCaption
 				}
 
 				# Multiple images and no caption at all
@@ -951,13 +1003,22 @@ tt_content.image.20 {
 					if {
 						value = 1
 						isGreaterThan.data = register:imageCount
-						isFalse.field = imagecaption
+						isFalse.data = register:allImageCaptions
 					}
 					value = noCaption
 				}
 			}
 			allStdWrap {
-				wrap = <div class="csc-textpic-imagewrap"> | </div>
+				dataWrap = <div class="csc-textpic-imagewrap"> | </div>
+				dataWrap {
+					override = <div class="csc-textpic-imagewrap" data-csc-images="{register:imageCount}" data-csc-cols="{field:imagecols}"> | </div>
+					override {
+						if {
+							value = html5
+							equals.data = TSFE:config|config|doctype
+						}
+					}
+				}
 				innerWrap.cObject = CASE
 				innerWrap.cObject {
 					key.field = imageorient
@@ -991,7 +1052,18 @@ tt_content.image.20 {
 		noCaption {
 			# Multiple images and no caption at all
 			fallbackRendering < tt_content.image.20.rendering.singleNoCaption.fallbackRendering.10
-			allStdWrap.wrap = <div class="csc-textpic-imagewrap"> | </div>
+			allStdWrap {
+				dataWrap = <div class="csc-textpic-imagewrap"> | </div>
+				dataWrap {
+					override = <div class="csc-textpic-imagewrap" data-csc-images="{register:imageCount}" data-csc-cols="{field:imagecols}"> | </div>
+					override {
+						if {
+							value = html5
+							equals.data = TSFE:config|config|doctype
+						}
+					}
+				}
+			}
 			singleStdWrap {
 				wrap = <div class="csc-textpic-image###CLASSES###"> | </div>
 				wrap {
@@ -1064,54 +1136,15 @@ tt_content.image.20 {
 				}
 			}
 		}
-		globalCaption {
-			# Just one image without a caption
-			fallbackRendering < tt_content.image.20.rendering.singleNoCaption.fallbackRendering.10
-			allStdWrap {
-				wrap = <div class="csc-textpic-imagewrap"><table>###CAPTION###<tbody> | </tbody></table></div>
-				wrap {
-					override = <figure class="csc-textpic-imagewrap"> | ###CAPTION###</figure>
-					override {
-						if {
-							value = html5
-							equals.data = TSFE:config|config|doctype
-						}
-					}
-				}
-			}
-			singleStdWrap {
-				wrap = <div class="csc-textpic-image###CLASSES###"> | </div>
-				wrap {
-					override = <div class="csc-textpic-image###CLASSES###"> | </div>
-				}
-			}
-			rowStdWrap.wrap = <div class="csc-textpic-imagerow"> | </div>
-			noRowsStdWrap.wrap = <div class="csc-textpic-imagerow csc-textpic-imagerow-none"> | </div>
-			lastRowStdWrap.wrap = <div class="csc-textpic-imagerow csc-textpic-imagerow-last"> | </div>
-			columnStdWrap.wrap = <div class="csc-textpic-imagecolumn###CLASSES###"> | </div>
-			caption {
-				required = 1
-				wrap = <caption class="csc-textpic-caption"> | </caption>
-				wrap {
-					override = <figcaption class="csc-textpic-caption###CLASSES###"> | </figcaption>
-					override {
-						if {
-							value = html5
-							equals.data = TSFE:config|config|doctype
-						}
-					}
-				}
-			}
-		}
 	}
 	renderMethod = singleNoCaption
 
-	editIcons = tt_content : image [imageorient|imagewidth|imageheight], [imagecols|image_noRows|imageborder],[image_link|image_zoom],[image_compression|image_effects|image_frames],imagecaption[imagecaption_position]
+	editIcons = tt_content : image [imageorient|imagewidth|imageheight],[imagecols|image_noRows|imageborder],[image_zoom],[image_compression|image_effects|image_frames],[imagecaption_position]
 	editIcons.iconTitle.data = LLL:EXT:css_styled_content/pi1/locallang.xml:eIcon.images
 
-	caption.editIcons = tt_content : imagecaption[imagecaption_position]
+	caption.editIcons = tt_content : imagecaption_position
 	caption.editIcons.beforeLastTag=1
-	caption.editIcons.iconTitle.data = LLL:EXT:css_styled_content/pi1/locallang.xml:eIcon.caption
+	caption.editIcons.iconTitle.data = LLL:EXT:css_styled_content/pi1/locallang.xml:eIcon.caption_position
 
 	stdWrap.prefixComment = 2 | Image block:
 }
@@ -1167,7 +1200,7 @@ tt_content.bullets {
 		dataWrap = <ul class="csc-bulletlist csc-bulletlist-{field:layout}">|</ul>
 	 	editIcons = tt_content: bodytext, [layout]
 	 	editIcons.beforeLastTag = 1
-	 	editIcons.iconTitle.data = LLL:EXT:css_styled_content/pi1/locallang.php:eIcon.bullets
+	 	editIcons.iconTitle.data = LLL:EXT:css_styled_content/pi1/locallang.xlf:eIcon.bullets
 
 	 	prefixComment = 2 | Bullet list:
 	}
@@ -1330,13 +1363,13 @@ tt_content.uploads {
 # *****************
 # CType: table
 # *****************
-# Rendered by a PHP function specifically written to handle CE tables. See css_styled_content/pi1/class.tx_cssstyledcontent_pi1.php
+# Rendered by a PHP function specifically written to handle CE tables. See EXT:css_styled_content/Classes/Controller/CssStyledContentController.php
 tt_content.table = COA
 tt_content.table {
 	10 = < lib.stdheader
 
 	20 = USER
-	20.userFunc = tx_cssstyledcontent_pi1->render_table
+	20.userFunc = TYPO3\CMS\CssStyledContent\Controller\CssStyledContentController->render_table
 	20.field = bodytext
 
 	20.color {
@@ -1582,6 +1615,7 @@ tt_content.mailform = COA
 tt_content.mailform.10 = < lib.stdheader
 tt_content.mailform.20 = FORM
 tt_content.mailform.20 {
+	useDefaultContentObject = 1
 	accessibility = 1
 	noWrapAttr=1
 	formName = mailform
@@ -1935,11 +1969,41 @@ tt_content.menu {
 				NO.wrapItemAndSub = <li class="csc-section">|</li>
 			}
 		}
+
 		# "Sitemaps of selected pages - liststyle"
 		8 < .2
 		8 {
 			special = directory
 			special.value.field = pages
+		}
+
+		# Menu of categorized pages
+		categorized_pages < .default
+		categorized_pages {
+			special = categories
+			special.value.field = selected_categories
+			special.relation.field = category_field
+			special.sorting = title
+			special.order = asc
+			stdWrap {
+				outerWrap = <ul class="csc-menu csc-menu-categorized-pages">|</ul>
+			}
+		}
+
+		# Menu of categorized content elements
+		categorized_content = RECORDS
+		categorized_content {
+			categories.field = selected_categories
+			categories.relation.field = category_field
+			tables = tt_content
+			conf.tt_content = TEXT
+			conf.tt_content {
+				field = header
+				typolink.parameter = {field:pid}#{field:uid}
+				typolink.parameter.insertData = 1
+				wrap = <li>|</li>
+			}
+			wrap = <ul>|</ul>
 		}
 	}
 
@@ -1988,15 +2052,9 @@ tt_content.menu {
 # Should be a complete copy from the old static template "content (default)"
 tt_content.shortcut = COA
 tt_content.shortcut {
-	20 = CASE
-	20.key.field = layout
-	20.0= RECORDS
-	20.0 {
-		source.field = records
-		tables = {$content.shortcut.tables}
-	}
-	20.1= RECORDS
-	20.1 {
+
+	20 = RECORDS
+	20 {
 		source.field = records
 		tables = {$content.shortcut.tables}
 	}
@@ -2089,6 +2147,8 @@ plugin.tx_cssstyledcontent._CSS_DEFAULT_STYLE (
 	.csc-header-alignment-right { text-align: right; }
 	.csc-header-alignment-left { text-align: left; }
 
+	div.csc-textpic-responsive, div.csc-textpic-responsive * { -moz-box-sizing: border-box; -webkit-box-sizing: border-box; box-sizing: border-box;  }
+
 	/* Clear floats after csc-textpic and after csc-textpic-imagerow */
 	div.csc-textpic, div.csc-textpic div.csc-textpic-imagerow, ul.csc-uploads li { overflow: hidden; }
 
@@ -2125,7 +2185,7 @@ plugin.tx_cssstyledcontent._CSS_DEFAULT_STYLE (
 	div.csc-textpic-imagecolumn, td.csc-textpic-imagecolumn .csc-textpic-image { margin-right: {$styles.content.imgtext.colSpace}px; }
 	div.csc-textpic-imagecolumn.csc-textpic-lastcol, td.csc-textpic-imagecolumn.csc-textpic-lastcol .csc-textpic-image { margin-right: 0; }
 
-	/* Add margin from image-block to text (in case of "Text w/ images") */
+	/* Add margin from image-block to text (in case of "Text & Images") */
 	div.csc-textpic-intext-left .csc-textpic-imagewrap,
 	div.csc-textpic-intext-left-nowrap .csc-textpic-imagewrap {
 		margin-right: {$styles.content.imgtext.textMargin}px;

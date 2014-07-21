@@ -1,30 +1,19 @@
 <?php
 namespace TYPO3\CMS\Core\Log;
 
-/***************************************************************
- * Copyright notice
+/**
+ * This file is part of the TYPO3 CMS project.
  *
- * (c) 2011-2013 Ingo Renner (ingo@typo3.org)
- * (c) 2011-2013 Steffen Müller (typo3@t3node.com)
- * (c) 2011-2013 Steffen Gebert (steffen.gebert@typo3.org)
- * All rights reserved
+ * It is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License, either version 2
+ * of the License, or any later version.
  *
- * This script is part of the TYPO3 project. The TYPO3 project is
- * free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
+ * For the full copyright and license information, please read the
+ * LICENSE.txt file that was distributed with this source code.
  *
- * The GNU General Public License can be found at
- * http://www.gnu.org/copyleft/gpl.html.
- *
- * This script is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * This copyright notice MUST APPEAR in all copies of the script!
- ***************************************************************/
+ * The TYPO3 project - inspiring people to share!
+ */
+
 /**
  * Logger to log events and data for different components.
  *
@@ -32,7 +21,7 @@ namespace TYPO3\CMS\Core\Log;
  * @author Steffen Müller <typo3@t3node.com>
  * @author Steffen Gebert <steffen.gebert@typo3.org>
  */
-class Logger {
+class Logger implements \Psr\Log\LoggerInterface {
 
 	/**
 	 * Logger name or component for which this logger is meant to be used for.
@@ -171,12 +160,13 @@ class Logger {
 	/**
 	 * Adds a log record.
 	 *
-	 * @param integer $level Log level.
+	 * @param integer|string $level Log level. Value according to \TYPO3\CMS\Core\Log\LogLevel. Alternatively accepts a string.
 	 * @param string $message Log message.
 	 * @param array $data Additional data to log
 	 * @return mixed
 	 */
 	public function log($level, $message, array $data = array()) {
+		$level = LogLevel::normalizeLevel($level);
 		\TYPO3\CMS\Core\Log\LogLevel::validateLevel($level);
 		if ($level > $this->minimumLogLevel) {
 			return $this;
@@ -311,6 +301,3 @@ class Logger {
 	}
 
 }
-
-
-?>

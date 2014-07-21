@@ -12,10 +12,9 @@ namespace TYPO3\CMS\Fluid\Tests\Unit\Core\Parser;
  *                                                                        */
 
 /**
- * Testcase for ParsingState
- *
+ * Test case
  */
-class ParsingStateTest extends \TYPO3\CMS\Extbase\Tests\Unit\BaseTestCase {
+class ParsingStateTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 
 	/**
 	 * Parsing state
@@ -26,10 +25,6 @@ class ParsingStateTest extends \TYPO3\CMS\Extbase\Tests\Unit\BaseTestCase {
 
 	public function setUp() {
 		$this->parsingState = new \TYPO3\CMS\Fluid\Core\Parser\ParsingState();
-	}
-
-	public function tearDown() {
-		unset($this->parsingState);
 	}
 
 	/**
@@ -64,5 +59,3 @@ class ParsingStateTest extends \TYPO3\CMS\Extbase\Tests\Unit\BaseTestCase {
 		$this->assertEquals($renderedValue, 'T3DD09 Rock!', 'The rendered value of the Root Node is not returned by the ParsingState.');
 	}
 }
-
-?>

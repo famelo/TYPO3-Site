@@ -1,31 +1,19 @@
 <?php
 namespace TYPO3\CMS\Core\Locking;
 
-/***************************************************************
- *  Copyright notice
+/**
+ * This file is part of the TYPO3 CMS project.
  *
- *  (c) 2008-2013 Michael Stucki (michael@typo3.org)
- *  All rights reserved
+ * It is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License, either version 2
+ * of the License, or any later version.
  *
- *  This script is part of the TYPO3 project. The TYPO3 project is
- *  free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
+ * For the full copyright and license information, please read the
+ * LICENSE.txt file that was distributed with this source code.
  *
- *  The GNU General Public License can be found at
- *  http://www.gnu.org/copyleft/gpl.html.
- *  A copy is found in the textfile GPL.txt and important notices to the license
- *  from the author is found in LICENSE.txt distributed with these scripts.
- *
- *
- *  This script is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  This copyright notice MUST APPEAR in all copies of the script!
- ***************************************************************/
+ * The TYPO3 project - inspiring people to share!
+ */
+use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
  * TYPO3 locking class
@@ -35,13 +23,21 @@ namespace TYPO3\CMS\Core\Locking;
  * This is especially useful if two clients are requesting the same website short after each other. While the request of client 1 triggers building and caching of the website, client 2 will be waiting at this lock.
  *
  * @author Michael Stucki <michael@typo3.org>
+ * @author Markus Klein <klein.t3@mfc-linz.at>
  */
 class Locker {
 
+	const LOCKING_METHOD_SIMPLE = 'simple';
+	const LOCKING_METHOD_FLOCK = 'flock';
+	const LOCKING_METHOD_SEMAPHORE = 'semaphore';
+	const LOCKING_METHOD_DISABLED = 'disable';
+
+	const FILE_LOCK_FOLDER = 'typo3temp/locks/';
+
 	/**
-	 * @var string Locking method: One of 'simple', 'flock', 'semaphore' or 'disable'
+	 * @var string Locking method: One of the constants above
 	 */
-	protected $method;
+	protected $method = '';
 
 	/**
 	 * @var mixed Identifier used for this lock
@@ -56,7 +52,7 @@ class Locker {
 	/**
 	 * @var resource File pointer if using flock method
 	 */
-	protected $filepointer;
+	protected $filePointer;
 
 	/**
 	 * @var boolean True if lock is acquired
@@ -87,122 +83,243 @@ class Locker {
 	 * Constructor:
 	 * initializes locking, check input parameters and set variables accordingly.
 	 *
+	 * Parameters $loops and $step only apply to the locking method LOCKING_METHOD_SIMPLE.
+	 *
 	 * @param string $id ID to identify this lock in the system
-	 * @param string $method Define which locking method to use. Defaults to "simple".
-	 * @param integer $loops Number of times a locked resource is tried to be acquired. Only used in manual locks method "simple".
-	 * @param integer step Milliseconds after lock acquire is retried. $loops * $step results in the maximum delay of a lock. Only used in manual lock method "simple".
+	 * @param string $method Define which locking method to use. Use one of the LOCKING_METHOD_* constants. Defaults to LOCKING_METHOD_SIMPLE. Use '' to use setting from Install Tool.
+	 * @param int $loops Number of times a locked resource is tried to be acquired.
+	 * @param int $step Milliseconds after lock acquire is retried. $loops * $step results in the maximum delay of a lock.
+	 * @throws \RuntimeException
+	 * @throws \InvalidArgumentException
 	 */
-	public function __construct($id, $method = 'simple', $loops = 0, $step = 0) {
+	public function __construct($id, $method = self::LOCKING_METHOD_SIMPLE, $loops = 0, $step = 0) {
 		// Force ID to be string
-		$id = (string) $id;
-		if (intval($loops)) {
-			$this->loops = intval($loops);
+		$id = (string)$id;
+		if ((int)$loops) {
+			$this->loops = (int)$loops;
 		}
-		if (intval($step)) {
-			$this->step = intval($step);
+		if ((int)$step) {
+			$this->step = (int)$step;
+		}
+		if ($method === '' && isset($GLOBALS['TYPO3_CONF_VARS']['SYS']['lockingMode'])) {
+			$method = (string)$GLOBALS['TYPO3_CONF_VARS']['SYS']['lockingMode'];
+		}
+
+		switch ($method) {
+			case self::LOCKING_METHOD_SIMPLE:
+				// intended fall through
+			case self::LOCKING_METHOD_FLOCK:
+				$this->id = md5($id);
+				$this->createPathIfNeeded();
+				break;
+			case self::LOCKING_METHOD_SEMAPHORE:
+				$this->id = abs(crc32($id));
+				break;
+			case self::LOCKING_METHOD_DISABLED:
+				break;
+			default:
+				throw new \InvalidArgumentException('No such locking method "' . $method . '"', 1294586097);
 		}
 		$this->method = $method;
-		switch ($this->method) {
-		case 'simple':
-
-		case 'flock':
-			$path = PATH_site . 'typo3temp/locks/';
-			if (!is_dir($path)) {
-				\TYPO3\CMS\Core\Utility\GeneralUtility::mkdir($path);
-			}
-			$this->id = md5($id);
-			$this->resource = $path . $this->id;
-			break;
-		case 'semaphore':
-			$this->id = abs(crc32($id));
-			if (($this->resource = sem_get($this->id, 1)) === FALSE) {
-				throw new \RuntimeException('Unable to get semaphore', 1313828196);
-			}
-			break;
-		case 'disable':
-			break;
-		default:
-			throw new \InvalidArgumentException('No such method "' . $method . '"', 1294586097);
-		}
 	}
 
 	/**
 	 * Destructor:
-	 * Releases lock automatically when instance is destroyed.
-	 *
-	 * @return 	void
-	 * @todo Define visibility
+	 * Releases lock automatically when instance is destroyed and release resources
 	 */
 	public function __destruct() {
 		$this->release();
+		switch ($this->method) {
+			case self::LOCKING_METHOD_FLOCK:
+				if (
+					GeneralUtility::isAllowedAbsPath($this->resource)
+					&& GeneralUtility::isFirstPartOfStr($this->resource, PATH_site . self::FILE_LOCK_FOLDER)
+				) {
+					@unlink($this->resource);
+				}
+				break;
+			case self::LOCKING_METHOD_SEMAPHORE:
+				@sem_remove($this->resource);
+				break;
+			default:
+				// do nothing
+		}
 	}
 
 	/**
-	 * Acquire a lock and return when successful. If the lock is already open, the client will be
+	 * Tries to allocate the semaphore
 	 *
-	 * It is important to know that the lock will be acquired in any case, even if the request was blocked first. Therefore, the lock needs to be released in every situation.
+	 * @return void
+	 * @throws \RuntimeException
+	 */
+	protected function getSemaphore() {
+		$this->resource = sem_get($this->id, 1);
+		if ($this->resource === FALSE) {
+			throw new \RuntimeException('Unable to get semaphore with id ' . $this->id, 1313828196);
+		}
+	}
+
+	/**
+	 * Acquire a lock and return when successful.
+	 *
+	 * It is important to know that the lock will be acquired in any case, even if the request was blocked first.
+	 * Therefore, the lock needs to be released in every situation.
 	 *
 	 * @return boolean Returns TRUE if lock could be acquired without waiting, FALSE otherwise.
+	 * @throws \RuntimeException
+	 * @deprecated since 6.2 - will be removed two versions later; use new API instead
 	 */
 	public function acquire() {
-		// Default is TRUE, which means continue without caring for other clients. In the case of TYPO3s cache management, this has no negative effect except some resource overhead.
-		$noWait = TRUE;
-		$isAcquired = TRUE;
+		// TODO refactor locking in TSFE to use the new API, then this call can be logged
+		// GeneralUtility::logDeprecatedFunction();
+
+		// Default is TRUE, which means continue without caring for other clients.
+		// In the case of TYPO3s cache management, this has no negative effect except some resource overhead.
+		$noWait = FALSE;
+		$isAcquired = FALSE;
 		switch ($this->method) {
-		case 'simple':
-			if (is_file($this->resource)) {
-				$this->sysLog('Waiting for a different process to release the lock');
-				$maxExecutionTime = ini_get('max_execution_time');
-				$maxAge = time() - ($maxExecutionTime ? $maxExecutionTime : 120);
-				if (@filectime($this->resource) < $maxAge) {
-					@unlink($this->resource);
-					$this->sysLog('Unlink stale lockfile');
+			case self::LOCKING_METHOD_SIMPLE:
+				if (file_exists($this->resource)) {
+					$this->sysLog('Waiting for a different process to release the lock');
+					$maxExecutionTime = (int)ini_get('max_execution_time');
+					$maxAge = time() - ($maxExecutionTime ?: 120);
+					if (@filectime($this->resource) < $maxAge) {
+						@unlink($this->resource);
+						$this->sysLog('Unlinking stale lockfile');
+					}
 				}
-			}
-			$isAcquired = FALSE;
-			for ($i = 0; $i < $this->loops; $i++) {
-				$filepointer = @fopen($this->resource, 'x');
-				if ($filepointer !== FALSE) {
-					fclose($filepointer);
-					$this->sysLog('Lock acquired');
-					$noWait = $i === 0;
-					$isAcquired = TRUE;
-					break;
+				for ($i = 0; $i < $this->loops; $i++) {
+					$filePointer = @fopen($this->resource, 'x');
+					if ($filePointer !== FALSE) {
+						fclose($filePointer);
+						GeneralUtility::fixPermissions($this->resource);
+						$this->sysLog('Lock acquired');
+						$noWait = $i === 0;
+						$isAcquired = TRUE;
+						break;
+					}
+					usleep($this->step * 1000);
 				}
-				usleep($this->step * 1000);
-			}
-			if (!$isAcquired) {
-				throw new \RuntimeException('Lock file could not be created', 1294586098);
-			}
-			\TYPO3\CMS\Core\Utility\GeneralUtility::fixPermissions($this->resource);
-			break;
-		case 'flock':
-			if (($this->filepointer = fopen($this->resource, 'w+')) == FALSE) {
-				throw new \RuntimeException('Lock file could not be opened', 1294586099);
-			}
-			// Lock without blocking
-			if (flock($this->filepointer, (LOCK_EX | LOCK_NB)) == TRUE) {
-				$noWait = TRUE;
-			} elseif (flock($this->filepointer, LOCK_EX) == TRUE) {
-				// Lock with blocking (waiting for similar locks to become released)
-				$noWait = FALSE;
-			} else {
-				throw new \RuntimeException('Could not lock file "' . $this->resource . '"', 1294586100);
-			}
-			break;
-		case 'semaphore':
-			if (sem_acquire($this->resource)) {
-				// Unfortunately it seems not possible to find out if the request was blocked, so we return FALSE in any case to make sure the operation is tried again.
-				$noWait = FALSE;
-			}
-			break;
-		case 'disable':
-			$noWait = FALSE;
-			$isAcquired = FALSE;
-			break;
+				if (!$isAcquired) {
+					throw new \RuntimeException('Lock file could not be created', 1294586098);
+				}
+				break;
+			case self::LOCKING_METHOD_FLOCK:
+				$this->filePointer = fopen($this->resource, 'c');
+				if ($this->filePointer === FALSE) {
+					throw new \RuntimeException('Lock file could not be opened', 1294586099);
+				}
+				// Lock without blocking
+				if (flock($this->filePointer, LOCK_EX | LOCK_NB)) {
+					$noWait = TRUE;
+				} elseif (flock($this->filePointer, LOCK_EX)) {
+					// Lock with blocking (waiting for similar locks to become released)
+					$noWait = FALSE;
+				} else {
+					throw new \RuntimeException('Could not lock file "' . $this->resource . '"', 1294586100);
+				}
+				$isAcquired = TRUE;
+				break;
+			case self::LOCKING_METHOD_SEMAPHORE:
+				$this->getSemaphore();
+				while (!$isAcquired) {
+					if (@sem_acquire($this->resource)) {
+						// Unfortunately it is not possible to find out if the request has blocked,
+						// as sem_acquire will block until we get the resource.
+						// So we do not set $noWait here at all
+						$isAcquired = TRUE;
+					}
+				}
+				break;
+			case self::LOCKING_METHOD_DISABLED:
+				break;
+			default:
+				// will never be reached
 		}
 		$this->isAcquired = $isAcquired;
 		return $noWait;
+	}
+
+	/**
+	 * Try to acquire an exclusive lock
+	 *
+	 * @throws \RuntimeException
+	 * @return bool Returns TRUE if the lock was acquired successfully
+	 */
+	public function acquireExclusiveLock() {
+		if ($this->isAcquired) {
+			return TRUE;
+		}
+		$this->isAcquired = FALSE;
+		switch ($this->method) {
+			case self::LOCKING_METHOD_SIMPLE:
+				if (file_exists($this->resource)) {
+					$this->sysLog('Waiting for a different process to release the lock');
+					$maxExecutionTime = (int)ini_get('max_execution_time');
+					$maxAge = time() - ($maxExecutionTime ?: 120);
+					if (@filectime($this->resource) < $maxAge) {
+						@unlink($this->resource);
+						$this->sysLog('Unlinking stale lockfile');
+					}
+				}
+				for ($i = 0; $i < $this->loops; $i++) {
+					$filePointer = @fopen($this->resource, 'x');
+					if ($filePointer !== FALSE) {
+						fclose($filePointer);
+						GeneralUtility::fixPermissions($this->resource);
+						$this->sysLog('Lock acquired');
+						$this->isAcquired = TRUE;
+						break;
+					}
+					usleep($this->step * 1000);
+				}
+				break;
+			case self::LOCKING_METHOD_FLOCK:
+				$this->filePointer = fopen($this->resource, 'c');
+				if ($this->filePointer === FALSE) {
+					throw new \RuntimeException('Lock file could not be opened', 1294586099);
+				}
+				if (flock($this->filePointer, LOCK_EX)) {
+				    $this->isAcquired = TRUE;
+				}
+				break;
+			case self::LOCKING_METHOD_SEMAPHORE:
+				$this->getSemaphore();
+				if (@sem_acquire($this->resource)) {
+					$this->isAcquired = TRUE;
+				}
+				break;
+			case self::LOCKING_METHOD_DISABLED:
+				break;
+			default:
+				// will never be reached
+		}
+		return $this->isAcquired;
+	}
+
+	/**
+	 * Try to acquire a shared lock
+	 *
+	 * (Only works for the flock() locking method currently)
+	 *
+	 * @return bool Returns TRUE if the lock was acquired successfully
+	 * @throws \RuntimeException
+	 */
+	public function acquireSharedLock() {
+		if ($this->isAcquired) {
+			return TRUE;
+		}
+		$isAcquired = FALSE;
+		if ($this->method === self::LOCKING_METHOD_FLOCK) {
+			$this->filePointer = fopen($this->resource, 'c');
+			if ($this->filePointer === FALSE) {
+				throw new \RuntimeException('Lock file could not be opened', 1294586099);
+			}
+			if (flock($this->filePointer, LOCK_SH)) {
+				$isAcquired = TRUE;
+			}
+		}
+		return $isAcquired;
 	}
 
 	/**
@@ -216,34 +333,33 @@ class Locker {
 		}
 		$success = TRUE;
 		switch ($this->method) {
-		case 'simple':
-			if (\TYPO3\CMS\Core\Utility\GeneralUtility::isAllowedAbsPath($this->resource) && \TYPO3\CMS\Core\Utility\GeneralUtility::isFirstPartOfStr($this->resource, PATH_site . 'typo3temp/locks/')) {
-				if (@unlink($this->resource) == FALSE) {
+			case self::LOCKING_METHOD_SIMPLE:
+				if (
+					GeneralUtility::isAllowedAbsPath($this->resource)
+					&& GeneralUtility::isFirstPartOfStr($this->resource, PATH_site . self::FILE_LOCK_FOLDER)
+				) {
+					if (@unlink($this->resource) === FALSE) {
+						$success = FALSE;
+					}
+				}
+				break;
+			case self::LOCKING_METHOD_FLOCK:
+				if (is_resource($this->filePointer)) {
+					if (flock($this->filePointer, LOCK_UN) === FALSE) {
+						$success = FALSE;
+					}
+					fclose($this->filePointer);
+				}
+				break;
+			case self::LOCKING_METHOD_SEMAPHORE:
+				if (!@sem_release($this->resource)) {
 					$success = FALSE;
 				}
-			}
-			break;
-		case 'flock':
-			if (is_resource($this->filepointer)) {
-				if (flock($this->filepointer, LOCK_UN) == FALSE) {
-					$success = FALSE;
-				}
-				fclose($this->filepointer);
-			}
-			if (\TYPO3\CMS\Core\Utility\GeneralUtility::isAllowedAbsPath($this->resource) && \TYPO3\CMS\Core\Utility\GeneralUtility::isFirstPartOfStr($this->resource, PATH_site . 'typo3temp/locks/')) {
-				@unlink($this->resource);
-			}
-			break;
-		case 'semaphore':
-			if (@sem_release($this->resource)) {
-				sem_remove($this->resource);
-			} else {
-				$success = FALSE;
-			}
-			break;
-		case 'disable':
-			$success = FALSE;
-			break;
+				break;
+			case self::LOCKING_METHOD_DISABLED:
+				break;
+			default:
+				// will never be reached
 		}
 		$this->isAcquired = FALSE;
 		return $success;
@@ -278,12 +394,46 @@ class Locker {
 	}
 
 	/**
-	 * Return the status of a lock
+	 * Return the local status of a lock
 	 *
-	 * @return string Returns TRUE if lock is acquired, FALSE otherwise
+	 * @return bool Returns TRUE if lock is acquired by this process, FALSE otherwise
 	 */
 	public function getLockStatus() {
 		return $this->isAcquired;
+	}
+
+	/**
+	 * Return the global status of the lock
+	 *
+	 * @return bool Returns TRUE if the lock is locked by either this or another process, FALSE otherwise
+	 */
+	public function isLocked() {
+		$result = FALSE;
+		switch ($this->method) {
+			case self::LOCKING_METHOD_SIMPLE:
+				if (file_exists($this->resource)) {
+					$maxExecutionTime = (int)ini_get('max_execution_time');
+					$maxAge = time() - ($maxExecutionTime ?: 120);
+					if (@filectime($this->resource) < $maxAge) {
+						@unlink($this->resource);
+						$this->sysLog('Unlinking stale lockfile');
+					} else {
+						$result = TRUE;
+					}
+				}
+				break;
+			case self::LOCKING_METHOD_FLOCK:
+				// we can't detect this reliably here, since the third parameter of flock() does not work on windows
+				break;
+			case self::LOCKING_METHOD_SEMAPHORE:
+				// no way to detect this at all, no PHP API for that
+				break;
+			case self::LOCKING_METHOD_DISABLED:
+				break;
+			default:
+				// will never be reached
+		}
+		return $result;
 	}
 
 	/**
@@ -314,11 +464,31 @@ class Locker {
 	 */
 	public function sysLog($message, $severity = 0) {
 		if ($this->isLoggingEnabled) {
-			\TYPO3\CMS\Core\Utility\GeneralUtility::sysLog('Locking [' . $this->method . '::' . $this->id . ']: ' . trim($message), $this->syslogFacility, $severity);
+			GeneralUtility::sysLog('Locking [' . $this->method . '::' . $this->id . ']: ' . trim($message), $this->syslogFacility, $severity);
 		}
 	}
 
+	/**
+	 * Tests if the directory for simple locks is available.
+	 * If not, the directory will be created. The lock path is usually
+	 * below typo3temp, typo3temp itself should exist already
+	 *
+	 * @return void
+	 * @throws \RuntimeException If path couldn't be created.
+	 */
+	protected function createPathIfNeeded() {
+		$path = PATH_site . self::FILE_LOCK_FOLDER;
+		if (!is_dir($path)) {
+			// Not using mkdir_deep on purpose here, if typo3temp itself
+			// does not exist, this issue should be solved on a different
+			// level of the application.
+			if (!GeneralUtility::mkdir($path)) {
+				throw new \RuntimeException('Cannot create directory ' . $path, 1395140007);
+			}
+		}
+		if (!is_writable($path)) {
+			throw new \RuntimeException('Cannot write to directory ' . $path, 1396278700);
+		}
+		$this->resource = $path . $this->id;
+	}
 }
-
-
-?>

@@ -1,28 +1,20 @@
 <?php
 namespace TYPO3\CMS\Core\Tests\Unit\TypoScript;
 
-/***************************************************************
- * Copyright notice
+/**
+ * This file is part of the TYPO3 CMS project.
  *
- * (c) 2012-2013 Christian Kuhn <lolli@schwarzbu.ch>
- * All rights reserved
+ * It is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License, either version 2
+ * of the License, or any later version.
  *
- * This script is part of the TYPO3 project. The TYPO3 project is
- * free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
+ * For the full copyright and license information, please read the
+ * LICENSE.txt file that was distributed with this source code.
  *
- * The GNU General Public License can be found at
- * http://www.gnu.org/copyleft/gpl.html.
- *
- * This script is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * This copyright notice MUST APPEAR in all copies of the script!
- ***************************************************************/
+ * The TYPO3 project - inspiring people to share!
+ */
+use TYPO3\CMS\Core\Utility\ExtensionManagementUtility;
+use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
  * Testcase for \TYPO3\CMS\Core\TypoScript\TemplateService
@@ -54,18 +46,9 @@ class TemplateServiceTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	 * @return void
 	 */
 	protected function setUp() {
+		$GLOBALS['TYPO3_LOADED_EXT'] = array();
 		$this->templateService = new \TYPO3\CMS\Core\TypoScript\TemplateService();
 		$this->templateServiceMock = $this->getAccessibleMock('\\TYPO3\\CMS\\Core\\TypoScript\\TemplateService', array('dummy'));
-	}
-
-	/**
-	 * Tears down this test case.
-	 *
-	 * @return void
-	 */
-	protected function tearDown() {
-		unset($this->templateService);
-		unset($this->templateServiceMock);
 	}
 
 	/**
@@ -87,7 +70,7 @@ class TemplateServiceTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 		$identifier = uniqid('test');
 		$GLOBALS['TYPO3_LOADED_EXT'] = array(
 			$identifier => array(
-				'ext_typoscript_setup.txt' => \TYPO3\CMS\Core\Utility\ExtensionManagementUtility::extPath(
+				'ext_typoscript_setup.txt' => ExtensionManagementUtility::extPath(
 					'core', 'Tests/Unit/TypoScript/Fixtures/ext_typoscript_setup.txt'
 				),
 			),
@@ -106,17 +89,29 @@ class TemplateServiceTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 		$identifier = uniqid('test');
 		$GLOBALS['TYPO3_LOADED_EXT'] = array(
 			$identifier => array(
-				'ext_typoscript_setup.txt' => \TYPO3\CMS\Core\Utility\ExtensionManagementUtility::extPath(
-					'core', 'Tests/Unit/TypoScript/Fixtures/ext_typoscript_setup.txt'
-				),
+				'ext_typoscript_setup.txt' => ExtensionManagementUtility::extPath(
+						'core', 'Tests/Unit/TypoScript/Fixtures/ext_typoscript_setup.txt'
+					),
+				'ext_typoscript_constants.txt' => ''
 			),
 		);
 
+		$mockPackage = $this->getMock('TYPO3\\CMS\\Core\\Package\\Package', array('getPackagePath'), array(), '', FALSE);
+		$mockPackage->expects($this->any())->method('getPackagePath')->will($this->returnValue(''));
+
+		$mockPackageManager = $this->getMock('TYPO3\\CMS\\Core\\Package\\PackageManager', array('isPackageActive' , 'getPackage'));
+		$mockPackageManager->expects($this->any())->method('isPackageActive')->will($this->returnValue(TRUE));
+		$mockPackageManager->expects($this->any())->method('getPackage')->will($this->returnValue($mockPackage));
+		ExtensionManagementUtility::setPackageManager($mockPackageManager);
+
 		$this->templateService->setProcessExtensionStatics(TRUE);
 		$this->templateService->runThroughTemplates(array(), 0);
+
 		$this->assertTrue(
 			in_array('test.Core.TypoScript = 1', $this->templateService->config)
 		);
+
+		ExtensionManagementUtility::setPackageManager(GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Package\\PackageManager'));
 	}
 
 	/**
@@ -164,5 +159,3 @@ class TemplateServiceTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	}
 
 }
-
-?>

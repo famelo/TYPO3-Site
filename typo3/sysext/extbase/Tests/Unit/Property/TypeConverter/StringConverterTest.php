@@ -20,12 +20,11 @@ namespace TYPO3\CMS\Extbase\Tests\Unit\Property\TypeConverter;
  *                                                                        *
  * The TYPO3 project - inspiring people to share!                         *
  *                                                                        */
+
 /**
- * Testcase for the String converter
- *
- * @covers \TYPO3\CMS\Extbase\Property\TypeConverter\StringConverter<extended>
+ * Test case
  */
-class StringConverterTest extends \TYPO3\CMS\Extbase\Tests\Unit\BaseTestCase {
+class StringConverterTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 
 	/**
 	 * @var \TYPO3\CMS\Extbase\Property\TypeConverterInterface
@@ -66,4 +65,3 @@ class StringConverterTest extends \TYPO3\CMS\Extbase\Tests\Unit\BaseTestCase {
 		$this->assertEquals(array(), $this->converter->getSourceChildPropertiesToBeConverted('myString'));
 	}
 }
-?>

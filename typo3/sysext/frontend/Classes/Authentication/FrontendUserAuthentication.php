@@ -1,40 +1,20 @@
 <?php
 namespace TYPO3\CMS\Frontend\Authentication;
 
-/***************************************************************
- *  Copyright notice
- *
- *  (c) 1999-2013 Kasper Skårhøj (kasperYYYY@typo3.com)
- *  All rights reserved
- *
- *  This script is part of the TYPO3 project. The TYPO3 project is
- *  free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
- *
- *  The GNU General Public License can be found at
- *  http://www.gnu.org/copyleft/gpl.html.
- *  A copy is found in the textfile GPL.txt and important notices to the license
- *  from the author is found in LICENSE.txt distributed with these scripts.
- *
- *
- *  This script is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  This copyright notice MUST APPEAR in all copies of the script!
- ***************************************************************/
 /**
- * Front End session user. Login and session data
- * Included from index_ts.php
+ * This file is part of the TYPO3 CMS project.
  *
- * Revised for TYPO3 3.6 June/2003 by Kasper Skårhøj
+ * It is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License, either version 2
+ * of the License, or any later version.
  *
- * @author Kasper Skårhøj <kasperYYYY@typo3.com>
- * @author René Fritz <r.fritz@colorcube.de>
+ * For the full copyright and license information, please read the
+ * LICENSE.txt file that was distributed with this source code.
+ *
+ * The TYPO3 project - inspiring people to share!
  */
+use TYPO3\CMS\Core\Utility\GeneralUtility;
+
 /**
  * Extension class for Front End User Authentication.
  *
@@ -43,26 +23,35 @@ namespace TYPO3\CMS\Frontend\Authentication;
  */
 class FrontendUserAuthentication extends \TYPO3\CMS\Core\Authentication\AbstractUserAuthentication {
 
-	// formfield with 0 or 1 // 1 = permanent login enabled // 0 = session is valid for a browser session only
 	/**
+	 * form field with 0 or 1
+	 * 1 = permanent login enabled
+	 * 0 = session is valid for a browser session only
+	 * @var string
 	 * @todo Define visibility
 	 */
 	public $formfield_permanent = 'permalogin';
 
-	// Lifetime of session data in seconds.
+	/**
+	 * Lifetime of session data in seconds.
+	 * @var int
+	 */
 	protected $sessionDataLifetime = 86400;
 
 	/**
+	 * @var string
 	 * @todo Define visibility
 	 */
 	public $usergroup_column = 'usergroup';
 
 	/**
+	 * @var string
 	 * @todo Define visibility
 	 */
 	public $usergroup_table = 'fe_groups';
 
 	/**
+	 * @var array
 	 * @todo Define visibility
 	 */
 	public $groupData = array(
@@ -71,56 +60,70 @@ class FrontendUserAuthentication extends \TYPO3\CMS\Core\Authentication\Abstract
 		'pid' => array()
 	);
 
-	// Used to accumulate the TSconfig data of the user
 	/**
+	 * Used to accumulate the TSconfig data of the user
+	 * @var array
 	 * @todo Define visibility
 	 */
 	public $TSdataArray = array();
 
 	/**
+	 * @var array
 	 * @todo Define visibility
 	 */
 	public $userTS = array();
 
 	/**
+	 * @var bool
 	 * @todo Define visibility
 	 */
-	public $userTSUpdated = 0;
+	public $userTSUpdated = FALSE;
 
 	/**
-	 * @todo Define visibility
-	 */
-	public $showHiddenRecords = 0;
-
-	// Session and user data:
-	/*
-	There are two types of data that can be stored: UserData and Session-Data. Userdata is for the login-user, and session-data for anyone viewing the pages.
-	'Keys' are keys in the internal dataarray of the data. When you get or set a key in one of the data-spaces (user or session) you decide the type of the variable (not object though)
-	'Reserved' keys are:
-	- 'recs': Array: Used to 'register' records, eg in a shopping basket. Structure: [recs][tablename][record_uid]=number
-	- sys: Reserved for TypoScript standard code.
-	 */
-	/**
+	 * Session and user data:
+	 * There are two types of data that can be stored: UserData and Session-Data.
+	 * Userdata is for the login-user, and session-data for anyone viewing the pages.
+	 * 'Keys' are keys in the internal data array of the data.
+	 * When you get or set a key in one of the data-spaces (user or session) you decide the type of the variable (not object though)
+	 * 'Reserved' keys are:
+	 *   - 'recs': Array: Used to 'register' records, eg in a shopping basket. Structure: [recs][tablename][record_uid]=number
+	 *   - sys: Reserved for TypoScript standard code.
 	 * @todo Define visibility
 	 */
 	public $sesData = array();
 
 	/**
+	 * @var bool
 	 * @todo Define visibility
 	 */
-	public $sesData_change = 0;
+	public $sesData_change = FALSE;
 
 	/**
+	 * @var bool
 	 * @todo Define visibility
 	 */
-	public $userData_change = 0;
+	public $userData_change = FALSE;
 
+	/**
+	 * @var bool
+	 */
+	public $is_permanent;
+
+	/**
+	 * @var int|NULL
+	 */
 	protected $sessionDataTimestamp = NULL;
 
 	/**
 	 * Default constructor.
 	 */
 	public function __construct() {
+		parent::__construct();
+
+		// Disable cookie by default, will be activated if saveSessionData() is called,
+		// a user is logging-in or an existing session is found
+		$this->dontSetCookie = TRUE;
+
 		$this->session_table = 'fe_sessions';
 		$this->name = self::getCookieName();
 		$this->get_name = 'ftu';
@@ -140,7 +143,6 @@ class FrontendUserAuthentication extends \TYPO3\CMS\Core\Authentication\Abstract
 		$this->formfield_uident = 'pass';
 		$this->formfield_chalvalue = 'challenge';
 		$this->formfield_status = 'logintype';
-		$this->security_level = '';
 		$this->auth_timeout_field = 6000;
 		$this->sendNoCacheHeaders = FALSE;
 		$this->getFallBack = TRUE;
@@ -168,11 +170,11 @@ class FrontendUserAuthentication extends \TYPO3\CMS\Core\Authentication\Abstract
 	 * @todo Define visibility
 	 */
 	public function start() {
-		if (intval($this->auth_timeout_field) > 0 && intval($this->auth_timeout_field) < $this->lifetime) {
+		if ((int)$this->auth_timeout_field > 0 && (int)$this->auth_timeout_field < $this->lifetime) {
 			// If server session timeout is non-zero but less than client session timeout: Copy this value instead.
 			$this->auth_timeout_field = $this->lifetime;
 		}
-		$this->sessionDataLifetime = intval($GLOBALS['TYPO3_CONF_VARS']['FE']['sessionDataLifetime']);
+		$this->sessionDataLifetime = (int)$GLOBALS['TYPO3_CONF_VARS']['FE']['sessionDataLifetime'];
 		if ($this->sessionDataLifetime <= 0) {
 			$this->sessionDataLifetime = 86400;
 		}
@@ -182,6 +184,7 @@ class FrontendUserAuthentication extends \TYPO3\CMS\Core\Authentication\Abstract
 	/**
 	 * Returns a new session record for the current user for insertion into the DB.
 	 *
+	 * @param array $tempuser
 	 * @return array User session record
 	 * @todo Define visibility
 	 */
@@ -199,8 +202,8 @@ class FrontendUserAuthentication extends \TYPO3\CMS\Core\Authentication\Abstract
 	 * @todo Define visibility
 	 */
 	public function isSetSessionCookie() {
-		$retVal = ($this->newSessionID || $this->forceSetCookie) && ($this->lifetime == 0 || !$this->user['ses_permanent']);
-		return $retVal;
+		return ($this->newSessionID || $this->forceSetCookie)
+			&& ($this->lifetime == 0 || !isset($this->user['ses_permanent']) || !$this->user['ses_permanent']);
 	}
 
 	/**
@@ -211,7 +214,7 @@ class FrontendUserAuthentication extends \TYPO3\CMS\Core\Authentication\Abstract
 	 * @todo Define visibility
 	 */
 	public function isRefreshTimeBasedCookie() {
-		return $this->lifetime > 0 && $this->user['ses_permanent'];
+		return $this->lifetime > 0 && isset($this->user['ses_permanent']) && $this->user['ses_permanent'];
 	}
 
 	/**
@@ -225,9 +228,9 @@ class FrontendUserAuthentication extends \TYPO3\CMS\Core\Authentication\Abstract
 		$loginData = parent::getLoginFormData();
 		if ($GLOBALS['TYPO3_CONF_VARS']['FE']['permalogin'] == 0 || $GLOBALS['TYPO3_CONF_VARS']['FE']['permalogin'] == 1) {
 			if ($this->getMethodEnabled) {
-				$isPermanent = \TYPO3\CMS\Core\Utility\GeneralUtility::_GP($this->formfield_permanent);
+				$isPermanent = GeneralUtility::_GP($this->formfield_permanent);
 			} else {
-				$isPermanent = \TYPO3\CMS\Core\Utility\GeneralUtility::_POST($this->formfield_permanent);
+				$isPermanent = GeneralUtility::_POST($this->formfield_permanent);
 			}
 			if (strlen($isPermanent) != 1) {
 				$isPermanent = $GLOBALS['TYPO3_CONF_VARS']['FE']['permalogin'];
@@ -248,7 +251,21 @@ class FrontendUserAuthentication extends \TYPO3\CMS\Core\Authentication\Abstract
 	}
 
 	/**
-	 * Will select all fe_groups records that the current fe_user is member of - and which groups are also allowed in the current domain.
+	 * Creates a user session record and returns its values.
+	 * However, as the FE user cookie is normally not set, this has to be done
+	 * before the parent class is doing the rest.
+	 *
+	 * @param array $tempuser User data array
+	 * @return array The session data for the newly created session.
+	 */
+	public function createUserSession($tempuser) {
+		$this->setSessionCookie();
+		return parent::createUserSession($tempuser);
+	}
+
+	/**
+	 * Will select all fe_groups records that the current fe_user is member of
+	 * and which groups are also allowed in the current domain.
 	 * It also accumulates the TSconfig for the fe_user/fe_groups in ->TSdataArray
 	 *
 	 * @return integer Returns the number of usergroups for the frontend users (if the internal user record exists and the usergroup field contains a value)
@@ -257,7 +274,7 @@ class FrontendUserAuthentication extends \TYPO3\CMS\Core\Authentication\Abstract
 	public function fetchGroupData() {
 		$this->TSdataArray = array();
 		$this->userTS = array();
-		$this->userTSUpdated = 0;
+		$this->userTSUpdated = FALSE;
 		$this->groupData = array(
 			'title' => array(),
 			'uid' => array(),
@@ -269,33 +286,33 @@ class FrontendUserAuthentication extends \TYPO3\CMS\Core\Authentication\Abstract
 		$authInfo = $this->getAuthInfoArray();
 		if ($this->writeDevLog) {
 			if (is_array($this->user)) {
-				\TYPO3\CMS\Core\Utility\GeneralUtility::devLog('Get usergroups for user: ' . \TYPO3\CMS\Core\Utility\GeneralUtility::arrayToLogString($this->user, array($this->userid_column, $this->username_column)), 'TYPO3\\CMS\\Frontend\\Authentication\\FrontendUserAuthentication');
+				GeneralUtility::devLog('Get usergroups for user: ' . GeneralUtility::arrayToLogString($this->user, array($this->userid_column, $this->username_column)), 'TYPO3\\CMS\\Frontend\\Authentication\\FrontendUserAuthentication');
 			} else {
-				\TYPO3\CMS\Core\Utility\GeneralUtility::devLog('Get usergroups for "anonymous" user', 'TYPO3\\CMS\\Frontend\\Authentication\\FrontendUserAuthentication');
+				GeneralUtility::devLog('Get usergroups for "anonymous" user', 'TYPO3\\CMS\\Frontend\\Authentication\\FrontendUserAuthentication');
 			}
 		}
 		$groupDataArr = array();
 		// Use 'auth' service to find the groups for the user
 		$serviceChain = '';
 		$subType = 'getGroups' . $this->loginType;
-		while (is_object($serviceObj = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstanceService('auth', $subType, $serviceChain))) {
+		while (is_object($serviceObj = GeneralUtility::makeInstanceService('auth', $subType, $serviceChain))) {
 			$serviceChain .= ',' . $serviceObj->getServiceKey();
 			$serviceObj->initAuth($subType, array(), $authInfo, $this);
 			$groupData = $serviceObj->getGroups($this->user, $groupDataArr);
 			if (is_array($groupData) && count($groupData)) {
 				// Keys in $groupData should be unique ids of the groups (like "uid") so this function will override groups.
-				$groupDataArr = \TYPO3\CMS\Core\Utility\GeneralUtility::array_merge($groupDataArr, $groupData);
+				$groupDataArr = GeneralUtility::array_merge($groupDataArr, $groupData);
 			}
 			unset($serviceObj);
 		}
 		if ($this->writeDevLog && $serviceChain) {
-			\TYPO3\CMS\Core\Utility\GeneralUtility::devLog($subType . ' auth services called: ' . $serviceChain, 'TYPO3\\CMS\\Frontend\\Authentication\\FrontendUserAuthentication');
+			GeneralUtility::devLog($subType . ' auth services called: ' . $serviceChain, 'TYPO3\\CMS\\Frontend\\Authentication\\FrontendUserAuthentication');
 		}
 		if ($this->writeDevLog && !count($groupDataArr)) {
-			\TYPO3\CMS\Core\Utility\GeneralUtility::devLog('No usergroups found by services', 'TYPO3\\CMS\\Frontend\\Authentication\\FrontendUserAuthentication');
+			GeneralUtility::devLog('No usergroups found by services', 'TYPO3\\CMS\\Frontend\\Authentication\\FrontendUserAuthentication');
 		}
 		if ($this->writeDevLog && count($groupDataArr)) {
-			\TYPO3\CMS\Core\Utility\GeneralUtility::devLog(count($groupDataArr) . ' usergroup records found by services', 'TYPO3\\CMS\\Frontend\\Authentication\\FrontendUserAuthentication');
+			GeneralUtility::devLog(count($groupDataArr) . ' usergroup records found by services', 'TYPO3\\CMS\\Frontend\\Authentication\\FrontendUserAuthentication');
 		}
 		// Use 'auth' service to check the usergroups if they are really valid
 		foreach ($groupDataArr as $groupData) {
@@ -303,13 +320,13 @@ class FrontendUserAuthentication extends \TYPO3\CMS\Core\Authentication\Abstract
 			$validGroup = TRUE;
 			$serviceChain = '';
 			$subType = 'authGroups' . $this->loginType;
-			while (is_object($serviceObj = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstanceService('auth', $subType, $serviceChain))) {
+			while (is_object($serviceObj = GeneralUtility::makeInstanceService('auth', $subType, $serviceChain))) {
 				$serviceChain .= ',' . $serviceObj->getServiceKey();
 				$serviceObj->initAuth($subType, array(), $authInfo, $this);
 				if (!$serviceObj->authGroup($this->user, $groupData)) {
 					$validGroup = FALSE;
 					if ($this->writeDevLog) {
-						\TYPO3\CMS\Core\Utility\GeneralUtility::devLog($subType . ' auth service did not auth group: ' . \TYPO3\CMS\Core\Utility\GeneralUtility::arrayToLogString($groupData, 'uid,title'), 'TYPO3\\CMS\\Frontend\\Authentication\\FrontendUserAuthentication', 2);
+						GeneralUtility::devLog($subType . ' auth service did not auth group: ' . GeneralUtility::arrayToLogString($groupData, 'uid,title'), 'TYPO3\\CMS\\Frontend\\Authentication\\FrontendUserAuthentication', 2);
 					}
 					break;
 				}
@@ -334,12 +351,12 @@ class FrontendUserAuthentication extends \TYPO3\CMS\Core\Authentication\Abstract
 			ksort($this->groupData['uid']);
 			ksort($this->groupData['pid']);
 		}
-		return count($this->groupData['uid']) ? count($this->groupData['uid']) : 0;
+		return count($this->groupData['uid']) ?: 0;
 	}
 
 	/**
 	 * Returns the parsed TSconfig for the fe_user
-	 * First time this function is called it will parse the TSconfig and store it in $this->userTS. Subsequent requests will not re-parse the TSconfig but simply return what is already in $this->userTS
+	 * The TSconfig will be cached in $this->userTS.
 	 *
 	 * @return array TSconfig array for the fe_user
 	 * @todo Define visibility
@@ -349,10 +366,10 @@ class FrontendUserAuthentication extends \TYPO3\CMS\Core\Authentication\Abstract
 			// Parsing the user TS (or getting from cache)
 			$this->TSdataArray = \TYPO3\CMS\Core\TypoScript\Parser\TypoScriptParser::checkIncludeLines_array($this->TSdataArray);
 			$userTS = implode(LF . '[GLOBAL]' . LF, $this->TSdataArray);
-			$parseObj = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\TypoScript\\Parser\\TypoScriptParser');
+			$parseObj = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\TypoScript\\Parser\\TypoScriptParser');
 			$parseObj->parse($userTS);
 			$this->userTS = $parseObj->setup;
-			$this->userTSUpdated = 1;
+			$this->userTSUpdated = TRUE;
 		}
 		return $this->userTS;
 	}
@@ -375,7 +392,7 @@ class FrontendUserAuthentication extends \TYPO3\CMS\Core\Authentication\Abstract
 	public function fetchSessionData() {
 		// Gets SesData if any AND if not already selected by session fixation check in ->isExistingSessionRecord()
 		if ($this->id && !count($this->sesData)) {
-			$statement = $GLOBALS['TYPO3_DB']->prepare_SELECTquery('*', 'fe_session_data', 'hash = :hash');
+			$statement = $this->db->prepare_SELECTquery('*', 'fe_session_data', 'hash = :hash');
 			$statement->execute(array(':hash' => $this->id));
 			if (($sesDataRow = $statement->fetch()) !== FALSE) {
 				$this->sesData = unserialize($sesDataRow['content']);
@@ -404,6 +421,10 @@ class FrontendUserAuthentication extends \TYPO3\CMS\Core\Authentication\Abstract
 			if (empty($this->sesData)) {
 				// Remove session-data
 				$this->removeSessionData();
+				// Remove cookie if not logged in as the session data is removed as well
+				if (empty($this->user['uid']) && $this->isCookieSet()) {
+					$this->removeCookie($this->name);
+				}
 			} elseif ($this->sessionDataTimestamp === NULL) {
 				// Write new session-data
 				$insertFields = array(
@@ -412,7 +433,9 @@ class FrontendUserAuthentication extends \TYPO3\CMS\Core\Authentication\Abstract
 					'tstamp' => $GLOBALS['EXEC_TIME']
 				);
 				$this->sessionDataTimestamp = $GLOBALS['EXEC_TIME'];
-				$GLOBALS['TYPO3_DB']->exec_INSERTquery('fe_session_data', $insertFields);
+				$this->db->exec_INSERTquery('fe_session_data', $insertFields);
+				// Now set the cookie (= fix the session)
+				$this->setSessionCookie();
 			} else {
 				// Update session data
 				$updateFields = array(
@@ -420,7 +443,7 @@ class FrontendUserAuthentication extends \TYPO3\CMS\Core\Authentication\Abstract
 					'tstamp' => $GLOBALS['EXEC_TIME']
 				);
 				$this->sessionDataTimestamp = $GLOBALS['EXEC_TIME'];
-				$GLOBALS['TYPO3_DB']->exec_UPDATEquery('fe_session_data', 'hash=' . $GLOBALS['TYPO3_DB']->fullQuoteStr($this->id, 'fe_session_data'), $updateFields);
+				$this->db->exec_UPDATEquery('fe_session_data', 'hash=' . $this->db->fullQuoteStr($this->id, 'fe_session_data'), $updateFields);
 			}
 		}
 	}
@@ -431,7 +454,23 @@ class FrontendUserAuthentication extends \TYPO3\CMS\Core\Authentication\Abstract
 	 * @return void
 	 */
 	public function removeSessionData() {
-		$GLOBALS['TYPO3_DB']->exec_DELETEquery('fe_session_data', 'hash=' . $GLOBALS['TYPO3_DB']->fullQuoteStr($this->id, 'fe_session_data'));
+		$this->db->exec_DELETEquery('fe_session_data', 'hash=' . $this->db->fullQuoteStr($this->id, 'fe_session_data'));
+	}
+
+	/**
+	 * Log out current user!
+	 * Removes the current session record, sets the internal ->user array to a blank string
+	 * Thereby the current user (if any) is effectively logged out!
+	 * Additionally the cookie is removed
+	 *
+	 * @return void
+	 */
+	public function logoff() {
+		parent::logoff();
+		// Remove the cookie on log-off, but only if we do not have an anonymous session
+		if (!$this->isExistingSessionRecord($this->id) && $this->isCookieSet()) {
+			$this->removeCookie($this->name);
+		}
 	}
 
 	/**
@@ -441,13 +480,14 @@ class FrontendUserAuthentication extends \TYPO3\CMS\Core\Authentication\Abstract
 	 * @return void
 	 */
 	public function gc() {
-		$timeoutTimeStamp = intval($GLOBALS['EXEC_TIME'] - $this->sessionDataLifetime);
-		$GLOBALS['TYPO3_DB']->exec_DELETEquery('fe_session_data', 'tstamp < ' . $timeoutTimeStamp);
+		$timeoutTimeStamp = (int)($GLOBALS['EXEC_TIME'] - $this->sessionDataLifetime);
+		$this->db->exec_DELETEquery('fe_session_data', 'tstamp < ' . $timeoutTimeStamp);
 		parent::gc();
 	}
 
 	/**
-	 * Returns session data for the fe_user; Either persistent data following the fe_users uid/profile (requires login) or current-session based (not available when browse is closed, but does not require login)
+	 * Returns session data for the fe_user; Either persistent data following the fe_users uid/profile (requires login)
+	 * or current-session based (not available when browse is closed, but does not require login)
 	 *
 	 * @param string $type Session data type; Either "user" (persistent, bound to fe_users profile) or "ses" (temporary, bound to current session cookie)
 	 * @param string $key Key from the data array to return; The session data (in either case) is an array ($this->uc / $this->sesData) and this value determines which key to return the value for.
@@ -456,16 +496,19 @@ class FrontendUserAuthentication extends \TYPO3\CMS\Core\Authentication\Abstract
 	 * @todo Define visibility
 	 */
 	public function getKey($type, $key) {
-		if ($key) {
-			switch ($type) {
+		if (!$key) {
+			return NULL;
+		}
+		$value = NULL;
+		switch ($type) {
 			case 'user':
-				return $this->uc[$key];
+				$value = $this->uc[$key];
 				break;
 			case 'ses':
-				return $this->sesData[$key];
+				$value = $this->sesData[$key];
 				break;
-			}
 		}
+		return $value;
 	}
 
 	/**
@@ -482,8 +525,10 @@ class FrontendUserAuthentication extends \TYPO3\CMS\Core\Authentication\Abstract
 	 * @todo Define visibility
 	 */
 	public function setKey($type, $key, $data) {
-		if ($key) {
-			switch ($type) {
+		if (!$key) {
+			return;
+		}
+		switch ($type) {
 			case 'user':
 				if ($this->user['uid']) {
 					if ($data === NULL) {
@@ -491,7 +536,7 @@ class FrontendUserAuthentication extends \TYPO3\CMS\Core\Authentication\Abstract
 					} else {
 						$this->uc[$key] = $data;
 					}
-					$this->userData_change = 1;
+					$this->userData_change = TRUE;
 				}
 				break;
 			case 'ses':
@@ -500,9 +545,8 @@ class FrontendUserAuthentication extends \TYPO3\CMS\Core\Authentication\Abstract
 				} else {
 					$this->sesData[$key] = $data;
 				}
-				$this->sesData_change = 1;
+				$this->sesData_change = TRUE;
 				break;
-			}
 		}
 	}
 
@@ -540,10 +584,10 @@ class FrontendUserAuthentication extends \TYPO3\CMS\Core\Authentication\Abstract
 	 * @todo Define visibility
 	 */
 	public function record_registration($recs, $maxSizeOfSessionData = 0) {
-		// Storing value ONLY if there is a confirmed cookie set (->cookieID),
+		// Storing value ONLY if there is a confirmed cookie set,
 		// otherwise a shellscript could easily be spamming the fe_sessions table
 		// with bogus content and thus bloat the database
-		if (!$maxSizeOfSessionData || $this->cookieId) {
+		if (!$maxSizeOfSessionData || $this->isCookieSet()) {
 			if ($recs['clear_all']) {
 				$this->setKey('ses', 'recs', array());
 			}
@@ -580,7 +624,7 @@ class FrontendUserAuthentication extends \TYPO3\CMS\Core\Authentication\Abstract
 		$count = parent::isExistingSessionRecord($id);
 		// Check if there are any fe_session_data records for the session ID the client claims to have
 		if ($count == FALSE) {
-			$statement = $GLOBALS['TYPO3_DB']->prepare_SELECTquery('content,tstamp', 'fe_session_data', 'hash = :hash');
+			$statement = $this->db->prepare_SELECTquery('content,tstamp', 'fe_session_data', 'hash = :hash');
 			$res = $statement->execute(array(':hash' => $id));
 			if ($res !== FALSE) {
 				if ($sesDataRow = $statement->fetch()) {
@@ -595,6 +639,3 @@ class FrontendUserAuthentication extends \TYPO3\CMS\Core\Authentication\Abstract
 	}
 
 }
-
-
-?>

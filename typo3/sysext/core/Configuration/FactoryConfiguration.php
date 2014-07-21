@@ -7,52 +7,42 @@
  */
 return array(
 	'BE' => array(
-		'installToolPassword' => 'bacb98acf97e0b6112b1d1b650b84971',
+		'explicitADmode' => 'explicitAllow',
+		'loginSecurityLevel' => 'rsa',
 	),
 	'DB' => array(
 		'extTablesDefinitionScript' => 'extTables.php',
 	),
 	'EXT' => array(
-		'extListArray' => array(
-			'info',
-			'perm',
-			'func',
-			'filelist',
-			'about',
-			'version',
-			'tsconfig_help',
-			'context_help',
-			'extra_page_cm_options',
-			'impexp',
-			'sys_note',
-			'tstemplate',
-			'tstemplate_ceditor',
-			'tstemplate_info',
-			'tstemplate_objbrowser',
-			'tstemplate_analyzer',
-			'func_wizards',
-			'wizard_crpages',
-			'wizard_sortpages',
-			'lowlevel',
-			'install',
-			'belog',
-			'beuser',
-			'aboutmodules',
-			'setup',
-			'taskcenter',
-			'info_pagetsconfig',
-			'viewpage',
-			'rtehtmlarea',
-			'css_styled_content',
-			't3skin',
-			't3editor',
-			'reports',
-			'felogin',
-			'form',
+		'extConf' => array(
+			'rsaauth' => 'a:1:{s:18:"temporaryDirectory";s:0:"";}',
+			'saltedpasswords' => serialize(array(
+				'BE.' => array(
+					'saltedPWHashingMethod' => 'TYPO3\\CMS\\Saltedpasswords\\Salt\\PhpassSalt',
+					'forceSalted' => 0,
+					'onlyAuthService' => 0,
+					'updatePasswd' => 1,
+				),
+				'FE.' => array(
+					'enabled' => 1,
+					'saltedPWHashingMethod' => 'TYPO3\\CMS\\Saltedpasswords\\Salt\\PhpassSalt',
+					'forceSalted' => 0,
+					'onlyAuthService' => 0,
+					'updatePasswd' => 1,
+				),
+			)),
 		),
 	),
+	'FE' => array(
+		'loginSecurityLevel' => 'rsa',
+		'activateContentAdapter' => FALSE,
+	),
+	'GFX' => array(
+		'jpg_quality' => '80',
+	),
 	'SYS' => array(
+		'compat_version' => '6.2',
+		'isInitialInstallationInProgress' => TRUE,
 		'sitename' => 'New TYPO3 site',
 	),
 );
-?>

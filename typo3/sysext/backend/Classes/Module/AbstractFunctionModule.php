@@ -1,30 +1,21 @@
 <?php
 namespace TYPO3\CMS\Backend\Module;
 
-/***************************************************************
- *  Copyright notice
+/**
+ * This file is part of the TYPO3 CMS project.
  *
- *  (c) 1999-2013 Kasper Skårhøj (kasperYYYY@typo3.com)
- *  All rights reserved
+ * It is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License, either version 2
+ * of the License, or any later version.
  *
- *  This script is part of the TYPO3 project. The TYPO3 project is
- *  free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
+ * For the full copyright and license information, please read the
+ * LICENSE.txt file that was distributed with this source code.
  *
- *  The GNU General Public License can be found at
- *  http://www.gnu.org/copyleft/gpl.html.
- *  A copy is found in the textfile GPL.txt and important notices to the license
- *  from the author is found in LICENSE.txt distributed with these scripts.
- *
- *  This script is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  This copyright notice MUST APPEAR in all copies of the script!
- ***************************************************************/
+ * The TYPO3 project - inspiring people to share!
+ */
+
+use TYPO3\CMS\Backend\Utility\BackendUtility;
+use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
  * Parent class for 'Extension Objects' in backend modules.
@@ -70,9 +61,9 @@ namespace TYPO3\CMS\Backend\Module;
  *
  * \TYPO3\CMS\Core\Utility\ExtensionManagementUtility::insertModuleFunction(
  * 'web_func',
- * 'tx_wizardcrpages_webfunc_2',
- * \TYPO3\CMS\Core\Utility\ExtensionManagementUtility::extPath($_EXTKEY).'class.tx_wizardcrpages_webfunc_2.php',
- * 'LLL:EXT:wizard_crpages/locallang.php:wiz_crMany',
+ * 'TYPO3\\CMS\\WizardCrpages\\Controller\\CreatePagesWizardModuleFunctionController',
+ * \TYPO3\CMS\Core\Utility\ExtensionManagementUtility::extPath($_EXTKEY) . 'Classes/Controller/CreatePagesWizardModuleFunctionController.php',
+ * 'LLL:EXT:wizard_crpages/locallang.xlf:wiz_crMany',
  * 'wiz'
  * );
  *
@@ -82,10 +73,11 @@ namespace TYPO3\CMS\Backend\Module;
  * times inclusion sections in their index.php scripts. For example (from web_func):
  *
  * Make instance:
- * $SOBE = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance("SC_mod_web_func_index");
+ * $SOBE = GeneralUtility::makeInstance("SC_mod_web_func_index");
  * $SOBE->init();
  *
  * Include files?
+ * Note: This "include_once" is deprecated since TYPO3 6.2: use auto-loading instead!
  * foreach($SOBE->include_once as $INC_FILE)	include_once($INC_FILE);
  * $SOBE->checkExtObj();	// Checking for first level external objects
  *
@@ -130,9 +122,8 @@ namespace TYPO3\CMS\Backend\Module;
  *
  * @author Kasper Skårhøj <kasperYYYY@typo3.com>
  * @see \TYPO3\CMS\Backend\Module\BaseScriptClass
- * @see tx_funcwizards_webfunc::init()
- * @see tx_funcwizards_webfunc
- * @see tx_wizardsortpages_webfunc_2
+ * @see \TYPO3\CMS\FuncWizards\Controller\WebFunctionWizardsBaseController
+ * @see \TYPO3\CMS\WizardSortpages\View\SortPagesWizardModuleFunction
  */
 abstract class AbstractFunctionModule {
 
@@ -175,7 +166,7 @@ abstract class AbstractFunctionModule {
 	 * This is a little hard to explain, so see it in action; it used in the extension 'func_wizards' in order to provide yet a layer of interfacing with the backend module.
 	 * The extension 'func_wizards' has this description: 'Adds the 'Wizards' item to the function menu in Web>Func. This is just a framework for wizard extensions.' - so as you can see it is designed to allow further connectivity - 'level 2'
 	 *
-	 * @see handleExternalFunctionValue(), tx_funcwizards_webfunc
+	 * @see handleExternalFunctionValue(), \TYPO3\CMS\FuncWizards\Controller\WebFunctionWizardsBaseController
 	 * @todo Define visibility
 	 */
 	public $function_key = '';
@@ -194,9 +185,10 @@ abstract class AbstractFunctionModule {
 	public function init(&$pObj, $conf) {
 		$this->pObj = $pObj;
 		// Path of this script:
-		$this->thisPath = dirname($conf['path']);
+		$reflector = new \ReflectionObject($this);
+		$this->thisPath = dirname($reflector->getFilename());
 		if (!@is_dir($this->thisPath)) {
-			throw new \RuntimeException('TYPO3 Fatal Error: Extension "' . $this->thisPath . ' was not a directory as expected...', 1270853912);
+			throw new \RuntimeException('TYPO3 Fatal Error: Could not find path for class ' . get_class($this), 1381164687);
 		}
 		// Local lang:
 		$this->incLocalLang();
@@ -208,12 +200,13 @@ abstract class AbstractFunctionModule {
 	 * If $this->function_key is set (which means there are two levels of object connectivity) then $this->extClassConf is loaded with the TBE_MODULES_EXT configuration for that sub-sub-module
 	 *
 	 * @return void
-	 * @see $function_key, tx_funcwizards_webfunc::init()
+	 * @see $function_key, \TYPO3\CMS\FuncWizards\Controller\WebFunctionWizardsBaseController::init()
+	 * @deprecated since 6.2. Instead of this include_once array, extensions should use auto-loading
 	 * @todo Define visibility
 	 */
 	public function handleExternalFunctionValue() {
 		// Must clean first to make sure the correct key is set...
-		$this->pObj->MOD_SETTINGS = \TYPO3\CMS\Backend\Utility\BackendUtility::getModuleData($this->pObj->MOD_MENU, \TYPO3\CMS\Core\Utility\GeneralUtility::_GP('SET'), $this->pObj->MCONF['name']);
+		$this->pObj->MOD_SETTINGS = BackendUtility::getModuleData($this->pObj->MOD_MENU, GeneralUtility::_GP('SET'), $this->pObj->MCONF['name']);
 		if ($this->function_key) {
 			$this->extClassConf = $this->pObj->getExternalItemConfig($this->pObj->MCONF['name'], $this->function_key, $this->pObj->MOD_SETTINGS[$this->function_key]);
 			if (is_array($this->extClassConf) && $this->extClassConf['path']) {
@@ -232,7 +225,8 @@ abstract class AbstractFunctionModule {
 		if ($this->localLangFile && (@is_file(($this->thisPath . '/' . $this->localLangFile)) || @is_file(($this->thisPath . '/' . substr($this->localLangFile, 0, -4) . '.xml')) || @is_file(($this->thisPath . '/' . substr($this->localLangFile, 0, -4) . '.xlf')))) {
 			$LOCAL_LANG = $GLOBALS['LANG']->includeLLFile($this->thisPath . '/' . $this->localLangFile, FALSE);
 			if (is_array($LOCAL_LANG)) {
-				$GLOBALS['LOCAL_LANG'] = \TYPO3\CMS\Core\Utility\GeneralUtility::array_merge_recursive_overrule((array) $GLOBALS['LOCAL_LANG'], $LOCAL_LANG);
+				$GLOBALS['LOCAL_LANG'] = (array)$GLOBALS['LOCAL_LANG'];
+				\TYPO3\CMS\Core\Utility\ArrayUtility::mergeRecursiveWithOverrule($GLOBALS['LOCAL_LANG'], $LOCAL_LANG);
 			}
 		}
 	}
@@ -246,10 +240,10 @@ abstract class AbstractFunctionModule {
 	 */
 	public function checkExtObj() {
 		if (is_array($this->extClassConf) && $this->extClassConf['name']) {
-			$this->extObj = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance($this->extClassConf['name']);
+			$this->extObj = GeneralUtility::makeInstance($this->extClassConf['name']);
 			$this->extObj->init($this->pObj, $this->extClassConf);
 			// Re-write:
-			$this->pObj->MOD_SETTINGS = \TYPO3\CMS\Backend\Utility\BackendUtility::getModuleData($this->pObj->MOD_MENU, \TYPO3\CMS\Core\Utility\GeneralUtility::_GP('SET'), $this->pObj->MCONF['name']);
+			$this->pObj->MOD_SETTINGS = BackendUtility::getModuleData($this->pObj->MOD_MENU, GeneralUtility::_GP('SET'), $this->pObj->MCONF['name']);
 		}
 	}
 
@@ -278,6 +272,3 @@ abstract class AbstractFunctionModule {
 	}
 
 }
-
-
-?>

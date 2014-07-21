@@ -14,30 +14,19 @@ $EM_CONF[$_EXTKEY] = array(
 	'category' => 'be',
 	'author' => 'Workspaces Team',
 	'author_email' => '',
-	'shy' => '',
-	'dependencies' => 'version',
-	'conflicts' => '',
-	'priority' => '',
-	'module' => '',
-	'state' => 'stable',
-	'internal' => '',
-	'uploadfolder' => 0,
-	'docPath' => 'Documentation',
-	'createDirs' => '',
-	'modify_tables' => '',
-	'clearCacheOnLoad' => 1,
-	'lockType' => '',
 	'author_company' => '',
-	'version' => '6.1.0',
+	'state' => 'stable',
+	'uploadfolder' => 0,
+	'createDirs' => '',
+	'clearCacheOnLoad' => 1,
+	'version' => '6.2.0',
 	'constraints' => array(
 		'depends' => array(
-			'typo3' => '6.1.0-6.1.99',
-			'version' => '6.1.0-6.1.99',
+			'typo3' => '6.2.0-6.2.99',
+			'version' => '6.2.0-6.2.99',
 		),
 		'conflicts' => array(),
-		'suggests' => array()
+		'suggests' => array(),
 	),
 	'_md5_values_when_last_written' => '',
-	'suggests' => array()
 );
-?>

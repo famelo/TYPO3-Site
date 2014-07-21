@@ -37,7 +37,6 @@ return array(
 	'SC_alt_doc_nodoc' => 'TYPO3\\CMS\\Backend\\Controller\\NoDocumentsOpenController',
 	'SC_db_layout' => 'TYPO3\\CMS\\Backend\\Controller\\PageLayoutController',
 	'SC_alt_db_navframe' => 'TYPO3\\CMS\\Backend\\Controller\\PageTreeNavigationController',
-	'SC_alt_shortcut' => 'TYPO3\\CMS\\Backend\\Controller\\ShortcutFrameController',
 	'SC_tce_db' => 'TYPO3\\CMS\\Backend\\Controller\\SimpleDataHandlerController',
 	'SC_wizard_add' => 'TYPO3\\CMS\\Backend\\Controller\\Wizard\\AddController',
 	'SC_wizard_colorpicker' => 'TYPO3\\CMS\\Backend\\Controller\\Wizard\\ColorpickerController',
@@ -129,9 +128,7 @@ return array(
 	'SC_t3lib_thumbs' => 'TYPO3\\CMS\\Backend\\View\\ThumbnailView',
 	'TYPO3Logo' => 'TYPO3\\CMS\\Backend\\View\\LogoView',
 	'cms_newContentElementWizardsHook' => 'TYPO3\\CMS\\Backend\\Wizard\\NewContentElementWizardHookInterface',
-	'SC_wizard_tsconfig' => 'TYPO3\\CMS\\Backend\\Wizard\\TsconfigWizard',
 	't3lib_extjs_ExtDirectRouter' => 'TYPO3\\CMS\\Core\\ExtDirect\\ExtDirectRouter',
 	't3lib_extjs_ExtDirectApi' => 'TYPO3\\CMS\\Core\\ExtDirect\\ExtDirectApi',
 	't3lib_extjs_ExtDirectDebug' => 'TYPO3\\CMS\\Core\\ExtDirect\\ExtDirectDebug',
 );
-?>

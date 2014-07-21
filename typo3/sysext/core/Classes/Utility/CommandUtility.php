@@ -1,31 +1,18 @@
 <?php
 namespace TYPO3\CMS\Core\Utility;
 
-/***************************************************************
- * Copyright notice
+/**
+ * This file is part of the TYPO3 CMS project.
  *
- * (c) 2010-2013 Steffen Kamper <steffen@typo3.org>
- * All rights reserved
+ * It is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License, either version 2
+ * of the License, or any later version.
  *
- * This script is part of the TYPO3 project. The TYPO3 project is
- * free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
+ * For the full copyright and license information, please read the
+ * LICENSE.txt file that was distributed with this source code.
  *
- * The GNU General Public License can be found at
- * http://www.gnu.org/copyleft/gpl.html.
- * A copy is found in the textfile GPL.txt and important notices to the license
- * from the author is found in LICENSE.txt distributed with these scripts.
- *
- *
- * This script is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * This copyright notice MUST APPEAR in all copies of the script!
- ***************************************************************/
+ * The TYPO3 project - inspiring people to share!
+ */
 /**
  * Class to handle system commands.
  * finds executables (programs) on Unix and Windows without knowing where they are
@@ -116,7 +103,6 @@ class CommandUtility {
 		}
 		$path = \TYPO3\CMS\Core\Utility\GeneralUtility::fixWindowsFilePath($path);
 		$im_version = strtolower($gfxConf['im_version_5']);
-		$combineScript = $gfxConf['im_combine_filename'] ? trim($gfxConf['im_combine_filename']) : 'combine';
 		// This is only used internally, has no effect outside
 		if ($command === 'combine') {
 			$command = 'composite';
@@ -129,7 +115,7 @@ class CommandUtility {
 			if ($im_version === 'im6') {
 				$switchCompositeParameters = TRUE;
 			}
-			$path = escapeshellarg($path . ($command == 'composite' ? $combineScript : $command) . $isExt);
+			$path = escapeshellarg($path . ($command == 'composite' ? 'composite' : $command) . $isExt);
 		}
 		// strip profile information for thumbnails and reduce their size
 		if ($parameters && $command != 'identify' && $gfxConf['im_useStripProfileByDefault'] && $gfxConf['im_stripProfileCommand'] != '') {
@@ -326,7 +312,7 @@ class CommandUtility {
 		}
 			// Merge the submitted paths array to the global
 		if ($paths) {
-			$paths = GeneralUtility::trimExplode(',', $paths, 1);
+			$paths = GeneralUtility::trimExplode(',', $paths, TRUE);
 			if (is_array($paths)) {
 				foreach ($paths as $path) {
 						// Make absolute path of relative
@@ -365,7 +351,7 @@ class CommandUtility {
 		if ($GLOBALS['TYPO3_CONF_VARS']['SYS']['binSetup']) {
 			$pathSetup = preg_split('/[\n,]+/', $GLOBALS['TYPO3_CONF_VARS']['SYS']['binSetup']);
 			foreach ($pathSetup as $val) {
-				list($cmd, $cmdPath) = GeneralUtility::trimExplode('=', $val, 1);
+				list($cmd, $cmdPath) = GeneralUtility::trimExplode('=', $val, TRUE);
 				$cmdArr[$cmd]['app'] = basename($cmdPath);
 				$cmdArr[$cmd]['path'] = dirname($cmdPath) . '/';
 				$cmdArr[$cmd]['valid'] = TRUE;
@@ -387,14 +373,14 @@ class CommandUtility {
 
 			// Image magick paths first
 			// im_path_lzw take precedence over im_path
-		if (($imPath = ($GLOBALS['TYPO3_CONF_VARS']['GFX']['im_path_lzw'] ? $GLOBALS['TYPO3_CONF_VARS']['GFX']['im_path_lzw'] : $GLOBALS['TYPO3_CONF_VARS']['GFX']['im_path']))) {
+		if (($imPath = ($GLOBALS['TYPO3_CONF_VARS']['GFX']['im_path_lzw'] ?: $GLOBALS['TYPO3_CONF_VARS']['GFX']['im_path']))) {
 			$imPath = self::fixPath($imPath);
 			$pathsArr[$imPath] = $imPath;
 		}
 
 			// Add configured paths
 		if ($GLOBALS['TYPO3_CONF_VARS']['SYS']['binPath']) {
-			$sysPath = GeneralUtility::trimExplode(',', $GLOBALS['TYPO3_CONF_VARS']['SYS']['binPath'], 1);
+			$sysPath = GeneralUtility::trimExplode(',', $GLOBALS['TYPO3_CONF_VARS']['SYS']['binPath'], TRUE);
 			foreach ($sysPath as $val) {
 				$val = self::fixPath($val);
 				$sysPathArr[$val] = $val;
@@ -405,7 +391,7 @@ class CommandUtility {
 			// TODO: how does this work for WIN
 		if ($GLOBALS['_SERVER']['PATH']) {
 			$sep = (TYPO3_OS == 'WIN' ? ';' : ':');
-			$envPath = GeneralUtility::trimExplode($sep, $GLOBALS['_SERVER']['PATH'], 1);
+			$envPath = GeneralUtility::trimExplode($sep, $GLOBALS['_SERVER']['PATH'], TRUE);
 			foreach ($envPath as $val) {
 				$val = self::fixPath($val);
 				$sysPathArr[$val] = $val;
@@ -437,6 +423,3 @@ class CommandUtility {
 	}
 
 }
-
-
-?>

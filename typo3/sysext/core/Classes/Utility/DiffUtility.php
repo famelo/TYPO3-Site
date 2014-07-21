@@ -1,39 +1,19 @@
 <?php
 namespace TYPO3\CMS\Core\Utility;
 
-/***************************************************************
- *  Copyright notice
- *
- *  (c) 1999-2013 Kasper Skårhøj (kasperYYYY@typo3.com)
- *  All rights reserved
- *
- *  This script is part of the TYPO3 project. The TYPO3 project is
- *  free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
- *
- *  The GNU General Public License can be found at
- *  http://www.gnu.org/copyleft/gpl.html.
- *  A copy is found in the textfile GPL.txt and important notices to the license
- *  from the author is found in LICENSE.txt distributed with these scripts.
- *
- *
- *  This script is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  This copyright notice MUST APPEAR in all copies of the script!
- ***************************************************************/
 /**
- * Contains class which has functions that generates a difference output of a content string
+ * This file is part of the TYPO3 CMS project.
  *
- * Revised for TYPO3 3.6 November/2003 by Kasper Skårhøj
- * XHTML Compliant
+ * It is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License, either version 2
+ * of the License, or any later version.
  *
- * @author Kasper Skårhøj <kasperYYYY@typo3.com>
+ * For the full copyright and license information, please read the
+ * LICENSE.txt file that was distributed with this source code.
+ *
+ * The TYPO3 project - inspiring people to share!
  */
+
 /**
  * This class has functions which generates a difference output of a content string
  *
@@ -91,14 +71,14 @@ class DiffUtility {
 			$diffResArray = array();
 			$differenceStr = '';
 			foreach ($diffRes as $lValue) {
-				if (intval($lValue)) {
-					$c = intval($lValue);
+				if ((int)$lValue) {
+					$c = (int)$lValue;
 					$diffResArray[$c]['changeInfo'] = $lValue;
 				}
-				if (substr($lValue, 0, 1) == '<') {
+				if ($lValue[0] === '<') {
 					$differenceStr .= ($diffResArray[$c]['old'][] = substr($lValue, 2));
 				}
-				if (substr($lValue, 0, 1) == '>') {
+				if ($lValue[0] === '>') {
 					$differenceStr .= ($diffResArray[$c]['new'][] = substr($lValue, 2));
 				}
 			}
@@ -121,8 +101,8 @@ class DiffUtility {
 						$outString .= '<' . $wrapTag . ' class="diff-g">' . htmlspecialchars(implode(' ', $diffResArray[($a + 1)]['new'])) . '</' . $wrapTag . '> ';
 					}
 					$chInfParts = explode(',', $diffResArray[$a + 1]['changeInfo']);
-					if (!strcmp($chInfParts[0], ($a + 1))) {
-						$newLine = intval($chInfParts[1]) - 1;
+					if ((string)$chInfParts[0] === (string)($a + 1)) {
+						$newLine = (int)$chInfParts[1] - 1;
 						if ($newLine > $a) {
 							$a = $newLine;
 						}
@@ -196,7 +176,7 @@ class DiffUtility {
 		$strArr = \TYPO3\CMS\Core\Utility\GeneralUtility::trimExplode(LF, $str);
 		$outArray = array();
 		foreach ($strArr as $lineOfWords) {
-			$allWords = \TYPO3\CMS\Core\Utility\GeneralUtility::trimExplode(' ', $lineOfWords, 1);
+			$allWords = \TYPO3\CMS\Core\Utility\GeneralUtility::trimExplode(' ', $lineOfWords, TRUE);
 			$outArray[] = $allWords;
 			$outArray[] = array('');
 			$outArray[] = array('');
@@ -222,6 +202,3 @@ class DiffUtility {
 	}
 
 }
-
-
-?>

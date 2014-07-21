@@ -1,29 +1,19 @@
 <?php
 namespace TYPO3\CMS\Impexp\Task;
 
-/***************************************************************
- *  Copyright notice
+/**
+ * This file is part of the TYPO3 CMS project.
  *
- *  (c) 1999-2013 Kasper Skårhøj (kasper@typo3.com)
- *  (c) 2010-2013 Georg Ringer (typo3@ringerge.org)
- *  All rights reserved
+ * It is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License, either version 2
+ * of the License, or any later version.
  *
- *  This script is part of the TYPO3 project. The TYPO3 project is
- *  free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
+ * For the full copyright and license information, please read the
+ * LICENSE.txt file that was distributed with this source code.
  *
- *  The GNU General Public License can be found at
- *  http://www.gnu.org/copyleft/gpl.html.
- *
- *  This script is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  This copyright notice MUST APPEAR in all copies of the script!
- ***************************************************************/
+ * The TYPO3 project - inspiring people to share!
+ */
+use TYPO3\CMS\Backend\Utility\BackendUtility;
 
 /**
  * This class provides a textarea to save personal notes
@@ -45,7 +35,7 @@ class ImportExportTask implements \TYPO3\CMS\Taskcenter\TaskInterface {
 	 */
 	public function __construct(\TYPO3\CMS\Taskcenter\Controller\TaskModuleController $taskObject) {
 		$this->taskObject = $taskObject;
-		$GLOBALS['LANG']->includeLLFile('EXT:impexp/locallang_csh.xml');
+		$GLOBALS['LANG']->includeLLFile('EXT:impexp/locallang_csh.xlf');
 	}
 
 	/**
@@ -74,10 +64,16 @@ class ImportExportTask implements \TYPO3\CMS\Taskcenter\TaskInterface {
 	 */
 	public function main() {
 		$content = '';
-		$id = intval(\TYPO3\CMS\Core\Utility\GeneralUtility::_GP('display'));
+		$id = (int)\TYPO3\CMS\Core\Utility\GeneralUtility::_GP('display');
 		// If a preset is found, it is rendered using an iframe
 		if ($id > 0) {
-			$url = $GLOBALS['BACK_PATH'] . \TYPO3\CMS\Core\Utility\ExtensionManagementUtility::extRelPath('impexp') . 'app/index.php?tx_impexp[action]=export&preset[load]=1&preset[select]=' . $id;
+			$url = BackendUtility::getModuleUrl(
+				'xMOD_tximpexp',
+				array(
+					'tx_impexp[action]' => 'export',
+					'preset[load]' => 1,
+					'preset[select]' => $id)
+			);
 			return $this->taskObject->urlInIframe($url, 1);
 		} else {
 			// Header
@@ -134,7 +130,7 @@ class ImportExportTask implements \TYPO3\CMS\Taskcenter\TaskInterface {
 						'icon' => $icon,
 						'title' => $title,
 						'descriptionHtml' => implode('<br />', $description),
-						'link' => 'mod.php?M=user_task&SET[function]=impexp.tx_impexp_task&display=' . $presetCfg['uid']
+						'link' => BackendUtility::getModuleUrl('user_task') . '&SET[function]=impexp.tx_impexp_task&display=' . $presetCfg['uid']
 					);
 				}
 				// Render preset list
@@ -170,20 +166,13 @@ class ImportExportTask implements \TYPO3\CMS\Taskcenter\TaskInterface {
 	}
 
 	/**
-	 * Returns first temporary folder of the user account (from $FILEMOUNTS)
+	 * Returns first temporary folder of the user account
 	 *
 	 * @return string Absolute path to first "_temp_" folder of the current user, otherwise blank.
 	 */
 	protected function userTempFolder() {
-		foreach ($GLOBALS['FILEMOUNTS'] as $filePathInfo) {
-			$tempFolder = $filePathInfo['path'] . '_temp_/';
-			if (@is_dir($tempFolder)) {
-				return $tempFolder;
-			}
-		}
+		// @TODO: This is broken since move to FAL
 		return '';
 	}
 
 }
-
-?>

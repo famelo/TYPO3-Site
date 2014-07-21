@@ -1,28 +1,20 @@
 <?php
 namespace TYPO3\CMS\Core\Tests\Unit\Utility;
 
-/***************************************************************
- *  Copyright notice
+/**
+ * This file is part of the TYPO3 CMS project.
  *
- *  (c) 2012-2013 Steffen Ritter <steffen.ritter@typo3.org>
- *  All rights reserved
+ * It is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License, either version 2
+ * of the License, or any later version.
  *
- *  This script is part of the TYPO3 project. The TYPO3 project is
- *  free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
+ * For the full copyright and license information, please read the
+ * LICENSE.txt file that was distributed with this source code.
  *
- *  The GNU General Public License can be found at
- *  http://www.gnu.org/copyleft/gpl.html.
- *
- *  This script is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  This copyright notice MUST APPEAR in all copies of the script!
- ***************************************************************/
+ * The TYPO3 project - inspiring people to share!
+ */
+
+use TYPO3\CMS\Core\Utility\RootlineUtility;
 
 /**
  * Testcase for class \TYPO3\CMS\Core\Utility\RootlineUtility
@@ -32,7 +24,7 @@ namespace TYPO3\CMS\Core\Tests\Unit\Utility;
 class RootlineUtilityTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 
 	/**
-	 * @var \TYPO3\CMS\Core\Utility\RootlineUtility|\TYPO3\CMS\Core\Tests\AccessibleObjectInterface|\PHPUnit_Framework_MockObject_MockObject
+	 * @var RootlineUtility|\TYPO3\CMS\Core\Tests\AccessibleObjectInterface|\PHPUnit_Framework_MockObject_MockObject
 	 */
 	protected $fixture;
 
@@ -41,11 +33,15 @@ class RootlineUtilityTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	 */
 	protected $pageContextMock;
 
-	public function setUp() {
+	protected function setUp() {
 		$this->pageContextMock = $this->getMock('TYPO3\\CMS\\Frontend\\Page\\PageRepository');
-		$this->fixture = $this->getAccessibleMock('\TYPO3\CMS\Core\Utility\RootlineUtility', array('enrichWithRelationFields'), array(1, '', $this->pageContextMock));
+		$this->fixture = $this->getAccessibleMock('TYPO3\\CMS\\Core\\Utility\\RootlineUtility', array('enrichWithRelationFields'), array(1, '', $this->pageContextMock));
 	}
 
+	protected function tearDown() {
+		parent::tearDown();
+		RootlineUtility::purgeCaches();
+	}
 
 	/***
 	 *
@@ -259,6 +255,19 @@ class RootlineUtilityTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	/**
 	 * @test
 	 */
+	public function getCacheIdentifierReturnsValidIdentifierWithCommasInMountPointParameter() {
+		/** @var \TYPO3\CMS\Core\Cache\Frontend\AbstractFrontend $cacheFrontendMock */
+		$cacheFrontendMock = $this->getMockForAbstractClass('TYPO3\\CMS\\Core\\Cache\\Frontend\\AbstractFrontend', array(), '', FALSE);
+		$this->pageContextMock->sys_language_uid = 8;
+		$this->pageContextMock->versioningWorkspaceId = 15;
+		$this->pageContextMock->versioningPreview = TRUE;
+		$this->fixture->__construct(42, '47-11,48-12', $this->pageContextMock);
+		$this->assertTrue($cacheFrontendMock->isValidEntryIdentifier($this->fixture->getCacheIdentifier()));
+	}
+
+	/**
+	 * @test
+	 */
 	public function getRecordArrayFetchesTranslationWhenLanguageIdIsSet() {
 		$pageData = array(
 			'uid' => 1,
@@ -295,6 +304,39 @@ class RootlineUtilityTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 		$this->fixture->_set('languageUid', 1);
 		$this->assertSame($pageDataTranslated, $this->fixture->_call('getRecordArray', 1));
 	}
-}
 
-?>
+	/**
+	 * @test
+	 */
+	public function enrichWithRelationFieldsCreatesWhereClauseForDisabledField() {
+		$mockDatabaseConnection = $this->getMock('\TYPO3\CMS\Core\Database\DatabaseConnection', array('exec_SELECTgetRows'), array(), '', FALSE);
+		$subject = $this->getAccessibleMock('\TYPO3\CMS\Core\Utility\RootlineUtility', array('columnHasRelationToResolve'), array(1, '', $this->pageContextMock));
+		$subject->_set('databaseConnection', $mockDatabaseConnection);
+		$GLOBALS['TYPO3_CONF_VARS']['FE']['pageOverlayFields'] = '';
+		$foreign_table = uniqid('foreign_table');
+		$foreign_field = uniqid('foreign_field');
+		$GLOBALS['TCA'][$foreign_table]['ctrl']['enablecolumns']['disabled'] = uniqid('disabled');
+		$GLOBALS['TCA']['pages']['columns'] = array(
+			'test' => array(
+				'config' => array(
+					'foreign_table' => $foreign_table,
+					'foreign_field' => $foreign_field
+				)
+			)
+		);
+		$expected = array(
+			$foreign_field . ' = 0',
+			$foreign_table . '.' . $GLOBALS['TCA'][$foreign_table]['ctrl']['enablecolumns']['disabled'] . ' = 0'
+		);
+		$this->pageContextMock->expects($this->once())->method('deleteClause')->will($this->returnValue(''));
+		$mockDatabaseConnection->expects(
+			$this->once())->
+			method('exec_SELECTgetRows')->
+			with('uid', $foreign_table, implode(' AND ', $expected), '', '', '', '')->
+			// the return value does not matter much, it is only here to prevent error messages from further code execution
+			will($this->returnValue(array('uid' => 17))
+		);
+		$subject->expects($this->once())->method('columnHasRelationToResolve')->will($this->returnValue(TRUE));
+		$subject->_call('enrichWithRelationFields', 17, array());
+	}
+}

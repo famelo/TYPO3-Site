@@ -3,6 +3,13 @@ return array(
 	'ctrl' => array(
 		'title' => 'LLL:EXT:lang/locallang_tca.xlf:sys_file_reference',
 		'label' => 'uid',
+		'formattedLabel_userFunc' => 'EXT:core/Classes/Resource/Service/UserFileInlineLabelService.php:TYPO3\\CMS\\Core\\Resource\\Service\\UserFileInlineLabelService->getInlineLabel',
+		'formattedLabel_userFunc_options' => array(
+			'sys_file' => array(
+				'title',
+				'name'
+			)
+		),
 		'tstamp' => 'tstamp',
 		'crdate' => 'crdate',
 		'cruser_id' => 'cruser_id',
@@ -19,10 +26,14 @@ return array(
 		'enablecolumns' => array(
 			'disabled' => 'hidden'
 		),
+		'typeicon_classes' => array(
+			'default' => 'mimetypes-other-other'
+		),
 		'security' => array(
 			'ignoreWebMountRestriction' => TRUE,
 			'ignoreRootLevelRestriction' => TRUE,
 		),
+		'searchFields' => 'uid_local,uid_foreign,tablenames,fieldname,title,description'
 	),
 	'interface' => array(
 		'showRecordFieldList' => 'hidden,uid_local,uid_foreign,tablenames,fieldname,sorting_foreign,table_local,title,description'
@@ -93,15 +104,9 @@ return array(
 			'exclude' => 0,
 			'label' => 'LLL:EXT:lang/locallang_tca.xlf:sys_file_reference.uid_foreign',
 			'config' => array(
-				'type' => 'select',
-				'items' => array(
-					array('', 0)
-				),
-				'foreign_table' => 'tt_content',
-				'foreign_table_where' => 'ORDER BY tt_content.uid',
-				'size' => 1,
-				'minitems' => 0,
-				'maxitems' => 1
+				'type' => 'input',
+				'size' => '10',
+				'eval' => 'int'
 			)
 		),
 		'tablenames' => array(
@@ -148,13 +153,15 @@ return array(
 		),
 		'title' => array(
 			'l10n_mode' => 'mergeIfNotBlank',
-			'exclude' => 0,
+			'exclude' => 1,
 			'label' => 'LLL:EXT:lang/locallang_tca.xlf:sys_file_reference.title',
 			'config' => array(
 				'type' => 'input',
-				'eval' => 'null',
 				'size' => '20',
-				'placeholder' => '__row|uid_local|title',
+				'eval' => 'null',
+				'placeholder' => '__row|uid_local|metadata|title',
+				'mode' => 'useOrOverridePlaceholder',
+				'default' => NULL,
 			)
 		),
 		'link' => array(
@@ -170,10 +177,16 @@ return array(
 						'type' => 'popup',
 						'title' => 'LLL:EXT:lang/locallang_tca.xlf:sys_file_reference.link',
 						'icon' => 'link_popup.gif',
-						'script' => 'browse_links.php?mode=wizard',
+						'module' => array(
+							'name' => 'wizard_element_browser',
+							'urlParameters' => array(
+								'mode' => 'wizard'
+							)
+						),
 						'JSopenParams' => 'height=300,width=500,status=0,menubar=0,scrollbars=1'
 					)
-				)
+				),
+				'softref' => 'typolink'
 			)
 		),
 		'description' => array(
@@ -183,10 +196,12 @@ return array(
 			'label' => 'LLL:EXT:lang/locallang_tca.xlf:sys_file_reference.description',
 			'config' => array(
 				'type' => 'text',
-				'eval' => 'null',
 				'cols' => '20',
 				'rows' => '5',
-				'placeholder' => '__row|uid_local|description',
+				'eval' => 'null',
+				'placeholder' => '__row|uid_local|metadata|description',
+				'mode' => 'useOrOverridePlaceholder',
+				'default' => NULL,
 			)
 		),
 		'alternative' => array(
@@ -195,9 +210,11 @@ return array(
 			'label' => 'LLL:EXT:lang/locallang_tca.xlf:sys_file_reference.alternative',
 			'config' => array(
 				'type' => 'input',
-				'eval' => 'null',
 				'size' => '20',
-				'placeholder' => '__row|uid_local|alternative',
+				'eval' => 'null',
+				'placeholder' => '__row|uid_local|metadata|alternative',
+				'mode' => 'useOrOverridePlaceholder',
+				'default' => NULL,
 			),
 		),
 	),
@@ -256,4 +273,3 @@ return array(
 		)
 	)
 );
-?>

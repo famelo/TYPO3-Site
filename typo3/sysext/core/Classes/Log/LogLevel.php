@@ -1,28 +1,18 @@
 <?php
 namespace TYPO3\CMS\Core\Log;
 
-/***************************************************************
- * Copyright notice
+/**
+ * This file is part of the TYPO3 CMS project.
  *
- * (c) 2011-2013 Ingo Renner (ingo@typo3.org)
- * All rights reserved
+ * It is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License, either version 2
+ * of the License, or any later version.
  *
- * This script is part of the TYPO3 project. The TYPO3 project is
- * free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
+ * For the full copyright and license information, please read the
+ * LICENSE.txt file that was distributed with this source code.
  *
- * The GNU General Public License can be found at
- * http://www.gnu.org/copyleft/gpl.html.
- *
- * This script is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * This copyright notice MUST APPEAR in all copies of the script!
- ***************************************************************/
+ * The TYPO3 project - inspiring people to share!
+ */
 /**
  * Log levels according to RFC 3164
  *
@@ -139,15 +129,26 @@ class LogLevel {
 	 *
 	 * @param integer $level log level to validate
 	 * @return void
-	 * @throws \RangeException if the given log level is invalid
+	 * @throws \Psr\Log\InvalidArgumentException if the given log level is invalid
 	 */
 	static public function validateLevel($level) {
 		if (!self::isValidLevel($level)) {
-			throw new \RangeException('Invalid Log Level.', 1321637121);
+			throw new \Psr\Log\InvalidArgumentException('Invalid Log Level.', 1321637121);
 		}
 	}
 
+	/**
+	 * Normalizes level by converting it from string to integer
+	 *
+	 * @param string $level
+	 * @return integer|string
+	 */
+	static public function normalizeLevel($level) {
+		if (is_string($level) && defined(__CLASS__ . '::' . strtoupper($level))) {
+			$level = constant(__CLASS__ . '::' . strtoupper($level));
+		}
+
+		return $level;
+	}
+
 }
-
-
-?>

@@ -1,28 +1,18 @@
 <?php
 namespace TYPO3\CMS\Core\Tests\Unit\TypoScript\Parser;
 
-/***************************************************************
- * Copyright notice
+/**
+ * This file is part of the TYPO3 CMS project.
  *
- * (c) 2013 Stefan Neufeind <info (at) speedpartner.de>
- * All rights reserved
+ * It is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License, either version 2
+ * of the License, or any later version.
  *
- * This script is part of the TYPO3 project. The TYPO3 project is
- * free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
+ * For the full copyright and license information, please read the
+ * LICENSE.txt file that was distributed with this source code.
  *
- * The GNU General Public License can be found at
- * http://www.gnu.org/copyleft/gpl.html.
- *
- * This script is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * This copyright notice MUST APPEAR in all copies of the script!
- ***************************************************************/
+ * The TYPO3 project - inspiring people to share!
+ */
 
 /**
  * Test case for \TYPO3\CMS\Core\TypoScript\Parser\TypoScriptParser
@@ -32,7 +22,7 @@ class TypoScriptParserTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	/**
 	 * @var \TYPO3\CMS\Core\TypoScript\Parser\TypoScriptParser|\TYPO3\CMS\Core\Tests\AccessibleObjectInterface
 	 */
-	protected $typoScriptParser;
+	protected $typoScriptParser = NULL;
 
 	/**
 	 * Set up
@@ -42,15 +32,6 @@ class TypoScriptParserTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	protected function setUp() {
 		$accessibleClassName = $this->buildAccessibleProxy('TYPO3\\CMS\\Core\\TypoScript\\Parser\\TypoScriptParser');
 		$this->typoScriptParser = new $accessibleClassName();
-	}
-
-	/**
-	 * Tear down
-	 *
-	 * @return void
-	 */
-	protected function tearDown() {
-		unset($this->typoScriptParser);
 	}
 
 	/**
@@ -262,6 +243,20 @@ class TypoScriptParserTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 					'key' => 'value',
 				)
 			),
+			'simple assignment with escaped dot at the beginning' => array(
+				'\\.key = value',
+				array(
+					'.key' => 'value',
+				)
+			),
+			'simple assignment with protected escaped dot at the beginning' => array(
+				'\\\\.key = value',
+				array(
+					'\\.' => array(
+						'key' => 'value',
+					),
+				)
+			),
 			'nested assignment' => array(
 				'lib.key = value',
 				array(
@@ -270,6 +265,42 @@ class TypoScriptParserTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 					),
 				),
 			),
+			'nested assignment with escaped key' => array(
+				'lib\\.key = value',
+				array(
+					'lib.key' => 'value',
+				),
+			),
+			'nested assignment with escaped key and escaped dot at the beginning' => array(
+				'\\.lib\\.key = value',
+				array(
+					'.lib.key' => 'value',
+				),
+			),
+			'nested assignment with protected escaped key' => array(
+				'lib\\\\.key = value',
+				array(
+					'lib\\.' => array('key' => 'value'),
+				),
+			),
+			'nested assignment with protected escaped key and protected escaped dot at the beginning' => array(
+				'\\\\.lib\\\\.key = value',
+				array(
+					'\\.' => array(
+						'lib\\.' => array('key' => 'value'),
+					),
+				),
+			),
+			'assignment with escaped an non escaped keys' => array(
+				'firstkey.secondkey\\.thirdkey.setting = value',
+				array(
+					'firstkey.' => array(
+						'secondkey.thirdkey.' => array(
+							'setting' => 'value'
+						)
+					)
+				)
+			),
 			'nested structured assignment' => array(
 				'lib {' . LF .
 					'key = value' . LF .
@@ -277,6 +308,72 @@ class TypoScriptParserTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 				array(
 					'lib.' => array(
 						'key' => 'value',
+					),
+				),
+			),
+			'nested structured assignment with escaped key inside' => array(
+				'lib {' . LF .
+					'key\\.nextkey = value' . LF .
+				'}',
+				array(
+					'lib.' => array(
+						'key.nextkey' => 'value',
+					),
+				),
+			),
+			'nested structured assignment with escaped key inside and escaped dots at the beginning' => array(
+				'\\.lib {' . LF .
+					'\\.key\\.nextkey = value' . LF .
+				'}',
+				array(
+					'.lib.' => array(
+						'.key.nextkey' => 'value',
+					),
+				),
+			),
+			'nested structured assignment with protected escaped key inside' => array(
+				'lib {' . LF .
+				'key\\\\.nextkey = value' . LF .
+				'}',
+				array(
+					'lib.' => array(
+						'key\\.' => array('nextkey' => 'value'),
+					),
+				),
+			),
+			'nested structured assignment with protected escaped key inside and protected escaped dots at the beginning' => array(
+				'\\\\.lib {' . LF .
+					'\\\\.key\\\\.nextkey = value' . LF .
+				'}',
+				array(
+					'\\.' => array(
+						'lib.' => array(
+							'\\.' => array(
+								'key\\.' => array('nextkey' => 'value'),
+							),
+						),
+					),
+				),
+			),
+			'nested structured assignment with escaped key' => array(
+				'lib\\.anotherkey {' . LF .
+					'key = value' . LF .
+				'}',
+				array(
+					'lib.anotherkey.' => array(
+						'key' => 'value',
+					),
+				),
+			),
+			'nested structured assignment with protected escaped key' => array(
+				'lib\\\\.anotherkey {' . LF .
+				'key = value' . LF .
+				'}',
+				array(
+					'lib\\.' => array(
+						'anotherkey.' => array(
+							'key' => 'value',
+						),
 					),
 				),
 			),
@@ -289,12 +386,50 @@ class TypoScriptParserTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 					'key' => 'first' . LF . 'second',
 				),
 			),
+			'multiline assignment with escaped key' => array(
+				'key\\.nextkey (' . LF .
+					'first' . LF .
+					'second' . LF .
+				')',
+				array(
+					'key.nextkey' => 'first' . LF . 'second',
+				),
+			),
+			'multiline assignment with protected escaped key' => array(
+				'key\\\\.nextkey (' . LF .
+				'first' . LF .
+				'second' . LF .
+				')',
+				array(
+					'key\\.' => array('nextkey' => 'first' . LF . 'second'),
+				),
+			),
 			'copying values' => array(
 				'lib.default = value' . LF .
 				'lib.copy < lib.default',
 				array(
 					'lib.' => array(
 						'default' => 'value',
+						'copy' => 'value',
+					),
+				),
+			),
+			'copying values with escaped key' => array(
+				'lib\\.default = value' . LF .
+				'lib.copy < lib\\.default',
+				array(
+					'lib.default' => 'value',
+					'lib.' => array(
+						'copy' => 'value',
+					),
+				),
+			),
+			'copying values with protected escaped key' => array(
+				'lib\\\\.default = value' . LF .
+				'lib.copy < lib\\\\.default',
+				array(
+					'lib\\.' => array('default' => 'value'),
+					'lib.' => array(
 						'copy' => 'value',
 					),
 				),
@@ -326,6 +461,116 @@ class TypoScriptParserTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 				array(
 					'first' => '1',
 					'second' => '2',
+				),
+			),
+			'nested assignment repeated segment names' => array(
+				'test.test.test = 1',
+				array(
+					'test.' => array(
+						'test.' => array(
+							'test' => '1',
+						),
+					)
+				),
+			),
+			'simple assignment operator with tab character before "="' => array(
+				'test	 = someValue',
+				array(
+					'test' => 'someValue',
+				),
+			),
+			'simple assignment operator character as value "="' => array(
+				'test ==TEST=',
+				array(
+					'test' => '=TEST=',
+				),
+			),
+			'nested assignment operator character as value "="' => array(
+				'test.test ==TEST=',
+				array(
+					'test.' => array(
+						'test' => '=TEST=',
+					),
+				),
+			),
+			'simple assignment character as value "<"' => array(
+				'test =<TEST>',
+				array(
+					'test' => '<TEST>',
+				),
+			),
+			'nested assignment character as value "<"' => array(
+				'test.test =<TEST>',
+				array(
+					'test.' => array(
+						'test' => '<TEST>',
+					),
+				),
+			),
+			'simple assignment character as value ">"' => array(
+				'test =>TEST<',
+				array(
+					'test' => '>TEST<',
+				),
+			),
+			'nested assignment character as value ">"' => array(
+				'test.test =>TEST<',
+				array(
+					'test.' => array(
+						'test' => '>TEST<',
+					),
+				),
+			),
+			'nested assignment repeated segment names with whitespaces' => array(
+				'test.test.test = 1' . " \t",
+				array(
+					'test.' => array(
+						'test.' => array(
+							'test' => '1',
+						),
+					)
+				),
+			),
+			'simple assignment operator character as value "=" with whitespaces' => array(
+				'test = =TEST=' . " \t",
+				array(
+					'test' => '=TEST=',
+				),
+			),
+			'nested assignment operator character as value "=" with whitespaces' => array(
+				'test.test = =TEST=' . " \t",
+				array(
+					'test.' => array(
+						'test' => '=TEST=',
+					),
+				),
+			),
+			'simple assignment character as value "<" with whitespaces' => array(
+				'test = <TEST>' . " \t",
+				array(
+					'test' => '<TEST>',
+				),
+			),
+			'nested assignment character as value "<" with whitespaces' => array(
+				'test.test = <TEST>' . " \t",
+				array(
+					'test.' => array(
+						'test' => '<TEST>',
+					),
+				),
+			),
+			'simple assignment character as value ">" with whitespaces' => array(
+				'test = >TEST<' . " \t",
+				array(
+					'test' => '>TEST<',
+				),
+			),
+			'nested assignment character as value ">" with whitespaces' => array(
+				'test.test = >TEST<',
+				array(
+					'test.' => array(
+						'test' => '>TEST<',
+					),
 				),
 			),
 			'CSC example #1' => array(
@@ -362,8 +607,119 @@ class TypoScriptParserTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 					),
 				),
 			),
+		    'key with colon' => array(
+				'some:key = is valid',
+				array(
+					'some:key' => 'is valid'
+				)
+		    ),
+		    'special operator' => array(
+			    'some := addToList(a)',
+			    array(
+				    'some' => 'a'
+			    )
+		    ),
+		    'special operator and colon, no spaces' => array(
+			    'some:key:=addToList(a)',
+			    array(
+				    'some:key' => 'a'
+			    )
+		    ),
+		    'key with all special symbols' => array(
+			    'someSpecial\\_:-\\.Chars = is valid',
+			    array(
+				    'someSpecial\\_:-.Chars' => 'is valid'
+			    )
+		    ),
 		);
 	}
 
+	/**
+	 * @test
+	 */
+	public function setValCanBeCalledWithArrayValueParameter() {
+		$string = '';
+		$setup = array();
+		$value = array();
+		$this->typoScriptParser->setVal($string, $setup, $value);
+	}
+
+	/**
+	 * @test
+	 */
+	public function setValCanBeCalledWithStringValueParameter() {
+		$string = '';
+		$setup = array();
+		$value = '';
+		$this->typoScriptParser->setVal($string, $setup, $value);
+	}
+
+	/**
+	 * @test
+	 * @dataProvider parseNextKeySegmentReturnsCorrectNextKeySegmentDataProvider
+	 */
+	public function parseNextKeySegmentReturnsCorrectNextKeySegment($key, $expectedKeySegment, $expectedRemainingKey) {
+		list($keySegment, $remainingKey) = $this->typoScriptParser->_call('parseNextKeySegment', $key);
+		$this->assertSame($expectedKeySegment, $keySegment);
+		$this->assertSame($expectedRemainingKey, $remainingKey);
+	}
+
+	/**
+	 * @return array
+	 */
+	public function parseNextKeySegmentReturnsCorrectNextKeySegmentDataProvider() {
+		return array(
+			'key without separator' => array(
+				'testkey',
+				'testkey',
+				''
+			),
+			'key with normal separator' => array(
+				'test.key',
+				'test',
+				'key'
+			),
+			'key with multiple normal separators' => array(
+				'test.key.subkey',
+				'test',
+				'key.subkey'
+			),
+			'key with separator and escape character' => array(
+				'te\\st.test',
+				'te\\st',
+				'test'
+			),
+			'key with escaped separators' => array(
+				'test\\.key\\.subkey',
+				'test.key.subkey',
+				''
+			),
+			'key with escaped and unescaped separator 1' => array(
+				'test.test\\.key',
+				'test',
+				'test\\.key'
+			),
+			'key with escaped and unescaped separator 2' => array(
+				'test\\.test.key\\.key2',
+				'test.test',
+				'key\\.key2'
+			),
+			'key with escaped escape character' => array(
+				'test\\\\.key',
+				'test\\',
+				'key'
+			),
+			'key with escaped separator and additional escape character' => array(
+				'test\\\\\\.key',
+				'test\\\\',
+				'key'
+			),
+
+		    'multiple escape characters within the key are preserved' => array(
+				'te\\\\st\\\\.key',
+				'te\\\\st\\',
+				'key'
+		    )
+		);
+	}
 }
-?>

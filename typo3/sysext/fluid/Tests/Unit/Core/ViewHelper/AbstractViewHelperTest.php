@@ -11,13 +11,10 @@ namespace TYPO3\CMS\Fluid\Tests\Unit\Core\ViewHelper;
  * The TYPO3 project - inspiring people to share!                         *
  *                                                                        */
 
-require_once(__DIR__ . '/../Fixtures/TestViewHelper.php');
-require_once(__DIR__ . '/../Fixtures/TestViewHelper2.php');
-
 /**
- * Testcase for AbstractViewHelper
+ * Test case
  */
-class AbstractViewHelperTest extends \TYPO3\CMS\Extbase\Tests\Unit\BaseTestCase {
+class AbstractViewHelperTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 
 	/**
 	 * @var \TYPO3\CMS\Extbase\Reflection\ReflectionService
@@ -273,9 +270,9 @@ class AbstractViewHelperTest extends \TYPO3\CMS\Extbase\Tests\Unit\BaseTestCase 
 		$viewHelperVariableContainer = $this->getMock('TYPO3\\CMS\\Fluid\\Core\\ViewHelper\\ViewHelperVariableContainer');
 		$controllerContext = $this->getMock('TYPO3\\CMS\\Extbase\\Mvc\\Controller\\ControllerContext', array(), array(), '', FALSE);
 
-		$renderingContext = new \TYPO3\CMS\Fluid\Core\Rendering\RenderingContext();
+		$renderingContext = $this->getAccessibleMock('TYPO3\\CMS\\Fluid\\Core\\Rendering\\RenderingContext', array('dummy'));
 		$renderingContext->injectTemplateVariableContainer($templateVariableContainer);
-		$renderingContext->injectViewHelperVariableContainer($viewHelperVariableContainer);
+		$renderingContext->_set('viewHelperVariableContainer', $viewHelperVariableContainer);
 		$renderingContext->setControllerContext($controllerContext);
 
 		$viewHelper = $this->getAccessibleMock('TYPO3\\CMS\\Fluid\\Core\\ViewHelper\\AbstractViewHelper', array('render', 'prepareArguments'), array(), '', FALSE);
@@ -287,5 +284,3 @@ class AbstractViewHelperTest extends \TYPO3\CMS\Extbase\Tests\Unit\BaseTestCase 
 		$this->assertSame($viewHelper->_get('controllerContext'), $controllerContext);
 	}
 }
-
-?>

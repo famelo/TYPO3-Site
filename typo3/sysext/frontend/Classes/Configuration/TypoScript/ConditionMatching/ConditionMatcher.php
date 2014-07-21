@@ -1,31 +1,18 @@
 <?php
 namespace TYPO3\CMS\Frontend\Configuration\TypoScript\ConditionMatching;
 
-/***************************************************************
- *  Copyright notice
+/**
+ * This file is part of the TYPO3 CMS project.
  *
- *  (c) 2009-2013 Oliver Hader <oliver@typo3.org>
- *  All rights reserved
+ * It is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License, either version 2
+ * of the License, or any later version.
  *
- *  This script is part of the TYPO3 project. The TYPO3 project is
- *  free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
+ * For the full copyright and license information, please read the
+ * LICENSE.txt file that was distributed with this source code.
  *
- *  The GNU General Public License can be found at
- *  http://www.gnu.org/copyleft/gpl.html.
- *  A copy is found in the textfile GPL.txt and important notices to the license
- *  from the author is found in LICENSE.txt distributed with these scripts.
- *
- *
- *  This script is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  This copyright notice MUST APPEAR in all copies of the script!
- ***************************************************************/
+ * The TYPO3 project - inspiring people to share!
+ */
 /**
  * Matching TypoScript conditions for frontend disposal.
  *
@@ -50,41 +37,41 @@ class ConditionMatcher extends \TYPO3\CMS\Core\Configuration\TypoScript\Conditio
 			return $result;
 		} else {
 			switch ($key) {
-			case 'usergroup':
-				$groupList = $this->getGroupList();
-				// '0,-1' is the default usergroups when not logged in!
-				if ($groupList != '0,-1') {
-					$values = \TYPO3\CMS\Core\Utility\GeneralUtility::trimExplode(',', $value, TRUE);
-					foreach ($values as $test) {
-						if ($test == '*' || \TYPO3\CMS\Core\Utility\GeneralUtility::inList($groupList, $test)) {
-							return TRUE;
-						}
-					}
-				}
-				break;
-			case 'treeLevel':
-				$values = \TYPO3\CMS\Core\Utility\GeneralUtility::trimExplode(',', $value, TRUE);
-				$treeLevel = count($this->rootline) - 1;
-				foreach ($values as $test) {
-					if ($test == $treeLevel) {
-						return TRUE;
-					}
-				}
-				break;
-			case 'PIDupinRootline':
-
-			case 'PIDinRootline':
-				$values = \TYPO3\CMS\Core\Utility\GeneralUtility::trimExplode(',', $value, TRUE);
-				if ($key == 'PIDinRootline' || !in_array($this->pageId, $values)) {
-					foreach ($values as $test) {
-						foreach ($this->rootline as $rl_dat) {
-							if ($rl_dat['uid'] == $test) {
+				case 'usergroup':
+					$groupList = $this->getGroupList();
+					// '0,-1' is the default usergroups when not logged in!
+					if ($groupList != '0,-1') {
+						$values = \TYPO3\CMS\Core\Utility\GeneralUtility::trimExplode(',', $value, TRUE);
+						foreach ($values as $test) {
+							if ($test == '*' || \TYPO3\CMS\Core\Utility\GeneralUtility::inList($groupList, $test)) {
 								return TRUE;
 							}
 						}
 					}
-				}
-				break;
+					break;
+				case 'treeLevel':
+					$values = \TYPO3\CMS\Core\Utility\GeneralUtility::trimExplode(',', $value, TRUE);
+					$treeLevel = count($this->rootline) - 1;
+					foreach ($values as $test) {
+						if ($test == $treeLevel) {
+							return TRUE;
+						}
+					}
+					break;
+				case 'PIDupinRootline':
+
+				case 'PIDinRootline':
+					$values = \TYPO3\CMS\Core\Utility\GeneralUtility::trimExplode(',', $value, TRUE);
+					if ($key == 'PIDinRootline' || !in_array($this->pageId, $values)) {
+						foreach ($values as $test) {
+							foreach ($this->rootline as $rl_dat) {
+								if ($rl_dat['uid'] == $test) {
+									return TRUE;
+								}
+							}
+						}
+					}
+					break;
 			}
 		}
 		return FALSE;
@@ -94,7 +81,7 @@ class ConditionMatcher extends \TYPO3\CMS\Core\Configuration\TypoScript\Conditio
 	 * Returns GP / ENV / TSFE vars
 	 *
 	 * @param string $var Identifier
-	 * @return mixed The value of the variable pointed to.
+	 * @return mixed The value of the variable pointed to or NULL if variable did not exist
 	 */
 	protected function getVariable($var) {
 		$vars = explode(':', $var, 2);
@@ -129,7 +116,7 @@ class ConditionMatcher extends \TYPO3\CMS\Core\Configuration\TypoScript\Conditio
 	 * @return integer The current page Id
 	 */
 	protected function determinePageId() {
-		return (int) $GLOBALS['TSFE']->id;
+		return (int)$GLOBALS['TSFE']->id;
 	}
 
 	/**
@@ -187,6 +174,3 @@ class ConditionMatcher extends \TYPO3\CMS\Core\Configuration\TypoScript\Conditio
 	}
 
 }
-
-
-?>

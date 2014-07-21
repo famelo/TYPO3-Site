@@ -1,42 +1,24 @@
 <?php
 namespace TYPO3\CMS\Extbase\Tests\Unit\Utility;
 
-/***************************************************************
- *  Copyright notice
+/**
+ * This file is part of the TYPO3 CMS project.
  *
- *  (c) 2009 Oliver Hader <oliver@typo3.org>
- *  All rights reserved
+ * It is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License, either version 2
+ * of the License, or any later version.
  *
- *  This script is part of the TYPO3 project. The TYPO3 project is
- *  free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
+ * For the full copyright and license information, please read the
+ * LICENSE.txt file that was distributed with this source code.
  *
- *  The GNU General Public License can be found at
- *  http://www.gnu.org/copyleft/gpl.html.
- *
- *  This script is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  This copyright notice MUST APPEAR in all copies of the script!
- ***************************************************************/
+ * The TYPO3 project - inspiring people to share!
+ */
 /**
  * Testcase for class \TYPO3\CMS\Extbase\Utility\ExtensionUtility
  */
 class ExtensionUtilityTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 
-	/**
-	 * A backup of the global database
-	 *
-	 * @var \TYPO3\CMS\Core\Database\DatabaseConnection
-	 */
-	protected $databaseBackup = NULL;
-
 	public function setUp() {
-		$this->databaseBackup = $GLOBALS['TYPO3_DB'];
 		$GLOBALS['TYPO3_DB'] = $this->getMock('TYPO3\\CMS\\Core\\Database\\DatabaseConnection', array('fullQuoteStr', 'exec_SELECTgetRows'));
 
 		$GLOBALS['TSFE'] = new \stdClass();
@@ -71,10 +53,6 @@ class ExtensionUtilityTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 		);
 	}
 
-	public function tearDown() {
-		$GLOBALS['TYPO3_DB'] = $this->databaseBackup;
-	}
-
 	/**
 	 * @test
 	 * @see \TYPO3\CMS\Extbase\Utility\ExtensionUtility::registerPlugin
@@ -101,23 +79,6 @@ class ExtensionUtilityTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 		$staticTypoScript = $GLOBALS['TYPO3_CONF_VARS']['FE']['defaultTypoScript_setup.']['43'];
 		$defaultTypoScript = $GLOBALS['TYPO3_CONF_VARS']['FE']['defaultTypoScript_setup'];
 		$this->assertContains('tt_content.list.20.myextension_pi1 = USER', $staticTypoScript);
-		$this->assertContains('
-plugin.tx_myextension {
-	settings {
-	}
-	persistence {
-		storagePid =
-		classes {
-		}
-	}
-	view {
-		templateRootPath =
-		layoutRootPath =
-		partialRootPath =
-		 # with defaultPid you can specify the default page uid of this plugin. If you set this to the string "auto" the target page will be determined automatically. Defaults to an empty string that expects the target page to be the current page.
-		defaultPid =
-	}
-}', $defaultTypoScript);
 	}
 
 	/**
@@ -290,6 +251,66 @@ plugin.tx_myextension {
 		);
 		$this->assertEquals($expectedResult, $GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['extbase']['extensions']['MyExtension']['plugins']['Pi1']);
 	}
-}
 
-?>
+	/**
+	 * Tests method combination of registerPlugin() and its dependency addPlugin() to
+	 * verify plugin icon path resolving works.
+	 *
+	 * @test
+	 */
+	public function registerPluginTriggersAddPluginWhichSetsPluginIconPathIfUsingUnderscoredExtensionNameAndIconPathNotGiven() {
+		$GLOBALS['TCA']['tt_content']['columns']['list_type']['config']['items'] = array();
+		$GLOBALS['TYPO3_LOADED_EXT'] = array();
+		$GLOBALS['TYPO3_LOADED_EXT']['indexed_search']['ext_icon'] = 'foo.gif';
+		\TYPO3\CMS\Extbase\Utility\ExtensionUtility::registerPlugin(
+			'indexed_search',
+			'Pi2',
+			'Testing'
+		);
+		$this->assertEquals(
+			'sysext/indexed_search/foo.gif',
+			$GLOBALS['TCA']['tt_content']['columns']['list_type']['config']['items'][0][2]
+		);
+	}
+
+	/**
+	 * Tests method combination of registerPlugin() and its dependency addPlugin() to
+	 * verify plugin icon path resolving works.
+	 *
+	 * @test
+	 */
+	public function registerPluginTriggersAddPluginWhichSetsPluginIconPathIfUsingUpperCameCasedExtensionNameAndIconPathNotGiven() {
+		$GLOBALS['TCA']['tt_content']['columns']['list_type']['config']['items'] = array();
+		$GLOBALS['TYPO3_LOADED_EXT'] = array();
+		$GLOBALS['TYPO3_LOADED_EXT']['indexed_search']['ext_icon'] = 'foo.gif';
+		\TYPO3\CMS\Extbase\Utility\ExtensionUtility::registerPlugin(
+			'IndexedSearch',
+			'Pi2',
+			'Testing'
+		);
+		$this->assertEquals(
+			'sysext/indexed_search/foo.gif',
+			$GLOBALS['TCA']['tt_content']['columns']['list_type']['config']['items'][0][2]
+		);
+	}
+
+	/**
+	 * Tests method combination of registerPlugin() and its dependency addPlugin() to
+	 * verify plugin icon path resolving works.
+	 *
+	 * @test
+	 */
+	public function registerPluginTriggersAddPluginWhichSetsPluginIconPathIfIconPathIsGiven() {
+		$GLOBALS['TCA']['tt_content']['columns']['list_type']['config']['items'] = array();
+		\TYPO3\CMS\Extbase\Utility\ExtensionUtility::registerPlugin(
+			'IndexedSearch',
+			'Pi2',
+			'Testing',
+			'sysext/indexed_search/foo.gif'
+		);
+		$this->assertEquals(
+			'sysext/indexed_search/foo.gif',
+			$GLOBALS['TCA']['tt_content']['columns']['list_type']['config']['items'][0][2]
+		);
+	}
+}

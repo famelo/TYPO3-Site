@@ -1,35 +1,28 @@
 <?php
 namespace TYPO3\CMS\Version\Dependency;
 
-/***************************************************************
- * Copyright notice
+/**
+ * This file is part of the TYPO3 CMS project.
  *
- * (c) 2010-2013 Oliver Hader <oliver@typo3.org>
- * All rights reserved
+ * It is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License, either version 2
+ * of the License, or any later version.
  *
- * This script is part of the TYPO3 project. The TYPO3 project is
- * free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
+ * For the full copyright and license information, please read the
+ * LICENSE.txt file that was distributed with this source code.
  *
- * The GNU General Public License can be found at
- * http://www.gnu.org/copyleft/gpl.html.
- * A copy is found in the textfile GPL.txt and important notices to the license
- * from the author is found in LICENSE.txt distributed with these scripts.
- *
- *
- * This script is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * This copyright notice MUST APPEAR in all copies of the script!
- ***************************************************************/
+ * The TYPO3 project - inspiring people to share!
+ */
+
 /**
  * Object to handle and determine dependent references of elements.
  */
 class DependencyResolver {
+
+	/**
+	 * @var int
+	 */
+	protected $workspace = 0;
 
 	/**
 	 * @var \TYPO3\CMS\Version\Dependency\DependencyEntityFactory
@@ -57,6 +50,24 @@ class DependencyResolver {
 	protected $outerMostParents;
 
 	/**
+	 * Sets the current workspace.
+	 *
+	 * @param int $workspace
+	 */
+	public function setWorkspace($workspace) {
+		$this->workspace = (int) $workspace;
+	}
+
+	/**
+	 * Gets the current workspace.
+	 *
+	 * @return int
+	 */
+	public function getWorkspace() {
+		return $this->workspace;
+	}
+
+	/**
 	 * Sets a callback for a particular event.
 	 *
 	 * @param string $eventName
@@ -82,6 +93,7 @@ class DependencyResolver {
 			$callback = $this->eventCallbacks[$eventName];
 			return $callback->execute($callerArguments, $caller, $eventName);
 		}
+		return NULL;
 	}
 
 	/**
@@ -113,7 +125,7 @@ class DependencyResolver {
 	/**
 	 * Gets the outermost parents that define complete dependent structure each.
 	 *
-	 * @return array
+	 * @return array|\TYPO3\CMS\Version\Dependency\ElementEntity[]
 	 */
 	public function getOuterMostParents() {
 		if (!isset($this->outerMostParents)) {
@@ -147,14 +159,14 @@ class DependencyResolver {
 	/**
 	 * Gets all nested elements (including the parent) of a particular outermost parent element.
 	 *
-	 * @throws RuntimeException
+	 * @throws \RuntimeException
 	 * @param \TYPO3\CMS\Version\Dependency\ElementEntity $outerMostParent
 	 * @return array
 	 */
 	public function getNestedElements(\TYPO3\CMS\Version\Dependency\ElementEntity $outerMostParent) {
 		$outerMostParentName = $outerMostParent->__toString();
 		if (!isset($this->outerMostParents[$outerMostParentName])) {
-			throw new \RuntimeException('Element "' . $outerMostParentName . '" was detected as outermost parent.', 1289318609);
+			throw new \RuntimeException('Element "' . $outerMostParentName . '" was not detected as outermost parent.', 1289318609);
 		}
 		$nestedStructure = array_merge(array($outerMostParentName => $outerMostParent), $outerMostParent->getNestedChildren());
 		return $nestedStructure;
@@ -182,6 +194,3 @@ class DependencyResolver {
 	}
 
 }
-
-
-?>

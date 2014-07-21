@@ -71,6 +71,7 @@
 		installButtons.off('click');
 		installButtons.on('click', function(event) {
 			event.preventDefault();
+			$('.typo3-extension-manager').mask();
 			var url = $(event.currentTarget.form).attr('href');
 			downloadPath = $(event.currentTarget.form).find('input.downloadPath:checked').val();
 			$.ajax({
@@ -91,7 +92,8 @@
 			});
 		} else {
 			if(data.hasErrors) {
-				TYPO3.Flashmessage.display(TYPO3.Severity.error, data.title, data.message, 10);
+				$('.typo3-extension-manager').unmask();
+				TYPO3.Flashmessage.display(TYPO3.Severity.error, data.title, data.message, 15);
 			} else {
 				var button = 'yes';
 				var dialog = [];
@@ -111,8 +113,18 @@
 				dataType: 'json',
 				success: function (data) {
 					$('.typo3-extension-manager').unmask();
-					if (data.errorMessage.length) {
-						TYPO3.Flashmessage.display(TYPO3.Severity.error, TYPO3.l10n.localize('extensionList.dependenciesResolveDownloadError.title'), data.errorMessage, 5);
+					if (data.errorCount > 0) {
+						TYPO3.Dialog.QuestionDialog({
+							title: data.errorTitle,
+							msg: data.errorMessage,
+							url: data.skipDependencyUri,
+							fn: function (button, dummy, dialog) {
+								if (button == 'yes') {
+									$('.typo3-extension-manager').mask();
+									getResolveDependenciesAndInstallResult('yes', dummy, dialog);
+								}
+							}
+						});
 					} else {
 						var successMessage = TYPO3.l10n.localize('extensionList.dependenciesResolveDownloadSuccess.message').replace(/\{0\}/g, data.extension) + ' <br />';
 						successMessage += '<br /><h3>' + TYPO3.l10n.localize('extensionList.dependenciesResolveDownloadSuccess.header') + ':</h3>';

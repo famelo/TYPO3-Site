@@ -29,16 +29,6 @@ class Tx_Aboutmodules_Controller_ModulesController extends \TYPO3\CMS\Aboutmodul
 /**
  * @deprecated since 6.0 will be removed in 7.0
  */
-class tx_adodb_tceforms extends \TYPO3\CMS\Adodb\DataHandling\DatabaseTypeItemsFunction {}
-
-/**
- * @deprecated since 6.0 will be removed in 7.0
- */
-class tx_adodb_checkconnectionwizard extends \TYPO3\CMS\Adodb\View\CheckConnectionWizardView {}
-
-/**
- * @deprecated since 6.0 will be removed in 7.0
- */
 class AjaxLogin extends \TYPO3\CMS\Backend\AjaxLoginHandler {}
 
 /**
@@ -225,11 +215,6 @@ class SC_db_layout extends \TYPO3\CMS\Backend\Controller\PageLayoutController {}
  * @deprecated since 6.0 will be removed in 7.0
  */
 class SC_alt_db_navframe extends \TYPO3\CMS\Backend\Controller\PageTreeNavigationController {}
-
-/**
- * @deprecated since 6.0 will be removed in 7.0
- */
-class SC_alt_shortcut extends \TYPO3\CMS\Backend\Controller\ShortcutFrameController {}
 
 /**
  * @deprecated since 6.0 will be removed in 7.0
@@ -685,11 +670,6 @@ class TYPO3Logo extends \TYPO3\CMS\Backend\View\LogoView {}
  * @deprecated since 6.0 will be removed in 7.0
  */
 interface cms_newContentElementWizardsHook extends \TYPO3\CMS\Backend\Wizard\NewContentElementWizardHookInterface {}
-
-/**
- * @deprecated since 6.0 will be removed in 7.0
- */
-class SC_wizard_tsconfig extends \TYPO3\CMS\Backend\Wizard\TsconfigWizard {}
 
 /**
  * @deprecated since 6.0 will be removed in 7.0
@@ -1469,22 +1449,7 @@ class ux_t3lib_sqlparser extends \TYPO3\CMS\Dbal\Database\SqlParser {}
 /**
  * @deprecated since 6.0 will be removed in 7.0
  */
-class tx_dbal_autoloader extends \TYPO3\CMS\Dbal\Autoloader {}
-
-/**
- * @deprecated since 6.0 will be removed in 7.0
- */
 class tx_dbal_module1 extends \TYPO3\CMS\Dbal\Controller\ModuleController {}
-
-/**
- * @deprecated since 6.0 will be removed in 7.0
- */
-class tx_dbal_tsparserext extends \TYPO3\CMS\Dbal\ExtensionManager\MessageDisplay {}
-
-/**
- * @deprecated since 6.0 will be removed in 7.0
- */
-class tx_dbal_installtool extends \TYPO3\CMS\Dbal\Hooks\InstallToolHooks {}
 
 /**
  * @deprecated since 6.0 will be removed in 7.0
@@ -2319,11 +2284,6 @@ interface Tx_Extbase_Persistence_QOM_ComparisonInterface extends \TYPO3\CMS\Extb
 /**
  * @deprecated since 6.0 will be removed in 7.0
  */
-class Tx_Extbase_Persistence_QOM_Constraint extends \TYPO3\CMS\Extbase\Persistence\Generic\Qom\Constraint {}
-
-/**
- * @deprecated since 6.0 will be removed in 7.0
- */
 interface Tx_Extbase_Persistence_QOM_ConstraintInterface extends \TYPO3\CMS\Extbase\Persistence\Generic\Qom\ConstraintInterface {}
 
 /**
@@ -2889,7 +2849,7 @@ class Tx_Extbase_SignalSlot_Exception_InvalidSlotException extends \TYPO3\CMS\Ex
 /**
  * @deprecated since 6.0 will be removed in 7.0
  */
-class Tx_Extbase_Tests_Unit_BaseTestCase extends \TYPO3\CMS\Extbase\Tests\Unit\BaseTestCase {}
+class Tx_Extbase_Tests_Unit_BaseTestCase extends \TYPO3\CMS\Core\Tests\UnitTestCase {}
 
 /**
  * @deprecated since 6.0 will be removed in 7.0
@@ -5054,16 +5014,6 @@ class tslib_gmenu extends \TYPO3\CMS\Frontend\ContentObject\Menu\GraphicalMenuCo
 /**
  * @deprecated since 6.0 will be removed in 7.0
  */
-class tslib_gmenu_foldout extends \TYPO3\CMS\Frontend\ContentObject\Menu\GraphicalMenuFoldoutContentObject {}
-
-/**
- * @deprecated since 6.0 will be removed in 7.0
- */
-class tslib_gmenu_layers extends \TYPO3\CMS\Frontend\ContentObject\Menu\GraphicalMenuLayersContentObject {}
-
-/**
- * @deprecated since 6.0 will be removed in 7.0
- */
 class tslib_imgmenu extends \TYPO3\CMS\Frontend\ContentObject\Menu\ImageMenuContentObject {}
 
 /**
@@ -5075,11 +5025,6 @@ class tslib_jsmenu extends \TYPO3\CMS\Frontend\ContentObject\Menu\JavaScriptMenu
  * @deprecated since 6.0 will be removed in 7.0
  */
 class tslib_tmenu extends \TYPO3\CMS\Frontend\ContentObject\Menu\TextMenuContentObject {}
-
-/**
- * @deprecated since 6.0 will be removed in 7.0
- */
-class tslib_tmenu_layers extends \TYPO3\CMS\Frontend\ContentObject\Menu\TextMenuLayersContentObject {}
 
 /**
  * @deprecated since 6.0 will be removed in 7.0
@@ -5299,11 +5244,6 @@ class SC_mod_tools_log_index extends \TYPO3\CMS\Impexp\Controller\ImportExportCo
 /**
  * @deprecated since 6.0 will be removed in 7.0
  */
-class tx_impexp_modfunc1 extends \TYPO3\CMS\Impexp\Controller\ModuleFunctionController {}
-
-/**
- * @deprecated since 6.0 will be removed in 7.0
- */
 class tx_impexp extends \TYPO3\CMS\Impexp\ImportExport {}
 
 /**
@@ -5414,97 +5354,77 @@ class tx_infopagetsconfig_webinfo extends \TYPO3\CMS\InfoPagetsconfig\Controller
 /**
  * @deprecated since 6.0 will be removed in 7.0
  */
-interface Tx_Install_Interfaces_CheckTheDatabaseHook extends \TYPO3\CMS\Install\CheckTheDatabaseHookInterface {}
+class tx_coreupdates_addflexformstoacl extends \TYPO3\CMS\Install\Updates\AddFlexFormsToAclUpdate {}
 
 /**
  * @deprecated since 6.0 will be removed in 7.0
  */
-class tx_install_mod1 extends \TYPO3\CMS\Install\Controller\InstallToolModuleController {}
+class tx_coreupdates_charsetDefaults extends \TYPO3\CMS\Install\Updates\CharsetDefaultsUpdate {}
 
 /**
  * @deprecated since 6.0 will be removed in 7.0
  */
-class tx_coreupdates_addflexformstoacl extends \TYPO3\CMS\Install\CoreUpdates\AddFlexFormsToAclUpdate {}
+class tx_coreupdates_compatversion extends \TYPO3\CMS\Install\Updates\CompatVersionUpdate {}
 
 /**
  * @deprecated since 6.0 will be removed in 7.0
  */
-class tx_coreupdates_charsetDefaults extends \TYPO3\CMS\Install\CoreUpdates\CharsetDefaultsUpdate {}
+class tx_coreupdates_compressionlevel extends \TYPO3\CMS\Install\Updates\CompressionLevelUpdate {}
 
 /**
  * @deprecated since 6.0 will be removed in 7.0
  */
-class tx_coreupdates_compatversion extends \TYPO3\CMS\Install\CoreUpdates\CompatVersionUpdate {}
+class tx_coreupdates_cscsplit extends \TYPO3\CMS\Install\Updates\CscSplitUpdate {}
 
 /**
  * @deprecated since 6.0 will be removed in 7.0
  */
-class tx_coreupdates_compressionlevel extends \TYPO3\CMS\Install\CoreUpdates\CompressionLevelUpdate {}
+class tx_coreupdates_flagsfromsprite extends \TYPO3\CMS\Install\Updates\FlagsFromSpriteUpdate {}
 
 /**
  * @deprecated since 6.0 will be removed in 7.0
  */
-class tx_coreupdates_cscsplit extends \TYPO3\CMS\Install\CoreUpdates\CscSplitUpdate {}
+class tx_coreupdates_imagecols extends \TYPO3\CMS\Install\Updates\ImagecolsUpdate {}
 
 /**
  * @deprecated since 6.0 will be removed in 7.0
  */
-class tx_coreupdates_flagsfromsprite extends \TYPO3\CMS\Install\CoreUpdates\FlagsFromSpriteUpdate {}
+class tx_coreupdates_imagelink extends \TYPO3\CMS\Install\Updates\ImagelinkUpdate {}
 
 /**
  * @deprecated since 6.0 will be removed in 7.0
  */
-class tx_coreupdates_imagecols extends \TYPO3\CMS\Install\CoreUpdates\ImagecolsUpdate {}
+class tx_coreupdates_installsysexts extends \TYPO3\CMS\Install\Updates\InstallSysExtsUpdate {}
 
 /**
  * @deprecated since 6.0 will be removed in 7.0
  */
-class tx_coreupdates_imagelink extends \TYPO3\CMS\Install\CoreUpdates\ImagelinkUpdate {}
+class tx_coreupdates_mediaFlexform extends \TYPO3\CMS\Install\Updates\MediaFlexformUpdate {}
 
 /**
  * @deprecated since 6.0 will be removed in 7.0
  */
-class tx_coreupdates_installsysexts extends \TYPO3\CMS\Install\CoreUpdates\InstallSysExtsUpdate {}
+class tx_coreupdates_mergeadvanced extends \TYPO3\CMS\Install\Updates\MergeAdvancedUpdate {}
 
 /**
  * @deprecated since 6.0 will be removed in 7.0
  */
-class tx_coreupdates_mediaFlexform extends \TYPO3\CMS\Install\CoreUpdates\MediaFlexformUpdate {}
+class tx_coreupdates_migrateworkspaces extends \TYPO3\CMS\Install\Updates\MigrateWorkspacesUpdate {}
 
 /**
  * @deprecated since 6.0 will be removed in 7.0
  */
-class tx_coreupdates_mergeadvanced extends \TYPO3\CMS\Install\CoreUpdates\MergeAdvancedUpdate {}
+class tx_coreupdates_notinmenu extends \TYPO3\CMS\Install\Updates\NotInMenuUpdate {}
 
 /**
  * @deprecated since 6.0 will be removed in 7.0
  */
-class tx_coreupdates_migrateworkspaces extends \TYPO3\CMS\Install\CoreUpdates\MigrateWorkspacesUpdate {}
+class tx_coreupdates_t3skin extends \TYPO3\CMS\Install\Updates\T3skinUpdate {}
 
 /**
  * @deprecated since 6.0 will be removed in 7.0
  */
-class tx_coreupdates_notinmenu extends \TYPO3\CMS\Install\CoreUpdates\NotInMenuUpdate {}
-
-/**
- * @deprecated since 6.0 will be removed in 7.0
- */
-class tx_coreupdates_t3skin extends \TYPO3\CMS\Install\CoreUpdates\T3skinUpdate {}
-
-/**
- * @deprecated since 6.0 will be removed in 7.0
- */
-class tx_install_ajax extends \TYPO3\CMS\Install\EidHandler {}
-
-/**
- * @deprecated since 6.0 will be removed in 7.0
- */
-class Tx_Install_Service_BasicService extends \TYPO3\CMS\Install\EnableFileService {}
-
-/**
- * @deprecated since 6.0 will be removed in 7.0
- */
-class tx_install extends \TYPO3\CMS\Install\Installer {}
+class Tx_Install_Service_BasicService extends \TYPO3\CMS\Install\Service\EnableFileService {}
 
 /**
  * @deprecated since 6.0 will be removed in 7.0
@@ -5514,12 +5434,12 @@ class tx_install_report_InstallStatus extends \TYPO3\CMS\Install\Report\InstallS
 /**
  * @deprecated since 6.0 will be removed in 7.0
  */
-class tx_install_session extends \TYPO3\CMS\Install\Session {}
+class tx_install_session extends \TYPO3\CMS\Install\Service\SessionService {}
 
 /**
  * @deprecated since 6.0 will be removed in 7.0
  */
-class t3lib_install_Sql extends \TYPO3\CMS\Install\Sql\SchemaMigrator {}
+class t3lib_install_Sql extends \TYPO3\CMS\Install\Service\SqlSchemaMigrationService {}
 
 /**
  * @deprecated since 6.0 will be removed in 7.0
@@ -5545,16 +5465,6 @@ class Tx_Install_Updates_File_TceformsUpdateWizard extends \TYPO3\CMS\Install\Up
  * @deprecated since 6.0 will be removed in 7.0
  */
 class Tx_Install_Updates_File_TtContentUploadsUpdateWizard extends \TYPO3\CMS\Install\Updates\TtContentUploadsUpdateWizard {}
-
-/**
- * @deprecated since 6.0 will be removed in 7.0
- */
-class tx_lang_clearcachemenu extends \TYPO3\CMS\Lang\ClearLanguageCacheMenuItem {}
-
-/**
- * @deprecated since 6.0 will be removed in 7.0
- */
-class tx_lang_clearcache extends \TYPO3\CMS\Lang\LanguageCacheClearer {}
 
 /**
  * @deprecated since 6.0 will be removed in 7.0
@@ -6184,11 +6094,6 @@ class tx_rtehtmlarea_user extends \TYPO3\CMS\Rtehtmlarea\User {}
 /**
  * @deprecated since 6.0 will be removed in 7.0
  */
-class tx_saltedpasswords_autoloader extends \TYPO3\CMS\Saltedpasswords\Autoloader {}
-
-/**
- * @deprecated since 6.0 will be removed in 7.0
- */
 class tx_saltedpasswords_eval_be extends \TYPO3\CMS\Saltedpasswords\Evaluation\BackendEvaluator {}
 
 /**
@@ -6389,32 +6294,32 @@ class tx_sysactionToolbarMenu extends \TYPO3\CMS\SysAction\ActionToolbarMenu {}
 /**
  * @deprecated since 6.0 will be removed in 7.0
  */
-class tx_t3editor_codecompletion extends \TYPO3\CMS\T3Editor\CodeCompletion {}
+class tx_t3editor_codecompletion extends \TYPO3\CMS\T3editor\CodeCompletion {}
 
 /**
  * @deprecated since 6.0 will be removed in 7.0
  */
-class tx_t3editor_tceforms_wizard extends \TYPO3\CMS\T3Editor\FormWizard {}
+class tx_t3editor_tceforms_wizard extends \TYPO3\CMS\T3editor\FormWizard {}
 
 /**
  * @deprecated since 6.0 will be removed in 7.0
  */
-class tx_t3editor_hooks_fileedit extends \TYPO3\CMS\T3Editor\Hook\FileEditHook {}
+class tx_t3editor_hooks_fileedit extends \TYPO3\CMS\T3editor\Hook\FileEditHook {}
 
 /**
  * @deprecated since 6.0 will be removed in 7.0
  */
-class tx_t3editor_hooks_tstemplateinfo extends \TYPO3\CMS\T3Editor\Hook\TypoScriptTemplateInfoHook {}
+class tx_t3editor_hooks_tstemplateinfo extends \TYPO3\CMS\T3editor\Hook\TypoScriptTemplateInfoHook {}
 
 /**
  * @deprecated since 6.0 will be removed in 7.0
  */
-class tx_t3editor extends \TYPO3\CMS\T3Editor\T3Editor {}
+class tx_t3editor extends \TYPO3\CMS\T3editor\T3editor {}
 
 /**
  * @deprecated since 6.0 will be removed in 7.0
  */
-class tx_t3editor_TSrefLoader extends \TYPO3\CMS\T3Editor\TypoScriptReferenceLoader {}
+class tx_t3editor_TSrefLoader extends \TYPO3\CMS\T3editor\TypoScriptReferenceLoader {}
 
 /**
  * @deprecated since 6.0 will be removed in 7.0
@@ -6434,32 +6339,27 @@ class tx_taskcenter_status extends \TYPO3\CMS\Taskcenter\TaskStatus {}
 /**
  * @deprecated since 6.0 will be removed in 7.0
  */
-class tx_tsconfighelp_module1 extends \TYPO3\CMS\TsconfigHelp\Controller\TypoScriptConfigHelpModuleController {}
-
-/**
- * @deprecated since 6.0 will be removed in 7.0
- */
 class SC_mod_web_ts_index extends \TYPO3\CMS\Tstemplate\Controller\TypoScriptTemplateModuleController {}
 
 /**
  * @deprecated since 6.0 will be removed in 7.0
  */
-class tx_tstemplateanalyzer extends \TYPO3\CMS\TstemplateAnalyzer\Controller\TemplateAnalyzerModuleFunctionController {}
+class tx_tstemplateanalyzer extends \TYPO3\CMS\Tstemplate\Controller\TemplateAnalyzerModuleFunctionController {}
 
 /**
  * @deprecated since 6.0 will be removed in 7.0
  */
-class tx_tstemplateceditor extends \TYPO3\CMS\TstemplateCeditor\Controller\TypoScriptTemplateConstantEditorModuleFunctionController {}
+class tx_tstemplateceditor extends \TYPO3\CMS\Tstemplate\Controller\TypoScriptTemplateConstantEditorModuleFunctionController {}
 
 /**
  * @deprecated since 6.0 will be removed in 7.0
  */
-class tx_tstemplateinfo extends \TYPO3\CMS\TstemplateInfo\Controller\TypoScriptTemplateInformationModuleFunctionController {}
+class tx_tstemplateinfo extends \TYPO3\CMS\Tstemplate\Controller\TypoScriptTemplateInformationModuleFunctionController {}
 
 /**
  * @deprecated since 6.0 will be removed in 7.0
  */
-class tx_tstemplateobjbrowser extends \TYPO3\CMS\TstemplateObjbrowser\Controller\TypoScriptTemplateObjectBrowserModuleFunctionController {}
+class tx_tstemplateobjbrowser extends \TYPO3\CMS\Tstemplate\Controller\TypoScriptTemplateObjectBrowserModuleFunctionController {}
 
 /**
  * @deprecated since 6.0 will be removed in 7.0
@@ -6650,4 +6550,3 @@ class Tx_Workspaces_Service_AutoPublishTask extends \TYPO3\CMS\Workspaces\Task\A
  * @deprecated since 6.0 will be removed in 7.0
  */
 class Tx_Workspaces_Service_CleanupPreviewLinkTask extends \TYPO3\CMS\Workspaces\Task\CleanupPreviewLinkTask {}
-?>

@@ -1,31 +1,21 @@
 <?php
 namespace TYPO3\CMS\Extensionmanager\Utility;
 
-/***************************************************************
- *  Copyright notice
+/**
+ * This file is part of the TYPO3 CMS project.
  *
- *  (c) 2012-2013 Susanne Moog <typo3@susannemoog.de>
- *  All rights reserved
+ * It is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License, either version 2
+ * of the License, or any later version.
  *
- *  This script is part of the TYPO3 project. The TYPO3 project is
- *  free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
+ * For the full copyright and license information, please read the
+ * LICENSE.txt file that was distributed with this source code.
  *
- *  The GNU General Public License can be found at
- *  http://www.gnu.org/copyleft/gpl.html.
- *  A copy is found in the textfile GPL.txt and important notices to the license
- *  from the author is found in LICENSE.txt distributed with these scripts.
- *
- *
- *  This script is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  This copyright notice MUST APPEAR in all copies of the script!
- ***************************************************************/
+ * The TYPO3 project - inspiring people to share!
+ */
+use TYPO3\CMS\Core\Package\PackageInterface;
+use TYPO3\CMS\Core\Utility\GeneralUtility;
+
 /**
  * Utility for dealing with extension list related functions
  *
@@ -39,60 +29,34 @@ namespace TYPO3\CMS\Extensionmanager\Utility;
 class ListUtility implements \TYPO3\CMS\Core\SingletonInterface {
 
 	/**
-	 * @var \TYPO3\CMS\Extbase\Object\ObjectManager
-	 */
-	public $objectManager;
-
-	/**
-	 * @param \TYPO3\CMS\Extbase\Object\ObjectManagerInterface $objectManager
-	 * @return void
-	 */
-	public function injectObjectManager(\TYPO3\CMS\Extbase\Object\ObjectManagerInterface $objectManager) {
-		$this->objectManager = $objectManager;
-	}
-
-	/**
 	 * @var \TYPO3\CMS\Extensionmanager\Utility\EmConfUtility
+	 * @inject
 	 */
-	public $emConfUtility;
-
-	/**
-	 * Inject emConfUtility
-	 *
-	 * @param \TYPO3\CMS\Extensionmanager\Utility\EmConfUtility $emConfUtility
-	 * @return void
-	 */
-	public function injectEmConfUtility(\TYPO3\CMS\Extensionmanager\Utility\EmConfUtility $emConfUtility) {
-		$this->emConfUtility = $emConfUtility;
-	}
+	protected $emConfUtility;
 
 	/**
 	 * @var \TYPO3\CMS\Extensionmanager\Domain\Repository\ExtensionRepository
+	 * @inject
 	 */
-	public $extensionRepository;
+	protected $extensionRepository;
 
 	/**
 	 * @var \TYPO3\CMS\Extensionmanager\Utility\InstallUtility
+	 * @inject
 	 */
 	protected $installUtility;
 
 	/**
-	 * @param \TYPO3\CMS\Extensionmanager\Utility\InstallUtility $installUtility
-	 * @return void
+	 * @var \TYPO3\CMS\Core\Package\PackageManager
+	 * @inject
 	 */
-	public function injectInstallUtility(\TYPO3\CMS\Extensionmanager\Utility\InstallUtility $installUtility) {
-		$this->installUtility = $installUtility;
-	}
+	protected $packageManager;
 
 	/**
-	 * Inject emConfUtility
-	 *
-	 * @param \TYPO3\CMS\Extensionmanager\Domain\Repository\ExtensionRepository $extensionRepository
-	 * @return void
+	 * @var \TYPO3\CMS\Extbase\SignalSlot\Dispatcher
+	 * @inject
 	 */
-	public function injectExtensionRepository(\TYPO3\CMS\Extensionmanager\Domain\Repository\ExtensionRepository $extensionRepository) {
-		$this->extensionRepository = $extensionRepository;
-	}
+	protected $signalSlotDispatcher;
 
 	/**
 	 * Returns the list of available, but not necessarily loaded extensions
@@ -101,28 +65,45 @@ class ListUtility implements \TYPO3\CMS\Core\SingletonInterface {
 	 * @see getInstExtList()
 	 */
 	public function getAvailableExtensions() {
+		$this->emitPackagesMayHaveChangedSignal();
 		$extensions = array();
-		$paths = \TYPO3\CMS\Extensionmanager\Domain\Model\Extension::returnInstallPaths();
-		foreach ($paths as $installationType => $path) {
-			try {
-				if (is_dir($path)) {
-					$extList = \TYPO3\CMS\Core\Utility\GeneralUtility::get_dirs($path);
-					if (is_array($extList)) {
-						foreach ($extList as $extKey) {
-							$extensions[$extKey] = array(
-								'siteRelPath' => str_replace(PATH_site, '', $path . $extKey),
-								'type' => $installationType,
-								'key' => $extKey,
-								'ext_icon' => \TYPO3\CMS\Core\Utility\ExtensionManagementUtility::getExtensionIcon($path . $extKey . '/')
-							);
-						}
-					}
-				}
-			} catch (\Exception $e) {
-				\TYPO3\CMS\Core\Utility\GeneralUtility::sysLog($e->getMessage(), 'extensionmanager');
+		foreach ($this->packageManager->getAvailablePackages() as $package) {
+			// Only TYPO3 related packages could be handled by the extension manager
+			// Composer packages from "Packages" folder will be instanciated as \TYPO3\Flow\Package\Package
+			if (!($package instanceof \TYPO3\CMS\Core\Package\PackageInterface)) {
+				continue;
 			}
+			$installationType = $this->getInstallTypeForPackage($package);
+			$extensions[$package->getPackageKey()] = array(
+				'siteRelPath' => str_replace(PATH_site, '', $package->getPackagePath()),
+				'type' => $installationType,
+				'key' => $package->getPackageKey(),
+				'ext_icon' => \TYPO3\CMS\Core\Utility\ExtensionManagementUtility::getExtensionIcon($package->getPackagePath()),
+			);
 		}
 		return $extensions;
+	}
+
+	/**
+	 * Emits packages may have changed signal
+	 */
+	protected function emitPackagesMayHaveChangedSignal() {
+		$this->signalSlotDispatcher->dispatch('PackageManagement', 'packagesMayHaveChanged');
+	}
+
+	/**
+	 * Returns "System", "Global" or "Local" based on extension position in filesystem.
+	 *
+	 * @param PackageInterface $package
+	 * @return string
+	 */
+	protected function getInstallTypeForPackage(PackageInterface $package) {
+		foreach (\TYPO3\CMS\Extensionmanager\Domain\Model\Extension::returnInstallPaths() as $installType => $installPath) {
+			if (GeneralUtility::isFirstPartOfStr($package->getPackagePath(), $installPath)) {
+				return $installType;
+			}
+		}
+		return '';
 	}
 
 	/**
@@ -132,8 +113,8 @@ class ListUtility implements \TYPO3\CMS\Core\SingletonInterface {
 	 * @return array
 	 */
 	public function getAvailableAndInstalledExtensions(array $availableExtensions) {
-		foreach ($GLOBALS['TYPO3_LOADED_EXT'] as $extKey => $properties) {
-			if (array_key_exists($extKey, $availableExtensions)) {
+		foreach (array_keys($this->packageManager->getActivePackages()) as $extKey) {
+			if (isset($availableExtensions[$extKey])) {
 				$availableExtensions[$extKey]['installed'] = TRUE;
 			}
 		}
@@ -175,8 +156,4 @@ class ListUtility implements \TYPO3\CMS\Core\SingletonInterface {
 		$availableAndInstalledExtensions = $this->getAvailableAndInstalledExtensions($availableExtensions);
 		return $this->enrichExtensionsWithEmConfAndTerInformation($availableAndInstalledExtensions);
 	}
-
 }
-
-
-?>

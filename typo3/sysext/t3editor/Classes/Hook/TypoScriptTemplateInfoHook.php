@@ -1,31 +1,18 @@
 <?php
-namespace TYPO3\CMS\T3Editor\Hook;
+namespace TYPO3\CMS\T3editor\Hook;
 
-/***************************************************************
- *  Copyright notice
+/**
+ * This file is part of the TYPO3 CMS project.
  *
- *  (c) 2007-2013 Tobias Liebig <mail_typo3@etobi.de>
- *  All rights reserved
+ * It is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License, either version 2
+ * of the License, or any later version.
  *
- *  This script is part of the TYPO3 project. The TYPO3 project is
- *  free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
+ * For the full copyright and license information, please read the
+ * LICENSE.txt file that was distributed with this source code.
  *
- *  The GNU General Public License can be found at
- *  http://www.gnu.org/copyleft/gpl.html.
- *  A copy is found in the textfile GPL.txt and important notices to the license
- *  from the author is found in LICENSE.txt distributed with these scripts.
- *
- *
- *  This script is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  This copyright notice MUST APPEAR in all copies of the script!
- ***************************************************************/
+ * The TYPO3 project - inspiring people to share!
+ */
 
 /**
  * Hook for tstemplate info
@@ -35,32 +22,33 @@ namespace TYPO3\CMS\T3Editor\Hook;
 class TypoScriptTemplateInfoHook {
 
 	/**
-	 * @var \TYPO3\CMS\T3Editor\T3Editor
+	 * @var \TYPO3\CMS\T3editor\T3editor
 	 */
 	protected $t3editor = NULL;
 
 	/**
 	 * @var string
 	 */
-	protected $ajaxSaveType = 'tx_tstemplateinfo';
+	protected $ajaxSaveType = 'TypoScriptTemplateInformationModuleFunctionController';
 
 	/**
-	 * @return \TYPO3\CMS\T3Editor\T3Editor
+	 * @return \TYPO3\CMS\T3editor\T3editor
 	 */
 	protected function getT3editor() {
 		if ($this->t3editor == NULL) {
-			$this->t3editor = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\T3Editor\\T3Editor')->setMode(\TYPO3\CMS\T3Editor\T3Editor::MODE_TYPOSCRIPT)->setAjaxSaveType($this->ajaxSaveType);
+			$this->t3editor = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\T3editor\\T3editor')->setMode(\TYPO3\CMS\T3editor\T3editor::MODE_TYPOSCRIPT)->setAjaxSaveType($this->ajaxSaveType);
 		}
 		return $this->t3editor;
 	}
 
 	/**
 	 * Hook-function: inject t3editor JavaScript code before the page is compiled
-	 * called in typo3/template.php:startPage
+	 * called in \TYPO3\CMS\Backend\Template\DocumentTemplate:startPage
 	 *
 	 * @param array $parameters
 	 * @param \TYPO3\CMS\Backend\Template\DocumentTemplate $pObj
 	 * @return void
+	 * @see \TYPO3\CMS\Backend\Template\DocumentTemplate::startPage
 	 */
 	public function preStartPageHook($parameters, $pObj) {
 		// Enable editor in Template-Modul
@@ -73,10 +61,10 @@ class TypoScriptTemplateInfoHook {
 
 	/**
 	 * Hook-function:
-	 * called in typo3/sysext/tstemplate_info/class.tx_tstemplateinfo.php
+	 * called in typo3/sysext/tstemplate_info/Classes/Controller/TypoScriptTemplateInformationModuleFunctionController.php
 	 *
 	 * @param array $parameters
-	 * @param \TYPO3\CMS\TstemplateInfo\Controller\TypoScriptTemplateInformationModuleFunctionController $pObj
+	 * @param \TYPO3\CMS\Tstemplate\Controller\TypoScriptTemplateInformationModuleFunctionController $pObj
 	 * @return void
 	 */
 	public function postOutputProcessingHook($parameters, $pObj) {
@@ -86,10 +74,10 @@ class TypoScriptTemplateInfoHook {
 		}
 		foreach (array('constants', 'config') as $type) {
 			if ($parameters['e'][$type]) {
-				$attributes = 'rows="' . $parameters['numberOfRows'] . '" ' . 'wrap="off" ' . $pObj->pObj->doc->formWidthText(48, 'width:98%;height:60%', 'off');
+				$attributes = 'rows="' . $parameters['numberOfRows'] . '" ' . 'wrap="off" ' . $pObj->pObj->doc->formWidth(48, TRUE, 'width:98%;height:60%');
 				$title = $GLOBALS['LANG']->getLL('template') . ' ' . htmlspecialchars($parameters['tplRow']['title']) . $GLOBALS['LANG']->getLL('delimiter') . ' ' . $GLOBALS['LANG']->getLL($type);
 				$outCode = $t3editor->getCodeEditor('data[' . $type . ']', 'fixed-font enable-tab', '$1', $attributes, $title, array(
-					'pageId' => intval($pObj->pObj->id)
+					'pageId' => (int)$pObj->pObj->id
 				));
 				$parameters['theOutput'] = preg_replace('/\\<textarea name="data\\[' . $type . '\\]".*\\>([^\\<]*)\\<\\/textarea\\>/mi', $outCode, $parameters['theOutput']);
 			}
@@ -111,7 +99,7 @@ class TypoScriptTemplateInfoHook {
 			// If given use the requested template_uid
 			// if not, use the first template-record on the page (in this case there should only be one record!)
 			$set = \TYPO3\CMS\Core\Utility\GeneralUtility::_GP('SET');
-			$template_uid = $set['templatesOnPage'] ? $set['templatesOnPage'] : 0;
+			$template_uid = $set['templatesOnPage'] ?: 0;
 			// Defined global here!
 			$tmpl = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\TypoScript\\ExtendedTemplateService');
 			// Do not log time-performance information
@@ -121,7 +109,7 @@ class TypoScriptTemplateInfoHook {
 			$tplRow = $tmpl->ext_getFirstTemplate($pageId, $template_uid);
 			$existTemplate = is_array($tplRow) ? TRUE : FALSE;
 			if ($existTemplate) {
-				$saveId = $tplRow['_ORIG_uid'] ? $tplRow['_ORIG_uid'] : $tplRow['uid'];
+				$saveId = $tplRow['_ORIG_uid'] ?: $tplRow['uid'];
 				// Update template ?
 				$POST = \TYPO3\CMS\Core\Utility\GeneralUtility::_POST();
 				if ($POST['submit']) {
@@ -130,26 +118,26 @@ class TypoScriptTemplateInfoHook {
 					if (is_array($POST['data'])) {
 						foreach ($POST['data'] as $field => $val) {
 							switch ($field) {
-							case 'constants':
+								case 'constants':
 
-							case 'config':
+								case 'config':
 
-							case 'title':
+								case 'title':
 
-							case 'sitetitle':
+								case 'sitetitle':
 
-							case 'description':
-								$recData['sys_template'][$saveId][$field] = $val;
-								break;
+								case 'description':
+									$recData['sys_template'][$saveId][$field] = $val;
+									break;
 							}
 						}
 					}
 					if (count($recData)) {
 						// process template row before saving
-						require_once \TYPO3\CMS\Core\Utility\ExtensionManagementUtility::extPath('tstemplate_info') . 'class.tx_tstemplateinfo.php';
-						$tstemplateinfo = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('tx_tstemplateinfo');
-						/* @var $tstemplateinfo tx_tstemplateinfo */
+						$tstemplateinfo = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Tstemplate\\Controller\\TypoScriptTemplateInformationModuleFunctionController');
+						/* @var $tstemplateinfo \TYPO3\CMS\Tstemplate\Controller\TypoScriptTemplateInformationModuleFunctionController */
 						// load the MOD_SETTINGS in order to check if the includeTypoScriptFileContent is set
+						$tstemplateinfo->pObj = $pObj;
 						$tstemplateinfo->pObj->MOD_SETTINGS = \TYPO3\CMS\Backend\Utility\BackendUtility::getModuleData(array('includeTypoScriptFileContent' => TRUE), array(), 'web_ts');
 						$recData['sys_template'][$saveId] = $tstemplateinfo->processTemplateRowBeforeSaving($recData['sys_template'][$saveId]);
 						// Create new tce-object
@@ -171,6 +159,3 @@ class TypoScriptTemplateInfoHook {
 	}
 
 }
-
-
-?>

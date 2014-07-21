@@ -1,32 +1,18 @@
 <?php
 namespace TYPO3\CMS\Extbase\Mvc;
 
-/***************************************************************
- *  Copyright notice
+/**
+ * This file is part of the TYPO3 CMS project.
  *
- *  (c) 2010-2013 Extbase Team (http://forge.typo3.org/projects/typo3v4-mvc)
- *  Extbase is a backport of TYPO3 Flow. All credits go to the TYPO3 Flow team.
- *  All rights reserved
+ * It is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License, either version 2
+ * of the License, or any later version.
  *
- *  This script is part of the TYPO3 project. The TYPO3 project is
- *  free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
+ * For the full copyright and license information, please read the
+ * LICENSE.txt file that was distributed with this source code.
  *
- *  The GNU General Public License can be found at
- *  http://www.gnu.org/copyleft/gpl.html.
- *  A copy is found in the textfile GPL.txt and important notices to the license
- *  from the author is found in LICENSE.txt distributed with these scripts.
- *
- *
- *  This script is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  This copyright notice MUST APPEAR in all copies of the script!
- ***************************************************************/
+ * The TYPO3 project - inspiring people to share!
+ */
 
 use TYPO3\CMS\Core\Utility\ClassNamingUtility;
 
@@ -125,7 +111,7 @@ class Request implements \TYPO3\CMS\Extbase\Mvc\RequestInterface {
 	protected $originalRequestMappingResults = NULL;
 
 	/**
-	 * @var array Errors that occured during this request
+	 * @var array Errors that occurred during this request
 	 * @deprecated since Extbase 1.4.0, will be removed two versions after Extbase 6.1
 	 */
 	protected $errors = array();
@@ -167,21 +153,43 @@ class Request implements \TYPO3\CMS\Extbase\Mvc\RequestInterface {
 	public function getControllerObjectName() {
 		if (NULL !== $this->controllerVendorName) {
 			// It's safe to assume a namespaced name as namespaced names have to follow PSR-0
-			$lowercaseObjectName = str_replace('@extension', $this->controllerExtensionName, $this->namespacedControllerObjectNamePattern);
-			$lowercaseObjectName = str_replace('@subpackage', $this->controllerSubpackageKey, $lowercaseObjectName);
-			$lowercaseObjectName = str_replace('@controller', $this->controllerName, $lowercaseObjectName);
-			$lowercaseObjectName = str_replace('@vendor', $this->controllerVendorName, $lowercaseObjectName);
-			$lowercaseObjectName = str_replace('\\\\', '\\', $lowercaseObjectName);
+			$objectName = str_replace(
+				array(
+					'@extension',
+					'@subpackage',
+					'@controller',
+					'@vendor',
+					'\\\\'
+				),
+				array(
+					$this->controllerExtensionName,
+					$this->controllerSubpackageKey,
+					$this->controllerName,
+					$this->controllerVendorName,
+					'\\'
+				),
+				$this->namespacedControllerObjectNamePattern
+			);
 		} else {
-			$lowercaseObjectName = str_replace('@extension', $this->controllerExtensionName, $this->controllerObjectNamePattern);
-			$lowercaseObjectName = str_replace('@subpackage', $this->controllerSubpackageKey, $lowercaseObjectName);
-			$lowercaseObjectName = str_replace('@controller', $this->controllerName, $lowercaseObjectName);
-			$lowercaseObjectName = str_replace('__', '_', $lowercaseObjectName);
+			$objectName = str_replace(
+				array(
+					'@extension',
+					'@subpackage',
+					'@controller',
+					'__'
+				),
+				array(
+					$this->controllerExtensionName,
+					$this->controllerSubpackageKey,
+					$this->controllerName,
+					'_'
+				),
+				$this->controllerObjectNamePattern
+			);
 		}
 		// TODO implement getCaseSensitiveObjectName()
-		$objectName = $lowercaseObjectName;
 		if ($objectName === FALSE) {
-			throw new \TYPO3\CMS\Extbase\Mvc\Exception\NoSuchControllerException('The controller object "' . $lowercaseObjectName . '" does not exist.', 1220884009);
+			throw new \TYPO3\CMS\Extbase\Mvc\Exception\NoSuchControllerException('The controller object "' . $objectName . '" does not exist.', 1220884009);
 		}
 		return $objectName;
 	}
@@ -323,7 +331,7 @@ class Request implements \TYPO3\CMS\Extbase\Mvc\RequestInterface {
 	 */
 	public function setControllerActionName($actionName) {
 		if (!is_string($actionName) && $actionName !== NULL) {
-			throw new \TYPO3\CMS\Extbase\Mvc\Exception\InvalidActionNameException('The action name must be a valid string, ' . gettype($actionName) . ' given (' . $actionName . ').', 1187176358);
+			throw new \TYPO3\CMS\Extbase\Mvc\Exception\InvalidActionNameException('The action name must be a valid string, ' . gettype($actionName) . ' given (' . $actionName . ').', 1187176359);
 		}
 		if ($actionName[0] !== strtolower($actionName[0]) && $actionName !== NULL) {
 			throw new \TYPO3\CMS\Extbase\Mvc\Exception\InvalidActionNameException('The action name must start with a lower case letter, "' . $actionName . '" does not match this criteria.', 1218473352);
@@ -492,7 +500,7 @@ class Request implements \TYPO3\CMS\Extbase\Mvc\RequestInterface {
 	}
 
 	/**
-	 * Set errors that occured during the request (e.g. argument mapping errors)
+	 * Set errors that occurred during the request (e.g. argument mapping errors)
 	 *
 	 * @param array $errors An array of \TYPO3\CMS\Extbase\Error\Error objects
 	 *
@@ -504,9 +512,9 @@ class Request implements \TYPO3\CMS\Extbase\Mvc\RequestInterface {
 	}
 
 	/**
-	 * Get errors that occured during the request (e.g. argument mapping errors)
+	 * Get errors that occurred during the request (e.g. argument mapping errors)
 	 *
-	 * @return array The errors that occured during the request
+	 * @return array The errors that occurred during the request
 	 * @deprecated since Extbase 1.4.0, will be removed two versions after Extbase 6.1
 	 */
 	public function getErrors() {
@@ -514,7 +522,7 @@ class Request implements \TYPO3\CMS\Extbase\Mvc\RequestInterface {
 	}
 
 	/**
-	 * Returns the original request. Filled only if a property mapping error occured.
+	 * Returns the original request. Filled only if a property mapping error occurred.
 	 *
 	 * @return \TYPO3\CMS\Extbase\Mvc\Request the original request.
 	 */
@@ -574,5 +582,3 @@ class Request implements \TYPO3\CMS\Extbase\Mvc\RequestInterface {
 		return $this->internalArguments[$argumentName];
 	}
 }
-
-?>

@@ -1,28 +1,18 @@
 <?php
 namespace TYPO3\CMS\Scheduler\Task;
 
-/***************************************************************
- *  Copyright notice
+/**
+ * This file is part of the TYPO3 CMS project.
  *
- *  (c) 2005-2013 Christian Jul Jensen (julle@typo3.org)
- *  All rights reserved
+ * It is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License, either version 2
+ * of the License, or any later version.
  *
- *  This script is part of the TYPO3 project. The TYPO3 project is
- *  free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
+ * For the full copyright and license information, please read the
+ * LICENSE.txt file that was distributed with this source code.
  *
- *  The GNU General Public License can be found at
- *  http://www.gnu.org/copyleft/gpl.html.
- *
- *  This script is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  This copyright notice MUST APPEAR in all copies of the script!
- ***************************************************************/
+ * The TYPO3 project - inspiring people to share!
+ */
 /**
  * This is the base class for all Scheduler tasks
  * It's an abstract class, not designed to be instantiated directly
@@ -43,14 +33,14 @@ abstract class AbstractTask {
 	/**
 	 * The unique id of the task used to identify it in the database
 	 *
-	 * @var int
+	 * @var integer
 	 */
 	protected $taskUid;
 
 	/**
 	 * Disable flag, TRUE if task is disabled, FALSE otherwise
 	 *
-	 * @var 	boolean
+	 * @var boolean
 	 */
 	protected $disabled = FALSE;
 
@@ -67,6 +57,20 @@ abstract class AbstractTask {
 	 * @var integer
 	 */
 	protected $executionTime = 0;
+
+	/**
+	 * Description for the task
+	 *
+	 * @var string
+	 */
+	protected $description = '';
+
+	/**
+	 * Task group for this task
+	 *
+	 * @var integer
+	 */
+	protected $taskGroup;
 
 	/**
 	 * Constructor
@@ -106,7 +110,7 @@ abstract class AbstractTask {
 	 * @return void
 	 */
 	public function setTaskUid($id) {
-		$this->taskUid = intval($id);
+		$this->taskUid = (int)$id;
 	}
 
 	/**
@@ -175,7 +179,26 @@ abstract class AbstractTask {
 	 * @return void
 	 */
 	public function setExecutionTime($timestamp) {
-		$this->executionTime = intval($timestamp);
+		$this->executionTime = (int)$timestamp;
+	}
+
+	/**
+	 * This method returns the task group (uid) of the task
+	 *
+	 * @return integer Uid of task group
+	 */
+	public function getTaskGroup() {
+		return $this->taskGroup;
+	}
+
+	/**
+	 * This method is used to set the task group (uid) of the task
+	 *
+	 * @param integer $timestamp Uid of task group
+	 * @return void
+	 */
+	public function setTaskGroup($taskGroup) {
+		$this->taskGroup = (int)$taskGroup;
 	}
 
 	/**
@@ -185,6 +208,25 @@ abstract class AbstractTask {
 	 */
 	public function getExecutionTime() {
 		return $this->executionTime;
+	}
+
+	/**
+	 * This method is used to set the description of the task
+	 *
+	 * @param string $description Description
+	 * @return void
+	 */
+	public function setDescription($description) {
+		$this->description = $description;
+	}
+
+	/**
+	 * This method returns the description of the task
+	 *
+	 * @return string Description
+	 */
+	public function getDescription() {
+		return $this->description;
 	}
 
 	/**
@@ -302,7 +344,7 @@ abstract class AbstractTask {
 		$queryArr = array(
 			'SELECT' => 'serialized_executions',
 			'FROM' => 'tx_scheduler_task',
-			'WHERE' => 'uid = ' . intval($this->taskUid),
+			'WHERE' => 'uid = ' . $this->taskUid,
 			'LIMIT' => 1
 		);
 		$res = $GLOBALS['TYPO3_DB']->exec_SELECT_queryArray($queryArr);
@@ -325,7 +367,7 @@ abstract class AbstractTask {
 		$queryArr = array(
 			'SELECT' => 'serialized_executions',
 			'FROM' => 'tx_scheduler_task',
-			'WHERE' => 'uid = ' . intval($this->taskUid),
+			'WHERE' => 'uid = ' . $this->taskUid,
 			'LIMIT' => 1
 		);
 		$res = $GLOBALS['TYPO3_DB']->exec_SELECT_queryArray($queryArr);
@@ -345,7 +387,7 @@ abstract class AbstractTask {
 		if (TYPO3_REQUESTTYPE & TYPO3_REQUESTTYPE_CLI) {
 			$context = 'CLI';
 		}
-		$GLOBALS['TYPO3_DB']->exec_UPDATEquery('tx_scheduler_task', 'uid = ' . intval($this->taskUid), array(
+		$GLOBALS['TYPO3_DB']->exec_UPDATEquery('tx_scheduler_task', 'uid = ' . $this->taskUid, array(
 			'serialized_executions' => serialize($runningExecutions),
 			'lastexecution_time' => time(),
 			'lastexecution_context' => $context
@@ -365,7 +407,7 @@ abstract class AbstractTask {
 		$queryArr = array(
 			'SELECT' => 'serialized_executions',
 			'FROM' => 'tx_scheduler_task',
-			'WHERE' => 'uid = ' . intval($this->taskUid),
+			'WHERE' => 'uid = ' . $this->taskUid,
 			'LIMIT' => 1
 		);
 		$res = $GLOBALS['TYPO3_DB']->exec_SELECT_queryArray($queryArr);
@@ -389,7 +431,7 @@ abstract class AbstractTask {
 					$failure = '';
 				}
 				// Save the updated executions list
-				$GLOBALS['TYPO3_DB']->exec_UPDATEquery('tx_scheduler_task', 'uid = ' . intval($this->taskUid), array(
+				$GLOBALS['TYPO3_DB']->exec_UPDATEquery('tx_scheduler_task', 'uid = ' . $this->taskUid, array(
 					'serialized_executions' => $runningExecutionsSerialized,
 					'lastexecution_failure' => $failure
 				));
@@ -405,7 +447,7 @@ abstract class AbstractTask {
 	 */
 	public function unmarkAllExecutions() {
 		// Set the serialized executions field to empty
-		$result = $GLOBALS['TYPO3_DB']->exec_UPDATEquery('tx_scheduler_task', 'uid = ' . intval($this->taskUid), array(
+		$result = $GLOBALS['TYPO3_DB']->exec_UPDATEquery('tx_scheduler_task', 'uid = ' . $this->taskUid, array(
 			'serialized_executions' => ''
 		));
 		return $result;
@@ -414,7 +456,7 @@ abstract class AbstractTask {
 	/**
 	 * Saves the details of the task to the database.
 	 *
-	 * @return bool
+	 * @return boolean
 	 */
 	public function save() {
 		return $this->scheduler->saveTask($this);
@@ -424,7 +466,7 @@ abstract class AbstractTask {
 	 * Stops the task, by replacing the execution object by an empty one
 	 * NOTE: the task still needs to be saved after that
 	 *
-	 * @return 	void
+	 * @return void
 	 */
 	public function stop() {
 		$this->execution = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Scheduler\\Execution');
@@ -440,6 +482,3 @@ abstract class AbstractTask {
 	}
 
 }
-
-
-?>

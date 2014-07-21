@@ -1,31 +1,18 @@
 <?php
 namespace TYPO3\CMS\Core\Resource\Driver;
 
-/***************************************************************
- * Copyright notice
+/**
+ * This file is part of the TYPO3 CMS project.
  *
- * (c) 2013 Steffen Ritter <steffen.ritter@typo3.org>
- * All rights reserved
+ * It is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License, either version 2
+ * of the License, or any later version.
  *
- * This script is part of the TYPO3 project. The TYPO3 project is
- * free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
+ * For the full copyright and license information, please read the
+ * LICENSE.txt file that was distributed with this source code.
  *
- * The GNU General Public License can be found at
- * http://www.gnu.org/copyleft/gpl.html.
- * A copy is found in the textfile GPL.txt and important notices to the license
- * from the author is found in LICENSE.txt distributed with these scripts.
- *
- *
- * This script is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU General Public License for more details.
- *
- * This copyright notice MUST APPEAR in all copies of the script!
- ***************************************************************/
+ * The TYPO3 project - inspiring people to share!
+ */
 
 /**
  * Class AbstractHierarchicalFilesystemDriver
@@ -54,8 +41,10 @@ abstract class AbstractHierarchicalFilesystemDriver extends AbstractDriver {
 	 */
 	protected function canonicalizeAndCheckFilePath($filePath) {
 		$filePath = \TYPO3\CMS\Core\Utility\PathUtility::getCanonicalPath($filePath);
+
 		// filePath must be valid
-		if (!$this->isPathValid($filePath)) {
+		// Special case is required by vfsStream in Unit Test context
+		if (!$this->isPathValid($filePath) && substr($filePath, 0, 6) !== 'vfs://') {
 			throw new \TYPO3\CMS\Core\Resource\Exception\InvalidPathException('File ' . $filePath . ' is not valid (".." and "//" is not allowed in path).', 1320286857);
 		}
 		return $filePath;
@@ -64,12 +53,45 @@ abstract class AbstractHierarchicalFilesystemDriver extends AbstractDriver {
 	/**
 	 * Makes sure the Path given as parameter is valid
 	 *
+	 * @param string $fileIdentifier The file path (including the file name!)
+	 * @return string
+	 */
+	protected function canonicalizeAndCheckFileIdentifier($fileIdentifier) {
+		if ($fileIdentifier !== '') {
+			$fileIdentifier = $this->canonicalizeAndCheckFilePath($fileIdentifier);
+			$fileIdentifier = '/' . ltrim($fileIdentifier, '/');
+			if (!$this->isCaseSensitiveFileSystem()) {
+				$fileIdentifier = strtolower($fileIdentifier);
+			}
+		}
+		return $fileIdentifier;
+	}
+
+	/**
+	 * Makes sure the Path given as parameter is valid
+	 *
 	 * @param string $folderPath The file path (including the file name!)
 	 * @return string
 	 */
-	protected function canonicalizeAndCheckFolderPath($folderPath) {
-		return $this->canonicalizeAndCheckFilePath($folderPath) . '/';
+	protected function canonicalizeAndCheckFolderIdentifier($folderPath) {
+		if ($folderPath === '/') {
+			$canonicalizedIdentifier = $folderPath;
+		} else {
+			$canonicalizedIdentifier = $this->canonicalizeAndCheckFileIdentifier($folderPath) . '/';
+		}
+		return $canonicalizedIdentifier;
 	}
-}
 
-?>
+	/**
+	 * Returns the identifier of the folder the file resides in
+	 *
+	 * @param string $fileIdentifier
+	 * @return mixed
+	 */
+	public function getParentFolderIdentifierOfIdentifier($fileIdentifier) {
+		$fileIdentifier = $this->canonicalizeAndCheckFileIdentifier($fileIdentifier);
+		return \TYPO3\CMS\Core\Utility\PathUtility::dirname($fileIdentifier) . '/';
+	}
+
+
+}

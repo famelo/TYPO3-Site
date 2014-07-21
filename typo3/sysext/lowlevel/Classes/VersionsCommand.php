@@ -1,37 +1,22 @@
 <?php
 namespace TYPO3\CMS\Lowlevel;
 
-/***************************************************************
- *  Copyright notice
- *
- *  (c) 1999-2013 Kasper Skårhøj (kasperYYYY@typo3.com)
- *  All rights reserved
- *
- *  This script is part of the TYPO3 project. The TYPO3 project is
- *  free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
- *
- *  The GNU General Public License can be found at
- *  http://www.gnu.org/copyleft/gpl.html.
- *  A copy is found in the textfile GPL.txt and important notices to the license
- *  from the author is found in LICENSE.txt distributed with these scripts.
- *
- *
- *  This script is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  This copyright notice MUST APPEAR in all copies of the script!
- ***************************************************************/
 /**
- * Cleaner module: Versions of records
- * User function called from tx_lowlevel_cleaner_core configured in ext_localconf.php
+ * This file is part of the TYPO3 CMS project.
  *
- * @author Kasper Skårhøj <kasperYYYY@typo3.com>
+ * It is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License, either version 2
+ * of the License, or any later version.
+ *
+ * For the full copyright and license information, please read the
+ * LICENSE.txt file that was distributed with this source code.
+ *
+ * The TYPO3 project - inspiring people to share!
  */
+
+use TYPO3\CMS\Backend\Utility\BackendUtility;
+use TYPO3\CMS\Core\Versioning\VersionState;
+
 /**
  * Looking for versions of records
  *
@@ -91,7 +76,7 @@ Automatic Repair:
 		);
 		$startingPoint = $this->cli_isArg('--pid') ? \TYPO3\CMS\Core\Utility\MathUtility::forceIntegerInRange($this->cli_argValue('--pid'), 0) : 0;
 		$depth = $this->cli_isArg('--depth') ? \TYPO3\CMS\Core\Utility\MathUtility::forceIntegerInRange($this->cli_argValue('--depth'), 0) : 1000;
-		$this->genTree($startingPoint, $depth, (int) $this->cli_argValue('--echotree'));
+		$this->genTree($startingPoint, $depth, (int)$this->cli_argValue('--echotree'));
 		$resultArray['versions'] = $this->recStats['versions'];
 		$resultArray['versions_published'] = $this->recStats['versions_published'];
 		$resultArray['versions_liveWS'] = $this->recStats['versions_liveWS'];
@@ -101,9 +86,13 @@ Automatic Repair:
 		$resultArray['versions_unused_placeholders'] = array();
 		foreach ($GLOBALS['TCA'] as $table => $cfg) {
 			if ($cfg['ctrl']['versioningWS']) {
-				$placeHolders = $GLOBALS['TYPO3_DB']->exec_SELECTgetRows('uid,pid', $table, 't3ver_state=1 AND pid>=0' . \TYPO3\CMS\Backend\Utility\BackendUtility::deleteClause($table));
+				$placeHolders = $GLOBALS['TYPO3_DB']->exec_SELECTgetRows(
+					'uid,pid',
+					$table,
+					't3ver_state=' . new VersionState(VersionState::NEW_PLACEHOLDER) . ' AND pid>=0' . BackendUtility::deleteClause($table)
+				);
 				foreach ($placeHolders as $phrec) {
-					if (count(\TYPO3\CMS\Backend\Utility\BackendUtility::selectVersionsOfRecord($table, $phrec['uid'], 'uid')) <= 1) {
+					if (count(BackendUtility::selectVersionsOfRecord($table, $phrec['uid'], 'uid')) <= 1) {
 						$resultArray['versions_unused_placeholders'][\TYPO3\CMS\Core\Utility\GeneralUtility::shortmd5($table . ':' . $phrec['uid'])] = $table . ':' . $phrec['uid'];
 					}
 				}
@@ -114,15 +103,19 @@ Automatic Repair:
 		$resultArray['versions_move_placeholders_ok'] = array();
 		$resultArray['versions_move_placeholders_bad'] = array();
 		foreach ($GLOBALS['TCA'] as $table => $cfg) {
-			if ((int) $cfg['ctrl']['versioningWS'] >= 2) {
-				$placeHolders = $GLOBALS['TYPO3_DB']->exec_SELECTgetRows('uid,pid,t3ver_move_id,t3ver_wsid,t3ver_state', $table, 't3ver_state=3 AND pid>=0' . \TYPO3\CMS\Backend\Utility\BackendUtility::deleteClause($table));
+			if ((int)$cfg['ctrl']['versioningWS'] >= 2) {
+				$placeHolders = $GLOBALS['TYPO3_DB']->exec_SELECTgetRows(
+					'uid,pid,t3ver_move_id,t3ver_wsid,t3ver_state',
+					$table,
+					't3ver_state=' . new VersionState(VersionState::MOVE_PLACEHOLDER) . ' AND pid>=0' . BackendUtility::deleteClause($table)
+				);
 				foreach ($placeHolders as $phrec) {
 					$shortID = \TYPO3\CMS\Core\Utility\GeneralUtility::shortmd5($table . ':' . $phrec['uid']);
-					if ((int) $phrec['t3ver_wsid'] != 0) {
+					if ((int)$phrec['t3ver_wsid'] != 0) {
 						$phrecCopy = $phrec;
-						if (\TYPO3\CMS\Backend\Utility\BackendUtility::movePlhOL($table, $phrec)) {
-							if ($wsAlt = \TYPO3\CMS\Backend\Utility\BackendUtility::getWorkspaceVersionOfRecord($phrecCopy['t3ver_wsid'], $table, $phrec['uid'], 'uid,pid,t3ver_state')) {
-								if ($wsAlt['t3ver_state'] != 4) {
+						if (BackendUtility::movePlhOL($table, $phrec)) {
+							if ($wsAlt = BackendUtility::getWorkspaceVersionOfRecord($phrecCopy['t3ver_wsid'], $table, $phrec['uid'], 'uid,pid,t3ver_state')) {
+								if (!VersionState::cast($wsAlt['t3ver_state'])->equals(VersionState::MOVE_POINTER)) {
 									$resultArray['versions_move_placeholders_bad'][$shortID] = array($table . ':' . $phrec['uid'], 'State for version was not "4" as it should be!', $phrecCopy);
 								} else {
 									$resultArray['versions_move_placeholders_ok'][$shortID] = array(
@@ -149,10 +142,10 @@ Automatic Repair:
 		// Finding move_id_check inconsistencies:
 		$resultArray['versions_move_id_check'] = array();
 		foreach ($GLOBALS['TCA'] as $table => $cfg) {
-			if ((int) $cfg['ctrl']['versioningWS'] >= 2) {
-				$placeHolders = $GLOBALS['TYPO3_DB']->exec_SELECTgetRows('uid,pid,t3ver_move_id,t3ver_wsid,t3ver_state', $table, 't3ver_move_id<>0' . \TYPO3\CMS\Backend\Utility\BackendUtility::deleteClause($table));
+			if ((int)$cfg['ctrl']['versioningWS'] >= 2) {
+				$placeHolders = $GLOBALS['TYPO3_DB']->exec_SELECTgetRows('uid,pid,t3ver_move_id,t3ver_wsid,t3ver_state', $table, 't3ver_move_id<>0' . BackendUtility::deleteClause($table));
 				foreach ($placeHolders as $phrec) {
-					if ((int) $phrec['t3ver_state'] == 3) {
+					if (VersionState::cast($phrec['t3ver_state'])->equals(VersionState::MOVE_PLACEHOLDER)) {
 						if ($phrec['pid'] != -1) {
 
 						} else {
@@ -217,7 +210,7 @@ Automatic Repair:
 					$fields_values = array(
 						't3ver_wsid' => 0
 					);
-					$GLOBALS['TYPO3_DB']->exec_UPDATEquery($table, 'uid=' . intval($uid), $fields_values);
+					$GLOBALS['TYPO3_DB']->exec_UPDATEquery($table, 'uid=' . (int)$uid, $fields_values);
 					echo 'DONE';
 				}
 				echo LF;
@@ -247,6 +240,3 @@ Automatic Repair:
 	}
 
 }
-
-
-?>

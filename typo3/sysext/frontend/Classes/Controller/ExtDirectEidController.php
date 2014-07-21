@@ -1,29 +1,18 @@
 <?php
 namespace TYPO3\CMS\Frontend\Controller;
 
-/***************************************************************
- * Copyright notice
+/**
+ * This file is part of the TYPO3 CMS project.
  *
- * (c) 2010-2013 Stefan Galinski <stefan.galinski@gmail.com>
+ * It is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License, either version 2
+ * of the License, or any later version.
  *
- * All rights reserved
+ * For the full copyright and license information, please read the
+ * LICENSE.txt file that was distributed with this source code.
  *
- * This script is part of the TYPO3 project. The TYPO3 project is
- * free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
- *
- * The GNU General Public License can be found at
- * http://www.gnu.org/copyleft/gpl.html.
- *
- * This script is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * This copyright notice MUST APPEAR in all copies of the script!
- ***************************************************************/
+ * The TYPO3 project - inspiring people to share!
+ */
 /**
  * eID controller for ExtDirect
  *
@@ -36,7 +25,7 @@ class ExtDirectEidController {
 	 *
 	 * @var \TYPO3\CMS\Core\Http\AjaxRequestHandler
 	 */
-	protected $ajaxObjext = NULL;
+	protected $ajaxObject = NULL;
 
 	/**
 	 * Routes the given eID action to the related ExtDirect method with the necessary
@@ -47,7 +36,7 @@ class ExtDirectEidController {
 	public function routeAction() {
 		\TYPO3\CMS\Frontend\Utility\EidUtility::initLanguage();
 		$ajaxID = \TYPO3\CMS\Core\Utility\GeneralUtility::_GP('action');
-		$ajaxScript = $GLOBALS['TYPO3_CONF_VARS']['BE']['AJAX']['ExtDirect::' . $ajaxID];
+		$ajaxScript = $GLOBALS['TYPO3_CONF_VARS']['BE']['AJAX']['ExtDirect::' . $ajaxID]['callbackMethod'];
 		$this->ajaxObject = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Http\\AjaxRequestHandler', 'ExtDirect::' . $ajaxID);
 		$parameters = array();
 		\TYPO3\CMS\Core\Utility\GeneralUtility::callUserFunction($ajaxScript, $parameters, $this->ajaxObject, FALSE, TRUE);
@@ -75,6 +64,3 @@ class ExtDirectEidController {
 	}
 
 }
-
-
-?>

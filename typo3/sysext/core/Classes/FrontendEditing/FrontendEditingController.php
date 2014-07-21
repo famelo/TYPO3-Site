@@ -1,32 +1,18 @@
 <?php
 namespace TYPO3\CMS\Core\FrontendEditing;
 
-/***************************************************************
- *  Copyright notice
+/**
+ * This file is part of the TYPO3 CMS project.
  *
- *  (c) 2008-2013 Jeff Segars <jeff@webempoweredchurch.org>
- *  (c) 2008-2013 David Slayback <dave@webempoweredchurch.org>
- *  All rights reserved
+ * It is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License, either version 2
+ * of the License, or any later version.
  *
- *  This script is part of the TYPO3 project. The TYPO3 project is
- *  free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
+ * For the full copyright and license information, please read the
+ * LICENSE.txt file that was distributed with this source code.
  *
- *  The GNU General Public License can be found at
- *  http://www.gnu.org/copyleft/gpl.html.
- *  A copy is found in the textfile GPL.txt and important notices to the license
- *  from the author is found in LICENSE.txt distributed with these scripts.
- *
- *
- *  This script is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  This copyright notice MUST APPEAR in all copies of the script!
- ***************************************************************/
+ * The TYPO3 project - inspiring people to share!
+ */
 /**
  * Controller class for frontend editing.
  *
@@ -84,7 +70,7 @@ class FrontendEditingController {
 		}
 		list($table, $uid) = explode(':', $currentRecord);
 		// Page ID for new records, 0 if not specified
-		$newRecordPid = intval($conf['newRecordInPid']);
+		$newRecordPid = (int)$conf['newRecordInPid'];
 		if (!$conf['onlyCurrentPid'] || $dataArray['pid'] == $GLOBALS['TSFE']->id) {
 			if ($table == 'pages') {
 				$newUid = $uid;
@@ -127,7 +113,7 @@ class FrontendEditingController {
 	public function displayEditIcons($content, $params, array $conf = array(), $currentRecord = '', array $dataArray = array(), $addUrlParamStr = '') {
 		// Check incoming params:
 		list($currentRecordTable, $currentRecordUID) = explode(':', $currentRecord);
-		list($fieldList, $table) = array_reverse(\TYPO3\CMS\Core\Utility\GeneralUtility::trimExplode(':', $params, 1));
+		list($fieldList, $table) = array_reverse(\TYPO3\CMS\Core\Utility\GeneralUtility::trimExplode(':', $params, TRUE));
 		// Reverse the array because table is optional
 		if (!$table) {
 			$table = $currentRecordTable;
@@ -135,7 +121,7 @@ class FrontendEditingController {
 			// If the table is set as the first parameter, and does not match the table of the current record, then just return.
 			return $content;
 		}
-		$editUid = $dataArray['_LOCALIZED_UID'] ? $dataArray['_LOCALIZED_UID'] : $currentRecordUID;
+		$editUid = $dataArray['_LOCALIZED_UID'] ?: $currentRecordUID;
 		// Edit icons imply that the editing action is generally allowed, assuming page and content element permissions permit it.
 		if (!array_key_exists('allow', $conf)) {
 			$conf['allow'] = 'edit';
@@ -205,7 +191,7 @@ class FrontendEditingController {
 	public function editAction() {
 		// Commands
 		list($table, $uid) = explode(':', $this->TSFE_EDIT['record']);
-		$uid = intval($uid);
+		$uid = (int)$uid;
 		$cmd = $this->TSFE_EDIT['cmd'];
 		// Look for some TSFE_EDIT data that indicates we should save.
 		if (($this->TSFE_EDIT['doSave'] || $this->TSFE_EDIT['update'] || $this->TSFE_EDIT['update_close']) && is_array($this->TSFE_EDIT['data'])) {
@@ -335,10 +321,10 @@ class FrontendEditingController {
 						$operator = '>';
 						$order = 'ASC';
 					}
-					$sortCheck = ' AND ' . $sortField . $operator . intval($row[$sortField]);
+					$sortCheck = ' AND ' . $sortField . $operator . (int)$row[$sortField];
 				}
 				$GLOBALS['TYPO3_DB']->sql_free_result($res);
-				$res = $GLOBALS['TYPO3_DB']->exec_SELECTquery('uid,pid', $table, 'pid=' . intval($row['pid']) . $sortCheck . $copyAfterFieldsQuery . $GLOBALS['TSFE']->sys_page->enableFields($table, '', $ignore), '', $sortField . ' ' . $order, '2');
+				$res = $GLOBALS['TYPO3_DB']->exec_SELECTquery('uid,pid', $table, 'pid=' . (int)$row['pid'] . $sortCheck . $copyAfterFieldsQuery . $GLOBALS['TSFE']->sys_page->enableFields($table, '', $ignore), '', $sortField . ' ' . $order, '2');
 				if ($row2 = $GLOBALS['TYPO3_DB']->sql_fetch_assoc($res)) {
 					if ($afterUID) {
 						$cmdData[$table][$uid]['move'] = -$afterUID;
@@ -484,7 +470,7 @@ class FrontendEditingController {
 			}
 			if (!$conf['onlyCurrentPid'] || $dataArray['pid'] == $GLOBALS['TSFE']->id) {
 				// Permissions:
-				$types = \TYPO3\CMS\Core\Utility\GeneralUtility::trimExplode(',', \TYPO3\CMS\Core\Utility\GeneralUtility::strtolower($conf['allow']), 1);
+				$types = \TYPO3\CMS\Core\Utility\GeneralUtility::trimExplode(',', \TYPO3\CMS\Core\Utility\GeneralUtility::strtolower($conf['allow']), TRUE);
 				$allow = array_flip($types);
 				$perms = $GLOBALS['BE_USER']->calcPerms($GLOBALS['TSFE']->page);
 				if ($table == 'pages') {
@@ -578,6 +564,3 @@ class FrontendEditingController {
 	}
 
 }
-
-
-?>

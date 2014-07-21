@@ -1,31 +1,21 @@
 <?php
 namespace TYPO3\CMS\Backend\Controller\Wizard;
 
-/***************************************************************
- *  Copyright notice
+/**
+ * This file is part of the TYPO3 CMS project.
  *
- *  (c) 1999-2013 Kasper Skårhøj (kasperYYYY@typo3.com)
- *  All rights reserved
+ * It is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License, either version 2
+ * of the License, or any later version.
  *
- *  This script is part of the TYPO3 project. The TYPO3 project is
- *  free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
+ * For the full copyright and license information, please read the
+ * LICENSE.txt file that was distributed with this source code.
  *
- *  The GNU General Public License can be found at
- *  http://www.gnu.org/copyleft/gpl.html.
- *  A copy is found in the textfile GPL.txt and important notices to the license
- *  from the author is found in LICENSE.txt distributed with these scripts.
- *
- *
- *  This script is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  This copyright notice MUST APPEAR in all copies of the script!
- ***************************************************************/
+ * The TYPO3 project - inspiring people to share!
+ */
+
+use TYPO3\CMS\Backend\Utility\BackendUtility;
+use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
  * Script Class for colorpicker wizard
@@ -114,34 +104,43 @@ class ColorpickerController {
 	public $content;
 
 	/**
+	 * Constructor
+	 */
+	public function __construct() {
+		$GLOBALS['LANG']->includeLLFile('EXT:lang/locallang_wizards.xlf');
+		$GLOBALS['SOBE'] = $this;
+
+		$this->init();
+	}
+
+	/**
 	 * Initialises the Class
 	 *
 	 * @return 	void
-	 * @todo Define visibility
 	 */
-	public function init() {
+	protected function init() {
 		// Setting GET vars (used in frameset script):
-		$this->P = \TYPO3\CMS\Core\Utility\GeneralUtility::_GP('P', 1);
+		$this->P = GeneralUtility::_GP('P');
 		// Setting GET vars (used in colorpicker script):
-		$this->colorValue = \TYPO3\CMS\Core\Utility\GeneralUtility::_GP('colorValue');
-		$this->fieldChangeFunc = \TYPO3\CMS\Core\Utility\GeneralUtility::_GP('fieldChangeFunc');
-		$this->fieldChangeFuncHash = \TYPO3\CMS\Core\Utility\GeneralUtility::_GP('fieldChangeFuncHash');
-		$this->fieldName = \TYPO3\CMS\Core\Utility\GeneralUtility::_GP('fieldName');
-		$this->formName = \TYPO3\CMS\Core\Utility\GeneralUtility::_GP('formName');
-		$this->md5ID = \TYPO3\CMS\Core\Utility\GeneralUtility::_GP('md5ID');
-		$this->exampleImg = \TYPO3\CMS\Core\Utility\GeneralUtility::_GP('exampleImg');
+		$this->colorValue = GeneralUtility::_GP('colorValue');
+		$this->fieldChangeFunc = GeneralUtility::_GP('fieldChangeFunc');
+		$this->fieldChangeFuncHash = GeneralUtility::_GP('fieldChangeFuncHash');
+		$this->fieldName = GeneralUtility::_GP('fieldName');
+		$this->formName = GeneralUtility::_GP('formName');
+		$this->md5ID = GeneralUtility::_GP('md5ID');
+		$this->exampleImg = GeneralUtility::_GP('exampleImg');
 		// Resolving image (checking existence etc.)
 		$this->imageError = '';
 		if ($this->exampleImg) {
-			$this->pickerImage = \TYPO3\CMS\Core\Utility\GeneralUtility::getFileAbsFileName($this->exampleImg, 1, 1);
+			$this->pickerImage = GeneralUtility::getFileAbsFileName($this->exampleImg, 1, 1);
 			if (!$this->pickerImage || !@is_file($this->pickerImage)) {
 				$this->imageError = 'ERROR: The image, "' . $this->exampleImg . '", could not be found!';
 			}
 		}
-		// Setting field-change functions:
-		$fieldChangeFuncArr = unserialize($this->fieldChangeFunc);
 		$update = '';
 		if ($this->areFieldChangeFunctionsValid()) {
+			// Setting field-change functions:
+			$fieldChangeFuncArr = unserialize($this->fieldChangeFunc);
 			unset($fieldChangeFuncArr['alert']);
 			foreach ($fieldChangeFuncArr as $v) {
 				$update .= '
@@ -149,7 +148,7 @@ class ColorpickerController {
 			}
 		}
 		// Initialize document object:
-		$this->doc = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Backend\\Template\\DocumentTemplate');
+		$this->doc = GeneralUtility::makeInstance('TYPO3\\CMS\\Backend\\Template\\DocumentTemplate');
 		$this->doc->backPath = $GLOBALS['BACK_PATH'];
 		$this->doc->JScode = $this->doc->wrapScriptTags('
 			function checkReference() {	//
@@ -189,27 +188,26 @@ class ColorpickerController {
 	 * Main Method, rendering either colorpicker or frameset depending on ->showPicker
 	 *
 	 * @return 	void
-	 * @todo Define visibility
 	 */
 	public function main() {
 		// Show frameset by default:
-		if (!\TYPO3\CMS\Core\Utility\GeneralUtility::_GP('showPicker')) {
+		if (!GeneralUtility::_GP('showPicker')) {
 			$this->frameSet();
 		} else {
 			// Putting together the items into a form:
 			$content = '
-				<form name="colorform" method="post" action="wizard_colorpicker.php">
+				<form name="colorform" method="post" action="' . htmlspecialchars(BackendUtility::getModuleUrl('wizard_colorpicker')) . '">
 					' . $this->colorMatrix() . '
 					' . $this->colorList() . '
 					' . $this->colorImage() . '
 
 						<!-- Value box: -->
-					<p class="c-head">' . $GLOBALS['LANG']->getLL('colorpicker_colorValue', 1) . '</p>
+					<p class="c-head">' . $GLOBALS['LANG']->getLL('colorpicker_colorValue', TRUE) . '</p>
 					<table border="0" cellpadding="0" cellspacing="3">
 						<tr>
 							<td><input type="text" ' . $this->doc->formWidth(7) . ' maxlength="10" name="colorValue" value="' . htmlspecialchars($this->colorValue) . '" /></td>
-							<td style="background-color:' . htmlspecialchars($this->colorValue) . '; border: 1px solid black;">&nbsp;<span style="color: black;">' . $GLOBALS['LANG']->getLL('colorpicker_black', 1) . '</span>&nbsp;<span style="color: white;">' . $GLOBALS['LANG']->getLL('colorpicker_white', 1) . '</span>&nbsp;</td>
-							<td><input type="submit" name="save_close" value="' . $GLOBALS['LANG']->getLL('colorpicker_setClose', 1) . '" /></td>
+							<td style="background-color:' . htmlspecialchars($this->colorValue) . '; border: 1px solid black;">&nbsp;<span style="color: black;">' . $GLOBALS['LANG']->getLL('colorpicker_black', TRUE) . '</span>&nbsp;<span style="color: white;">' . $GLOBALS['LANG']->getLL('colorpicker_white', TRUE) . '</span>&nbsp;</td>
+							<td><input type="submit" name="save_close" value="' . $GLOBALS['LANG']->getLL('colorpicker_setClose', TRUE) . '" /></td>
 						</tr>
 					</table>
 
@@ -223,9 +221,9 @@ class ColorpickerController {
 					<input type="hidden" name="exampleImg" value="' . htmlspecialchars($this->exampleImg) . '" />
 				</form>';
 			// If the save/close button is clicked, then close:
-			if (\TYPO3\CMS\Core\Utility\GeneralUtility::_GP('save_close')) {
+			if (GeneralUtility::_GP('save_close')) {
 				$content .= $this->doc->wrapScriptTags('
-					setValue(' . \TYPO3\CMS\Core\Utility\GeneralUtility::quoteJSvalue($this->colorValue) . ');
+					setValue(' . GeneralUtility::quoteJSvalue($this->colorValue) . ');
 					parent.close();
 				');
 			}
@@ -247,7 +245,7 @@ class ColorpickerController {
 	}
 
 	/**
-	 * Returnes a frameset so our JavaScript Reference isn't lost
+	 * Returns a frameset so our JavaScript Reference isn't lost
 	 * Took some brains to figure this one out ;-)
 	 * If Peter wouldn't have been I would've gone insane...
 	 *
@@ -265,7 +263,19 @@ class ColorpickerController {
 		');
 		$this->content = $GLOBALS['TBE_TEMPLATE']->startPage($GLOBALS['LANG']->getLL('colorpicker_title'));
 		// URL for the inner main frame:
-		$url = 'wizard_colorpicker.php?showPicker=1' . '&colorValue=' . rawurlencode($this->P['currentValue']) . '&fieldName=' . rawurlencode($this->P['itemName']) . '&formName=' . rawurlencode($this->P['formName']) . '&exampleImg=' . rawurlencode($this->P['exampleImg']) . '&md5ID=' . rawurlencode($this->P['md5ID']) . '&fieldChangeFunc=' . rawurlencode(serialize($this->P['fieldChangeFunc'])) . '&fieldChangeFuncHash=' . $this->P['fieldChangeFuncHash'];
+		$url = BackendUtility::getModuleUrl(
+			'wizard_colorpicker',
+			array(
+				'showPicker' => 1,
+				'colorValue' => $this->P['currentValue'],
+				'fieldName' => $this->P['itemName'],
+				'formName' => $this->P['formName'],
+				'exampleImg' => $this->P['exampleImg'],
+				'md5ID' => $this->P['md5ID'],
+				'fieldChangeFunc' => serialize($this->P['fieldChangeFunc']),
+				'fieldChangeFuncHash' => $this->P['fieldChangeFuncHash'],
+			)
+		);
 		$this->content .= '
 			<frameset rows="*,1" framespacing="0" frameborder="0" border="0">
 				<frame name="content" src="' . htmlspecialchars($url) . '" marginwidth="0" marginheight="0" frameborder="0" scrolling="auto" noresize="noresize" />
@@ -314,7 +324,7 @@ class ColorpickerController {
 			$rows++;
 		}
 		$table = '
-			<p class="c-head">' . $GLOBALS['LANG']->getLL('colorpicker_fromMatrix', 1) . '</p>
+			<p class="c-head">' . $GLOBALS['LANG']->getLL('colorpicker_fromMatrix', TRUE) . '</p>
 			<table border="0" cellpadding="1" cellspacing="1" style="width:100%; border: 1px solid black; cursor:crosshair;">' . implode('', $tRows) . '
 			</table>';
 		return $table;
@@ -338,7 +348,7 @@ class ColorpickerController {
 		}
 		// Compile selector box and return result:
 		$output = '
-			<p class="c-head">' . $GLOBALS['LANG']->getLL('colorpicker_fromList', 1) . '</p>
+			<p class="c-head">' . $GLOBALS['LANG']->getLL('colorpicker_fromList', TRUE) . '</p>
 			<select onchange="document.colorform.colorValue.value = this.options[this.selectedIndex].value; document.colorform.submit(); return false;">
 				' . implode('
 				', $opt) . '
@@ -356,12 +366,12 @@ class ColorpickerController {
 		// Handling color-picker image if any:
 		if (!$this->imageError) {
 			if ($this->pickerImage) {
-				if (\TYPO3\CMS\Core\Utility\GeneralUtility::_POST('coords_x')) {
-					$this->colorValue = '#' . $this->getIndex(\TYPO3\CMS\Core\Imaging\GraphicalFunctions::imageCreateFromFile($this->pickerImage), \TYPO3\CMS\Core\Utility\GeneralUtility::_POST('coords_x'), \TYPO3\CMS\Core\Utility\GeneralUtility::_POST('coords_y'));
+				if (GeneralUtility::_POST('coords_x')) {
+					$this->colorValue = '#' . $this->getIndex(\TYPO3\CMS\Core\Imaging\GraphicalFunctions::imageCreateFromFile($this->pickerImage), GeneralUtility::_POST('coords_x'), GeneralUtility::_POST('coords_y'));
 				}
 				$pickerFormImage = '
-				<p class="c-head">' . $GLOBALS['LANG']->getLL('colorpicker_fromImage', 1) . '</p>
-				<input type="image" src="../' . substr($this->pickerImage, strlen(PATH_site)) . '" name="coords" style="cursor:crosshair;" /><br />';
+				<p class="c-head">' . $GLOBALS['LANG']->getLL('colorpicker_fromImage', TRUE) . '</p>
+				<input type="image" src="../' . \TYPO3\CMS\Core\Utility\PathUtility::stripPathSitePrefix($this->pickerImage) . '" name="coords" style="cursor:crosshair;" /><br />';
 			} else {
 				$pickerFormImage = '';
 			}
@@ -407,10 +417,7 @@ class ColorpickerController {
 	 * @return boolean Whether the submitted field change functions are valid
 	 */
 	protected function areFieldChangeFunctionsValid() {
-		return $this->fieldChangeFunc && $this->fieldChangeFuncHash && $this->fieldChangeFuncHash === \TYPO3\CMS\Core\Utility\GeneralUtility::hmac($this->fieldChangeFunc);
+		return $this->fieldChangeFunc && $this->fieldChangeFuncHash && $this->fieldChangeFuncHash === GeneralUtility::hmac($this->fieldChangeFunc);
 	}
 
 }
-
-
-?>

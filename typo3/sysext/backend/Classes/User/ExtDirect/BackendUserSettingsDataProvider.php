@@ -1,31 +1,21 @@
 <?php
 namespace TYPO3\CMS\Backend\User\ExtDirect;
 
-/***************************************************************
- *  Copyright notice
+/**
+ * This file is part of the TYPO3 CMS project.
  *
- *  (c) 2010-2013 Steffen Kamper <steffen@typo3.org>
- *  All rights reserved
+ * It is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License, either version 2
+ * of the License, or any later version.
  *
- *  This script is part of the TYPO3 project. The TYPO3 project is
- *  free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
+ * For the full copyright and license information, please read the
+ * LICENSE.txt file that was distributed with this source code.
  *
- *  The GNU General Public License can be found at
- *  http://www.gnu.org/copyleft/gpl.html.
- *  A copy is found in the textfile GPL.txt and important notices to the license
- *  from the author is found in LICENSE.txt distributed with these scripts.
- *
- *
- *  This script is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  This copyright notice MUST APPEAR in all copies of the script!
- ***************************************************************/
+ * The TYPO3 project - inspiring people to share!
+ */
+
+use TYPO3\CMS\Core\Utility\GeneralUtility;
+
 /**
  * ExtDirect DataProvider for BE User Settings
  *
@@ -36,7 +26,7 @@ class BackendUserSettingsDataProvider {
 	/**
 	 * Get user settings
 	 *
-	 * Returns all user settings, if $key is not specified, otherwise it retuns the value for $key
+	 * Returns all user settings, if $key is not specified, otherwise it returns the value for $key
 	 *
 	 * @param string $key Identifier, allows also dotted notation for subarrays
 	 * @return mixed Value associated
@@ -112,7 +102,7 @@ class BackendUserSettingsDataProvider {
 		if (!isset($list)) {
 			$list = $value;
 		} else {
-			if (!\TYPO3\CMS\Core\Utility\GeneralUtility::inList($list, $value)) {
+			if (!GeneralUtility::inList($list, $value)) {
 				$list .= ',' . $value;
 			}
 		}
@@ -129,9 +119,9 @@ class BackendUserSettingsDataProvider {
 	 */
 	public function removeFromList($key, $value) {
 		$list = $this->get($key);
-		if (\TYPO3\CMS\Core\Utility\GeneralUtility::inList($list, $value)) {
-			$list = \TYPO3\CMS\Core\Utility\GeneralUtility::trimExplode(',', $list, TRUE);
-			$list = \TYPO3\CMS\Core\Utility\GeneralUtility::removeArrayEntryByValue($list, $value);
+		if (GeneralUtility::inList($list, $value)) {
+			$list = GeneralUtility::trimExplode(',', $list, TRUE);
+			$list = GeneralUtility::removeArrayEntryByValue($list, $value);
 			$this->set($key, implode(',', $list));
 		}
 	}
@@ -143,7 +133,7 @@ class BackendUserSettingsDataProvider {
 	 * @return mixed $array value of the settings
 	 */
 	protected function getFromDottedNotation($key) {
-		$subkeys = \TYPO3\CMS\Core\Utility\GeneralUtility::trimExplode('.', $key);
+		$subkeys = GeneralUtility::trimExplode('.', $key);
 		$array = &$GLOBALS['BE_USER']->uc;
 		foreach ($subkeys as $subkey) {
 			$array = &$array[$subkey];
@@ -159,7 +149,7 @@ class BackendUserSettingsDataProvider {
 	 * @return void
 	 */
 	protected function setFromDottedNotation($key, $value) {
-		$subkeys = \TYPO3\CMS\Core\Utility\GeneralUtility::trimExplode('.', $key, TRUE);
+		$subkeys = GeneralUtility::trimExplode('.', $key, TRUE);
 		$lastKey = $subkeys[count($subkeys) - 1];
 		$array = &$GLOBALS['BE_USER']->uc;
 		foreach ($subkeys as $subkey) {
@@ -178,11 +168,8 @@ class BackendUserSettingsDataProvider {
 	 * @return void
 	 */
 	protected function getLastKeyFromDottedNotation($key) {
-		$subkeys = \TYPO3\CMS\Core\Utility\GeneralUtility::trimExplode('.', $key, TRUE);
+		$subkeys = GeneralUtility::trimExplode('.', $key, TRUE);
 		return $subkeys[count($subkeys) - 1];
 	}
 
 }
-
-
-?>

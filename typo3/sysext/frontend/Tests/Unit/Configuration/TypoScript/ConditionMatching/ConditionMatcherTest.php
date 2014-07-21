@@ -1,28 +1,18 @@
 <?php
 namespace TYPO3\CMS\Frontend\Tests\Unit\Configuration\TypoScript\ConditionMatching;
 
-/***************************************************************
- *  Copyright notice
+/**
+ * This file is part of the TYPO3 CMS project.
  *
- *  (c) 2009-2013 Oliver Hader <oliver@typo3.org>
- *  All rights reserved
+ * It is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License, either version 2
+ * of the License, or any later version.
  *
- *  This script is part of the TYPO3 project. The TYPO3 project is
- *  free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
+ * For the full copyright and license information, please read the
+ * LICENSE.txt file that was distributed with this source code.
  *
- *  The GNU General Public License can be found at
- *  http://www.gnu.org/copyleft/gpl.html.
- *
- *  This script is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  This copyright notice MUST APPEAR in all copies of the script!
- ***************************************************************/
+ * The TYPO3 project - inspiring people to share!
+ */
 
 /**
  * Testcase for class \TYPO3\CMS\Frontend\Configuration\TypoScript\ConditionMatching\ConditionMatcher.
@@ -52,11 +42,6 @@ class ConditionMatcherTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 			0 => array('uid' => 101, 'pid' => 0)
 		);
 		$this->matchCondition = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Frontend\\Configuration\\TypoScript\\ConditionMatching\\ConditionMatcher');
-	}
-
-	public function tearDown() {
-		unset($this->matchCondition);
-		unset($GLOBALS[$this->testGlobalNamespace]);
 	}
 
 	/**
@@ -471,6 +456,29 @@ class ConditionMatcherTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	 *
 	 * @test
 	 */
+	public function globalStringConditionMatchesOnEmptyExpressionWithValueSetToEmptyString() {
+		$testKey = uniqid('test');
+		$_GET = array();
+		$_POST = array($testKey => '');
+		$this->assertTrue($this->matchCondition->match('[globalString = GP:' . $testKey . '=]'));
+		$this->assertTrue($this->matchCondition->match('[globalString = GP:' . $testKey . ' = ]'));
+	}
+
+	/**
+	 * Tests whether string comparison matches.
+	 *
+	 * @test
+	 */
+	public function globalStringConditionMatchesOnEmptyLiteralExpressionWithValueSetToEmptyString() {
+		$this->assertTrue($this->matchCondition->match('[globalString = LIT:=]'));
+		$this->assertTrue($this->matchCondition->match('[globalString = LIT: = ]'));
+	}
+
+	/**
+	 * Tests whether string comparison matches.
+	 *
+	 * @test
+	 */
 	public function globalStringConditionMatchesWildcardExpression() {
 		$this->assertTrue($this->matchCondition->match('[globalString = LIT:TYPO3.Test.Condition = TYPO3?Test?Condition]'));
 		$this->assertTrue($this->matchCondition->match('[globalString = LIT:TYPO3.Test.Condition = TYPO3.T*t.Condition]'));
@@ -700,5 +708,3 @@ class ConditionMatcherTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	}
 
 }
-
-?>

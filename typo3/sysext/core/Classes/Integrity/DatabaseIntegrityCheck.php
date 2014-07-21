@@ -1,40 +1,21 @@
 <?php
 namespace TYPO3\CMS\Core\Integrity;
 
-/***************************************************************
- *  Copyright notice
- *
- *  (c) 1999-2013 Kasper Skårhøj (kasperYYYY@typo3.com)
- *  All rights reserved
- *
- *  This script is part of the TYPO3 project. The TYPO3 project is
- *  free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
- *
- *  The GNU General Public License can be found at
- *  http://www.gnu.org/copyleft/gpl.html.
- *  A copy is found in the textfile GPL.txt and important notices to the license
- *  from the author is found in LICENSE.txt distributed with these scripts.
- *
- *
- *  This script is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  This copyright notice MUST APPEAR in all copies of the script!
- ***************************************************************/
 /**
- * Contains a class for evaluation of database integrity according to $GLOBALS['TCA']
- * Most of these functions are considered obsolete!
+ * This file is part of the TYPO3 CMS project.
  *
- * Revised for TYPO3 3.6 July/2003 by Kasper Skårhøj
- * XHTML compliant
+ * It is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License, either version 2
+ * of the License, or any later version.
  *
- * @author Kasper Skårhøj <kasperYYYY@typo3.com>
+ * For the full copyright and license information, please read the
+ * LICENSE.txt file that was distributed with this source code.
+ *
+ * The TYPO3 project - inspiring people to share!
  */
+
+use TYPO3\CMS\Backend\Utility\BackendUtility;
+
 /**
  * This class holds functions used by the TYPO3 backend to check the integrity of the database (The DBint module, 'lowlevel' extension)
  *
@@ -154,9 +135,9 @@ class DatabaseIntegrityCheck {
 	 */
 	public function genTree($theID, $depthData, $versions = FALSE) {
 		if ($versions) {
-			$res = $GLOBALS['TYPO3_DB']->exec_SELECTquery('uid,title,doktype,deleted,t3ver_wsid,t3ver_id,t3ver_count' . (\TYPO3\CMS\Core\Utility\ExtensionManagementUtility::isLoaded('cms') ? ',hidden' : ''), 'pages', 'pid=-1 AND t3ver_oid=' . intval($theID) . ' ' . (!$this->genTree_includeDeleted ? 'AND deleted=0' : '') . $this->perms_clause, '', 'sorting');
+			$res = $GLOBALS['TYPO3_DB']->exec_SELECTquery('uid,title,doktype,deleted,t3ver_wsid,t3ver_id,t3ver_count,hidden', 'pages', 'pid=-1 AND t3ver_oid=' . (int)$theID . ' ' . (!$this->genTree_includeDeleted ? 'AND deleted=0' : '') . $this->perms_clause, '', 'sorting');
 		} else {
-			$res = $GLOBALS['TYPO3_DB']->exec_SELECTquery('uid,title,doktype,deleted' . (\TYPO3\CMS\Core\Utility\ExtensionManagementUtility::isLoaded('cms') ? ',hidden' : ''), 'pages', 'pid=' . intval($theID) . ' ' . (!$this->genTree_includeDeleted ? 'AND deleted=0' : '') . $this->perms_clause, '', 'sorting');
+			$res = $GLOBALS['TYPO3_DB']->exec_SELECTquery('uid,title,doktype,deleted,hidden', 'pages', 'pid=' . (int)$theID . ' ' . (!$this->genTree_includeDeleted ? 'AND deleted=0' : '') . $this->perms_clause, '', 'sorting');
 		}
 		// Traverse the records selected:
 		$a = 0;
@@ -225,10 +206,18 @@ class DatabaseIntegrityCheck {
 	public function genTree_records($theID, $depthData, $table = '', $versions = FALSE) {
 		if ($versions) {
 			// Select all records from table pointing to this page:
-			$res = $GLOBALS['TYPO3_DB']->exec_SELECTquery(\TYPO3\CMS\Backend\Utility\BackendUtility::getCommonSelectFields($table), $table, 'pid=-1 AND t3ver_oid=' . intval($theID) . (!$this->genTree_includeDeleted ? \TYPO3\CMS\Backend\Utility\BackendUtility::deleteClause($table) : ''));
+			$res = $GLOBALS['TYPO3_DB']->exec_SELECTquery(
+				BackendUtility::getCommonSelectFields($table),
+				$table,
+				'pid=-1 AND t3ver_oid=' . (int)$theID . (!$this->genTree_includeDeleted ? BackendUtility::deleteClause($table) : '')
+			);
 		} else {
 			// Select all records from table pointing to this page:
-			$res = $GLOBALS['TYPO3_DB']->exec_SELECTquery(\TYPO3\CMS\Backend\Utility\BackendUtility::getCommonSelectFields($table), $table, 'pid=' . intval($theID) . (!$this->genTree_includeDeleted ? \TYPO3\CMS\Backend\Utility\BackendUtility::deleteClause($table) : ''));
+			$res = $GLOBALS['TYPO3_DB']->exec_SELECTquery(
+				BackendUtility::getCommonSelectFields($table),
+				$table,
+				'pid=' . (int)$theID . (!$this->genTree_includeDeleted ? BackendUtility::deleteClause($table) : '')
+			);
 		}
 		// Traverse selected:
 		$a = 0;
@@ -248,7 +237,7 @@ class DatabaseIntegrityCheck {
 				$PM = 'join';
 				$LN = $a == $c ? 'blank' : 'line';
 				$BTM = $a == $c ? 'bottom' : '';
-				$this->genTree_HTML .= $depthData . '<img' . \TYPO3\CMS\Backend\Utility\IconUtility::skinImg($this->backPath, ('gfx/ol/' . $PM . $BTM . '.gif'), 'width="18" height="16"') . ' align="top" alt="" />' . $versionLabel . \TYPO3\CMS\Backend\Utility\IconUtility::getSpriteIconForRecord($table, $row, array('title' => $table)) . htmlspecialchars(($row['uid'] . ': ' . \TYPO3\CMS\Backend\Utility\BackendUtility::getRecordTitle($table, $row))) . '</span></div>';
+				$this->genTree_HTML .= $depthData . '<img' . \TYPO3\CMS\Backend\Utility\IconUtility::skinImg($this->backPath, ('gfx/ol/' . $PM . $BTM . '.gif'), 'width="18" height="16"') . ' align="top" alt="" />' . $versionLabel . \TYPO3\CMS\Backend\Utility\IconUtility::getSpriteIconForRecord($table, $row, array('title' => $table)) . htmlspecialchars(($row['uid'] . ': ' . BackendUtility::getRecordTitle($table, $row))) . '</span></div>';
 			}
 			// Register various data for this item:
 			$this->rec_idArray[$table][$newID] = $row;
@@ -266,30 +255,6 @@ class DatabaseIntegrityCheck {
 			}
 		}
 		$GLOBALS['TYPO3_DB']->sql_free_result($res);
-	}
-
-	/**
-	 * Generates tree and returns statistics
-	 *
-	 * @param integer $root
-	 * @return array Record statistics
-	 * @deprecated and unused since 6.0, will be removed two versions later
-	 * @todo Define visibility
-	 */
-	public function genTreeStatus($root = 0) {
-		\TYPO3\CMS\Core\Utility\GeneralUtility::logDeprecatedFunction();
-		$this->genTree_includeDeleted = TRUE;
-		// if set, genTree() includes deleted pages. This is default.
-		$this->genTree_includeVersions = TRUE;
-		// if set, genTree() includes verisonized pages/records. This is default.
-		$this->genTree_includeRecords = TRUE;
-		// if set, genTree() includes records from pages.
-		$this->perms_clause = '';
-		// extra where-clauses for the tree-selection
-		$this->genTree_makeHTML = 0;
-		// if set, genTree() generates HTML, that visualizes the tree.
-		$this->genTree($root, '');
-		return $this->recStats;
 	}
 
 	/**
@@ -314,7 +279,7 @@ class DatabaseIntegrityCheck {
 					$this->lRecords[$table][$row['uid']] = array(
 						'uid' => $row['uid'],
 						'pid' => $row['pid'],
-						'title' => strip_tags(\TYPO3\CMS\Backend\Utility\BackendUtility::getRecordTitle($table, $row))
+						'title' => strip_tags(BackendUtility::getRecordTitle($table, $row))
 					);
 					$lostIdList[] = $row['uid'];
 				}
@@ -343,7 +308,7 @@ class DatabaseIntegrityCheck {
 			if ($GLOBALS['TCA'][$table]['ctrl']['enablecolumns']['disabled']) {
 				$updateFields[$GLOBALS['TCA'][$table]['ctrl']['enablecolumns']['disabled']] = 1;
 			}
-			$GLOBALS['TYPO3_DB']->exec_UPDATEquery($table, 'uid=' . intval($uid), $updateFields);
+			$GLOBALS['TYPO3_DB']->exec_UPDATEquery($table, 'uid=' . (int)$uid, $updateFields);
 			return TRUE;
 		} else {
 			return FALSE;
@@ -371,7 +336,7 @@ class DatabaseIntegrityCheck {
 				if ($count) {
 					$list[$table] = $count;
 				}
-				$count = $GLOBALS['TYPO3_DB']->exec_SELECTcountRows('uid', $table, 'pid IN (' . $pid_list_tmp . ')' . \TYPO3\CMS\Backend\Utility\BackendUtility::deleteClause($table));
+				$count = $GLOBALS['TYPO3_DB']->exec_SELECTcountRows('uid', $table, 'pid IN (' . $pid_list_tmp . ')' . BackendUtility::deleteClause($table));
 				if ($count) {
 					$list_n[$table] = $count;
 				}
@@ -623,7 +588,7 @@ class DatabaseIntegrityCheck {
 				$idlist = array_keys($dbArr);
 				$theList = implode(',', $idlist);
 				if ($theList) {
-					$mres = $GLOBALS['TYPO3_DB']->exec_SELECTquery('uid', $table, 'uid IN (' . $theList . ')' . \TYPO3\CMS\Backend\Utility\BackendUtility::deleteClause($table));
+					$mres = $GLOBALS['TYPO3_DB']->exec_SELECTquery('uid', $table, 'uid IN (' . $theList . ')' . BackendUtility::deleteClause($table));
 					while ($row = $GLOBALS['TYPO3_DB']->sql_fetch_assoc($mres)) {
 						if (isset($dbArr[$row['uid']])) {
 							unset($dbArr[$row['uid']]);
@@ -710,6 +675,3 @@ class DatabaseIntegrityCheck {
 	}
 
 }
-
-
-?>

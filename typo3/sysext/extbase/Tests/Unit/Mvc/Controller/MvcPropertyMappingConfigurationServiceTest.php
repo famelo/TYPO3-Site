@@ -25,10 +25,9 @@ use TYPO3\CMS\Core\Utility\DebugUtility;
 use TYPO3\CMS\Extbase\Utility\DebuggerUtility;
 
 /**
- * Testcase for the MVC Property Mapping Configuration Service
- * @covers \TYPO3\CMS\Extbase\Mvc\Controller\MvcPropertyMappingConfigurationService
+ * Test case
  */
-class MvcPropertyMappingConfigurationServiceTest extends \TYPO3\CMS\Extbase\Tests\Unit\BaseTestCase {
+class MvcPropertyMappingConfigurationServiceTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 
 	/**
 	 * Data provider for generating the list of trusted properties
@@ -281,20 +280,20 @@ class MvcPropertyMappingConfigurationServiceTest extends \TYPO3\CMS\Extbase\Test
 		$mockHashService = $this->getMock('TYPO3\CMS\Extbase\Security\Cryptography\HashService', array('validateAndStripHmac'));
 		$mockHashService->expects($this->once())->method('validateAndStripHmac')->with('fooTrustedProperties')->will($this->returnValue(serialize($trustedProperties)));
 
-		$requestHashService = new \TYPO3\CMS\Extbase\Mvc\Controller\MvcPropertyMappingConfigurationService();
-		$requestHashService->injectHashService($mockHashService);
+		$requestHashService = $this->getAccessibleMock('TYPO3\CMS\Extbase\Mvc\Controller\MvcPropertyMappingConfigurationService', array('dummy'));
+		$requestHashService->_set('hashService', $mockHashService);
 
 		$mockObjectManager = $this->getMock('TYPO3\\CMS\\Extbase\\Object\\ObjectManagerInterface');
-		$mockArgument = $this->getMock('TYPO3\\CMS\\Extbase\\Mvc\\Controller\\Argument', array('getName'), array(), '', FALSE);
+		$mockArgument = $this->getAccessibleMock('TYPO3\\CMS\\Extbase\\Mvc\\Controller\\Argument', array('getName'), array(), '', FALSE);
 
 		$propertyMappingConfiguration = new \TYPO3\CMS\Extbase\Mvc\Controller\MvcPropertyMappingConfiguration();
 
-		$mockArgument->injectPropertyMappingConfiguration($propertyMappingConfiguration);
+		$mockArgument->_set('propertyMappingConfiguration', $propertyMappingConfiguration);
 		$mockArgument->expects($this->any())->method('getName')->will($this->returnValue('foo'));
 		$mockObjectManager->expects($this->once())->method('get')->with('TYPO3\\CMS\\Extbase\\Mvc\\Controller\\Argument')->will($this->returnValue($mockArgument));
 
-		$arguments = new \TYPO3\CMS\Extbase\Mvc\Controller\Arguments();
-		$arguments->injectObjectManager($mockObjectManager);
+		$arguments = $this->getAccessibleMock('TYPO3\CMS\Extbase\Mvc\Controller\Arguments', array('dummy'));
+		$arguments->_set('objectManager', $mockObjectManager);
 		$arguments->addNewArgument('foo');
 
 		$requestHashService->initializePropertyMappingConfigurationFromRequest($request, $arguments);
@@ -302,5 +301,3 @@ class MvcPropertyMappingConfigurationServiceTest extends \TYPO3\CMS\Extbase\Test
 		return $arguments;
 	}
 }
-
-?>

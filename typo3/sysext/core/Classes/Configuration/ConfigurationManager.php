@@ -1,29 +1,21 @@
 <?php
 namespace TYPO3\CMS\Core\Configuration;
+
+/**
+ * This file is part of the TYPO3 CMS project.
+ *
+ * It is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License, either version 2
+ * of the License, or any later version.
+ *
+ * For the full copyright and license information, please read the
+ * LICENSE.txt file that was distributed with this source code.
+ *
+ * The TYPO3 project - inspiring people to share!
+ */
+
 use TYPO3\CMS\Core\Utility;
 
-/***************************************************************
- *  Copyright notice
- *
- *  (c) 2012-2013 Helge Funk <helge.funk@e-net.info>
- *  All rights reserved
- *
- *  This script is part of the TYPO3 project. The TYPO3 project is
- *  free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
- *
- *  The GNU General Public License can be found at
- *  http://www.gnu.org/copyleft/gpl.html.
- *
- *  This script is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  This copyright notice MUST APPEAR in all copies of the script!
- ***************************************************************/
 /**
  * Handle loading and writing of global and local (instance specific)
  * configuration.
@@ -64,11 +56,6 @@ class ConfigurationManager {
 	protected $additionalFactoryConfigurationFile = 'typo3conf/AdditionalFactoryConfiguration.php';
 
 	/**
-	 * @var string Path to legacy localconf.php file, relative to PATH_site
-	 */
-	protected $localconfFile = 'typo3conf/localconf.php';
-
-	/**
 	 * @var string Absolute path to typo3conf directory
 	 */
 	protected $pathTypo3Conf = PATH_typo3conf;
@@ -83,7 +70,8 @@ class ConfigurationManager {
 		'EXT/extConf',
 		'EXTCONF',
 		'INSTALL/wizardDone',
-		'DB'
+		'DB',
+		'SYS/caching/cacheConfigurations',
 	);
 
 	/**
@@ -156,26 +144,14 @@ class ConfigurationManager {
 	}
 
 	/**
-	 * Get the file resource
-	 *
-	 * @return string
-	 * @deprecated since 6.1, will be removed if the compatibily layer for localconf.php is dropped
-	 */
-	public function getLocalconfFileLocation() {
-		return PATH_site . $this->localconfFile;
-	}
-
-	/**
 	 * Override local configuration with new values.
 	 *
 	 * @param array $configurationToMerge Override configuration array
 	 * @return void
 	 */
 	public function updateLocalConfiguration(array $configurationToMerge) {
-		$newLocalConfiguration = Utility\GeneralUtility::array_merge_recursive_overrule(
-			$this->getLocalConfiguration(),
-			$configurationToMerge
-		);
+		$newLocalConfiguration = $this->getLocalConfiguration();
+		Utility\ArrayUtility::mergeRecursiveWithOverrule($newLocalConfiguration, $configurationToMerge);
 		$this->writeLocalConfiguration($newLocalConfiguration);
 	}
 
@@ -207,12 +183,9 @@ class ConfigurationManager {
 	 * @return mixed
 	 */
 	public function getConfigurationValueByPath($path) {
-		return Utility\ArrayUtility::getValueByPath(
-			Utility\GeneralUtility::array_merge_recursive_overrule(
-				$this->getDefaultConfiguration(), $this->getLocalConfiguration()
-			),
-			$path
-		);
+		$defaultConfiguration = $this->getDefaultConfiguration();
+		Utility\ArrayUtility::mergeRecursiveWithOverrule($defaultConfiguration, $this->getLocalConfiguration());
+		return Utility\ArrayUtility::getValueByPath($defaultConfiguration, $path);
 	}
 
 	/**
@@ -249,36 +222,42 @@ class ConfigurationManager {
 	}
 
 	/**
+	 * Remove keys from LocalConfiguration
+	 *
+	 * @param array $keys Array with key paths to remove from LocalConfiguration
+	 * @return boolean TRUE if something was removed
+	 */
+	public function removeLocalConfigurationKeysByPath(array $keys) {
+		$result = FALSE;
+		$localConfiguration = $this->getLocalConfiguration();
+		foreach ($keys as $path) {
+			// Remove key if path is within LocalConfiguration
+			if (Utility\ArrayUtility::isValidPath($localConfiguration, $path)) {
+				$result = TRUE;
+				$localConfiguration = Utility\ArrayUtility::removeByPath($localConfiguration, $path);
+			}
+		}
+		if ($result) {
+			$this->writeLocalConfiguration($localConfiguration);
+		}
+		return $result;
+	}
+
+	/**
 	 * Checks if the configuration can be written.
 	 *
 	 * @return boolean
 	 * @access private
 	 */
 	public function canWriteConfiguration() {
-		$result = TRUE;
-		if (!@is_writable($this->pathTypo3Conf)) {
-			$result = FALSE;
-		}
-		if (
-			file_exists($this->getLocalConfigurationFileLocation())
-			&& !@is_writable($this->getLocalConfigurationFileLocation())
-		) {
-			$result = FALSE;
-		}
-		if (
-			file_exists($this->getLocalconfFileLocation())
-			&& !@is_writable($this->getLocalconfFileLocation())
-		) {
-			$result = FALSE;
-		}
-		return $result;
+		$fileLocation = $this->getLocalConfigurationFileLocation();
+		return @is_writable($this->pathTypo3Conf) && (!file_exists($fileLocation) || @is_writable($fileLocation));
 	}
 
 	/**
 	 * Reads the configuration array and exports it to the global variable
 	 *
 	 * @access private
-	 * @throws \RuntimeException
 	 * @throws \UnexpectedValueException
 	 * @return void
 	 */
@@ -286,43 +265,18 @@ class ConfigurationManager {
 		if (@is_file($this->getLocalConfigurationFileLocation())) {
 			$localConfiguration = $this->getLocalConfiguration();
 			if (is_array($localConfiguration)) {
-				$GLOBALS['TYPO3_CONF_VARS'] = Utility\GeneralUtility::array_merge_recursive_overrule($this->getDefaultConfiguration(), $localConfiguration);
+				$defaultConfiguration = $this->getDefaultConfiguration();
+				Utility\ArrayUtility::mergeRecursiveWithOverrule($defaultConfiguration, $localConfiguration);
+				$GLOBALS['TYPO3_CONF_VARS'] = $defaultConfiguration;
 			} else {
 				throw new \UnexpectedValueException('LocalConfiguration invalid.', 1349272276);
 			}
 			if (@is_file($this->getAdditionalConfigurationFileLocation())) {
 				require $this->getAdditionalConfigurationFileLocation();
 			}
-			// @deprecated since 6.0: Simulate old 'extList' as comma separated list of 'extListArray'
-			$GLOBALS['TYPO3_CONF_VARS']['EXT']['extList'] = implode(',', $GLOBALS['TYPO3_CONF_VARS']['EXT']['extListArray']);
-		} elseif (@is_file($this->getLocalconfFileLocation())) {
-			$GLOBALS['TYPO3_CONF_VARS'] = $this->getDefaultConfiguration();
-			// Legacy localconf.php handling
-			// @deprecated: Can be removed if old localconf.php is not supported anymore
-			global $TYPO3_CONF_VARS, $typo_db, $typo_db_username, $typo_db_password, $typo_db_host, $typo_db_extTableDef_script;
-			require $this->getLocalconfFileLocation();
-			// If the localconf.php was not upgraded to LocalConfiguration.php, the default extListArray
-			// from EXT:core/Configuration/DefaultConfiguration.php is still set. In this case we just unset
-			// this key here, so \TYPO3\CMS\Core\Utility\ExtensionManagementUtility::getLoadedExtensionListArray() falls back to use extList string
-			// @deprecated: This case can be removed later if localconf.php is not supported anymore
-			unset($TYPO3_CONF_VARS['EXT']['extListArray']);
-			// Write the old globals into the new place in the configuration array
-			$GLOBALS['TYPO3_CONF_VARS']['DB'] = array();
-			$GLOBALS['TYPO3_CONF_VARS']['DB']['database'] = $typo_db;
-			$GLOBALS['TYPO3_CONF_VARS']['DB']['username'] = $typo_db_username;
-			$GLOBALS['TYPO3_CONF_VARS']['DB']['password'] = $typo_db_password;
-			$GLOBALS['TYPO3_CONF_VARS']['DB']['host'] = $typo_db_host;
-			$GLOBALS['TYPO3_CONF_VARS']['DB']['extTablesDefinitionScript'] = $typo_db_extTableDef_script;
-			unset($GLOBALS['typo_db']);
-			unset($GLOBALS['typo_db_username']);
-			unset($GLOBALS['typo_db_password']);
-			unset($GLOBALS['typo_db_host']);
-			unset($GLOBALS['typo_db_extTableDef_script']);
 		} else {
-			throw new \RuntimeException(
-				'Neither ' . $this->localConfigurationFile . ' (recommended) nor ' . $this->localconfFile . ' (obsolete) could be found!',
-				1349272337
-			);
+			// No LocalConfiguration (yet), load DefaultConfiguration only
+			$GLOBALS['TYPO3_CONF_VARS'] = $this->getDefaultConfiguration();
 		}
 	}
 
@@ -353,7 +307,10 @@ class ConfigurationManager {
 			'?>',
 			TRUE
 		);
-		return $result === FALSE ? FALSE : TRUE;
+
+		Utility\OpcodeCacheUtility::clearAllActive($localConfigurationFile);
+
+		return $result;
 	}
 
 	/**
@@ -365,13 +322,12 @@ class ConfigurationManager {
 	 * @access private
 	 */
 	public function writeAdditionalConfiguration(array $additionalConfigurationLines) {
-		$result = Utility\GeneralUtility::writeFile(
+		return Utility\GeneralUtility::writeFile(
 			PATH_site . $this->additionalConfigurationFile,
 			'<?php' . LF .
 				implode(LF, $additionalConfigurationLines) . LF .
 			'?>'
 		);
-		return $result === FALSE ? FALSE : TRUE;
 	}
 
 	/**
@@ -379,20 +335,22 @@ class ConfigurationManager {
 	 * file in typo3conf to create a basic LocalConfiguration.php. This is used
 	 * by the install tool in an early step.
 	 *
+	 * @throws \RuntimeException
 	 * @return void
 	 * @access private
 	 */
 	public function createLocalConfigurationFromFactoryConfiguration() {
 		if (file_exists($this->getLocalConfigurationFileLocation())) {
 			throw new \RuntimeException(
-				'LocalConfiguration.php exists already', 1364836026
+				'LocalConfiguration.php exists already',
+				1364836026
 			);
 		}
 		$localConfigurationArray = require $this->getFactoryConfigurationFileLocation();
 		$additionalFactoryConfigurationFileLocation = $this->getAdditionalFactoryConfigurationFileLocation();
 		if (file_exists($additionalFactoryConfigurationFileLocation)) {
 			$additionalFactoryConfigurationArray = require $additionalFactoryConfigurationFileLocation;
-			$localConfigurationArray = Utility\GeneralUtility::array_merge_recursive_overrule(
+			Utility\ArrayUtility::mergeRecursiveWithOverrule(
 				$localConfigurationArray,
 				$additionalFactoryConfigurationArray
 			);
@@ -417,6 +375,3 @@ class ConfigurationManager {
 	}
 
 }
-
-
-?>

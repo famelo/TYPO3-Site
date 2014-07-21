@@ -1,28 +1,20 @@
 <?php
 namespace TYPO3\CMS\Core\Tests\Unit\Utility;
 
-/***************************************************************
- *  Copyright notice
+/**
+ * This file is part of the TYPO3 CMS project.
  *
- *  (c) 2011-2013 Susanne Moog <typo3@susanne-moog.de>
- *  All rights reserved
+ * It is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License, either version 2
+ * of the License, or any later version.
  *
- *  This script is part of the TYPO3 project. The TYPO3 project is
- *  free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
+ * For the full copyright and license information, please read the
+ * LICENSE.txt file that was distributed with this source code.
  *
- *  The GNU General Public License can be found at
- *  http://www.gnu.org/copyleft/gpl.html.
- *
- *  This script is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  This copyright notice MUST APPEAR in all copies of the script!
- ***************************************************************/
+ * The TYPO3 project - inspiring people to share!
+ */
+
+use \TYPO3\CMS\Core\Utility\VersionNumberUtility;
 
 /**
  * Testcase for class \TYPO3\CMS\Core\Utility\VersionNumberUtility
@@ -71,7 +63,7 @@ class VersionNumberUtilityTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	 * @dataProvider validVersionNumberDataProvider
 	 */
 	public function convertVersionNumberToIntegerConvertsVersionNumbersToIntegers($expected, $version) {
-		$this->assertEquals($expected, \TYPO3\CMS\Core\Utility\VersionNumberUtility::convertVersionNumberToInteger($version));
+		$this->assertEquals($expected, VersionNumberUtility::convertVersionNumberToInteger($version));
 	}
 
 	/**
@@ -80,8 +72,8 @@ class VersionNumberUtilityTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	 */
 	public function convertIntegerToVersionNumberConvertsIntegerToVersionNumber($versionNumber, $expected) {
 		// Make sure incoming value is an integer
-		$versionNumber = (int) $versionNumber;
-		$this->assertEquals($expected, \TYPO3\CMS\Core\Utility\VersionNumberUtility::convertIntegerToVersionNumber($versionNumber));
+		$versionNumber = (int)$versionNumber;
+		$this->assertEquals($expected, VersionNumberUtility::convertIntegerToVersionNumber($versionNumber));
 	}
 
 	/**
@@ -90,7 +82,7 @@ class VersionNumberUtilityTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	 */
 	public function convertIntegerToVersionNumberConvertsOtherTypesAsIntegerToVersionNumber($version) {
 		$this->setExpectedException('\\InvalidArgumentException', '', 1334072223);
-		\TYPO3\CMS\Core\Utility\VersionNumberUtility::convertIntegerToVersionNumber($version);
+		VersionNumberUtility::convertIntegerToVersionNumber($version);
 	}
 
 	/**
@@ -117,7 +109,11 @@ class VersionNumberUtilityTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 			array(
 				'6.0.1',
 				'6.0.1'
-			)
+			),
+			array(
+				'6.2.0beta5',
+				'6.2.0'
+			),
 		);
 	}
 
@@ -131,12 +127,17 @@ class VersionNumberUtilityTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	 * @param string $expectedVersion
 	 */
 	public function getNumericTypo3VersionNumber($currentVersion, $expectedVersion) {
-		$namespace = 'TYPO3\\CMS\\Core\\Utility';
 		$className = uniqid('VersionNumberUtility');
-		eval('namespace ' . $namespace . '; class ' . $className . ' extends \\TYPO3\\CMS\\Core\\Utility\\VersionNumberUtility {' . '  protected static function getCurrentTypo3Version() {' . '    return \'' . $currentVersion . '\';' . '  }' . '}');
-		$className = $namespace . '\\' . $className;
-		$version = $className::getNumericTypo3Version();
-		$this->assertEquals($expectedVersion, $version);
+		eval(
+			'namespace ' . __NAMESPACE__ . ';' .
+			'class ' . $className . ' extends \\TYPO3\\CMS\\Core\\Utility\\VersionNumberUtility {' .
+			'  public static function getCurrentTypo3Version() {' .
+			'    return \'' . $currentVersion . '\';' .
+			'  }' .
+			'}'
+		);
+		$className = __NAMESPACE__ . '\\' . $className;
+		$this->assertEquals($expectedVersion, $className::getNumericTypo3Version());
 	}
 
 	/**
@@ -175,10 +176,7 @@ class VersionNumberUtilityTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	 * @dataProvider convertVersionsStringToVersionNumbersForcesVersionNumberInRangeDataProvider
 	 */
 	public function convertVersionsStringToVersionNumbersForcesVersionNumberInRange($versionString, $expectedResult) {
-		$versions = \TYPO3\CMS\Core\Utility\VersionNumberUtility::convertVersionsStringToVersionNumbers($versionString);
+		$versions = VersionNumberUtility::convertVersionsStringToVersionNumbers($versionString);
 		$this->assertEquals($expectedResult, $versions);
 	}
-
 }
-
-?>

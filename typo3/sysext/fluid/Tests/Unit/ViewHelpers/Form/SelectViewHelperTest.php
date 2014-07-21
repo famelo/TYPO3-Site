@@ -11,10 +11,6 @@ namespace TYPO3\CMS\Fluid\Tests\Unit\ViewHelpers\Form;
  * The TYPO3 project - inspiring people to share!                         *
  *                                                                        */
 
-require_once(__DIR__ . '/Fixtures/EmptySyntaxTreeNode.php');
-require_once(__DIR__ . '/Fixtures/Fixture_UserDomainClass.php');
-require_once(__DIR__ . '/FormFieldViewHelperBaseTestcase.php');
-
 /**
  * Test for the "Select" Form view helper
  */
@@ -48,6 +44,7 @@ class SelectViewHelperTest extends \TYPO3\CMS\Fluid\Tests\Unit\ViewHelpers\Form\
 		foreach ($this->backupLocales as $category => $locale) {
 			setlocale(constant($category), $locale);
 		}
+		parent::tearDown();
 	}
 
 	/**
@@ -215,7 +212,7 @@ class SelectViewHelperTest extends \TYPO3\CMS\Fluid\Tests\Unit\ViewHelpers\Form\
 	public function selectOnDomainObjectsCreatesExpectedOptions() {
 		$mockPersistenceManager = $this->getMock('TYPO3\\CMS\\Extbase\\Persistence\\PersistenceManagerInterface');
 		$mockPersistenceManager->expects($this->any())->method('getIdentifierByObject')->will($this->returnValue(NULL));
-		$this->viewHelper->injectPersistenceManager($mockPersistenceManager);
+		$this->viewHelper->_set('persistenceManager', $mockPersistenceManager);
 
 		$this->tagBuilder->expects($this->once())->method('addAttribute')->with('name', 'myName');
 		$this->viewHelper->expects($this->once())->method('registerFieldNameForFormTokenGeneration')->with('myName');
@@ -287,7 +284,7 @@ class SelectViewHelperTest extends \TYPO3\CMS\Fluid\Tests\Unit\ViewHelpers\Form\
 				return $object->getId();
 			}
 		));
-		$this->viewHelper->injectPersistenceManager($mockPersistenceManager);
+		$this->viewHelper->_set('persistenceManager', $mockPersistenceManager);
 
 		$this->tagBuilder = new \TYPO3\CMS\Fluid\Core\ViewHelper\TagBuilder();
 		$this->viewHelper->expects($this->exactly(3))->method('registerFieldNameForFormTokenGeneration')->with('myName[]');
@@ -322,7 +319,7 @@ class SelectViewHelperTest extends \TYPO3\CMS\Fluid\Tests\Unit\ViewHelpers\Form\
 	public function selectWithoutFurtherConfigurationOnDomainObjectsUsesUuidForValueAndLabel() {
 		$mockPersistenceManager = $this->getMock('TYPO3\\CMS\\Extbase\\Persistence\\PersistenceManagerInterface');
 		$mockPersistenceManager->expects($this->any())->method('getIdentifierByObject')->will($this->returnValue('fakeUID'));
-		$this->viewHelper->injectPersistenceManager($mockPersistenceManager);
+		$this->viewHelper->_set('persistenceManager', $mockPersistenceManager);
 
 		$this->tagBuilder->expects($this->once())->method('addAttribute')->with('name', 'myName');
 		$this->viewHelper->expects($this->once())->method('registerFieldNameForFormTokenGeneration')->with('myName');
@@ -347,7 +344,7 @@ class SelectViewHelperTest extends \TYPO3\CMS\Fluid\Tests\Unit\ViewHelpers\Form\
 	public function selectWithoutFurtherConfigurationOnDomainObjectsUsesToStringForLabelIfAvailable() {
 		$mockPersistenceManager = $this->getMock('TYPO3\\CMS\\Extbase\\Persistence\\PersistenceManagerInterface');
 		$mockPersistenceManager->expects($this->any())->method('getIdentifierByObject')->will($this->returnValue('fakeUID'));
-		$this->viewHelper->injectPersistenceManager($mockPersistenceManager);
+		$this->viewHelper->_set('persistenceManager', $mockPersistenceManager);
 
 		$this->tagBuilder->expects($this->once())->method('addAttribute')->with('name', 'myName');
 		$this->viewHelper->expects($this->once())->method('registerFieldNameForFormTokenGeneration')->with('myName');
@@ -374,7 +371,7 @@ class SelectViewHelperTest extends \TYPO3\CMS\Fluid\Tests\Unit\ViewHelpers\Form\
 	public function selectOnDomainObjectsThrowsExceptionIfNoValueCanBeFound() {
 		$mockPersistenceManager = $this->getMock('TYPO3\\CMS\\Extbase\\Persistence\\PersistenceManagerInterface');
 		$mockPersistenceManager->expects($this->any())->method('getIdentifierByObject')->will($this->returnValue(NULL));
-		$this->viewHelper->injectPersistenceManager($mockPersistenceManager);
+		$this->viewHelper->_set('persistenceManager', $mockPersistenceManager);
 
 		$user = new \TYPO3\CMS\Fluid\Tests\Unit\ViewHelpers\Form\Fixtures\UserDomainClass(1, 'Ingmar', 'Schlecht');
 
@@ -484,5 +481,3 @@ class SelectViewHelperTest extends \TYPO3\CMS\Fluid\Tests\Unit\ViewHelpers\Form\
 		$this->viewHelper->render();
 	}
 }
-
-?>

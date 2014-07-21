@@ -1,31 +1,18 @@
 <?php
 namespace TYPO3\CMS\Core\Resource;
 
-/***************************************************************
- *  Copyright notice
+/**
+ * This file is part of the TYPO3 CMS project.
  *
- *  (c) 2011-2013 Andreas Wolf <andreas.wolf@ikt-werk.de>
- *  All rights reserved
+ * It is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License, either version 2
+ * of the License, or any later version.
  *
- *  This script is part of the TYPO3 project. The TYPO3 project is
- *  free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
+ * For the full copyright and license information, please read the
+ * LICENSE.txt file that was distributed with this source code.
  *
- *  The GNU General Public License can be found at
- *  http://www.gnu.org/copyleft/gpl.html.
- *  A copy is found in the textfile GPL.txt and important notices to the license
- *  from the author is found in LICENSE.txt distributed with these scripts.
- *
- *
- *  This script is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  This copyright notice MUST APPEAR in all copies of the script!
- ***************************************************************/
+ * The TYPO3 project - inspiring people to share!
+ */
 /**
  * Abstract repository implementing the basic repository methods
  *
@@ -179,7 +166,7 @@ abstract class AbstractRepository implements \TYPO3\CMS\Extbase\Persistence\Repo
 	/**
 	 * Finds an object matching the given identifier.
 	 *
-	 * @param int $uid The identifier of the object to find
+	 * @param integer $uid The identifier of the object to find
 	 *
 	 * @throws \RuntimeException
 	 * @throws \InvalidArgumentException
@@ -190,7 +177,7 @@ abstract class AbstractRepository implements \TYPO3\CMS\Extbase\Persistence\Repo
 		if (!\TYPO3\CMS\Core\Utility\MathUtility::canBeInterpretedAsInteger($uid)) {
 			throw new \InvalidArgumentException('uid has to be integer.', 1316779798);
 		}
-		$row = $GLOBALS['TYPO3_DB']->exec_SELECTgetSingleRow('*', $this->table, 'uid=' . intval($uid) . $this->getWhereClauseForEnabledFields());
+		$row = $GLOBALS['TYPO3_DB']->exec_SELECTgetSingleRow('*', $this->table, 'uid=' . (int)$uid . $this->getWhereClauseForEnabledFields());
 		if (empty($row) || !is_array($row)) {
 			throw new \RuntimeException('Could not find row with uid "' . $uid . '" in table ' . $this->table, 1314354065);
 		}
@@ -204,7 +191,7 @@ abstract class AbstractRepository implements \TYPO3\CMS\Extbase\Persistence\Repo
 	 * @return string the additional where clause, something like " AND deleted=0 AND hidden=0"
 	 */
 	protected function getWhereClauseForEnabledFields() {
-		if ($this->getEnvironmentMode() === 'FE') {
+		if ($this->getEnvironmentMode() === 'FE' && $GLOBALS['TSFE']->sys_page) {
 			// frontend context
 			$whereClause = $GLOBALS['TSFE']->sys_page->enableFields($this->table);
 			$whereClause .= $GLOBALS['TSFE']->sys_page->deleteClause($this->table);
@@ -302,7 +289,11 @@ abstract class AbstractRepository implements \TYPO3\CMS\Extbase\Persistence\Repo
 		return TYPO3_MODE;
 	}
 
+	/**
+	 * @return \TYPO3\CMS\Core\Database\DatabaseConnection
+	 */
+	protected function getDatabaseConnection() {
+		return $GLOBALS['TYPO3_DB'];
+	}
+
 }
-
-
-?>

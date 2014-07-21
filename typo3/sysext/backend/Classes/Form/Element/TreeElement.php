@@ -1,32 +1,21 @@
 <?php
 namespace TYPO3\CMS\Backend\Form\Element;
 
-/***************************************************************
- *  Copyright notice
+/**
+ * This file is part of the TYPO3 CMS project.
  *
- *  (c) 2010-2013 Steffen Ritter <info@steffen-ritter.net>
- *  (c) 2010-2013 Steffen Kamper <steffen@typo3.org>
- *  All rights reserved
+ * It is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License, either version 2
+ * of the License, or any later version.
  *
- *  This script is part of the TYPO3 project. The TYPO3 project is
- *  free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
+ * For the full copyright and license information, please read the
+ * LICENSE.txt file that was distributed with this source code.
  *
- *  The GNU General Public License can be found at
- *  http://www.gnu.org/copyleft/gpl.html.
- *  A copy is found in the textfile GPL.txt and important notices to the license
- *  from the author is found in LICENSE.txt distributed with these scripts.
- *
- *
- *  This script is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  This copyright notice MUST APPEAR in all copies of the script!
- ***************************************************************/
+ * The TYPO3 project - inspiring people to share!
+ */
+
+use TYPO3\CMS\Core\Utility\GeneralUtility;
+
 /**
  * TCEforms wizard for rendering an AJAX selector for records
  *
@@ -77,7 +66,7 @@ class TreeElement {
 		}
 		$allowedUids = array();
 		foreach ($possibleSelectboxItems as $item) {
-			if (intval($item[1]) > 0) {
+			if ((int)$item[1] > 0) {
 				$allowedUids[] = $item[1];
 			}
 		}
@@ -85,8 +74,8 @@ class TreeElement {
 		$treeDataProvider->setSelectedList(implode(',', $selectedNodes));
 		$treeDataProvider->setItemWhiteList($allowedUids);
 		$treeDataProvider->initializeTreeData();
-		$treeRenderer = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Tree\\TableConfiguration\\ExtJsArrayTreeRenderer');
-		$tree = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Tree\\TableConfiguration\\TableConfigurationTree');
+		$treeRenderer = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Tree\\TableConfiguration\\ExtJsArrayTreeRenderer');
+		$tree = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Tree\\TableConfiguration\\TableConfigurationTree');
 		$tree->setDataProvider($treeDataProvider);
 		$tree->setNodeRenderer($treeRenderer);
 		$treeData = $tree->render();
@@ -112,13 +101,13 @@ class TreeElement {
 		$itemArray[] = $treeData;
 		$treeData = json_encode($itemArray);
 		$id = md5($PA['itemFormElName']);
-		if (isset($PA['fieldConf']['config']['size']) && intval($PA['fieldConf']['config']['size']) > 0) {
-			$height = intval($PA['fieldConf']['config']['size']) * 20;
+		if (isset($PA['fieldConf']['config']['size']) && (int)$PA['fieldConf']['config']['size'] > 0) {
+			$height = (int)$PA['fieldConf']['config']['size'] * 20;
 		} else {
 			$height = 280;
 		}
-		if (isset($PA['fieldConf']['config']['autoSizeMax']) && intval($PA['fieldConf']['config']['autoSizeMax']) > 0) {
-			$autoSizeMax = intval($PA['fieldConf']['config']['autoSizeMax']) * 20;
+		if (isset($PA['fieldConf']['config']['autoSizeMax']) && (int)$PA['fieldConf']['config']['autoSizeMax'] > 0) {
+			$autoSizeMax = (int)$PA['fieldConf']['config']['autoSizeMax'] * 20;
 		}
 		$header = FALSE;
 		$expanded = FALSE;
@@ -128,7 +117,7 @@ class TreeElement {
 			$header = $appearance['showHeader'] ? TRUE : FALSE;
 			$expanded = $appearance['expandAll'] === TRUE;
 			if (isset($appearance['width'])) {
-				$width = intval($appearance['width']);
+				$width = (int)$appearance['width'];
 			}
 		}
 		$onChange = '';
@@ -138,10 +127,10 @@ class TreeElement {
 		// Create a JavaScript code line which will ask the user to save/update the form due to changing the element.
 		// This is used for eg. "type" fields and others configured with "requestUpdate"
 		if (
-			$GLOBALS['TCA'][$table]['ctrl']['type']
-			&& !strcmp($field, $GLOBALS['TCA'][$table]['ctrl']['type'])
-			|| $GLOBALS['TCA'][$table]['ctrl']['requestUpdate']
-			&& \TYPO3\CMS\Core\Utility\GeneralUtility::inList(str_replace(' ', '', $GLOBALS['TCA'][$table]['ctrl']['requestUpdate']), $field)
+			!empty($GLOBALS['TCA'][$table]['ctrl']['type'])
+			&& $field === $GLOBALS['TCA'][$table]['ctrl']['type']
+			|| !empty($GLOBALS['TCA'][$table]['ctrl']['requestUpdate'])
+			&& GeneralUtility::inList(str_replace(' ', '', $GLOBALS['TCA'][$table]['ctrl']['requestUpdate']), $field)
 		) {
 			if ($GLOBALS['BE_USER']->jsConfirmation(1)) {
 				$onChange .= 'if (confirm(TBE_EDITOR.labels.onChangeAlert) && ' . 'TBE_EDITOR.checkSubmit(-1)){ TBE_EDITOR.submitForm() };';
@@ -152,13 +141,13 @@ class TreeElement {
 		/** @var $pageRenderer \TYPO3\CMS\Core\Page\PageRenderer */
 		$pageRenderer = $GLOBALS['SOBE']->doc->getPageRenderer();
 		$pageRenderer->loadExtJs();
-		$pageRenderer->addJsFile('../t3lib/js/extjs/tree/tree.js');
+		$pageRenderer->addJsFile('sysext/backend/Resources/Public/JavaScript/tree.js');
 		$pageRenderer->addInlineLanguageLabelFile(\TYPO3\CMS\Core\Utility\ExtensionManagementUtility::extPath('lang') . 'locallang_csh_corebe.xlf', 'tcatree');
 		$pageRenderer->addExtOnReadyCode('
 			TYPO3.Components.Tree.StandardTreeItemData["' . $id . '"] = ' . $treeData . ';
 			var tree' . $id . ' = new TYPO3.Components.Tree.StandardTree({
 				id: "' . $id . '",
-				showHeader: ' . intval($header) . ',
+				showHeader: ' . (int)$header . ',
 				onChange: "' . $onChange . '",
 				countSelectedNodes: ' . count($selectedNodes) . ',
 				width: ' . $width . ',
@@ -185,16 +174,32 @@ class TreeElement {
 						if (node.id !== "root") {
 							top.TYPO3.BackendUserSettings.ExtDirect.addToList("tcaTrees." + this.ucId, node.attributes.uid);
 						}
-					}
+					},
+					beforerender: function(treeCmp) {
+						// Check if that tree element is already rendered. It is appended on the first tceforms_inline call.
+						if (Ext.fly(treeCmp.getId())) {
+							return false;
+						}
+					}' . ($expanded ? ',
+					afterrender: function(treeCmp) {
+						treeCmp.expandAll();
+					}' : '') . '
 				},
-				tcaMaxItems: ' . ($PA['fieldConf']['config']['maxitems'] ? intval($PA['fieldConf']['config']['maxitems']) : 99999) . ',
+				tcaMaxItems: ' . ($PA['fieldConf']['config']['maxitems'] ? (int)$PA['fieldConf']['config']['maxitems'] : 99999) . ',
 				tcaSelectRecursiveAllowed: ' . ($appearance['allowRecursiveMode'] ? 'true' : 'false') . ',
 				tcaSelectRecursive: false,
 				tcaExclusiveKeys: "' . ($PA['fieldConf']['config']['exclusiveKeys'] ? $PA['fieldConf']['config']['exclusiveKeys'] : '') . '",
 				ucId: "' . md5(($table . '|' . $field)) . '",
 				selModel: TYPO3.Components.Tree.EmptySelectionModel,
 				disabled: ' . ($PA['fieldConf']['config']['readOnly'] ? 'true' : 'false') . '
-			});' . LF . ($autoSizeMax ? 'tree' . $id . '.bodyStyle = "max-height: ' . $autoSizeMax . 'px;min-height: ' . $height . 'px;";' : 'tree' . $id . '.height = ' . $height . ';') . LF . 'tree' . $id . '.render("tree_' . $id . '");' . ($expanded ? 'tree' . $id . '.expandAll();' : '') . '
+			});' . LF .
+				($autoSizeMax
+					? 'tree' . $id . '.bodyStyle = "max-height: ' . $autoSizeMax . 'px;min-height: ' . $height . 'px;";'
+					: 'tree' . $id . '.height = ' . $height . ';'
+				) . LF .
+				'(function() {
+					tree' . $id . '.render("tree_' . $id . '");
+				}).defer(20);
 		');
 		$formField = '
 			<div class="typo3-tceforms-tree">
@@ -207,6 +212,3 @@ class TreeElement {
 	}
 
 }
-
-
-?>

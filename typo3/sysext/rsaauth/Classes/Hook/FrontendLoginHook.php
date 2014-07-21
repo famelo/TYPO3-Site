@@ -1,28 +1,18 @@
 <?php
 namespace TYPO3\CMS\Rsaauth\Hook;
 
-/***************************************************************
- *  Copyright notice
+/**
+ * This file is part of the TYPO3 CMS project.
  *
- *  (c) 2009-2013 Dmitry Dulepov <dmitry@typo3.org>
- *  All rights reserved
+ * It is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License, either version 2
+ * of the License, or any later version.
  *
- *  This script is part of the TYPO3 project. The TYPO3 project is
- *  free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
+ * For the full copyright and license information, please read the
+ * LICENSE.txt file that was distributed with this source code.
  *
- *  The GNU General Public License can be found at
- *  http://www.gnu.org/copyleft/gpl.html.
- *
- *  This script is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  This copyright notice MUST APPEAR in all copies of the script!
- ***************************************************************/
+ * The TYPO3 project - inspiring people to share!
+ */
 /**
  * This class contains a hook to implement RSA authentication for the TYPO3
  * Frontend. Warning: felogin must be USER_INT for this to work!
@@ -41,7 +31,7 @@ class FrontendLoginHook {
 		if (trim($GLOBALS['TYPO3_CONF_VARS']['FE']['loginSecurityLevel']) === 'rsa') {
 			$backend = \TYPO3\CMS\Rsaauth\Backend\BackendFactory::getBackend();
 			if ($backend) {
-				$result[0] = 'tx_rsaauth_feencrypt(this);';
+				$result[0] = 'return TYPO3FrontendLoginFormRsaEncryption.submitForm(this, TYPO3FrontendLoginFormRsaEncryptionPublicKeyUrl);';
 				$javascriptPath = \TYPO3\CMS\Core\Utility\ExtensionManagementUtility::siteRelPath('rsaauth') . 'resources/';
 				$files = array(
 					'jsbn/jsbn.js',
@@ -49,26 +39,17 @@ class FrontendLoginHook {
 					'jsbn/rng.js',
 					'jsbn/rsa.js',
 					'jsbn/base64.js',
-					'rsaauth_min.js'
+					'FrontendLoginFormRsaEncryption.min.js'
 				);
+				$eIdUrl = \TYPO3\CMS\Core\Utility\GeneralUtility::quoteJSvalue($GLOBALS['TSFE']->absRefPrefix . 'index.php?eID=FrontendLoginRsaPublicKey');
+				$additionalHeader = '<script type="text/javascript">var TYPO3FrontendLoginFormRsaEncryptionPublicKeyUrl = ' . $eIdUrl . ';</script>';
 				foreach ($files as $file) {
-					$result[1] .= '<script type="text/javascript" src="' . \TYPO3\CMS\Core\Utility\GeneralUtility::getIndpEnv('TYPO3_SITE_URL') . $javascriptPath . $file . '"></script>';
+					$additionalHeader .= '<script type="text/javascript" src="' . \TYPO3\CMS\Core\Utility\GeneralUtility::getIndpEnv('TYPO3_SITE_URL') . $javascriptPath . $file . '"></script>';
 				}
-				// Generate a new key pair
-				$keyPair = $backend->createNewKeyPair();
-				// Save private key
-				$storage = \TYPO3\CMS\Rsaauth\Storage\StorageFactory::getStorage();
-				/** @var $storage \TYPO3\CMS\Rsaauth\Storage\AbstractStorage */
-				$storage->put($keyPair->getPrivateKey());
-				// Add RSA hidden fields
-				$result[1] .= '<input type="hidden" id="rsa_n" name="n" value="' . htmlspecialchars($keyPair->getPublicKeyModulus()) . '" />';
-				$result[1] .= '<input type="hidden" id="rsa_e" name="e" value="' . sprintf('%x', $keyPair->getExponent()) . '" />';
+				$GLOBALS['TSFE']->additionalHeaderData['rsaauth_js'] = $additionalHeader;
 			}
 		}
 		return $result;
 	}
 
 }
-
-
-?>

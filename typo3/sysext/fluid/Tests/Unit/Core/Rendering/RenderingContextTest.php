@@ -10,10 +10,11 @@ namespace TYPO3\CMS\Fluid\Tests\Unit\Core\Rendering;
  *                                                                        *
  * The TYPO3 project - inspiring people to share!                         *
  *                                                                        */
+
 /**
- * Testcase for ParsingState
+ * Test case
  */
-class RenderingContextTest extends \TYPO3\CMS\Extbase\Tests\Unit\BaseTestCase {
+class RenderingContextTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 
 	/**
 	 * Parsing state
@@ -23,7 +24,7 @@ class RenderingContextTest extends \TYPO3\CMS\Extbase\Tests\Unit\BaseTestCase {
 	protected $renderingContext;
 
 	public function setUp() {
-		$this->renderingContext = new \TYPO3\CMS\Fluid\Core\Rendering\RenderingContext();
+		$this->renderingContext = $this->getAccessibleMock('TYPO3\\CMS\\Fluid\\Core\\Rendering\\RenderingContext', array('dummy'));
 	}
 
 	/**
@@ -49,9 +50,7 @@ class RenderingContextTest extends \TYPO3\CMS\Extbase\Tests\Unit\BaseTestCase {
 	 */
 	public function viewHelperVariableContainerCanBeReadCorrectly() {
 		$viewHelperVariableContainer = $this->getMock('TYPO3\\CMS\\Fluid\\Core\\ViewHelper\\ViewHelperVariableContainer');
-		$this->renderingContext->injectViewHelperVariableContainer($viewHelperVariableContainer);
+		$this->renderingContext->_set('viewHelperVariableContainer', $viewHelperVariableContainer);
 		$this->assertSame($viewHelperVariableContainer, $this->renderingContext->getViewHelperVariableContainer());
 	}
 }
-
-?>

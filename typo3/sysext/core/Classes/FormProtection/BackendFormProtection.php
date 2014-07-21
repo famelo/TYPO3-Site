@@ -1,29 +1,18 @@
 <?php
 namespace TYPO3\CMS\Core\FormProtection;
 
-/***************************************************************
- * Copyright notice
+/**
+ * This file is part of the TYPO3 CMS project.
  *
- * (c) 2010-2013 Oliver Klee <typo3-coding@oliverklee.de>
- * (c) 2010-2013 Helmut Hummel <helmut.hummel@typo3.org>
- * All rights reserved
+ * It is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License, either version 2
+ * of the License, or any later version.
  *
- * This script is part of the TYPO3 project. The TYPO3 project is
- * free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
+ * For the full copyright and license information, please read the
+ * LICENSE.txt file that was distributed with this source code.
  *
- * The GNU General Public License can be found at
- * http://www.gnu.org/copyleft/gpl.html.
- *
- * This script is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * This copyright notice MUST APPEAR in all copies of the script!
- ***************************************************************/
+ * The TYPO3 project - inspiring people to share!
+ */
 
 /**
  * This class provides protection against cross-site request forgery (XSRF/CSRF)
@@ -109,7 +98,6 @@ class BackendFormProtection extends \TYPO3\CMS\Core\FormProtection\AbstractFormP
 			throw new \TYPO3\CMS\Core\Error\Exception('A back-end form protection may only be instantiated if there' . ' is an active back-end session.', 1285067843);
 		}
 		$this->backendUser = $GLOBALS['BE_USER'];
-		parent::__construct();
 	}
 
 	/**
@@ -121,10 +109,10 @@ class BackendFormProtection extends \TYPO3\CMS\Core\FormProtection\AbstractFormP
 	protected function createValidationErrorMessage() {
 		$flashMessage = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance(
 			'TYPO3\\CMS\\Core\\Messaging\\FlashMessage',
-			$GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.xlf:error.formProtection.tokenInvalid'),
+			$this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:error.formProtection.tokenInvalid'),
 			'',
 			\TYPO3\CMS\Core\Messaging\FlashMessage::ERROR,
-			!(isset($GLOBALS['TYPO3_AJAX']) && $GLOBALS['TYPO3_AJAX'] === TRUE)
+			!$this->isAjaxRequest()
 		);
 		/** @var $flashMessageService \TYPO3\CMS\Core\Messaging\FlashMessageService */
 		$flashMessageService = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance(
@@ -136,9 +124,18 @@ class BackendFormProtection extends \TYPO3\CMS\Core\FormProtection\AbstractFormP
 	}
 
 	/**
+	 * Checks if the current request is an Ajax request
+	 *
+	 * @return bool
+	 */
+	protected function isAjaxRequest() {
+		return (bool)(TYPO3_REQUESTTYPE & TYPO3_REQUESTTYPE_AJAX);
+	}
+
+	/**
 	 * Retrieves the saved session token or generates a new one.
 	 *
-	 * @return array<array>
+	 * @return string
 	 */
 	protected function retrieveSessionToken() {
 		$this->sessionToken = $this->backendUser->getSessionData('formSessionToken');
@@ -146,6 +143,7 @@ class BackendFormProtection extends \TYPO3\CMS\Core\FormProtection\AbstractFormP
 			$this->sessionToken = $this->generateSessionToken();
 			$this->persistSessionToken();
 		}
+		return $this->sessionToken;
 	}
 
 	/**
@@ -165,6 +163,7 @@ class BackendFormProtection extends \TYPO3\CMS\Core\FormProtection\AbstractFormP
 	 *
 	 * @access private
 	 * @return string
+	 * @throws \UnexpectedValueException
 	 */
 	public function setSessionTokenFromRegistry() {
 		$this->sessionToken = $this->getRegistry()->get('core', 'formSessionToken:' . $this->backendUser->user['uid']);
@@ -182,17 +181,16 @@ class BackendFormProtection extends \TYPO3\CMS\Core\FormProtection\AbstractFormP
 	 * @return void
 	 */
 	public function storeSessionTokenInRegistry() {
-		$this->getRegistry()->set('core', 'formSessionToken:' . $this->backendUser->user['uid'], $this->sessionToken);
+		$this->getRegistry()->set('core', 'formSessionToken:' . $this->backendUser->user['uid'], $this->getSessionToken());
 	}
 
 	/**
 	 * Removes the session token for the user from the registry.
 	 *
 	 * @access private
-	 * @return string
 	 */
 	public function removeSessionTokenFromRegistry() {
-		return $this->getRegistry()->remove('core', 'formSessionToken:' . $this->backendUser->user['uid']);
+		$this->getRegistry()->remove('core', 'formSessionToken:' . $this->backendUser->user['uid']);
 	}
 
 	/**
@@ -227,7 +225,12 @@ class BackendFormProtection extends \TYPO3\CMS\Core\FormProtection\AbstractFormP
 		return isset($GLOBALS['BE_USER']) && $GLOBALS['BE_USER'] instanceof \TYPO3\CMS\Core\Authentication\BackendUserAuthentication && isset($GLOBALS['BE_USER']->user['uid']);
 	}
 
+	/**
+	 * Return language service instance
+	 *
+	 * @return \TYPO3\CMS\Lang\LanguageService
+	 */
+	protected function getLanguageService() {
+		return $GLOBALS['LANG'];
+	}
 }
-
-
-?>

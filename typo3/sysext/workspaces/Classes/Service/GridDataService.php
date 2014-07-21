@@ -1,31 +1,22 @@
 <?php
 namespace TYPO3\CMS\Workspaces\Service;
 
-/***************************************************************
- *  Copyright notice
+/**
+ * This file is part of the TYPO3 CMS project.
  *
- *  (c) 2010-2013 Workspaces Team (http://forge.typo3.org/projects/show/typo3v4-workspaces)
- *  All rights reserved
+ * It is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License, either version 2
+ * of the License, or any later version.
  *
- *  This script is part of the TYPO3 project. The TYPO3 project is
- *  free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
+ * For the full copyright and license information, please read the
+ * LICENSE.txt file that was distributed with this source code.
  *
- *  The GNU General Public License can be found at
- *  http://www.gnu.org/copyleft/gpl.html.
- *  A copy is found in the textfile GPL.txt and important notices to the license
- *  from the author is found in LICENSE.txt distributed with these scripts.
- *
- *
- *  This script is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  This copyright notice MUST APPEAR in all copies of the script!
- ***************************************************************/
+ * The TYPO3 project - inspiring people to share!
+ */
+
+use TYPO3\CMS\Backend\Utility\BackendUtility;
+use TYPO3\CMS\Core\Utility\GeneralUtility;
+
 /**
  * Grid data service
  *
@@ -37,6 +28,13 @@ class GridDataService {
 	const SIGNAL_GenerateDataArray_PostProcesss = 'generateDataArray.postProcess';
 	const SIGNAL_GetDataArray_PostProcesss = 'getDataArray.postProcess';
 	const SIGNAL_SortDataArray_PostProcesss = 'sortDataArray.postProcess';
+
+	const GridColumn_Collection = 'Workspaces_Collection';
+	const GridColumn_CollectionLevel = 'Workspaces_CollectionLevel';
+	const GridColumn_CollectionParent = 'Workspaces_CollectionParent';
+	const GridColumn_CollectionCurrent = 'Workspaces_CollectionCurrent';
+	const GridColumn_CollectionChildren = 'Workspaces_CollectionChildren';
+
 	/**
 	 * Id of the current active workspace.
 	 *
@@ -92,8 +90,8 @@ class GridDataService {
 	public function generateGridListFromVersions($versions, $parameter, $currentWorkspace) {
 		// Read the given parameters from grid. If the parameter is not set use default values.
 		$filterTxt = isset($parameter->filterTxt) ? $parameter->filterTxt : '';
-		$start = isset($parameter->start) ? intval($parameter->start) : 0;
-		$limit = isset($parameter->limit) ? intval($parameter->limit) : 30;
+		$start = isset($parameter->start) ? (int)$parameter->start : 0;
+		$limit = isset($parameter->limit) ? (int)$parameter->limit : 30;
 		$this->sort = isset($parameter->sort) ? $parameter->sort : 't3ver_oid';
 		$this->sortDir = isset($parameter->dir) ? $parameter->dir : 'ASC';
 		if (is_int($currentWorkspace)) {
@@ -124,15 +122,21 @@ class GridDataService {
 		// check for dataArray in cache
 		if ($this->getDataArrayFromCache($versions, $filterTxt) === FALSE) {
 			/** @var $stagesObj \TYPO3\CMS\Workspaces\Service\StagesService */
-			$stagesObj = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Workspaces\\Service\\StagesService');
+			$stagesObj = GeneralUtility::makeInstance('TYPO3\\CMS\\Workspaces\\Service\\StagesService');
+			$defaultGridColumns = array(
+				self::GridColumn_Collection => 0,
+				self::GridColumn_CollectionLevel => 0,
+				self::GridColumn_CollectionParent => '',
+				self::GridColumn_CollectionCurrent => '',
+				self::GridColumn_CollectionChildren => 0,
+			);
 			foreach ($versions as $table => $records) {
-				$versionArray = array('table' => $table);
 				$hiddenField = $this->getTcaEnableColumnsFieldName($table, 'disabled');
 				$isRecordTypeAllowedToModify = $GLOBALS['BE_USER']->check('tables_modify', $table);
 
 				foreach ($records as $record) {
-					$origRecord = \TYPO3\CMS\Backend\Utility\BackendUtility::getRecord($table, $record['t3ver_oid']);
-					$versionRecord = \TYPO3\CMS\Backend\Utility\BackendUtility::getRecord($table, $record['uid']);
+					$origRecord = BackendUtility::getRecord($table, $record['t3ver_oid']);
+					$versionRecord = BackendUtility::getRecord($table, $record['uid']);
 					$combinedRecord = \TYPO3\CMS\Workspaces\Domain\Model\CombinedRecord::createFromArrays($table, $origRecord, $versionRecord);
 					$this->getIntegrityService()->checkElement($combinedRecord);
 
@@ -144,21 +148,28 @@ class GridDataService {
 
 					$isDeletedPage = $table == 'pages' && $recordState == 'deleted';
 					$viewUrl = \TYPO3\CMS\Workspaces\Service\WorkspaceService::viewSingleRecord($table, $record['uid'], $origRecord, $versionRecord);
+					$versionArray = array();
+					$versionArray['table'] = $table;
 					$versionArray['id'] = $table . ':' . $record['uid'];
 					$versionArray['uid'] = $record['uid'];
 					$versionArray['workspace'] = $versionRecord['t3ver_id'];
-					$versionArray['label_Workspace'] = htmlspecialchars(\TYPO3\CMS\Backend\Utility\BackendUtility::getRecordTitle($table, $versionRecord));
-					$versionArray['label_Live'] = htmlspecialchars(\TYPO3\CMS\Backend\Utility\BackendUtility::getRecordTitle($table, $origRecord));
+					$versionArray = array_merge($versionArray, $defaultGridColumns);
+					$versionArray['label_Workspace'] = htmlspecialchars(
+						BackendUtility::getRecordTitle($table, $versionRecord));
+					$versionArray['label_Live'] = htmlspecialchars(BackendUtility::getRecordTitle($table, $origRecord));
 					$versionArray['label_Stage'] = htmlspecialchars($stagesObj->getStageTitle($versionRecord['t3ver_stage']));
 					$tempStage = $stagesObj->getNextStage($versionRecord['t3ver_stage']);
 					$versionArray['label_nextStage'] = htmlspecialchars($stagesObj->getStageTitle($tempStage['uid']));
 					$tempStage = $stagesObj->getPrevStage($versionRecord['t3ver_stage']);
 					$versionArray['label_prevStage'] = htmlspecialchars($stagesObj->getStageTitle($tempStage['uid']));
-					$versionArray['path_Live'] = htmlspecialchars(\TYPO3\CMS\Backend\Utility\BackendUtility::getRecordPath($record['livepid'], '', 999));
-					$versionArray['path_Workspace'] = htmlspecialchars(\TYPO3\CMS\Backend\Utility\BackendUtility::getRecordPath($record['wspid'], '', 999));
+					$versionArray['path_Live'] = htmlspecialchars(
+						BackendUtility::getRecordPath($record['livepid'], '', 999));
+					$versionArray['path_Workspace'] = htmlspecialchars(
+						BackendUtility::getRecordPath($record['wspid'], '', 999));
 					$versionArray['workspace_Title'] = htmlspecialchars(\TYPO3\CMS\Workspaces\Service\WorkspaceService::getWorkspaceTitle($versionRecord['t3ver_wsid']));
 					$versionArray['workspace_Tstamp'] = $versionRecord['tstamp'];
-					$versionArray['workspace_Formated_Tstamp'] = \TYPO3\CMS\Backend\Utility\BackendUtility::datetime($versionRecord['tstamp']);
+					$versionArray['workspace_Formated_Tstamp'] = BackendUtility::datetime($versionRecord['tstamp']);
+					$versionArray['t3ver_wsid'] = $versionRecord['t3ver_wsid'];
 					$versionArray['t3ver_oid'] = $record['t3ver_oid'];
 					$versionArray['livepid'] = $record['livepid'];
 					$versionArray['stage'] = $versionRecord['t3ver_stage'];
@@ -185,13 +196,20 @@ class GridDataService {
 					$versionArray['allowedAction_edit'] = $isRecordTypeAllowedToModify && !$isDeletedPage;
 					$versionArray['allowedAction_editVersionedPage'] = $isRecordTypeAllowedToModify && !$isDeletedPage;
 					$versionArray['state_Workspace'] = $recordState;
+
+					$versionArray = array_merge(
+						$versionArray,
+						$this->getAdditionalColumnService()->getData($combinedRecord)
+					);
+
 					if ($filterTxt == '' || $this->isFilterTextInVisibleColumns($filterTxt, $versionArray)) {
-						$this->dataArray[] = $versionArray;
+						$versionIdentifier = $versionArray['id'];
+						$this->dataArray[$versionIdentifier] = $versionArray;
 					}
 				}
 			}
 			// Suggested slot method:
-			// methodName(Tx_Workspaces_Service_GridData $gridData, array &$dataArray, array $versions)
+			// methodName(\TYPO3\CMS\Workspaces\Service\GridDataService $gridData, array &$dataArray, array $versions)
 			$this->emitSignal(self::SIGNAL_GenerateDataArray_BeforeCaching, $this->dataArray, $versions);
 			// Enrich elements after everything has been processed:
 			foreach ($this->dataArray as &$element) {
@@ -204,9 +222,27 @@ class GridDataService {
 			$this->setDataArrayIntoCache($versions, $filterTxt);
 		}
 		// Suggested slot method:
-		// methodName(Tx_Workspaces_Service_GridData $gridData, array &$dataArray, array $versions)
+		// methodName(\TYPO3\CMS\Workspaces\Service\GridDataService $gridData, array &$dataArray, array $versions)
 		$this->emitSignal(self::SIGNAL_GenerateDataArray_PostProcesss, $this->dataArray, $versions);
 		$this->sortDataArray();
+		$this->resolveDataArrayDependencies();
+	}
+
+	/**
+	 * Resolves dependencies of nested structures
+	 * and sort data elements considering these dependencies.
+	 *
+	 * @return void
+	 */
+	protected function resolveDataArrayDependencies() {
+		$collectionService = $this->getDependencyCollectionService();
+		$dependencyResolver = $collectionService->getDependencyResolver();
+
+		foreach ($this->dataArray as $dataElement) {
+			$dependencyResolver->addElement($dataElement['table'], $dataElement['uid']);
+		}
+
+		$this->dataArray = $collectionService->process($this->dataArray);
 	}
 
 	/**
@@ -218,12 +254,25 @@ class GridDataService {
 	 */
 	protected function getDataArray($start, $limit) {
 		$dataArrayPart = array();
-		$end = $start + $limit < count($this->dataArray) ? $start + $limit : count($this->dataArray);
+		$dataArrayCount = count($this->dataArray);
+		$end = ($start + $limit < count($this->dataArray) ? $start + $limit : $dataArrayCount);
+
+		// Ensure that there are numerical indexes
+		$this->dataArray = array_values(($this->dataArray));
 		for ($i = $start; $i < $end; $i++) {
 			$dataArrayPart[] = $this->dataArray[$i];
 		}
+
+		// Ensure that collections are not cut for the pagination
+		if (!empty($this->dataArray[$i][self::GridColumn_Collection])) {
+			$collectionIdentifier = $this->dataArray[$i][self::GridColumn_Collection];
+			for ($i = $i + 1; $i < $dataArrayCount && $collectionIdentifier === $this->dataArray[$i][self::GridColumn_Collection]; $i++) {
+				$dataArrayPart[] = $this->dataArray[$i];
+			}
+		}
+
 		// Suggested slot method:
-		// methodName(Tx_Workspaces_Service_GridData $gridData, array &$dataArray, $start, $limit)
+		// methodName(\TYPO3\CMS\Workspaces\Service\GridDataService $gridData, array &$dataArray, $start, $limit)
 		$this->emitSignal(self::SIGNAL_GetDataArray_PostProcesss, $this->dataArray, $start, $limit);
 		return $dataArrayPart;
 	}
@@ -234,7 +283,7 @@ class GridDataService {
 	 * @return void
 	 */
 	protected function initializeWorkspacesCachingFramework() {
-		$this->workspacesCache = $GLOBALS['typo3CacheManager']->getCache('workspaces_cache');
+		$this->workspacesCache = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Cache\\CacheManager')->getCache('workspaces_cache');
 	}
 
 	/**
@@ -296,39 +345,31 @@ class GridDataService {
 	protected function sortDataArray() {
 		if (is_array($this->dataArray)) {
 			switch ($this->sort) {
-			case 'uid':
-
-			case 'change':
-
-			case 'workspace_Tstamp':
-
-			case 't3ver_oid':
-
-			case 'liveid':
-
-			case 'livepid':
-
-			case 'languageValue':
-				usort($this->dataArray, array($this, 'intSort'));
-				break;
-			case 'label_Workspace':
-
-			case 'label_Live':
-
-			case 'label_Stage':
-
-			case 'workspace_Title':
-
-			case 'path_Live':
-				// case 'path_Workspace': This is the first sorting attribute
-				usort($this->dataArray, array($this, 'stringSort'));
-				break;
+				case 'uid':
+				case 'change':
+				case 'workspace_Tstamp':
+				case 't3ver_oid':
+				case 'liveid':
+				case 'livepid':
+				case 'languageValue':
+					uasort($this->dataArray, array($this, 'intSort'));
+					break;
+				case 'label_Workspace':
+				case 'label_Live':
+				case 'label_Stage':
+				case 'workspace_Title':
+				case 'path_Live':
+					// case 'path_Workspace': This is the first sorting attribute
+					uasort($this->dataArray, array($this, 'stringSort'));
+					break;
+				default:
+					// Do nothing
 			}
 		} else {
-			\TYPO3\CMS\Core\Utility\GeneralUtility::sysLog('Try to sort "' . $this->sort . '" in "TYPO3\\CMS\\Workspaces\\Service\\GridDataService::sortDataArray" but $this->dataArray is empty! This might be the Bug #26422 which could not reproduced yet.', 3);
+			GeneralUtility::sysLog('Try to sort "' . $this->sort . '" in "TYPO3\\CMS\\Workspaces\\Service\\GridDataService::sortDataArray" but $this->dataArray is empty! This might be the Bug #26422 which could not reproduced yet.', 3);
 		}
 		// Suggested slot method:
-		// methodName(Tx_Workspaces_Service_GridData $gridData, array &$dataArray, $sortColumn, $sortDirection)
+		// methodName(\TYPO3\CMS\Workspaces\Service\GridDataService $gridData, array &$dataArray, $sortColumn, $sortDirection)
 		$this->emitSignal(self::SIGNAL_SortDataArray_PostProcesss, $this->dataArray, $this->sort, $this->sortDir);
 	}
 
@@ -340,6 +381,9 @@ class GridDataService {
 	 * @return integer
 	 */
 	protected function intSort(array $a, array $b) {
+		if (!$this->isSortable($a, $b)) {
+			return 0;
+		}
 		// First sort by using the page-path in current workspace
 		$path_cmp = strcasecmp($a['path_Workspace'], $b['path_Workspace']);
 		if ($path_cmp < 0) {
@@ -367,6 +411,9 @@ class GridDataService {
 	 * @return integer
 	 */
 	protected function stringSort($a, $b) {
+		if (!$this->isSortable($a, $b)) {
+			return 0;
+		}
 		$path_cmp = strcasecmp($a['path_Workspace'], $b['path_Workspace']);
 		if ($path_cmp < 0) {
 			return $path_cmp;
@@ -386,6 +433,22 @@ class GridDataService {
 	}
 
 	/**
+	 * Determines whether dataArray elements are sortable.
+	 * Only elements on the first level (0) or below the same
+	 * parent element are directly sortable.
+	 *
+	 * @param array $a
+	 * @param array $b
+	 * @return bool
+	 */
+	protected function isSortable(array $a, array $b) {
+		return (
+			$a[self::GridColumn_CollectionLevel] === 0 && $b[self::GridColumn_CollectionLevel] === 0
+			|| $a[self::GridColumn_CollectionParent] === $b[self::GridColumn_CollectionParent]
+		);
+	}
+
+	/**
 	 * Determines whether the text used to filter the results is part of
 	 * a column that is visible in the grid view.
 	 *
@@ -399,20 +462,20 @@ class GridDataService {
 				if (isset($value['hidden']) && isset($column) && isset($versionArray[$column])) {
 					if ($value['hidden'] == 0) {
 						switch ($column) {
-						case 'workspace_Tstamp':
-							if (stripos($versionArray['workspace_Formated_Tstamp'], $filterText) !== FALSE) {
-								return TRUE;
-							}
-							break;
-						case 'change':
-							if (stripos(strval($versionArray[$column]), str_replace('%', '', $filterText)) !== FALSE) {
-								return TRUE;
-							}
-							break;
-						default:
-							if (stripos(strval($versionArray[$column]), $filterText) !== FALSE) {
-								return TRUE;
-							}
+							case 'workspace_Tstamp':
+								if (stripos($versionArray['workspace_Formated_Tstamp'], $filterText) !== FALSE) {
+									return TRUE;
+								}
+								break;
+							case 'change':
+								if (stripos(strval($versionArray[$column]), str_replace('%', '', $filterText)) !== FALSE) {
+									return TRUE;
+								}
+								break;
+							default:
+								if (stripos(strval($versionArray[$column]), $filterText) !== FALSE) {
+									return TRUE;
+								}
 						}
 					}
 				}
@@ -430,25 +493,24 @@ class GridDataService {
 	 * @return string
 	 */
 	protected function workspaceState($stateId, $hiddenOnline = FALSE, $hiddenOffline = FALSE) {
-		switch ($stateId) {
-		case -1:
-			$state = 'new';
-			break;
-		case 1:
-
-		case 2:
-			$state = 'deleted';
-			break;
-		case 4:
-			$state = 'moved';
-			break;
-		default:
-			$state = 'modified';
-		}
+		$hiddenState = NULL;
 		if ($hiddenOnline == 0 && $hiddenOffline == 1) {
-			$state = 'hidden';
+			$hiddenState = 'hidden';
 		} elseif ($hiddenOnline == 1 && $hiddenOffline == 0) {
-			$state = 'unhidden';
+			$hiddenState = 'unhidden';
+		}
+		switch ($stateId) {
+			case -1:
+				$state = 'new';
+				break;
+			case 2:
+				$state = 'deleted';
+				break;
+			case 4:
+				$state = 'moved';
+				break;
+			default:
+				$state = ($hiddenState ?: 'modified');
 		}
 		return $state;
 	}
@@ -480,7 +542,7 @@ class GridDataService {
 	 */
 	protected function getLanguageValue($table, array $record) {
 		$languageValue = 0;
-		if (\TYPO3\CMS\Backend\Utility\BackendUtility::isTableLocalizable($table)) {
+		if (BackendUtility::isTableLocalizable($table)) {
 			$languageField = $GLOBALS['TCA'][$table]['ctrl']['languageField'];
 			if (!empty($record[$languageField])) {
 				$languageValue = $record[$languageField];
@@ -514,7 +576,7 @@ class GridDataService {
 	public function getSystemLanguages() {
 		if (!isset($this->systemLanguages)) {
 			/** @var $translateTools \TYPO3\CMS\Backend\Configuration\TranslationConfigurationProvider */
-			$translateTools = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Backend\\Configuration\\TranslationConfigurationProvider');
+			$translateTools = GeneralUtility::makeInstance('TYPO3\\CMS\\Backend\\Configuration\\TranslationConfigurationProvider');
 			$this->systemLanguages = $translateTools->getSystemLanguages();
 		}
 		return $this->systemLanguages;
@@ -527,7 +589,7 @@ class GridDataService {
 	 */
 	protected function getIntegrityService() {
 		if (!isset($this->integrityService)) {
-			$this->integrityService = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Workspaces\\Service\\IntegrityService');
+			$this->integrityService = GeneralUtility::makeInstance('TYPO3\\CMS\\Workspaces\\Service\\IntegrityService');
 		}
 		return $this->integrityService;
 	}
@@ -545,6 +607,20 @@ class GridDataService {
 	}
 
 	/**
+	 * @return \TYPO3\CMS\Workspaces\Service\Dependency\CollectionService
+	 */
+	protected function getDependencyCollectionService() {
+		return GeneralUtility::makeInstance('TYPO3\\CMS\\Workspaces\\Service\\Dependency\\CollectionService');
+	}
+
+	/**
+	 * @return \TYPO3\CMS\Workspaces\Service\AdditionalColumnService
+	 */
+	protected function getAdditionalColumnService() {
+		return $this->getObjectManager()->get('TYPO3\\CMS\\Workspaces\\Service\\AdditionalColumnService');
+	}
+
+	/**
 	 * @return \TYPO3\CMS\Extbase\SignalSlot\Dispatcher
 	 */
 	protected function getSignalSlotDispatcher() {
@@ -559,6 +635,3 @@ class GridDataService {
 	}
 
 }
-
-
-?>

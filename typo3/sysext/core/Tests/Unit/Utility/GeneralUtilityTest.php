@@ -1,29 +1,24 @@
 <?php
 namespace TYPO3\CMS\Core\Tests\Unit\Utility;
-use TYPO3\CMS\Core\Utility;
 
-/***************************************************************
- *  Copyright notice
+/**
+ * This file is part of the TYPO3 CMS project.
  *
- *  (c) 2009-2013 Ingo Renner <ingo@typo3.org>
- *  All rights reserved
+ * It is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License, either version 2
+ * of the License, or any later version.
  *
- *  This script is part of the TYPO3 project. The TYPO3 project is
- *  free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
+ * For the full copyright and license information, please read the
+ * LICENSE.txt file that was distributed with this source code.
  *
- *  The GNU General Public License can be found at
- *  http://www.gnu.org/copyleft/gpl.html.
- *
- *  This script is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  This copyright notice MUST APPEAR in all copies of the script!
- ***************************************************************/
+ * The TYPO3 project - inspiring people to share!
+ */
+
+use TYPO3\CMS\Core\Tests\Unit\Utility\Fixtures\GeneralUtilityFixture;
+use TYPO3\CMS\Core\Utility;
+use \org\bovigo\vfs\vfsStream;
+use \org\bovigo\vfs\vfsStreamDirectory;
+use \org\bovigo\vfs\vfsStreamWrapper;
 
 /**
  * Testcase for class \TYPO3\CMS\Core\Utility\GeneralUtility
@@ -34,10 +29,7 @@ use TYPO3\CMS\Core\Utility;
 class GeneralUtilityTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 
 	/**
-	 * Absolute path to files that must be removed
-	 * after a test - handled in tearDown
-	 *
-	 * @var array
+	 * @var array Files, directories and links to be deleted after a test
 	 */
 	protected $testFilesToDelete = array();
 
@@ -47,14 +39,34 @@ class GeneralUtilityTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	protected $singletonInstances = array();
 
 	public function setUp() {
+		GeneralUtilityFixture::$isAllowedHostHeaderValueCallCount = 0;
+		GeneralUtilityFixture::setAllowHostHeaderValue(FALSE);
+		$GLOBALS['TYPO3_CONF_VARS']['SYS']['trustedHostsPattern'] = Utility\GeneralUtility::ENV_TRUSTED_HOSTS_PATTERN_ALLOW_ALL;
 		$this->singletonInstances = Utility\GeneralUtility::getSingletonInstances();
 	}
 
 	public function tearDown() {
 		Utility\GeneralUtility::resetSingletonInstances($this->singletonInstances);
 		foreach ($this->testFilesToDelete as $absoluteFileName) {
-			Utility\GeneralUtility::unlink_tempfile($absoluteFileName);
+			Utility\GeneralUtility::rmdir($absoluteFileName, TRUE);
 		}
+		parent::tearDown();
+	}
+
+	/**
+	 * Helper method to test for an existing internet connection.
+	 * Some tests are skipped if there is no working uplink.
+	 *
+	 * @return boolean $isConnected
+	 */
+	public function isConnected() {
+		$isConnected = FALSE;
+		$connected = @fsockopen('typo3.org', 80);
+		if ($connected) {
+			$isConnected = TRUE;
+			fclose($connected);
+		}
+		return $isConnected;
 	}
 
 	///////////////////////////
@@ -189,107 +201,6 @@ class GeneralUtilityTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 			'Target key pointing to sublevels and string input data' => array('lie', 'cake|is', array('cake' => array('is' => 'lie'))),
 			'Target key pointing to sublevels and array input data' => array(array('a' => 'lie'), 'cake|is', array('cake' => array('is' => array('a' => 'lie'))))
 		);
-	}
-
-	///////////////////////////////
-	// Tests concerning gif_compress
-	///////////////////////////////
-	/**
-	 * @test
-	 */
-	public function gifCompressFixesPermissionOfConvertedFileIfUsingImagemagick() {
-		if (TYPO3_OS == 'WIN') {
-			$this->markTestSkipped('gifCompressFixesPermissionOfConvertedFileIfUsingImagemagick() test not available on Windows.');
-		}
-		if (!$GLOBALS['TYPO3_CONF_VARS']['GFX']['im'] || !$GLOBALS['TYPO3_CONF_VARS']['GFX']['im_path_lzw']) {
-			$this->markTestSkipped('gifCompressFixesPermissionOfConvertedFileIfUsingImagemagick() test not available without imagemagick setup.');
-		}
-		$fixtureGifFile = __DIR__ . '/Fixtures/clear.gif';
-		$GLOBALS['TYPO3_CONF_VARS']['GFX']['gif_compress'] = TRUE;
-		// Copy file to unique filename in typo3temp, set target permissions and run method
-		$testFilename = PATH_site . 'typo3temp/' . uniqid('test_') . '.gif';
-		@copy($fixtureGifFile, $testFilename);
-		$GLOBALS['TYPO3_CONF_VARS']['BE']['fileCreateMask'] = '0777';
-		Utility\GeneralUtility::gif_compress($testFilename, 'IM');
-		// Get actual permissions and clean up
-		clearstatcache();
-		$resultFilePermissions = substr(decoct(fileperms($testFilename)), 2);
-		Utility\GeneralUtility::unlink_tempfile($testFilename);
-		$this->assertEquals($resultFilePermissions, '0777');
-	}
-
-	/**
-	 * @test
-	 */
-	public function gifCompressFixesPermissionOfConvertedFileIfUsingGd() {
-		if (TYPO3_OS == 'WIN') {
-			$this->markTestSkipped('gifCompressFixesPermissionOfConvertedFileIfUsingImagemagick() test not available on Windows.');
-		}
-		$fixtureGifFile = __DIR__ . '/Fixtures/clear.gif';
-		$GLOBALS['TYPO3_CONF_VARS']['GFX']['gdlib'] = TRUE;
-		$GLOBALS['TYPO3_CONF_VARS']['GFX']['gdlib_png'] = FALSE;
-		$GLOBALS['TYPO3_CONF_VARS']['GFX']['gif_compress'] = TRUE;
-		// Copy file to unique filename in typo3temp, set target permissions and run method
-		$testFilename = PATH_site . 'typo3temp/' . uniqid('test_') . '.gif';
-		@copy($fixtureGifFile, $testFilename);
-		$GLOBALS['TYPO3_CONF_VARS']['BE']['fileCreateMask'] = '0777';
-		Utility\GeneralUtility::gif_compress($testFilename, 'GD');
-		// Get actual permissions and clean up
-		clearstatcache();
-		$resultFilePermissions = substr(decoct(fileperms($testFilename)), 2);
-		Utility\GeneralUtility::unlink_tempfile($testFilename);
-		$this->assertEquals($resultFilePermissions, '0777');
-	}
-
-	///////////////////////////////
-	// Tests concerning png_to_gif_by_imagemagick
-	///////////////////////////////
-	/**
-	 * @test
-	 */
-	public function pngToGifByImagemagickFixesPermissionsOfConvertedFile() {
-		if (TYPO3_OS == 'WIN') {
-			$this->markTestSkipped('pngToGifByImagemagickFixesPermissionsOfConvertedFile() test not available on Windows.');
-		}
-		if (!$GLOBALS['TYPO3_CONF_VARS']['GFX']['im'] || !$GLOBALS['TYPO3_CONF_VARS']['GFX']['im_path_lzw']) {
-			$this->markTestSkipped('pngToGifByImagemagickFixesPermissionsOfConvertedFile() test not available without imagemagick setup.');
-		}
-		$fixturePngFile = __DIR__ . '/Fixtures/clear.png';
-		$GLOBALS['TYPO3_CONF_VARS']['FE']['png_to_gif'] = TRUE;
-		// Copy file to unique filename in typo3temp, set target permissions and run method
-		$testFilename = PATH_site . 'typo3temp/' . uniqid('test_') . '.png';
-		@copy($fixturePngFile, $testFilename);
-		$GLOBALS['TYPO3_CONF_VARS']['BE']['fileCreateMask'] = '0777';
-		$newGifFile = Utility\GeneralUtility::png_to_gif_by_imagemagick($testFilename);
-		// Get actual permissions and clean up
-		clearstatcache();
-		$resultFilePermissions = substr(decoct(fileperms($newGifFile)), 2);
-		Utility\GeneralUtility::unlink_tempfile($newGifFile);
-		$this->assertEquals($resultFilePermissions, '0777');
-	}
-
-	///////////////////////////////
-	// Tests concerning read_png_gif
-	///////////////////////////////
-	/**
-	 * @test
-	 */
-	public function readPngGifFixesPermissionsOfConvertedFile() {
-		if (TYPO3_OS == 'WIN') {
-			$this->markTestSkipped('readPngGifFixesPermissionsOfConvertedFile() test not available on Windows.');
-		}
-		if (!$GLOBALS['TYPO3_CONF_VARS']['GFX']['im']) {
-			$this->markTestSkipped('readPngGifFixesPermissionsOfConvertedFile() test not available without imagemagick setup.');
-		}
-		$testGifFile = __DIR__ . '/Fixtures/clear.gif';
-		// Set target permissions and run method
-		$GLOBALS['TYPO3_CONF_VARS']['BE']['fileCreateMask'] = '0777';
-		$newPngFile = Utility\GeneralUtility::read_png_gif($testGifFile, TRUE);
-		// Get actual permissions and clean up
-		clearstatcache();
-		$resultFilePermissions = substr(decoct(fileperms($newPngFile)), 2);
-		Utility\GeneralUtility::unlink_tempfile($newPngFile);
-		$this->assertEquals($resultFilePermissions, '0777');
 	}
 
 	///////////////////////////
@@ -675,7 +586,9 @@ class GeneralUtilityTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 			'Element at end of list' => array('one,two,removeme', 'one,two'),
 			'One item list' => array('removeme', ''),
 			'Element not contained in list' => array('one,two,three', 'one,two,three'),
-			'Empty list' => array('', '')
+			'Empty list' => array('', ''),
+			'List with leading comma is trimmed afterwards' => array(',one,two,removeme', 'one,two'),
+			'List with trailing comma is trimmed afterwards' => array('one,two,removeme,', 'one,two'),
 		);
 	}
 
@@ -785,9 +698,9 @@ class GeneralUtilityTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 			'array is not part of string' => array('string', array()),
 			'string is not part of array' => array(array(), 'string'),
 			'NULL is not part of string' => array('string', NULL),
-			'string is not part of array' => array(NULL, 'string'),
+			'string is not part of NULL' => array(NULL, 'string'),
 			'NULL is not part of array' => array(array(), NULL),
-			'array is not part of string' => array(NULL, array()),
+			'array is not part of NULL' => array(NULL, array()),
 			'empty string is not part of empty string' => array('', ''),
 			'NULL is not part of empty string' => array('', NULL),
 			'false is not part of empty string' => array('', FALSE),
@@ -882,7 +795,7 @@ class GeneralUtilityTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	public function htmlspecialcharsDecodeReturnsDecodedString() {
 		$string = '<typo3 version="6.0">&nbsp;</typo3>';
 		$encoded = htmlspecialchars($string);
-		$decoded = Utility\GeneralUtility::htmlspecialchars_decode($encoded);
+		$decoded = htmlspecialchars_decode($encoded);
 		$this->assertEquals($string, $decoded);
 	}
 
@@ -1019,7 +932,6 @@ class GeneralUtilityTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 			// 'dot in local part' => array('firstname.lastname@employee.2something.com'),
 			// Fix / change if TYPO3 php requirement changed: Address ok with 5.2.6, but not ok with 5.3.2
 			// 'dash as local part' => array('-@foo.com'),
-			'umlauts in local part' => array('äöüfoo@bar.com'),
 			'umlauts in domain part' => array('foo@äöüfoo.com')
 		);
 	}
@@ -1064,6 +976,7 @@ class GeneralUtilityTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 			'dot at beginning of domain part' => array('test@.com'),
 			// Fix / change if TYPO3 php requirement changed: Address ok with 5.2.6, but not ok with 5.3.2
 			// 'local part ends with dot' => array('e.x.a.m.p.l.e.@example.com'),
+			'umlauts in local part' => array('äöüfoo@bar.com'),
 			'trailing whitespace' => array('test@example.com '),
 			'trailing carriage return' => array('test@example.com' . CR),
 			'trailing linefeed' => array('test@example.com' . LF),
@@ -1170,6 +1083,30 @@ class GeneralUtilityTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 		$keepItems = 'third';
 		$getValueFunc = create_function('$value', 'return $value[0];');
 		$match = Utility\GeneralUtility::keepItemsInArray($array, $keepItems, $getValueFunc);
+		$this->assertEquals($expected, $match);
+	}
+
+	/**
+	 * Similar to keepItemsInArrayCanUseCallbackOnSearchArray(),
+	 * but uses a closure instead of create_function()
+	 *
+	 * @test
+	 */
+	public function keepItemsInArrayCanUseClosure() {
+		$array = array(
+			'aa' => array('first', 'second'),
+			'bb' => array('third', 'fourth'),
+			'cc' => array('fifth', 'sixth')
+		);
+		$expected = array('bb' => array('third', 'fourth'));
+		$keepItems = 'third';
+		$match = Utility\GeneralUtility::keepItemsInArray(
+			$array,
+			$keepItems,
+			function ($value) {
+				return $value[0];
+			}
+		);
 		$this->assertEquals($expected, $match);
 	}
 
@@ -1319,13 +1256,91 @@ class GeneralUtilityTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	//////////////////////////////////
 	// Tests concerning revExplode
 	//////////////////////////////////
+
+	/**
+	 * @return array
+	 */
+	public function revExplodeDataProvider() {
+		return array(
+			'limit 0 should return unexploded string' => array(
+				':',
+				'my:words:here',
+				0,
+				array('my:words:here')
+			),
+			'limit 1 should return unexploded string' => array(
+				':',
+				'my:words:here',
+				1,
+				array('my:words:here')
+			),
+			'limit 2 should return two pieces' => array(
+				':',
+				'my:words:here',
+				2,
+				array('my:words', 'here')
+			),
+			'limit 3 should return unexploded string' => array(
+				':',
+				'my:words:here',
+				3,
+				array('my', 'words', 'here')
+			),
+			'limit 0 should return unexploded string if no delimiter is contained' => array(
+				':',
+				'mywordshere',
+				0,
+				array('mywordshere')
+			),
+			'limit 1 should return unexploded string if no delimiter is contained' => array(
+				':',
+				'mywordshere',
+				1,
+				array('mywordshere')
+			),
+			'limit 2 should return unexploded string if no delimiter is contained' => array(
+				':',
+				'mywordshere',
+				2,
+				array('mywordshere')
+			),
+			'limit 3 should return unexploded string if no delimiter is contained' => array(
+				':',
+				'mywordshere',
+				3,
+				array('mywordshere')
+			),
+			'multi character delimiter is handled properly with limit 2' => array(
+				'[]',
+				'a[b][c][d]',
+				2,
+				array('a[b][c', 'd]')
+			),
+			'multi character delimiter is handled properly with limit 3' => array(
+				'[]',
+				'a[b][c][d]',
+				3,
+				array('a[b', 'c', 'd]')
+			),
+		);
+	}
+
+	/**
+	 * @test
+	 * @dataProvider revExplodeDataProvider
+	 */
+	public function revExplodeCorrectlyExplodesStringForGivenPartsCount($delimiter, $testString, $count, $expectedArray) {
+		$actualArray = Utility\GeneralUtility::revExplode($delimiter, $testString, $count);
+		$this->assertEquals($expectedArray, $actualArray);
+	}
+
 	/**
 	 * @test
 	 */
-	public function revExplodeExplodesString() {
-		$testString = 'my:words:here';
-		$expectedArray = array('my:words', 'here');
-		$actualArray = Utility\GeneralUtility::revExplode(':', $testString, 2);
+	public function revExplodeRespectsLimitThreeWhenExploding() {
+		$testString = 'even:more:of:my:words:here';
+		$expectedArray = array('even:more:of:my', 'words', 'here');
+		$actualArray = Utility\GeneralUtility::revExplode(':', $testString, 3);
 		$this->assertEquals($expectedArray, $actualArray);
 	}
 
@@ -1564,6 +1579,174 @@ class GeneralUtilityTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 
 	/**
 	 * @test
+	 */
+	public function isAllowedHostHeaderValueReturnsFalseIfTrusedHostsIsNotConfigured() {
+		unset($GLOBALS['TYPO3_CONF_VARS']['SYS']['trustedHostsPattern']);
+		$this->assertFalse(GeneralUtilityFixture::isAllowedHostHeaderValue('evil.foo.bar'));
+	}
+
+	/**
+	 * @return array
+	 */
+	static public function hostnamesMatchingTrustedHostsConfigurationDataProvider() {
+		return array(
+			'hostname without port matching' => array('lolli.did.this', '.*\.did\.this'),
+			'other hostname without port matching' => array('helmut.did.this', '.*\.did\.this'),
+			'two different hostnames without port matching 1st host' => array('helmut.is.secure', '(helmut\.is\.secure|lolli\.is\.secure)'),
+			'two different hostnames without port matching 2nd host' => array('lolli.is.secure', '(helmut\.is\.secure|lolli\.is\.secure)'),
+			'hostname with port matching' => array('lolli.did.this:42', '.*\.did\.this:42'),
+		);
+	}
+
+	/**
+	 * @return array
+	 */
+	static public function hostnamesNotMatchingTrustedHostsConfigurationDataProvider() {
+		return array(
+			'hostname without port' => array('lolli.did.this', 'helmut\.did\.this'),
+			'hostname with port, but port not allowed' => array('lolli.did.this:42', 'helmut\.did\.this'),
+			'two different hostnames in pattern but host header starts with differnet value #1' => array('sub.helmut.is.secure', '(helmut\.is\.secure|lolli\.is\.secure)'),
+			'two different hostnames in pattern but host header starts with differnet value #2' => array('sub.lolli.is.secure', '(helmut\.is\.secure|lolli\.is\.secure)'),
+			'two different hostnames in pattern but host header ends with differnet value #1' => array('helmut.is.secure.tld', '(helmut\.is\.secure|lolli\.is\.secure)'),
+			'two different hostnames in pattern but host header ends with differnet value #2' => array('lolli.is.secure.tld', '(helmut\.is\.secure|lolli\.is\.secure)'),
+		);
+	}
+
+	/**
+	 * @param string $httpHost HTTP_HOST string
+	 * @param string $hostNamePattern trusted hosts pattern
+	 * @test
+	 * @dataProvider hostnamesMatchingTrustedHostsConfigurationDataProvider
+	 */
+	public function isAllowedHostHeaderValueReturnsTrueIfHostValueMatches($httpHost, $hostNamePattern) {
+		$GLOBALS['TYPO3_CONF_VARS']['SYS']['trustedHostsPattern'] = $hostNamePattern;
+		$this->assertTrue(GeneralUtilityFixture::isAllowedHostHeaderValue($httpHost));
+	}
+
+	/**
+	 * @param string $httpHost HTTP_HOST string
+	 * @param string $hostNamePattern trusted hosts pattern
+	 * @test
+	 * @dataProvider hostnamesNotMatchingTrustedHostsConfigurationDataProvider
+	 */
+	public function isAllowedHostHeaderValueReturnsFalseIfHostValueMatches($httpHost, $hostNamePattern) {
+		$GLOBALS['TYPO3_CONF_VARS']['SYS']['trustedHostsPattern'] = $hostNamePattern;
+		$this->assertFalse(GeneralUtilityFixture::isAllowedHostHeaderValue($httpHost));
+	}
+
+	public function serverNamePatternDataProvider() {
+		return array(
+			'host value matches server name and server port is default http' => array(
+				'httpHost' => 'secure.web.server',
+				'serverName' => 'secure.web.server',
+				'isAllowed' => TRUE,
+				'serverPort' => '80',
+				'ssl' => 'Off',
+			),
+			'host value matches server name and server port is default https' => array(
+				'httpHost' => 'secure.web.server',
+				'serverName' => 'secure.web.server',
+				'isAllowed' => TRUE,
+				'serverPort' => '443',
+				'ssl' => 'On',
+			),
+			'host value matches server name and server port' => array(
+				'httpHost' => 'secure.web.server:88',
+				'serverName' => 'secure.web.server',
+				'isAllowed' => TRUE,
+				'serverPort' => '88',
+			),
+			'host value is ipv6 but matches server name and server port' => array(
+				'httpHost' => '[::1]:81',
+				'serverName' => '[::1]',
+				'isAllowed' => TRUE,
+				'serverPort' => '81',
+			),
+			'host value does not match server name' => array(
+				'httpHost' => 'insecure.web.server',
+				'serverName' => 'secure.web.server',
+				'isAllowed' => FALSE,
+			),
+			'host value does not match server port' => array(
+				'httpHost' => 'secure.web.server:88',
+				'serverName' => 'secure.web.server',
+				'isAllowed' => FALSE,
+				'serverPort' => '89',
+			),
+			'host value has default port that does not match server port' => array(
+				'httpHost' => 'secure.web.server',
+				'serverName' => 'secure.web.server',
+				'isAllowed' => FALSE,
+				'serverPort' => '81',
+				'ssl' => 'Off',
+			),
+			'host value has default port that does not match server ssl port' => array(
+				'httpHost' => 'secure.web.server',
+				'serverName' => 'secure.web.server',
+				'isAllowed' => FALSE,
+				'serverPort' => '444',
+				'ssl' => 'On',
+			),
+		);
+	}
+
+	/**
+	 * @param string $httpHost
+	 * @param string $serverName
+	 * @param bool $isAllowed
+	 * @param string $serverPort
+	 * @param string $ssl
+	 *
+	 * @test
+	 * @dataProvider serverNamePatternDataProvider
+	 */
+	public function isAllowedHostHeaderValueWorksCorrectlyWithWithServerNamePattern($httpHost, $serverName, $isAllowed, $serverPort = '80', $ssl = 'Off') {
+		$GLOBALS['TYPO3_CONF_VARS']['SYS']['trustedHostsPattern'] = Utility\GeneralUtility::ENV_TRUSTED_HOSTS_PATTERN_SERVER_NAME;
+		$_SERVER['SERVER_NAME'] = $serverName;
+		$_SERVER['SERVER_PORT'] = $serverPort;
+		$_SERVER['HTTPS'] = $ssl;
+		$this->assertSame($isAllowed, GeneralUtilityFixture::isAllowedHostHeaderValue($httpHost));
+	}
+
+	/**
+	 * @test
+	 */
+	public function allGetIndpEnvCallsRelatedToHostNamesCallIsAllowedHostHeaderValue() {
+		GeneralUtilityFixture::getIndpEnv('HTTP_HOST');
+		GeneralUtilityFixture::getIndpEnv('TYPO3_HOST_ONLY');
+		GeneralUtilityFixture::getIndpEnv('TYPO3_REQUEST_HOST');
+		GeneralUtilityFixture::getIndpEnv('TYPO3_REQUEST_URL');
+		$this->assertSame(4, GeneralUtilityFixture::$isAllowedHostHeaderValueCallCount);
+	}
+
+	/**
+	 * @param string $httpHost HTTP_HOST string
+	 * @param string $hostNamePattern trusted hosts pattern
+	 * @test
+	 * @dataProvider hostnamesNotMatchingTrustedHostsConfigurationDataProvider
+	 * @expectedException \UnexpectedValueException
+	 * @expectedExceptionCode 1396795884
+	 */
+	public function getIndpEnvForHostThrowsExceptionForNotAllowedHostnameValues($httpHost, $hostNamePattern) {
+		$_SERVER['HTTP_HOST'] = $httpHost;
+		$GLOBALS['TYPO3_CONF_VARS']['SYS']['trustedHostsPattern'] = $hostNamePattern;
+		GeneralUtilityFixture::getIndpEnv('HTTP_HOST');
+	}
+
+	/**
+	 * @param string $httpHost HTTP_HOST string
+	 * @param string $hostNamePattern trusted hosts pattern (not used in this test currently)
+	 * @test
+	 * @dataProvider hostnamesNotMatchingTrustedHostsConfigurationDataProvider
+	 */
+	public function getIndpEnvForHostAllowsAllHostnameValuesIfHostPatternIsSetToAllowAll($httpHost, $hostNamePattern) {
+		$_SERVER['HTTP_HOST'] = $httpHost;
+		$GLOBALS['TYPO3_CONF_VARS']['SYS']['trustedHostsPattern'] = Utility\GeneralUtility::ENV_TRUSTED_HOSTS_PATTERN_ALLOW_ALL;
+		$this->assertSame($httpHost, Utility\GeneralUtility::getIndpEnv('HTTP_HOST'));
+	}
+
+	/**
+	 * @test
 	 * @dataProvider hostnameAndPortDataProvider
 	 */
 	public function getIndpEnvTypo3PortParsesHostnamesAndIpAdresses($httpHost, $dummy, $expectedPort) {
@@ -1689,9 +1872,9 @@ class GeneralUtilityTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	/**
 	 * Data provider for valid isValidUrl's
 	 *
-	 * @return array Valid ressource
+	 * @return array Valid resource
 	 */
-	public function validUrlValidRessourceDataProvider() {
+	public function validUrlValidResourceDataProvider() {
 		return array(
 			'http' => array('http://www.example.org/'),
 			'http without trailing slash' => array('http://qwe'),
@@ -1712,15 +1895,14 @@ class GeneralUtilityTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 			'http punicode subdomain' => array('http://xn--h-zfa.oebb.at'),
 			'http domain-name umlauts' => array('http://www.öbb.at'),
 			'http subdomain umlauts' => array('http://äh.oebb.at'),
-			'http directory umlauts' => array('http://www.oebb.at/äöü/')
 		);
 	}
 
 	/**
 	 * @test
-	 * @dataProvider validUrlValidRessourceDataProvider
+	 * @dataProvider validUrlValidResourceDataProvider
 	 */
-	public function validURLReturnsTrueForValidRessource($url) {
+	public function validURLReturnsTrueForValidResource($url) {
 		$this->assertTrue(Utility\GeneralUtility::isValidUrl($url));
 	}
 
@@ -1743,7 +1925,8 @@ class GeneralUtilityTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 			'empty string' => array(''),
 			'string -1' => array('-1'),
 			'string array()' => array('array()'),
-			'random string' => array('qwe')
+			'random string' => array('qwe'),
+			'http directory umlauts' => array('http://www.oebb.at/äöü/'),
 		);
 	}
 
@@ -1868,7 +2051,6 @@ class GeneralUtilityTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 		@copy($fixtureFile, $testFilename);
 		Utility\GeneralUtility::unlink_tempfile($testFilename);
 		$fileExists = file_exists($testFilename);
-		@unlink($testFilename);
 		$this->assertFalse($fileExists);
 	}
 
@@ -1881,7 +2063,6 @@ class GeneralUtilityTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 		@copy($fixtureFile, $testFilename);
 		Utility\GeneralUtility::unlink_tempfile($testFilename);
 		$fileExists = file_exists($testFilename);
-		@unlink($testFilename);
 		$this->assertFalse($fileExists);
 	}
 
@@ -1893,7 +2074,6 @@ class GeneralUtilityTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 		$testFilename = PATH_site . 'typo3temp/' . uniqid('test_') . '.gif';
 		@copy($fixtureFile, $testFilename);
 		$returnValue = Utility\GeneralUtility::unlink_tempfile($testFilename);
-		@unlink($testFilename);
 		$this->assertTrue($returnValue);
 	}
 
@@ -2243,7 +2423,7 @@ class GeneralUtilityTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	 * @test
 	 */
 	public function getDirsReturnsArrayOfDirectoriesFromGivenDirectory() {
-		$path = PATH_t3lib;
+		$path = PATH_typo3conf;
 		$directories = Utility\GeneralUtility::get_dirs($path);
 		$this->assertInternalType(\PHPUnit_Framework_Constraint_IsType::TYPE_ARRAY, $directories);
 	}
@@ -2306,13 +2486,17 @@ class GeneralUtilityTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 				'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789',
 				'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
 			),
-			'Angel brackets and ampersand are encoded' => array(
+			'Angle brackets and ampersand are encoded' => array(
 				'<>&',
-				'\\x3C\\x3E\\x26'
+				'\\u003C\\u003E\\u0026'
 			),
-			'Quotes and slashes are encoded' => array(
-				'"\'\\/',
-				'\\x22\\x27\\x5C\\x2F'
+			'Quotes and backslashes are encoded' => array(
+				'"\'\\',
+				'\\u0022\\u0027\\u005C'
+			),
+			'Forward slashes are escaped' => array(
+				'</script>',
+				'\\u003C\\/script\\u003E'
 			),
 			'Empty string stays empty' => array(
 				'',
@@ -2320,19 +2504,19 @@ class GeneralUtilityTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 			),
 			'Exclamation mark and space are properly encoded' => array(
 				'Hello World!',
-				'Hello\\x20World\\x21'
+				'Hello\\u0020World\\u0021'
 			),
 			'Whitespaces are properly encoded' => array(
 				TAB . LF . CR . ' ',
-				'\\x09\\x0A\\x0D\\x20'
+				'\\u0009\\u000A\\u000D\\u0020'
 			),
 			'Null byte is properly encoded' => array(
 				chr(0),
-				'\\x00'
+				'\\u0000'
 			),
 			'Umlauts are properly encoded' => array(
 				'ÜüÖöÄä',
-				'\\xDC\\xFC\\xD6\\xF6\\xC4\\xE4'
+				'\\u00dc\\u00fc\\u00d6\\u00f6\\u00c4\\u00e4'
 			)
 		);
 	}
@@ -2366,11 +2550,11 @@ class GeneralUtilityTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 		$file = PATH_site . 'typo3temp/' . $unique . '.xml';
 		Utility\GeneralUtility::writeFileToTypo3tempDir($file, $xml);
 		// Make sure there is no cached version of the label
-		$GLOBALS['typo3CacheManager']->getCache('t3lib_l10n')->flush();
+		Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Cache\\CacheManager')->getCache('l10n')->flush();
 		// Get default value
 		$defaultLL = Utility\GeneralUtility::readLLfile('EXT:lang/locallang_core.xlf', 'default');
 		// Clear language cache again
-		$GLOBALS['typo3CacheManager']->getCache('t3lib_l10n')->flush();
+		Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Cache\\CacheManager')->getCache('l10n')->flush();
 		// Set override file
 		$GLOBALS['TYPO3_CONF_VARS']['SYS']['locallangXMLOverride']['EXT:lang/locallang_core.xlf'][$unique] = $file;
 		/** @var $store \TYPO3\CMS\Core\Localization\LanguageStore */
@@ -2547,10 +2731,9 @@ class GeneralUtilityTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	 * @test
 	 */
 	public function minifyJavaScriptWritesExceptionMessageToDevLog() {
-		$namespace = 'TYPO3\\CMS\\Core\\Utility';
 		$t3libDivMock = uniqid('GeneralUtility');
-		eval('namespace ' . $namespace . '; class ' . $t3libDivMock . ' extends \\TYPO3\\CMS\\Core\\Utility\\GeneralUtility {' . '  public static function devLog($errorMessage) {' . '    if (!($errorMessage === \'Error minifying java script: foo\')) {' . '      throw new \\UnexpectedValue(\'broken\');' . '    }' . '    throw new \\RuntimeException();' . '  }' . '}');
-		$t3libDivMock = $namespace . '\\' . $t3libDivMock;
+		eval('namespace ' . __NAMESPACE__ . '; class ' . $t3libDivMock . ' extends \\TYPO3\\CMS\\Core\\Utility\\GeneralUtility {' . '  public static function devLog($errorMessage) {' . '    if (!($errorMessage === \'Error minifying java script: foo\')) {' . '      throw new \\UnexpectedValue(\'broken\');' . '    }' . '    throw new \\RuntimeException();' . '  }' . '}');
+		$t3libDivMock = __NAMESPACE__ . '\\' . $t3libDivMock;
 		$hookClassName = uniqid('tx_coretest');
 		$minifyHookMock = $this->getMock('stdClass', array('minify'), array(), $hookClassName);
 		$functionName = '&' . $hookClassName . '->minify';
@@ -2572,29 +2755,6 @@ class GeneralUtilityTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	 */
 	public function minifyJavaScriptErroneousCallback() {
 		throw new \RuntimeException('foo', 1344888548);
-	}
-
-	///////////////////////////
-	// Tests concerning getUrl
-	///////////////////////////
-	/**
-	 * @test
-	 */
-	public function getUrlWithAdditionalRequestHeadersProvidesHttpHeaderOnError() {
-		$url = 'http://typo3.org/i-do-not-exist-' . time();
-		$report = array();
-		Utility\GeneralUtility::getUrl($url, 0, array(), $report);
-		$this->assertContains('404', $report['message']);
-	}
-
-	/**
-	 * @test
-	 */
-	public function getUrlProvidesWithoutAdditionalRequestHeadersHttpHeaderOnError() {
-		$url = 'http://typo3.org/i-do-not-exist-' . time();
-		$report = array();
-		Utility\GeneralUtility::getUrl($url, 0, FALSE, $report);
-		$this->assertContains('404', $report['message'], 'Did not provide the HTTP response header when requesting a failing URL.');
 	}
 
 	///////////////////////////////
@@ -2675,17 +2835,14 @@ class GeneralUtilityTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 		// Create and prepare test directory
 		$directory = PATH_site . 'typo3temp/' . uniqid('test_');
 		Utility\GeneralUtility::mkdir($directory);
+		$this->testFilesToDelete[] = $directory;
 		chmod($directory, 1551);
 		// Set target permissions and run method
 		$GLOBALS['TYPO3_CONF_VARS']['BE']['folderCreateMask'] = '0770';
 		$fixPermissionsResult = Utility\GeneralUtility::fixPermissions($directory);
-		// Get actual permissions and clean up
 		clearstatcache();
-		$resultDirectoryPermissions = substr(decoct(fileperms($directory)), 1);
-		Utility\GeneralUtility::rmdir($directory);
-		// Test if everything was ok
 		$this->assertTrue($fixPermissionsResult);
-		$this->assertEquals('0770', $resultDirectoryPermissions);
+		$this->assertEquals('0770', substr(decoct(fileperms($directory)), 1));
 	}
 
 	/**
@@ -2698,17 +2855,15 @@ class GeneralUtilityTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 		// Create and prepare test directory
 		$directory = PATH_site . 'typo3temp/' . uniqid('test_');
 		Utility\GeneralUtility::mkdir($directory);
+		$this->testFilesToDelete[] = $directory;
 		chmod($directory, 1551);
 		// Set target permissions and run method
 		$GLOBALS['TYPO3_CONF_VARS']['BE']['folderCreateMask'] = '0770';
 		$fixPermissionsResult = Utility\GeneralUtility::fixPermissions($directory . '/');
 		// Get actual permissions and clean up
 		clearstatcache();
-		$resultDirectoryPermissions = substr(decoct(fileperms($directory)), 1);
-		Utility\GeneralUtility::rmdir($directory);
-		// Test if everything was ok
 		$this->assertTrue($fixPermissionsResult);
-		$this->assertEquals('0770', $resultDirectoryPermissions);
+		$this->assertEquals('0770', substr(decoct(fileperms($directory)), 1));
 	}
 
 	/**
@@ -2721,17 +2876,15 @@ class GeneralUtilityTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 		// Create and prepare test directory
 		$directory = PATH_site . 'typo3temp/' . uniqid('.test_');
 		Utility\GeneralUtility::mkdir($directory);
+		$this->testFilesToDelete[] = $directory;
 		chmod($directory, 1551);
 		// Set target permissions and run method
 		$GLOBALS['TYPO3_CONF_VARS']['BE']['folderCreateMask'] = '0770';
 		$fixPermissionsResult = Utility\GeneralUtility::fixPermissions($directory);
 		// Get actual permissions and clean up
 		clearstatcache();
-		$resultDirectoryPermissions = substr(decoct(fileperms($directory)), 1);
-		Utility\GeneralUtility::rmdir($directory);
-		// Test if everything was ok
 		$this->assertTrue($fixPermissionsResult);
-		$this->assertEquals('0770', $resultDirectoryPermissions);
+		$this->assertEquals('0770', substr(decoct(fileperms($directory)), 1));
 	}
 
 	/**
@@ -2744,6 +2897,7 @@ class GeneralUtilityTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 		// Create and prepare test directory and file structure
 		$baseDirectory = PATH_site . 'typo3temp/' . uniqid('test_');
 		Utility\GeneralUtility::mkdir($baseDirectory);
+		$this->testFilesToDelete[] = $baseDirectory;
 		chmod($baseDirectory, 1751);
 		Utility\GeneralUtility::writeFileToTypo3tempDir($baseDirectory . '/file', '42');
 		chmod($baseDirectory . '/file', 482);
@@ -2773,14 +2927,6 @@ class GeneralUtilityTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 		$resultBarDirectoryPermissions = substr(decoct(fileperms($baseDirectory . '/.bar')), 1);
 		$resultBarFilePermissions = substr(decoct(fileperms($baseDirectory . '/.bar/.file')), 2);
 		$resultBarFile2Permissions = substr(decoct(fileperms($baseDirectory . '/.bar/..file2')), 2);
-		// Clean up
-		unlink($baseDirectory . '/file');
-		unlink($baseDirectory . '/foo/file');
-		unlink($baseDirectory . '/.bar/.file');
-		unlink($baseDirectory . '/.bar/..file2');
-		Utility\GeneralUtility::rmdir($baseDirectory . '/foo');
-		Utility\GeneralUtility::rmdir($baseDirectory . '/.bar');
-		Utility\GeneralUtility::rmdir($baseDirectory);
 		// Test if everything was ok
 		$this->assertTrue($fixPermissionsResult);
 		$this->assertEquals('0770', $resultBaseDirectoryPermissions);
@@ -2801,16 +2947,13 @@ class GeneralUtilityTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 		}
 		// Create and prepare test file
 		$filename = PATH_site . 'typo3temp/../typo3temp/' . uniqid('test_');
+		$this->testFilesToDelete[] = $filename;
 		touch($filename);
 		chmod($filename, 482);
 		// Set target permissions and run method
 		$GLOBALS['TYPO3_CONF_VARS']['BE']['fileCreateMask'] = '0660';
 		$fixPermissionsResult = Utility\GeneralUtility::fixPermissions($filename);
-		// Get actual permissions and clean up
 		clearstatcache();
-		$resultFilePermissions = substr(decoct(fileperms($filename)), 2);
-		unlink($filename);
-		// Test if everything was ok
 		$this->assertFalse($fixPermissionsResult);
 	}
 
@@ -2823,17 +2966,14 @@ class GeneralUtilityTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 		}
 		$filename = 'typo3temp/' . uniqid('test_');
 		Utility\GeneralUtility::writeFileToTypo3tempDir(PATH_site . $filename, '42');
+		$this->testFilesToDelete[] = PATH_site . $filename;
 		chmod(PATH_site . $filename, 482);
 		// Set target permissions and run method
 		$GLOBALS['TYPO3_CONF_VARS']['BE']['fileCreateMask'] = '0660';
 		$fixPermissionsResult = Utility\GeneralUtility::fixPermissions($filename);
-		// Get actual permissions and clean up
 		clearstatcache();
-		$resultFilePermissions = substr(decoct(fileperms(PATH_site . $filename)), 2);
-		unlink(PATH_site . $filename);
-		// Test if everything was ok
 		$this->assertTrue($fixPermissionsResult);
-		$this->assertEquals('0660', $resultFilePermissions);
+		$this->assertEquals('0660', substr(decoct(fileperms(PATH_site . $filename)), 2));
 	}
 
 	/**
@@ -2863,14 +3003,13 @@ class GeneralUtilityTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 		}
 		$directory = PATH_site . 'typo3temp/' . uniqid('test_');
 		Utility\GeneralUtility::mkdir($directory);
+		$this->testFilesToDelete[] = $directory;
 		chmod($directory, 1551);
 		unset($GLOBALS['TYPO3_CONF_VARS']['BE']['folderCreateMask']);
 		$fixPermissionsResult = Utility\GeneralUtility::fixPermissions($directory);
 		clearstatcache();
-		$resultDirectoryPermissions = substr(decoct(fileperms($directory)), 1);
-		Utility\GeneralUtility::rmdir($directory);
 		$this->assertTrue($fixPermissionsResult);
-		$this->assertEquals('0755', $resultDirectoryPermissions);
+		$this->assertEquals('0755', substr(decoct(fileperms($directory)), 1));
 	}
 
 	///////////////////////////////
@@ -2882,11 +3021,10 @@ class GeneralUtilityTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	public function mkdirCreatesDirectory() {
 		$directory = PATH_site . 'typo3temp/' . uniqid('test_');
 		$mkdirResult = Utility\GeneralUtility::mkdir($directory);
+		$this->testFilesToDelete[] = $directory;
 		clearstatcache();
-		$directoryCreated = is_dir($directory);
-		@rmdir($directory);
 		$this->assertTrue($mkdirResult);
-		$this->assertTrue($directoryCreated);
+		$this->assertTrue(is_dir($directory));
 	}
 
 	/**
@@ -2895,11 +3033,10 @@ class GeneralUtilityTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	public function mkdirCreatesHiddenDirectory() {
 		$directory = PATH_site . 'typo3temp/' . uniqid('.test_');
 		$mkdirResult = Utility\GeneralUtility::mkdir($directory);
+		$this->testFilesToDelete[] = $directory;
 		clearstatcache();
-		$directoryCreated = is_dir($directory);
-		@rmdir($directory);
 		$this->assertTrue($mkdirResult);
-		$this->assertTrue($directoryCreated);
+		$this->assertTrue(is_dir($directory));
 	}
 
 	/**
@@ -2908,11 +3045,10 @@ class GeneralUtilityTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	public function mkdirCreatesDirectoryWithTrailingSlash() {
 		$directory = PATH_site . 'typo3temp/' . uniqid('test_') . '/';
 		$mkdirResult = Utility\GeneralUtility::mkdir($directory);
+		$this->testFilesToDelete[] = $directory;
 		clearstatcache();
-		$directoryCreated = is_dir($directory);
-		@rmdir($directory);
 		$this->assertTrue($mkdirResult);
-		$this->assertTrue($directoryCreated);
+		$this->assertTrue(is_dir($directory));
 	}
 
 	/**
@@ -2926,10 +3062,10 @@ class GeneralUtilityTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 		$oldUmask = umask(19);
 		$GLOBALS['TYPO3_CONF_VARS']['BE']['folderCreateMask'] = '0772';
 		Utility\GeneralUtility::mkdir($directory);
+		$this->testFilesToDelete[] = $directory;
 		clearstatcache();
 		$resultDirectoryPermissions = substr(decoct(fileperms($directory)), 1);
 		umask($oldUmask);
-		rmdir($directory);
 		$this->assertEquals($resultDirectoryPermissions, '0772');
 	}
 
@@ -2948,10 +3084,10 @@ class GeneralUtilityTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 			$GLOBALS['TYPO3_CONF_VARS']['BE']['createGroup'] = $swapGroup;
 			$directory = uniqid('mkdirtest_');
 			Utility\GeneralUtility::mkdir(PATH_site . 'typo3temp/' . $directory);
+			$this->testFilesToDelete[] = PATH_site . 'typo3temp/' . $directory;
 			clearstatcache();
 			$resultDirectoryGroupInfo = posix_getgrgid(filegroup(PATH_site . 'typo3temp/' . $directory));
 			$resultDirectoryGroup = $resultDirectoryGroupInfo['name'];
-			@rmdir((PATH_site . 'typo3temp/' . $directory));
 			$this->assertEquals($resultDirectoryGroup, $swapGroup);
 		}
 	}
@@ -2979,7 +3115,13 @@ class GeneralUtilityTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 			$this->markTestSkipped($methodName . '() test cannot be done when the web server user is only member of 1 group.');
 			return FALSE;
 		}
-		$groupInfo = posix_getgrgid($groups[1]);
+		$uname = strtolower(php_uname());
+		$groupOffset = 1;
+		if (strpos($uname, 'darwin') !== FALSE) {
+			// We are on OSX and it seems that the first group needs to be fetched since Mavericks
+			$groupOffset = 0;
+		}
+		$groupInfo = posix_getgrgid($groups[$groupOffset]);
 		return $groupInfo['name'];
 	}
 
@@ -2992,9 +3134,8 @@ class GeneralUtilityTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	public function mkdirDeepCreatesDirectory() {
 		$directory = 'typo3temp/' . uniqid('test_');
 		Utility\GeneralUtility::mkdir_deep(PATH_site, $directory);
-		$isDirectoryCreated = is_dir(PATH_site . $directory);
-		rmdir(PATH_site . $directory);
-		$this->assertTrue($isDirectoryCreated);
+		$this->testFilesToDelete[] = PATH_site . $directory;
+		$this->assertTrue(is_dir(PATH_site . $directory));
 	}
 
 	/**
@@ -3004,10 +3145,8 @@ class GeneralUtilityTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 		$directory = 'typo3temp/' . uniqid('test_');
 		$subDirectory = $directory . '/foo';
 		Utility\GeneralUtility::mkdir_deep(PATH_site, $subDirectory);
-		$isDirectoryCreated = is_dir(PATH_site . $subDirectory);
-		rmdir(PATH_site . $subDirectory);
-		rmdir(PATH_site . $directory);
-		$this->assertTrue($isDirectoryCreated);
+		$this->testFilesToDelete[] = PATH_site . $directory;
+		$this->assertTrue(is_dir(PATH_site . $subDirectory));
 	}
 
 	/**
@@ -3021,11 +3160,10 @@ class GeneralUtilityTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 		$oldUmask = umask(19);
 		$GLOBALS['TYPO3_CONF_VARS']['BE']['folderCreateMask'] = '0777';
 		Utility\GeneralUtility::mkdir_deep(PATH_site . 'typo3temp/', $directory);
+		$this->testFilesToDelete[] = PATH_site . 'typo3temp/' . $directory;
 		clearstatcache();
-		$resultDirectoryPermissions = substr(decoct(fileperms(PATH_site . 'typo3temp/' . $directory)), -3, 3);
-		@rmdir((PATH_site . 'typo3temp/' . $directory));
 		umask($oldUmask);
-		$this->assertEquals($resultDirectoryPermissions, '777');
+		$this->assertEquals('777', substr(decoct(fileperms(PATH_site . 'typo3temp/' . $directory)), -3, 3));
 	}
 
 	/**
@@ -3040,12 +3178,10 @@ class GeneralUtilityTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 		$GLOBALS['TYPO3_CONF_VARS']['BE']['folderCreateMask'] = '0777';
 		$oldUmask = umask(19);
 		Utility\GeneralUtility::mkdir_deep(PATH_site . 'typo3temp/', $subDirectory);
+		$this->testFilesToDelete[] = PATH_site . 'typo3temp/' . $directory;
 		clearstatcache();
-		$resultDirectoryPermissions = substr(decoct(fileperms(PATH_site . 'typo3temp/' . $directory)), -3, 3);
-		@rmdir((PATH_site . 'typo3temp/' . $subDirectory));
-		@rmdir((PATH_site . 'typo3temp/' . $directory));
 		umask($oldUmask);
-		$this->assertEquals($resultDirectoryPermissions, '777');
+		$this->assertEquals('777', substr(decoct(fileperms(PATH_site . 'typo3temp/' . $directory)), -3, 3));
 	}
 
 	/**
@@ -3059,12 +3195,10 @@ class GeneralUtilityTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 		$existingDirectory = uniqid('test_existing_') . '/';
 		$newSubDirectory = uniqid('test_new_');
 		@mkdir(($baseDirectory . $existingDirectory));
+		$this->testFilesToDelete[] = $baseDirectory . $existingDirectory;
 		chmod($baseDirectory . $existingDirectory, 482);
 		Utility\GeneralUtility::mkdir_deep($baseDirectory, $existingDirectory . $newSubDirectory);
-		$resultExistingDirectoryPermissions = substr(decoct(fileperms($baseDirectory . $existingDirectory)), 2);
-		@rmdir($baseDirectory, ($existingDirectory . $newSubDirectory));
-		@rmdir($baseDirectory, $existingDirectory);
-		$this->assertEquals($resultExistingDirectoryPermissions, '0742');
+		$this->assertEquals('0742', substr(decoct(fileperms($baseDirectory . $existingDirectory)), 2));
 	}
 
 	/**
@@ -3076,10 +3210,10 @@ class GeneralUtilityTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 			$GLOBALS['TYPO3_CONF_VARS']['BE']['createGroup'] = $swapGroup;
 			$directory = uniqid('mkdirdeeptest_');
 			Utility\GeneralUtility::mkdir_deep(PATH_site . 'typo3temp/', $directory);
+			$this->testFilesToDelete[] = PATH_site . 'typo3temp/' . $directory;
 			clearstatcache();
 			$resultDirectoryGroupInfo = posix_getgrgid(filegroup(PATH_site . 'typo3temp/' . $directory));
 			$resultDirectoryGroup = $resultDirectoryGroupInfo['name'];
-			@rmdir((PATH_site . 'typo3temp/' . $directory));
 			$this->assertEquals($resultDirectoryGroup, $swapGroup);
 		}
 	}
@@ -3094,11 +3228,10 @@ class GeneralUtilityTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 			$directory = uniqid('mkdirdeeptest_');
 			$subDirectory = $directory . '/bar';
 			Utility\GeneralUtility::mkdir_deep(PATH_site . 'typo3temp/', $subDirectory);
+			$this->testFilesToDelete[] = PATH_site . 'typo3temp/' . $directory;
 			clearstatcache();
 			$resultDirectoryGroupInfo = posix_getgrgid(filegroup(PATH_site . 'typo3temp/' . $directory));
 			$resultDirectoryGroup = $resultDirectoryGroupInfo['name'];
-			@rmdir((PATH_site . 'typo3temp/' . $subDirectory));
-			@rmdir((PATH_site . 'typo3temp/' . $directory));
 			$this->assertEquals($resultDirectoryGroup, $swapGroup);
 		}
 	}
@@ -3113,11 +3246,10 @@ class GeneralUtilityTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 			$directory = uniqid('mkdirdeeptest_');
 			$subDirectory = $directory . '/bar';
 			Utility\GeneralUtility::mkdir_deep(PATH_site . 'typo3temp/', $subDirectory);
+			$this->testFilesToDelete[] = PATH_site . 'typo3temp/' . $directory;
 			clearstatcache();
 			$resultDirectoryGroupInfo = posix_getgrgid(filegroup(PATH_site . 'typo3temp/' . $subDirectory));
 			$resultDirectoryGroup = $resultDirectoryGroupInfo['name'];
-			@rmdir((PATH_site . 'typo3temp/' . $subDirectory));
-			@rmdir((PATH_site . 'typo3temp/' . $directory));
 			$this->assertEquals($resultDirectoryGroup, $swapGroup);
 		}
 	}
@@ -3126,12 +3258,12 @@ class GeneralUtilityTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	 * @test
 	 */
 	public function mkdirDeepCreatesDirectoryInVfsStream() {
-		if (!class_exists('\\vfsStreamWrapper')) {
+		if (!class_exists('org\\bovigo\\vfs\\vfsStreamWrapper')) {
 			$this->markTestSkipped('mkdirDeepCreatesDirectoryInVfsStream() test not available with this phpunit version.');
 		}
-		\vfsStreamWrapper::register();
+		vfsStreamWrapper::register();
 		$baseDirectory = uniqid('test_');
-		\vfsStreamWrapper::setRoot(new \vfsStreamDirectory($baseDirectory));
+		vfsStreamWrapper::setRoot(new vfsStreamDirectory($baseDirectory));
 		Utility\GeneralUtility::mkdir_deep('vfs://' . $baseDirectory . '/', 'sub');
 		$this->assertTrue(is_dir('vfs://' . $baseDirectory . '/sub'));
 	}
@@ -3158,6 +3290,304 @@ class GeneralUtilityTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	 */
 	public function mkdirDeepThrowsExceptionIfDeepDirectoryIsNotOfTypeString() {
 		Utility\GeneralUtility::mkdir_deep(PATH_site . 'typo3temp/foo', array());
+	}
+
+	///////////////////////////////
+	// Tests concerning rmdir
+	///////////////////////////////
+
+	/**
+	 * @test
+	 */
+	public function rmdirRemovesFile() {
+		$file = PATH_site . 'typo3temp/' . uniqid('file_');
+		touch($file);
+		Utility\GeneralUtility::rmdir($file);
+		$this->assertFalse(file_exists($file));
+	}
+
+	/**
+	 * @test
+	 */
+	public function rmdirReturnTrueIfFileWasRemoved() {
+		$file = PATH_site . 'typo3temp/' . uniqid('file_');
+		touch($file);
+		$this->assertTrue(Utility\GeneralUtility::rmdir($file));
+	}
+
+	/**
+	 * @test
+	 */
+	public function rmdirReturnFalseIfNoFileWasRemoved() {
+		$file = PATH_site . 'typo3temp/' . uniqid('file_');
+		$this->assertFalse(Utility\GeneralUtility::rmdir($file));
+	}
+
+	/**
+	 * @test
+	 */
+	public function rmdirRemovesDirectory() {
+		$directory = PATH_site . 'typo3temp/' . uniqid('directory_');
+		mkdir($directory);
+		Utility\GeneralUtility::rmdir($directory);
+		$this->assertFalse(file_exists($directory));
+	}
+
+	/**
+	 * @test
+	 */
+	public function rmdirRemovesDirectoryWithTrailingSlash() {
+		$directory = PATH_site . 'typo3temp/' . uniqid('directory_') . '/';
+		mkdir($directory);
+		Utility\GeneralUtility::rmdir($directory);
+		$this->assertFalse(file_exists($directory));
+	}
+
+	/**
+	 * @test
+	 */
+	public function rmdirDoesNotRemoveDirectoryWithFilesAndReturnsFalseIfRecursiveDeletionIsOff() {
+		$directory = PATH_site . 'typo3temp/' . uniqid('directory_') . '/';
+		mkdir($directory);
+		$file = uniqid('file_');
+		touch($directory . $file);
+		$this->testFilesToDelete[] = $directory;
+		$return = Utility\GeneralUtility::rmdir($directory);
+		$this->assertTrue(file_exists($directory));
+		$this->assertTrue(file_exists($directory . $file));
+		$this->assertFalse($return);
+	}
+
+	/**
+	 * @test
+	 */
+	public function rmdirRemovesDirectoriesRecursiveAndReturnsTrue() {
+		$directory = PATH_site . 'typo3temp/' . uniqid('directory_') . '/';
+		mkdir($directory);
+		mkdir($directory . 'sub/');
+		touch($directory . 'sub/file');
+		$return = Utility\GeneralUtility::rmdir($directory, TRUE);
+		$this->assertFalse(file_exists($directory));
+		$this->assertTrue($return);
+	}
+
+	/**
+	 * @test
+	 */
+	public function rmdirRemovesLinkToDirectory() {
+		if (TYPO3_OS === 'WIN') {
+			$this->markTestSkipped('Test not available on Windows OS.');
+		}
+		$existingDirectory = PATH_site . 'typo3temp/' . uniqid('notExists_') . '/';
+		mkdir($existingDirectory);
+		$this->testFilesToDelete[] = $existingDirectory;
+		$symlinkName = PATH_site . 'typo3temp/' . uniqid('link_');
+		symlink($existingDirectory, $symlinkName);
+		Utility\GeneralUtility::rmdir($symlinkName, TRUE);
+		$this->assertFalse(is_link($symlinkName));
+	}
+
+	/**
+	 * @test
+	 */
+	public function rmdirRemovesDeadLinkToDirectory() {
+		if (TYPO3_OS === 'WIN') {
+			$this->markTestSkipped('Test not available on Windows OS.');
+		}
+		$notExistingDirectory = PATH_site . 'typo3temp/' . uniqid('notExists_') . '/';
+		$symlinkName = PATH_site . 'typo3temp/' . uniqid('link_');
+		symlink($notExistingDirectory, $symlinkName);
+		Utility\GeneralUtility::rmdir($symlinkName, TRUE);
+		$this->assertFalse(is_link($symlinkName));
+	}
+
+	/**
+	 * @test
+	 */
+	public function rmdirRemovesDeadLinkToFile() {
+		if (TYPO3_OS === 'WIN') {
+			$this->markTestSkipped('Test not available on Windows OS.');
+		}
+		$notExistingFile = PATH_site . 'typo3temp/' . uniqid('notExists_');
+		$symlinkName = PATH_site . 'typo3temp/' . uniqid('link_');
+		symlink($notExistingFile, $symlinkName);
+		Utility\GeneralUtility::rmdir($symlinkName, TRUE);
+		$this->assertFalse(is_link($symlinkName));
+	}
+
+	///////////////////////////////////
+	// Tests concerning getFilesInDir
+	///////////////////////////////////
+
+	/**
+	 * Helper method to create test directory.
+	 *
+	 * @return string A unique directory name prefixed with test_.
+	 */
+	protected function getFilesInDirCreateTestDirectory() {
+		if (!class_exists('org\\bovigo\\vfs\\vfsStreamWrapper')) {
+			$this->markTestSkipped('getFilesInDirCreateTestDirectory() helper method not available without vfsStream.');
+		}
+		$structure = array(
+			'subDirectory' => array(
+				'test.php' => 'butter',
+				'other.php' => 'milk',
+				'stuff.csv' => 'honey',
+			),
+			'excludeMe.txt' => 'cocoa nibs',
+			'testB.txt' => 'olive oil',
+			'testA.txt' => 'eggs',
+			'testC.txt' => 'carrots',
+			'test.js' => 'oranges',
+			'test.css' => 'apples',
+			'.secret.txt' => 'sammon',
+		);
+		vfsStream::setup('test', NULL, $structure);
+		$vfsUrl = vfsStream::url('test');
+
+		if (version_compare(PHP_VERSION, '5.4.0', '>=')) {
+			// set random values for mtime
+			foreach ($structure as $structureLevel1Key => $structureLevel1Content) {
+				$newMtime = rand();
+				if (is_array($structureLevel1Content)) {
+					foreach ($structureLevel1Content as $structureLevel2Key => $structureLevel2Content) {
+						touch($vfsUrl . '/' . $structureLevel1Key . '/' . $structureLevel2Key, $newMtime);
+					}
+				} else {
+					touch($vfsUrl . '/' . $structureLevel1Key, $newMtime);
+				}
+			}
+		}
+		return $vfsUrl;
+	}
+
+	/**
+	 * @test
+	 */
+	public function getFilesInDirFindsRegularFile() {
+		$vfsStreamUrl = $this->getFilesInDirCreateTestDirectory();
+		$files = Utility\GeneralUtility::getFilesInDir($vfsStreamUrl);
+		$this->assertContains('testA.txt', $files);
+	}
+
+	/**
+	 * @test
+	 */
+	public function getFilesInDirFindsHiddenFile() {
+		$vfsStreamUrl = $this->getFilesInDirCreateTestDirectory();
+		$files = Utility\GeneralUtility::getFilesInDir($vfsStreamUrl);
+		$this->assertContains('.secret.txt', $files);
+	}
+
+	/**
+	 * @test
+	 */
+	public function getFilesInDirByExtensionFindsFiles() {
+		$vfsStreamUrl = $this->getFilesInDirCreateTestDirectory();
+		$files = Utility\GeneralUtility::getFilesInDir($vfsStreamUrl, 'txt,js');
+		$this->assertContains('testA.txt', $files);
+		$this->assertContains('test.js', $files);
+	}
+
+	/**
+	 * @test
+	 */
+	public function getFilesInDirByExtensionDoesNotFindFilesWithOtherExtensions() {
+		$vfsStreamUrl = $this->getFilesInDirCreateTestDirectory();
+		$files = Utility\GeneralUtility::getFilesInDir($vfsStreamUrl, 'txt,js');
+		$this->assertContains('testA.txt', $files);
+		$this->assertContains('test.js', $files);
+		$this->assertNotContains('test.css', $files);
+	}
+
+	/**
+	 * @test
+	 */
+	public function getFilesInDirExcludesFilesMatchingPattern() {
+		$vfsStreamUrl = $this->getFilesInDirCreateTestDirectory();
+		$files = Utility\GeneralUtility::getFilesInDir($vfsStreamUrl, '', FALSE, '', 'excludeMe.*');
+		$this->assertContains('test.js', $files);
+		$this->assertNotContains('excludeMe.txt', $files);
+	}
+
+	/**
+	 * @test
+	 */
+	public function getFilesInDirCanPrependPath() {
+		$vfsStreamUrl = $this->getFilesInDirCreateTestDirectory();
+		$this->assertContains(
+			$vfsStreamUrl . '/testA.txt',
+			Utility\GeneralUtility::getFilesInDir($vfsStreamUrl, '', TRUE)
+		);
+	}
+
+	/**
+	 * @test
+	 */
+	public function getFilesInDirDoesSortAlphabeticallyByDefault() {
+		$vfsStreamUrl = $this->getFilesInDirCreateTestDirectory();
+		$this->assertSame(
+			array_values(Utility\GeneralUtility::getFilesInDir($vfsStreamUrl, '', FALSE)),
+			array('.secret.txt', 'excludeMe.txt', 'test.css', 'test.js', 'testA.txt', 'testB.txt', 'testC.txt')
+		);
+	}
+
+	/**
+	 * @test
+	 */
+	public function getFilesInDirCanOrderByMtime() {
+		if (version_compare(PHP_VERSION, '5.4.0', '<')) {
+			$this->markTestSkipped('touch() does not work with vfsStream in PHP 5.3 and below.');
+		}
+
+		$vfsStreamUrl = $this->getFilesInDirCreateTestDirectory();
+		$files = array();
+		$iterator = new \DirectoryIterator($vfsStreamUrl);
+		foreach ($iterator as $fileinfo) {
+			if ($fileinfo->isFile()) {
+				$files[$fileinfo->getFilename()] = $fileinfo->getMTime();
+			}
+		}
+		asort($files);
+		$this->assertSame(
+			array_values(Utility\GeneralUtility::getFilesInDir($vfsStreamUrl, '', FALSE, 'mtime')),
+			array_keys($files)
+		);
+	}
+
+	/**
+	 * @test
+	 */
+	public function getFilesInDirReturnsArrayWithMd5OfElementAndPathAsArrayKey() {
+		$vfsStreamUrl = $this->getFilesInDirCreateTestDirectory();
+		$this->assertArrayHasKey(
+			md5($vfsStreamUrl . '/testA.txt'),
+			Utility\GeneralUtility::getFilesInDir($vfsStreamUrl)
+		);
+	}
+
+	/**
+	 * @test
+	 */
+	public function getFilesInDirDoesNotFindDirectories() {
+		$vfsStreamUrl = $this->getFilesInDirCreateTestDirectory();
+		$this->assertNotContains(
+			'subDirectory',
+			Utility\GeneralUtility::getFilesInDir($vfsStreamUrl)
+		);
+	}
+
+	/**
+	 * Dotfiles; current directory: '.' and parent directory: '..' must not be
+	 * present.
+	 *
+	 * @test
+	 */
+	public function getFilesInDirDoesNotFindDotfiles() {
+		$vfsStreamUrl = $this->getFilesInDirCreateTestDirectory();
+		$files = Utility\GeneralUtility::getFilesInDir($vfsStreamUrl);
+		$this->assertNotContains('..', $files);
+		$this->assertNotContains('.', $files);
 	}
 
 	///////////////////////////////
@@ -3429,7 +3859,6 @@ class GeneralUtilityTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 			'consecutive ../' => array('dir1/dir2/dir3/../../../dir4', 'dir4'),
 			'distrubuted ../ with trailing /' => array('dir1/../dir2/dir3/../', 'dir2/'),
 			'distributed ../ without trailing /' => array('dir1/../dir2/dir3/..', 'dir2'),
-			'multiple distributed and consecutive ../ together' => array('dir1/dir2/dir3/dir4/../../dir5/dir6/dir7/../dir8/', 'dir1/dir2/dir5/dir6/dir8/'),
 			'multiple distributed and consecutive ../ together' => array('dir1/dir2/dir3/dir4/../../dir5/dir6/dir7/../dir8/', 'dir1/dir2/dir5/dir6/dir8/'),
 			'dirname with leading ..' => array('dir1/..dir2/dir3/', 'dir1/..dir2/dir3/'),
 			'dirname with trailing ..' => array('dir1/dir2../dir3/', 'dir1/dir2../dir3/'),
@@ -3748,12 +4177,84 @@ class GeneralUtilityTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	}
 
 	/**
-	 * Tests whether verifyFilenameAgainstDenyPattern detects the NULL character.
+	 * @return array
+	 */
+	public function deniedFilesDataProvider() {
+		return array(
+			'Nul character in file' => array('image' . chr(0) . '.gif'),
+			'Nul character in file with .php' => array('image.php' . chr(0) . '.gif'),
+			'Regular .php file' => array('file.php'),
+			'Regular .php5 file' => array('file.php5'),
+			'Regular .php3 file' => array('file.php3'),
+			'Regular .phpsh file' => array('file.phpsh'),
+			'Regular .phtml file' => array('file.phtml'),
+			'PHP file in the middle' => array('file.php.txt'),
+			'.htaccess file' => array('.htaccess'),
+		);
+	}
+
+	/**
+	 * Tests whether verifyFilenameAgainstDenyPattern detects denied files.
 	 *
+	 * @param string $deniedFile
+	 * @test
+	 * @dataProvider deniedFilesDataProvider
+	 */
+	public function verifyFilenameAgainstDenyPatternDetectsNotAllowedFiles($deniedFile) {
+		$this->assertFalse(Utility\GeneralUtility::verifyFilenameAgainstDenyPattern($deniedFile));
+	}
+
+
+	/////////////////////////////////////////////////////////////////////////////////////
+	// Tests concerning copyDirectory
+	/////////////////////////////////////////////////////////////////////////////////////
+
+	/**
 	 * @test
 	 */
-	public function verifyFilenameAgainstDenyPatternDetectsNullCharacter() {
-		$this->assertFalse(Utility\GeneralUtility::verifyFilenameAgainstDenyPattern('image .gif'));
+	public function copyDirectoryCopiesFilesAndDirectoriesWithRelativePaths() {
+		$sourceDirectory = 'typo3temp/' . uniqid('test_') . '/';
+		$absoluteSourceDirectory = PATH_site . $sourceDirectory;
+		$this->testFilesToDelete[] = $absoluteSourceDirectory;
+		Utility\GeneralUtility::mkdir($absoluteSourceDirectory);
+
+		$targetDirectory = 'typo3temp/' . uniqid('test_') . '/';
+		$absoluteTargetDirectory = PATH_site . $targetDirectory;
+		$this->testFilesToDelete[] = $absoluteTargetDirectory;
+		Utility\GeneralUtility::mkdir($absoluteTargetDirectory);
+
+		Utility\GeneralUtility::writeFileToTypo3tempDir($absoluteSourceDirectory . 'file', '42');
+		Utility\GeneralUtility::mkdir($absoluteSourceDirectory . 'foo');
+		Utility\GeneralUtility::writeFileToTypo3tempDir($absoluteSourceDirectory . 'foo/file', '42');
+
+		Utility\GeneralUtility::copyDirectory($sourceDirectory, $targetDirectory);
+
+		$this->assertFileExists($absoluteTargetDirectory . 'file');
+		$this->assertFileExists($absoluteTargetDirectory . 'foo/file');
+	}
+
+	/**
+	 * @test
+	 */
+	public function copyDirectoryCopiesFilesAndDirectoriesWithAbsolutePaths() {
+		$sourceDirectory = 'typo3temp/' . uniqid('test_') . '/';
+		$absoluteSourceDirectory = PATH_site . $sourceDirectory;
+		$this->testFilesToDelete[] = $absoluteSourceDirectory;
+		Utility\GeneralUtility::mkdir($absoluteSourceDirectory);
+
+		$targetDirectory = 'typo3temp/' . uniqid('test_') . '/';
+		$absoluteTargetDirectory = PATH_site . $targetDirectory;
+		$this->testFilesToDelete[] = $absoluteTargetDirectory;
+		Utility\GeneralUtility::mkdir($absoluteTargetDirectory);
+
+		Utility\GeneralUtility::writeFileToTypo3tempDir($absoluteSourceDirectory . 'file', '42');
+		Utility\GeneralUtility::mkdir($absoluteSourceDirectory . 'foo');
+		Utility\GeneralUtility::writeFileToTypo3tempDir($absoluteSourceDirectory . 'foo/file', '42');
+
+		Utility\GeneralUtility::copyDirectory($absoluteSourceDirectory, $absoluteTargetDirectory);
+
+		$this->assertFileExists($absoluteTargetDirectory . 'file');
+		$this->assertFileExists($absoluteTargetDirectory . 'foo/file');
 	}
 
 	/////////////////////////////////////////////////////////////////////////////////////
@@ -3775,10 +4276,9 @@ class GeneralUtilityTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 		$GLOBALS['TYPO3_CONF_VARS']['BE']['fileCreateMask'] = '0777';
 		// Call method, get actual permissions and clean up
 		Utility\GeneralUtility::syslog('testLog', 'test', Utility\GeneralUtility::SYSLOG_SEVERITY_NOTICE);
+		$this->testFilesToDelete[] = $testLogFilename;
 		clearstatcache();
-		$resultFilePermissions = substr(decoct(fileperms($testLogFilename)), 2);
-		Utility\GeneralUtility::unlink_tempfile($testLogFilename);
-		$this->assertEquals($resultFilePermissions, '0777');
+		$this->assertEquals('0777', substr(decoct(fileperms($testLogFilename)), 2));
 	}
 
 	/**
@@ -3795,15 +4295,16 @@ class GeneralUtilityTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 		$GLOBALS['TYPO3_CONF_VARS']['BE']['fileCreateMask'] = '0777';
 		// Call method, get actual permissions and clean up
 		Utility\GeneralUtility::deprecationLog('foo');
+		$this->testFilesToDelete[] = $deprecationLogFilename;
 		clearstatcache();
 		$resultFilePermissions = substr(decoct(fileperms($deprecationLogFilename)), 2);
-		@unlink($deprecationLogFilename);
-		$this->assertEquals($resultFilePermissions, '0777');
+		$this->assertEquals('0777', $resultFilePermissions);
 	}
 
 	///////////////////////////////////////////////////
 	// Tests concerning callUserFunction
 	///////////////////////////////////////////////////
+
 	/**
 	 * @test
 	 * @dataProvider callUserFunctionInvalidParameterDataprovider
@@ -3812,7 +4313,7 @@ class GeneralUtilityTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 		$inputData = array('foo' => 'bar');
 		// omit the debug() output
 		ob_start();
-		$result = Utility\GeneralUtility::callUserFunction($functionName, $inputData, $this, 'user_');
+		$result = Utility\GeneralUtility::callUserFunction($functionName, $inputData, $this, 'user_', 1);
 		ob_end_clean();
 		$this->assertFalse($result);
 	}
@@ -3916,37 +4417,12 @@ class GeneralUtilityTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	}
 
 	///////////////////////////////////////////////////
-	// Tests concerning hasValidClassPrefix
-	///////////////////////////////////////////////////
-	/**
-	 * @return array
-	 */
-	public function validClassPrefixDataProvider() {
-		return array(
-			'normal prefix' => array('tx_foo'),
-			'normal long prefix' => array('tx_foo_bar'),
-			'extbase named prefix' => array('Tx_foo'),
-			'user func named prefix' => array('user_foo'),
-			'empty string' => array('')
-		);
-	}
-
-	/**
-	 * @test
-	 * @dataProvider validClassPrefixDataProvider
-	 * @param string $className Class name to test
-	 */
-	public function hasValidClassPrefixAcceptsValidPrefixes($className) {
-		$this->assertTrue(Utility\GeneralUtility::hasValidClassPrefix($className));
-	}
-
-	///////////////////////////////////////////////////
 	// Tests concerning generateRandomBytes
 	///////////////////////////////////////////////////
 	/**
 	 * @test
 	 * @dataProvider generateRandomBytesReturnsExpectedAmountOfBytesDataProvider
-	 * @param int $numberOfBytes Number of Bytes to generate
+	 * @param integer $numberOfBytes Number of Bytes to generate
 	 */
 	public function generateRandomBytesReturnsExpectedAmountOfBytes($numberOfBytes) {
 		$this->assertEquals(strlen(Utility\GeneralUtility::generateRandomBytes($numberOfBytes)), $numberOfBytes);
@@ -3975,7 +4451,7 @@ class GeneralUtilityTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	/**
 	 * @test
 	 * @dataProvider generateRandomBytesReturnsDifferentBytesDuringDifferentCallsDataProvider
-	 * @param int $numberOfBytes  Number of Bytes to generate
+	 * @param integer $numberOfBytes  Number of Bytes to generate
 	 */
 	public function generateRandomBytesReturnsDifferentBytesDuringDifferentCalls($numberOfBytes) {
 		$results = array();
@@ -4063,9 +4539,8 @@ text with a ' . $urlMatch . '$|s'),
 	 * @param string $expected Text with correctly detected URLs
 	 */
 	public function substUrlsInPlainText($input, $expectedPreg) {
+		$GLOBALS['TYPO3_DB'] = $this->getMock('TYPO3\\CMS\\Core\\Database\\DatabaseConnection', array(), array(), '', FALSE);
 		$this->assertTrue(preg_match($expectedPreg, Utility\GeneralUtility::substUrlsInPlainText($input, 1, 'http://example.com/index.php')) == 1);
 	}
 
 }
-
-?>

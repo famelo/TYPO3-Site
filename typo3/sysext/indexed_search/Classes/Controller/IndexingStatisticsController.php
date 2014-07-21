@@ -1,39 +1,33 @@
 <?php
 namespace TYPO3\CMS\IndexedSearch\Controller;
 
-/***************************************************************
- *  Copyright notice
- *
- *  (c) 2004-2013 Dimitri Ebert (dimitri.ebert@dkd.de)
- *  All rights reserved
- *
- *  This script is part of the TYPO3 project. The TYPO3 project is
- *  free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
- *
- *  The GNU General Public License can be found at
- *  http://www.gnu.org/copyleft/gpl.html.
- *
- *  This script is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  This copyright notice MUST APPEAR in all copies of the script!
- ***************************************************************/
 /**
- * Module extension (addition to function menu) 'Indexed search statistics' for the 'indexed_search' extension.
+ * This file is part of the TYPO3 CMS project.
  *
- * @author 	Dimitri Ebert <dimitri.ebert@dkd.de>
+ * It is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License, either version 2
+ * of the License, or any later version.
+ *
+ * For the full copyright and license information, please read the
+ * LICENSE.txt file that was distributed with this source code.
+ *
+ * The TYPO3 project - inspiring people to share!
  */
+use TYPO3\CMS\Core\Utility\GeneralUtility;
+
 /**
  * Module extension (addition to function menu) 'Indexed search statistics' for the 'indexed_search' extension.
  *
- * @author 	Dimitri Ebert <dimitri.ebert@dkd.de>
+ * @author Dimitri Ebert <dimitri.ebert@dkd.de>
  */
 class IndexingStatisticsController extends \TYPO3\CMS\Backend\Module\AbstractFunctionModule {
+
+	/**
+	 * Default constructor loads additional locallang
+	 */
+	public function __construct() {
+		$GLOBALS['LANG']->includeLLFile('EXT:indexed_search/modfunc2/locallang.xlf');
+	}
 
 	/**
 	 * Calls showStats to generate output.
@@ -61,17 +55,24 @@ class IndexingStatisticsController extends \TYPO3\CMS\Backend\Module\AbstractFun
 	 */
 	public function showStats() {
 		$conf['words'] = 50;
+
 		// max words in result list
-		$conf['bid'] = intval(\TYPO3\CMS\Core\Utility\GeneralUtility::_GET('id'));
+		$conf['bid'] = (int)\TYPO3\CMS\Core\Utility\GeneralUtility::_GET('id');
+
 		// pageid for several statistics
 		$addwhere1 = '';
+
 		// all records
 		$addwhere2 = ' AND tstamp > ' . ($GLOBALS['EXEC_TIME'] - 30 * 24 * 60 * 60);
+
 		// last 30 days
 		$addwhere3 = ' AND tstamp > ' . ($GLOBALS['EXEC_TIME'] - 24 * 60 * 60);
+
 		// last 24 hours
-		$content = $GLOBALS['LANG']->getLL('title2') . '
-			<table cellpading="5" cellspacing="5" valign="top"><tr><td valign="top">' . $this->listSeveralStats($GLOBALS['LANG']->getLL('all'), $addwhere1, $conf) . '</td><td valign="top">' . $this->listSeveralStats($GLOBALS['LANG']->getLL('last30days'), $addwhere2, $conf) . '</td><td valign="top">' . $this->listSeveralStats($GLOBALS['LANG']->getLL('last24hours'), $addwhere3, $conf) . '</td></tr></table>' . $this->note;
+		$content = '<p class="lead">' . $GLOBALS['LANG']->getLL('title2') . '</p>';
+		$content .= '<table cellpading="5" cellspacing="5" valign="top" class=""><tr><td valign="top">' . $this->listSeveralStats($GLOBALS['LANG']->getLL('all'), $addwhere1, $conf) . '</td><td valign="top">' . $this->listSeveralStats($GLOBALS['LANG']->getLL('last30days'), $addwhere2, $conf) . '</td><td valign="top">' . $this->listSeveralStats($GLOBALS['LANG']->getLL('last24hours'), $addwhere3, $conf) . '</td></tr></table>';
+		$content .= '<p>' . $this->note . '</p>';
+
 		// Ask hook to include more on the page:
 		if ($hookObj = $this->hookRequest('additionalSearchStat')) {
 			$content .= $hookObj->additionalSearchStat();
@@ -144,8 +145,7 @@ class IndexingStatisticsController extends \TYPO3\CMS\Backend\Module\AbstractFun
 	 * @todo Define visibility
 	 */
 	public function extGetTreeList($id, $depth, $begin = 0, $perms_clause) {
-		// TODO: Fix this as this calls a non-static method
-		return \TYPO3\CMS\Backend\FrontendBackendUserAuthentication::extGetTreeList($id, $depth, $begin, $perms_clause);
+		return GeneralUtility::makeInstance('TYPO3\\CMS\\Backend\\FrontendBackendUserAuthentication')->extGetTreeList($id, $depth, $begin, $perms_clause);
 	}
 
 	/**
@@ -168,6 +168,3 @@ class IndexingStatisticsController extends \TYPO3\CMS\Backend\Module\AbstractFun
 	}
 
 }
-
-
-?>

@@ -1,39 +1,19 @@
 <?php
 namespace TYPO3\CMS\Lowlevel\Utility;
 
-/***************************************************************
- *  Copyright notice
- *
- *  (c) 1999-2013 Kasper Skårhøj (kasperYYYY@typo3.com)
- *  All rights reserved
- *
- *  This script is part of the TYPO3 project. The TYPO3 project is
- *  free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
- *
- *  The GNU General Public License can be found at
- *  http://www.gnu.org/copyleft/gpl.html.
- *  A copy is found in the textfile GPL.txt and important notices to the license
- *  from the author is found in LICENSE.txt distributed with these scripts.
- *
- *
- *  This script is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  This copyright notice MUST APPEAR in all copies of the script!
- ***************************************************************/
 /**
- * Class for displaying an array as a tree
+ * This file is part of the TYPO3 CMS project.
  *
- * Revised for TYPO3 3.6 July/2003 by Kasper Skårhøj
- * XHTML compliant
+ * It is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License, either version 2
+ * of the License, or any later version.
  *
- * @author Kasper Skårhøj <kasperYYYY@typo3.com>
+ * For the full copyright and license information, please read the
+ * LICENSE.txt file that was distributed with this source code.
+ *
+ * The TYPO3 project - inspiring people to share!
  */
+
 /**
  * Class for displaying an array as a tree
  * See the extension 'lowlevel' /config (Backend module 'Tools > Configuration')
@@ -114,12 +94,11 @@ class ArrayBrowser {
 			$a++;
 			$depth = $depth_in . $key;
 			$goto = 'a' . substr(md5($depth), 0, 6);
-			if (is_object($arr[$key])) {
-				$arr[$key] = (array) $arr[$key];
+			if (is_object($value) && !$value instanceof \Traversable) {
+				$value = (array)$value;
 			}
-			$isArray = is_array($arr[$key]);
+			$isArray = is_array($value) || $value instanceof \Traversable;
 			$deeper = $isArray && ($this->depthKeys[$depth] || $this->expAll);
-			$PM = 'join';
 			$LN = $a == $c ? 'blank' : 'line';
 			$BTM = $a == $c ? 'bottom' : '';
 			$PM = $isArray ? ($deeper ? 'minus' : 'plus') : 'join';
@@ -131,9 +110,9 @@ class ArrayBrowser {
 				$HTML .= ($this->expAll ? '' : '<a id="' . $goto . '" href="' . htmlspecialchars((\TYPO3\CMS\Backend\Utility\BackendUtility::getModuleUrl(\TYPO3\CMS\Core\Utility\GeneralUtility::_GP('M')) . '&node[' . $depth . ']=' . ($deeper ? 0 : 1) . '#' . $goto)) . '">') . $theIcon . ($this->expAll ? '' : '</a>');
 			}
 			$label = $key;
-			$HTML .= $this->wrapArrayKey($label, $depth, !$isArray ? $arr[$key] : '');
+			$HTML .= $this->wrapArrayKey($label, $depth, !$isArray ? $value : '');
 			if (!$isArray) {
-				$theValue = $arr[$key];
+				$theValue = $value;
 				if ($this->fixedLgd) {
 					$imgBlocks = ceil(1 + strlen($depthData) / 77);
 					$lgdChars = 68 - ceil(strlen(('[' . $key . ']')) * 0.8) - $imgBlocks * 3;
@@ -147,7 +126,7 @@ class ArrayBrowser {
 			}
 			$HTML .= '<br />';
 			if ($deeper) {
-				$HTML .= $this->tree($arr[$key], $depth, $depthData . '<img' . \TYPO3\CMS\Backend\Utility\IconUtility::skinImg($GLOBALS['BACK_PATH'], ('gfx/ol/' . $LN . '.gif'), 'width="18" height="16"') . ' align="top" alt="" />');
+				$HTML .= $this->tree($value, $depth, $depthData . '<img' . \TYPO3\CMS\Backend\Utility\IconUtility::skinImg($GLOBALS['BACK_PATH'], ('gfx/ol/' . $LN . '.gif'), 'width="18" height="16"') . ' align="top" alt="" />');
 			}
 		}
 		return $HTML;
@@ -279,6 +258,3 @@ class ArrayBrowser {
 	}
 
 }
-
-
-?>

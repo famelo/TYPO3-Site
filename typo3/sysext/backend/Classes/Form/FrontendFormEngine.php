@@ -1,36 +1,21 @@
 <?php
 namespace TYPO3\CMS\Backend\Form;
 
-/***************************************************************
- *  Copyright notice
- *
- *  (c) 1999-2013 Kasper Skårhøj (kasperYYYY@typo3.com)
- *  All rights reserved
- *
- *  This script is part of the TYPO3 project. The TYPO3 project is
- *  free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
- *
- *  The GNU General Public License can be found at
- *  http://www.gnu.org/copyleft/gpl.html.
- *  A copy is found in the textfile GPL.txt and important notices to the license
- *  from the author is found in LICENSE.txt distributed with these scripts.
- *
- *
- *  This script is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  This copyright notice MUST APPEAR in all copies of the script!
- ***************************************************************/
 /**
- * Contains a frontend version of the TYPO3 Core Form generator - AKA "TCEforms"
+ * This file is part of the TYPO3 CMS project.
  *
- * @author Kasper Skårhøj <kasperYYYY@typo3.com>
+ * It is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License, either version 2
+ * of the License, or any later version.
+ *
+ * For the full copyright and license information, please read the
+ * LICENSE.txt file that was distributed with this source code.
+ *
+ * The TYPO3 project - inspiring people to share!
  */
+
+use TYPO3\CMS\Core\Utility\GeneralUtility;
+
 /**
  * Extension class for the rendering of TCEforms in the frontend
  *
@@ -70,7 +55,7 @@ class FrontendFormEngine extends \TYPO3\CMS\Backend\Form\FormEngine {
 			$iRow[] = '<td valign="top">' . '<img name="req_' . $content['TABLE'] . '_' . $content['ID'] . '_' . $content['FIELD'] . '" src="clear.gif" width="10" height="10" alt="" />' . '<img name="cm_' . $content['TABLE'] . '_' . $content['ID'] . '_' . $content['FIELD'] . '" src="clear.gif" width="7" height="10" alt="" />' . '</td><td nowrap="nowrap" valign="top">' . $content['ITEM'] . $content['HELP_ICON'] . '</td>';
 		}
 		$out = '<table border="0" cellpadding="0" cellspacing="0">
-			<tr><td><img src="clear.gif" width="' . intval($this->paletteMargin) . '" height="1" alt="" /></td>' . implode('', $hRow) . '</tr>
+			<tr><td><img src="clear.gif" width="' . (int)$this->paletteMargin . '" height="1" alt="" /></td>' . implode('', $hRow) . '</tr>
 			<tr><td></td>' . implode('', $iRow) . '</tr>
 		</table>';
 		return $out;
@@ -137,8 +122,8 @@ class FrontendFormEngine extends \TYPO3\CMS\Backend\Form\FormEngine {
 	 * @return void
 	 */
 	public function initializeTemplateContainer() {
-		$GLOBALS['TBE_TEMPLATE'] = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Backend\\Template\\FrontendDocumentTemplate');
-		$GLOBALS['TBE_TEMPLATE']->getPageRenderer()->addInlineSetting('', 'PATH_typo3', \TYPO3\CMS\Core\Utility\GeneralUtility::dirname(\TYPO3\CMS\Core\Utility\GeneralUtility::getIndpEnv('SCRIPT_NAME')) . '/' . TYPO3_mainDir);
+		$GLOBALS['TBE_TEMPLATE'] = GeneralUtility::makeInstance('TYPO3\\CMS\\Backend\\Template\\FrontendDocumentTemplate');
+		$GLOBALS['TBE_TEMPLATE']->getPageRenderer()->addInlineSetting('', 'PATH_typo3', GeneralUtility::dirname(GeneralUtility::getIndpEnv('SCRIPT_NAME')) . '/' . TYPO3_mainDir);
 		$GLOBALS['SOBE'] = new \stdClass();
 		$GLOBALS['SOBE']->doc = $GLOBALS['TBE_TEMPLATE'];
 	}
@@ -150,7 +135,7 @@ class FrontendFormEngine extends \TYPO3\CMS\Backend\Form\FormEngine {
 	 * @return string
 	 */
 	private function prependBackPath($url) {
-		if (strpos($url, '://') !== FALSE || substr($url, 0, 1) === '/') {
+		if (strpos($url, '://') !== FALSE || $url[0] === '/') {
 			return $url;
 		} else {
 			return $this->backPath . $url;
@@ -158,6 +143,3 @@ class FrontendFormEngine extends \TYPO3\CMS\Backend\Form\FormEngine {
 	}
 
 }
-
-
-?>

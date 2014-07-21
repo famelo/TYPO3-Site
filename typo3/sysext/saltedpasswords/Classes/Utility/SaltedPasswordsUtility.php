@@ -1,42 +1,24 @@
 <?php
 namespace TYPO3\CMS\Saltedpasswords\Utility;
 
-/***************************************************************
- *  Copyright notice
- *
- *  (c) Marcus Krause (marcus#exp2009@t3sec.info)
- *  (c) Steffen Ritter (info@rs-websystems.de)
- *  All rights reserved
- *
- *  This script is part of the TYPO3 project. The TYPO3 project is
- *  free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
- *
- *  The GNU General Public License can be found at
- *  http://www.gnu.org/copyleft/gpl.html.
- *  A copy is found in the textfile GPL.txt and important notices to the license
- *  from the author is found in LICENSE.txt distributed with these scripts.
- *
- *
- *  This script is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  This copyright notice MUST APPEAR in all copies of the script!
- ***************************************************************/
 /**
- * Contains class "tx_saltedpasswords_div"
- * that provides various helper functions.
+ * This file is part of the TYPO3 CMS project.
+ *
+ * It is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License, either version 2
+ * of the License, or any later version.
+ *
+ * For the full copyright and license information, please read the
+ * LICENSE.txt file that was distributed with this source code.
+ *
+ * The TYPO3 project - inspiring people to share!
  */
+
 /**
  * General library class.
  *
  * @author Marcus Krause <marcus#exp2009@t3sec.info>
  * @author Steffen Ritter <info@rs-websystems.de>
- * @since 2009-06-14
  */
 class SaltedPasswordsUtility {
 
@@ -44,6 +26,7 @@ class SaltedPasswordsUtility {
 	 * Keeps this extension's key.
 	 */
 	const EXTKEY = 'saltedpasswords';
+
 	/**
 	 * Calculates number of backend users, who have no saltedpasswords
 	 * protection.
@@ -66,7 +49,7 @@ class SaltedPasswordsUtility {
 	 *
 	 * @author Rainer Kuhn <kuhn@punkt.de>
 	 * @author Marcus Krause <marcus#exp2009@t3sec.info>
-	 * @param string $mode TYPO3_MODE, wether Configuration for Frontend or Backend should be delivered
+	 * @param string $mode TYPO3_MODE, whether Configuration for Frontend or Backend should be delivered
 	 * @return array Extension configuration data
 	 */
 	static public function returnExtConf($mode = TYPO3_MODE) {
@@ -91,8 +74,8 @@ class SaltedPasswordsUtility {
 	 */
 	public function feloginForgotPasswordHook(array &$params, \TYPO3\CMS\Felogin\Controller\FrontendLoginController $pObj) {
 		if (self::isUsageEnabled('FE')) {
-			$this->objInstanceSaltedPW = \TYPO3\CMS\Saltedpasswords\Salt\SaltFactory::getSaltingInstance();
-			$params['newPassword'] = $this->objInstanceSaltedPW->getHashedPassword($params['newPassword']);
+			$objInstanceSaltedPW = \TYPO3\CMS\Saltedpasswords\Salt\SaltFactory::getSaltingInstance();
+			$params['newPassword'] = $objInstanceSaltedPW->getHashedPassword($params['newPassword']);
 		}
 	}
 
@@ -121,7 +104,7 @@ class SaltedPasswordsUtility {
 	static public function getDefaultSaltingHashingMethod($mode = TYPO3_MODE) {
 		$extConf = self::returnExtConf($mode);
 		$classNameToUse = 'TYPO3\\CMS\\Saltedpasswords\\Salt\\Md5Salt';
-		if (in_array($extConf['saltedPWHashingMethod'], array_keys($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['ext/saltedpasswords']['saltMethods']))) {
+		if (in_array($extConf['saltedPWHashingMethod'], array_keys(\TYPO3\CMS\Saltedpasswords\Salt\SaltFactory::getRegisteredSaltedHashingMethods()))) {
 			$classNameToUse = $extConf['saltedPWHashingMethod'];
 		}
 		return $classNameToUse;
@@ -138,8 +121,8 @@ class SaltedPasswordsUtility {
 		// Login Security Level Recognition
 		$extConf = self::returnExtConf($mode);
 		$securityLevel = $GLOBALS['TYPO3_CONF_VARS'][$mode]['loginSecurityLevel'];
-		if ($mode == 'BE' && $extConf['enabled']) {
-			return $securityLevel == 'normal' && $GLOBALS['TYPO3_CONF_VARS']['BE']['lockSSL'] > 0 || $securityLevel == 'rsa';
+		if ($mode == 'BE') {
+			return TRUE;
 		} elseif ($mode == 'FE' && $extConf['enabled']) {
 			return \TYPO3\CMS\Core\Utility\GeneralUtility::inList('normal,rsa', $securityLevel);
 		}
@@ -147,6 +130,3 @@ class SaltedPasswordsUtility {
 	}
 
 }
-
-
-?>

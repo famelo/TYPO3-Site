@@ -1,32 +1,18 @@
 <?php
 namespace TYPO3\CMS\Felogin\Controller;
 
-/***************************************************************
- *  Copyright notice
+/**
+ * This file is part of the TYPO3 CMS project.
  *
- *  (c) 2007-2013 Steffen Kamper <info@sk-typo3.de>
- *  Based on Newloginbox (c) 2002-2004 Kasper Skårhøj <kasper@typo3.com>
+ * It is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License, either version 2
+ * of the License, or any later version.
  *
- *  All rights reserved
+ * For the full copyright and license information, please read the
+ * LICENSE.txt file that was distributed with this source code.
  *
- *  This script is part of the TYPO3 project. The TYPO3 project is
- *  free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
- *
- *  The GNU General Public License can be found at
- *  http://www.gnu.org/copyleft/gpl.html.
- *
- *  This script is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  This copyright notice MUST APPEAR in all copies of the script!
- *
- *  The code was adapted from newloginbox, see manual for detailed description
- ***************************************************************/
+ * The TYPO3 project - inspiring people to share!
+ */
 
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 
@@ -130,8 +116,8 @@ class FrontendLoginController extends \TYPO3\CMS\Frontend\Plugin\AbstractPlugin 
 		$this->mergeflexFormValuesIntoConf();
 		// Get storage PIDs:
 		if ($this->conf['storagePid']) {
-			if (intval($this->conf['recursive'])) {
-				$this->spid = $this->pi_getPidList($this->conf['storagePid'], intval($this->conf['recursive']));
+			if ((int)$this->conf['recursive']) {
+				$this->spid = $this->pi_getPidList($this->conf['storagePid'], (int)$this->conf['recursive']);
 			} else {
 				$this->spid = $this->conf['storagePid'];
 			}
@@ -152,7 +138,7 @@ class FrontendLoginController extends \TYPO3\CMS\Frontend\Plugin\AbstractPlugin 
 		}
 		$this->redirectUrl = $this->validateRedirectUrl($this->redirectUrl);
 		// Get Template
-		$templateFile = $this->conf['templateFile'] ? $this->conf['templateFile'] : 'EXT:felogin/template.html';
+		$templateFile = $this->conf['templateFile'] ?: 'EXT:felogin/template.html';
 		$this->template = $this->cObj->fileResource($templateFile);
 		// Is user logged in?
 		$this->userIsLoggedIn = $GLOBALS['TSFE']->loginUser;
@@ -167,7 +153,7 @@ class FrontendLoginController extends \TYPO3\CMS\Frontend\Plugin\AbstractPlugin 
 		}
 		// What to display
 		$content = '';
-		if ($this->piVars['forgot']) {
+		if ($this->piVars['forgot'] && $this->conf['showForgotPassword']) {
 			$content .= $this->showForgot();
 		} elseif ($this->piVars['forgothash']) {
 			$content .= $this->changePassword();
@@ -180,8 +166,8 @@ class FrontendLoginController extends \TYPO3\CMS\Frontend\Plugin\AbstractPlugin 
 		}
 		// Process the redirect
 		if (($this->logintype === 'login' || $this->logintype === 'logout') && $this->redirectUrl && !$this->noRedirect) {
-			if (!$GLOBALS['TSFE']->fe_user->cookieId) {
-				$content .= $this->cObj->stdWrap($this->pi_getLL('cookie_warning', '', 1), $this->conf['cookieWarning_stdWrap.']);
+			if (!$GLOBALS['TSFE']->fe_user->isCookieSet() && $this->userIsLoggedIn) {
+				$content .= $this->cObj->stdWrap($this->pi_getLL('cookie_warning', '', TRUE), $this->conf['cookieWarning_stdWrap.']);
 			} else {
 				// Add hook for extra processing before redirect
 				if (
@@ -253,7 +239,7 @@ class FrontendLoginController extends \TYPO3\CMS\Frontend\Plugin\AbstractPlugin 
 					$markerArray['###STATUS_MESSAGE###'] = $this->cObj->stdWrap($error, $this->conf['forgotErrorMessage_stdWrap.']);
 				} else {
 					$markerArray['###STATUS_MESSAGE###'] = $this->cObj->stdWrap(
-						$this->pi_getLL('ll_forgot_reset_message_emailSent', '', 1),
+						$this->pi_getLL('ll_forgot_reset_message_emailSent', '', TRUE),
 						$this->conf['forgotResetMessageEmailSentMessage_stdWrap.']
 					);
 				}
@@ -267,15 +253,15 @@ class FrontendLoginController extends \TYPO3\CMS\Frontend\Plugin\AbstractPlugin 
 			$markerArray['###STATUS_MESSAGE###'] = $this->getDisplayText('forgot_reset_message', $this->conf['forgotMessage_stdWrap.']);
 			$markerArray['###BACKLINK_LOGIN###'] = '';
 		}
-		$markerArray['###BACKLINK_LOGIN###'] = $this->getPageLink($this->pi_getLL('ll_forgot_header_backToLogin', '', 1), array());
+		$markerArray['###BACKLINK_LOGIN###'] = $this->getPageLink($this->pi_getLL('ll_forgot_header_backToLogin', '', TRUE), array());
 		$markerArray['###STATUS_HEADER###'] = $this->getDisplayText('forgot_header', $this->conf['forgotHeader_stdWrap.']);
-		$markerArray['###LEGEND###'] = $this->pi_getLL('legend', $this->pi_getLL('reset_password', '', 1), 1);
+		$markerArray['###LEGEND###'] = $this->pi_getLL('legend', $this->pi_getLL('reset_password', '', TRUE), TRUE);
 		$markerArray['###ACTION_URI###'] = $this->getPageLink('', array($this->prefixId . '[forgot]' => 1), TRUE);
-		$markerArray['###EMAIL_LABEL###'] = $this->pi_getLL('your_email', '', 1);
-		$markerArray['###FORGOT_PASSWORD_ENTEREMAIL###'] = $this->pi_getLL('forgot_password_enterEmail', '', 1);
+		$markerArray['###EMAIL_LABEL###'] = $this->pi_getLL('your_email', '', TRUE);
+		$markerArray['###FORGOT_PASSWORD_ENTEREMAIL###'] = $this->pi_getLL('forgot_password_enterEmail', '', TRUE);
 		$markerArray['###FORGOT_EMAIL###'] = $this->prefixId . '[forgot_email]';
-		$markerArray['###SEND_PASSWORD###'] = $this->pi_getLL('reset_password', '', 1);
-		$markerArray['###DATA_LABEL###'] = $this->pi_getLL('ll_enter_your_data', '', 1);
+		$markerArray['###SEND_PASSWORD###'] = $this->pi_getLL('reset_password', '', TRUE);
+		$markerArray['###DATA_LABEL###'] = $this->pi_getLL('ll_enter_your_data', '', TRUE);
 		$markerArray = array_merge($markerArray, $this->getUserFieldMarkers());
 		// Generate hash
 		$hash = md5($this->generatePassword(3));
@@ -294,7 +280,7 @@ class FrontendLoginController extends \TYPO3\CMS\Frontend\Plugin\AbstractPlugin 
 	protected function changePassword() {
 		$subpartArray = ($linkpartArray = array());
 		$done = FALSE;
-		$minLength = intval($this->conf['newPasswordMinLength']) ? intval($this->conf['newPasswordMinLength']) : 6;
+		$minLength = (int)$this->conf['newPasswordMinLength'] ?: 6;
 		$subpart = $this->cObj->getSubpart($this->template, '###TEMPLATE_CHANGEPASSWORD###');
 		$markerArray['###STATUS_HEADER###'] = $this->getDisplayText('change_password_header', $this->conf['changePasswordHeader_stdWrap.']);
 		$markerArray['###STATUS_MESSAGE###'] = sprintf($this->getDisplayText(
@@ -306,14 +292,14 @@ class FrontendLoginController extends \TYPO3\CMS\Frontend\Plugin\AbstractPlugin 
 		$uid = $this->piVars['user'];
 		$piHash = $this->piVars['forgothash'];
 		$hash = explode('|', $piHash);
-		if (intval($uid) == 0) {
+		if ((int)$uid === 0) {
 			$markerArray['###STATUS_MESSAGE###'] = $this->getDisplayText(
 				'change_password_notvalid_message',
 				$this->conf['changePasswordNotValidMessage_stdWrap.']
 			);
 			$subpartArray['###CHANGEPASSWORD_FORM###'] = '';
 		} else {
-			$user = $this->pi_getRecord('fe_users', intval($uid));
+			$user = $this->pi_getRecord('fe_users', (int)$uid);
 			$userHash = $user['felogin_forgotHash'];
 			$compareHash = explode('|', $userHash);
 			if (!$compareHash || !$compareHash[1] || $compareHash[0] < time() || $hash[0] != $compareHash[0] || md5($hash[1]) != $compareHash[1]) {
@@ -365,7 +351,7 @@ class FrontendLoginController extends \TYPO3\CMS\Frontend\Plugin\AbstractPlugin 
 						$done = TRUE;
 						$subpartArray['###CHANGEPASSWORD_FORM###'] = '';
 						$markerArray['###BACKLINK_LOGIN###'] = $this->getPageLink(
-							$this->pi_getLL('ll_forgot_header_backToLogin', '', 1),
+							$this->pi_getLL('ll_forgot_header_backToLogin', '', TRUE),
 							array($this->prefixId . '[redirectReferrer]' => 'off')
 						);
 					}
@@ -376,13 +362,13 @@ class FrontendLoginController extends \TYPO3\CMS\Frontend\Plugin\AbstractPlugin 
 						$this->prefixId . '[user]' => $user['uid'],
 						$this->prefixId . '[forgothash]' => $piHash
 					));
-					$markerArray['###LEGEND###'] = $this->pi_getLL('change_password', '', 1);
-					$markerArray['###NEWPASSWORD1_LABEL###'] = $this->pi_getLL('newpassword_label1', '', 1);
-					$markerArray['###NEWPASSWORD2_LABEL###'] = $this->pi_getLL('newpassword_label2', '', 1);
+					$markerArray['###LEGEND###'] = $this->pi_getLL('change_password', '', TRUE);
+					$markerArray['###NEWPASSWORD1_LABEL###'] = $this->pi_getLL('newpassword_label1', '', TRUE);
+					$markerArray['###NEWPASSWORD2_LABEL###'] = $this->pi_getLL('newpassword_label2', '', TRUE);
 					$markerArray['###NEWPASSWORD1###'] = $this->prefixId . '[password1]';
 					$markerArray['###NEWPASSWORD2###'] = $this->prefixId . '[password2]';
 					$markerArray['###STORAGE_PID###'] = $this->spid;
-					$markerArray['###SEND_PASSWORD###'] = $this->pi_getLL('change_password', '', 1);
+					$markerArray['###SEND_PASSWORD###'] = $this->pi_getLL('change_password', '', TRUE);
 					$markerArray['###FORGOTHASH###'] = $piHash;
 				}
 			}
@@ -397,7 +383,7 @@ class FrontendLoginController extends \TYPO3\CMS\Frontend\Plugin\AbstractPlugin 
 	 * @return string Empty string with success, error message with no success
 	 */
 	protected function generateAndSendHash($user) {
-		$hours = intval($this->conf['forgotLinkHashValidTime']) > 0 ? intval($this->conf['forgotLinkHashValidTime']) : 24;
+		$hours = (int)$this->conf['forgotLinkHashValidTime'] > 0 ? (int)$this->conf['forgotLinkHashValidTime'] : 24;
 		$validEnd = time() + 3600 * $hours;
 		$validEndString = date($this->conf['dateFormat'], $validEnd);
 		$hash = md5(GeneralUtility::generateRandomBytes(64));
@@ -411,8 +397,8 @@ class FrontendLoginController extends \TYPO3\CMS\Frontend\Plugin\AbstractPlugin 
 		$isBaseURL = !empty($GLOBALS['TSFE']->baseUrl);
 		$isFeloginBaseURL = !empty($this->conf['feloginBaseURL']);
 		$link = $this->pi_getPageLink($GLOBALS['TSFE']->id, '', array(
-			$this->prefixId . '[user]' => $user['uid'],
-			$this->prefixId . '[forgothash]' => $randHash
+			rawurlencode($this->prefixId . '[user]') => $user['uid'],
+			rawurlencode($this->prefixId . '[forgothash]') => $randHash
 		));
 		// Prefix link if necessary
 		if ($isFeloginBaseURL) {
@@ -434,7 +420,7 @@ class FrontendLoginController extends \TYPO3\CMS\Frontend\Plugin\AbstractPlugin 
 			// No prefix is set, return the error
 			return $this->pi_getLL('ll_change_password_nolinkprefix_message');
 		}
-		$msg = sprintf($this->pi_getLL('ll_forgot_validate_reset_password', '', 0), $user['username'], $link, $validEndString);
+		$msg = sprintf($this->pi_getLL('ll_forgot_validate_reset_password'), $user['username'], $link, $validEndString);
 		// Add hook for extra processing of mail message
 		if (
 			isset($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['felogin']['forgotPasswordMail'])
@@ -471,13 +457,13 @@ class FrontendLoginController extends \TYPO3\CMS\Frontend\Plugin\AbstractPlugin 
 		$markerArray['###STATUS_HEADER###'] = $this->getDisplayText('status_header', $this->conf['logoutHeader_stdWrap.']);
 		$markerArray['###STATUS_MESSAGE###'] = $this->getDisplayText('status_message', $this->conf['logoutMessage_stdWrap.']);
 		$this->cObj->stdWrap($this->flexFormValue('message', 's_status'), $this->conf['logoutMessage_stdWrap.']);
-		$markerArray['###LEGEND###'] = $this->pi_getLL('logout', '', 1);
+		$markerArray['###LEGEND###'] = $this->pi_getLL('logout', '', TRUE);
 		$markerArray['###ACTION_URI###'] = $this->getPageLink('', array(), TRUE);
-		$markerArray['###LOGOUT_LABEL###'] = $this->pi_getLL('logout', '', 1);
+		$markerArray['###LOGOUT_LABEL###'] = $this->pi_getLL('logout', '', TRUE);
 		$markerArray['###NAME###'] = htmlspecialchars($GLOBALS['TSFE']->fe_user->user['name']);
 		$markerArray['###STORAGE_PID###'] = $this->spid;
 		$markerArray['###USERNAME###'] = htmlspecialchars($GLOBALS['TSFE']->fe_user->user['username']);
-		$markerArray['###USERNAME_LABEL###'] = $this->pi_getLL('username', '', 1);
+		$markerArray['###USERNAME_LABEL###'] = $this->pi_getLL('username', '', TRUE);
 		$markerArray['###NOREDIRECT###'] = $this->noRedirect ? '1' : '0';
 		$markerArray['###PREFIXID###'] = $this->prefixId;
 		$markerArray = array_merge($markerArray, $this->getUserFieldMarkers());
@@ -498,7 +484,7 @@ class FrontendLoginController extends \TYPO3\CMS\Frontend\Plugin\AbstractPlugin 
 		$subpart = $this->cObj->getSubpart($this->template, '###TEMPLATE_LOGIN###');
 		$subpartArray = ($linkpartArray = ($markerArray = array()));
 		$gpRedirectUrl = '';
-		$markerArray['###LEGEND###'] = $this->pi_getLL('oLabel_header_welcome', '', 1);
+		$markerArray['###LEGEND###'] = $this->pi_getLL('oLabel_header_welcome', '', TRUE);
 		if ($this->logintype === 'login') {
 			if ($this->userIsLoggedIn) {
 				// login success
@@ -587,20 +573,20 @@ class FrontendLoginController extends \TYPO3\CMS\Frontend\Plugin\AbstractPlugin 
 		$markerArray['###ACTION_URI###'] = $this->getPageLink('', array(), TRUE);
 		// Used by kb_md5fepw extension...
 		$markerArray['###EXTRA_HIDDEN###'] = $extraHidden;
-		$markerArray['###LEGEND###'] = $this->pi_getLL('login', '', 1);
-		$markerArray['###LOGIN_LABEL###'] = $this->pi_getLL('login', '', 1);
+		$markerArray['###LEGEND###'] = $this->pi_getLL('login', '', TRUE);
+		$markerArray['###LOGIN_LABEL###'] = $this->pi_getLL('login', '', TRUE);
 		// Used by kb_md5fepw extension...
 		$markerArray['###ON_SUBMIT###'] = $onSubmit;
-		$markerArray['###PASSWORD_LABEL###'] = $this->pi_getLL('password', '', 1);
+		$markerArray['###PASSWORD_LABEL###'] = $this->pi_getLL('password', '', TRUE);
 		$markerArray['###STORAGE_PID###'] = $this->spid;
-		$markerArray['###USERNAME_LABEL###'] = $this->pi_getLL('username', '', 1);
+		$markerArray['###USERNAME_LABEL###'] = $this->pi_getLL('username', '', TRUE);
 		$markerArray['###REDIRECT_URL###'] = htmlspecialchars($gpRedirectUrl);
 		$markerArray['###NOREDIRECT###'] = $this->noRedirect ? '1' : '0';
 		$markerArray['###PREFIXID###'] = $this->prefixId;
 		$markerArray = array_merge($markerArray, $this->getUserFieldMarkers());
 		if ($this->flexFormValue('showForgotPassword', 'sDEF') || $this->conf['showForgotPasswordLink']) {
 			$linkpartArray['###FORGOT_PASSWORD_LINK###'] = explode('|', $this->getPageLink('|', array($this->prefixId . '[forgot]' => 1)));
-			$markerArray['###FORGOT_PASSWORD###'] = $this->pi_getLL('ll_forgot_header', '', 1);
+			$markerArray['###FORGOT_PASSWORD###'] = $this->pi_getLL('ll_forgot_header', '', TRUE);
 		} else {
 			$subpartArray['###FORGOTP_VALID###'] = '';
 		}
@@ -611,7 +597,7 @@ class FrontendLoginController extends \TYPO3\CMS\Frontend\Plugin\AbstractPlugin 
 			&& GeneralUtility::inList('0,1', $GLOBALS['TYPO3_CONF_VARS']['FE']['permalogin'])
 			&& $GLOBALS['TYPO3_CONF_VARS']['FE']['lifetime'] > 0
 		) {
-			$markerArray['###PERMALOGIN###'] = $this->pi_getLL('permalogin', '', 1);
+			$markerArray['###PERMALOGIN###'] = $this->pi_getLL('permalogin', '', TRUE);
 			if ($GLOBALS['TYPO3_CONF_VARS']['FE']['permalogin'] == 1) {
 				$markerArray['###PERMALOGIN_HIDDENFIELD_ATTRIBUTES###'] = 'disabled="disabled"';
 				$markerArray['###PERMALOGIN_CHECKBOX_ATTRIBUTES###'] = 'checked="checked"';
@@ -663,7 +649,7 @@ class FrontendLoginController extends \TYPO3\CMS\Frontend\Plugin\AbstractPlugin 
 							break;
 						case 'login':
 							if ($this->conf['redirectPageLogin']) {
-								$redirect_url[] = $this->pi_getPageLink(intval($this->conf['redirectPageLogin']));
+								$redirect_url[] = $this->pi_getPageLink((int)$this->conf['redirectPageLogin']);
 							}
 							break;
 						case 'getpost':
@@ -686,7 +672,7 @@ class FrontendLoginController extends \TYPO3\CMS\Frontend\Plugin\AbstractPlugin 
 								$url = $this->referer;
 								// Is referring url allowed to redirect?
 								$match = array();
-								if (preg_match('/^http://([[:alnum:]._-]+)//', $url, $match)) {
+								if (preg_match('#^http://([[:alnum:]._-]+)/#', $url, $match)) {
 									$redirect_domain = $match[1];
 									$found = FALSE;
 									foreach (GeneralUtility::trimExplode(',', $this->conf['domains'], TRUE) as $d) {
@@ -711,7 +697,7 @@ class FrontendLoginController extends \TYPO3\CMS\Frontend\Plugin\AbstractPlugin 
 					switch ($redirMethod) {
 						case 'loginError':
 							if ($this->conf['redirectPageLoginError']) {
-								$redirect_url[] = $this->pi_getPageLink(intval($this->conf['redirectPageLoginError']));
+								$redirect_url[] = $this->pi_getPageLink((int)$this->conf['redirectPageLoginError']);
 							}
 							break;
 					}
@@ -724,7 +710,7 @@ class FrontendLoginController extends \TYPO3\CMS\Frontend\Plugin\AbstractPlugin 
 					$redirect_url[] = $this->cObj->lastTypoLinkUrl;
 				} elseif ($this->logintype == '' && $redirMethod == 'logout' && $this->conf['redirectPageLogout'] && $GLOBALS['TSFE']->loginUser) {
 					// If logout and page not accessible
-					$redirect_url[] = $this->pi_getPageLink(intval($this->conf['redirectPageLogout']));
+					$redirect_url[] = $this->pi_getPageLink((int)$this->conf['redirectPageLogout']);
 				} elseif ($this->logintype === 'logout') {
 					// after logout
 					// Hook for general actions after after logout has been confirmed
@@ -739,7 +725,7 @@ class FrontendLoginController extends \TYPO3\CMS\Frontend\Plugin\AbstractPlugin 
 					switch ($redirMethod) {
 						case 'logout':
 							if ($this->conf['redirectPageLogout']) {
-								$redirect_url[] = $this->pi_getPageLink(intval($this->conf['redirectPageLogout']));
+								$redirect_url[] = $this->pi_getPageLink((int)$this->conf['redirectPageLogout']);
 							}
 							break;
 					}
@@ -904,14 +890,14 @@ class FrontendLoginController extends \TYPO3\CMS\Frontend\Plugin\AbstractPlugin 
 	}
 
 	/**
-	 * Returns the header / message value from flexform if present, else from locallang.xml
+	 * Returns the header / message value from flexform if present, else from locallang.xlf
 	 *
 	 * @param string $label label name
 	 * @param string $stdWrapArray TS stdWrap array
 	 * @return string label text
 	 */
 	protected function getDisplayText($label, $stdWrapArray = array()) {
-		$text = $this->flexFormValue($label, 's_messages') ? $this->cObj->stdWrap($this->flexFormValue($label, 's_messages'), $stdWrapArray) : $this->cObj->stdWrap($this->pi_getLL('ll_' . $label, '', 1), $stdWrapArray);
+		$text = $this->flexFormValue($label, 's_messages') ? $this->cObj->stdWrap($this->flexFormValue($label, 's_messages'), $stdWrapArray) : $this->cObj->stdWrap($this->pi_getLL('ll_' . $label, '', TRUE), $stdWrapArray);
 		$replace = $this->getUserFieldMarkers();
 		return strtr($text, $replace);
 	}
@@ -1014,11 +1000,9 @@ class FrontendLoginController extends \TYPO3\CMS\Frontend\Plugin\AbstractPlugin 
 		$parsedUrl = @parse_url($url);
 		if ($parsedUrl !== FALSE && !isset($parsedUrl['scheme']) && !isset($parsedUrl['host'])) {
 			// If the relative URL starts with a slash, we need to check if it's within the current site path
-			return !GeneralUtility::isFirstPartOfStr($parsedUrl['path'], '/') || GeneralUtility::isFirstPartOfStr($parsedUrl['path'], GeneralUtility::getIndpEnv('TYPO3_SITE_PATH'));
+			return $parsedUrl['path'][0] !== '/' || GeneralUtility::isFirstPartOfStr($parsedUrl['path'], GeneralUtility::getIndpEnv('TYPO3_SITE_PATH'));
 		}
 		return FALSE;
 	}
 
 }
-
-?>

@@ -253,6 +253,7 @@ class TemplateParser {
 
 	/**
 	 * @var \TYPO3\CMS\Extbase\Object\ObjectManagerInterface
+	 * @inject
 	 */
 	protected $objectManager;
 
@@ -267,12 +268,26 @@ class TemplateParser {
 	protected $settings;
 
 	/**
+	 * @var array
+	 */
+	protected $viewHelperNameToImplementationClassNameRuntimeCache = array();
+
+	/**
 	 * Constructor. Preprocesses the $SCAN_PATTERN_NAMESPACEDECLARATION by
 	 * inserting the correct namespace separator.
 	 */
 	public function __construct() {
-		self::$SCAN_PATTERN_NAMESPACEDECLARATION = str_replace('LEGACY_NAMESPACE_SEPARATOR', preg_quote(\TYPO3\CMS\Fluid\Fluid::LEGACY_NAMESPACE_SEPARATOR), self::$SCAN_PATTERN_NAMESPACEDECLARATION);
-		self::$SCAN_PATTERN_NAMESPACEDECLARATION = str_replace('FLUID_NAMESPACE_SEPARATOR', preg_quote(\TYPO3\CMS\Fluid\Fluid::NAMESPACE_SEPARATOR), self::$SCAN_PATTERN_NAMESPACEDECLARATION);
+		self::$SCAN_PATTERN_NAMESPACEDECLARATION = str_replace(
+			array(
+				'LEGACY_NAMESPACE_SEPARATOR',
+				'FLUID_NAMESPACE_SEPARATOR'
+			),
+			array(
+				preg_quote(\TYPO3\CMS\Fluid\Fluid::LEGACY_NAMESPACE_SEPARATOR),
+				preg_quote(\TYPO3\CMS\Fluid\Fluid::NAMESPACE_SEPARATOR)
+			),
+			self::$SCAN_PATTERN_NAMESPACEDECLARATION
+		);
 	}
 
 	/**
@@ -282,16 +297,6 @@ class TemplateParser {
 	 */
 	public function injectSettings(array $settings) {
 		$this->settings = $settings;
-	}
-
-	/**
-	 * Inject object factory
-	 *
-	 * @param \TYPO3\CMS\Extbase\Object\ObjectManagerInterface $objectManager
-	 * @return void
-	 */
-	public function injectObjectManager(\TYPO3\CMS\Extbase\Object\ObjectManagerInterface $objectManager) {
-		$this->objectManager = $objectManager;
 	}
 
 	/**
@@ -483,6 +488,7 @@ class TemplateParser {
 			throw new \TYPO3\CMS\Fluid\Core\Parser\Exception('Namespace could not be resolved. This exception should never be thrown!', 1224254792);
 		}
 		$viewHelper = $this->objectManager->get($this->resolveViewHelperName($namespaceIdentifier, $methodIdentifier));
+		$this->viewHelperNameToImplementationClassNameRuntimeCache[$namespaceIdentifier][$methodIdentifier] = get_class($viewHelper);
 
 		// The following three checks are only done *in an uncached template*, and not needed anymore in the cached version
 		$expectedViewHelperArguments = $viewHelper->prepareArguments();
@@ -570,15 +576,23 @@ class TemplateParser {
 	 * @return string The fully qualified class name of the viewhelper
 	 */
 	protected function resolveViewHelperName($namespaceIdentifier, $methodIdentifier) {
-		$explodedViewHelperName = explode('.', $methodIdentifier);
-		$namespaceSeparator = strpos($this->namespaces[$namespaceIdentifier], \TYPO3\CMS\Fluid\Fluid::NAMESPACE_SEPARATOR) !== FALSE ? \TYPO3\CMS\Fluid\Fluid::NAMESPACE_SEPARATOR : \TYPO3\CMS\Fluid\Fluid::LEGACY_NAMESPACE_SEPARATOR;
-		if (count($explodedViewHelperName) > 1) {
-			$className = implode($namespaceSeparator, array_map('ucfirst', $explodedViewHelperName));
+		if (isset($this->viewHelperNameToImplementationClassNameRuntimeCache[$namespaceIdentifier][$methodIdentifier])) {
+			$name = $this->viewHelperNameToImplementationClassNameRuntimeCache[$namespaceIdentifier][$methodIdentifier];
 		} else {
-			$className = ucfirst($explodedViewHelperName[0]);
+			$explodedViewHelperName = explode('.', $methodIdentifier);
+			$namespaceSeparator = strpos($this->namespaces[$namespaceIdentifier], \TYPO3\CMS\Fluid\Fluid::NAMESPACE_SEPARATOR) !== FALSE ? \TYPO3\CMS\Fluid\Fluid::NAMESPACE_SEPARATOR : \TYPO3\CMS\Fluid\Fluid::LEGACY_NAMESPACE_SEPARATOR;
+			if (count($explodedViewHelperName) > 1) {
+				$className = implode($namespaceSeparator, array_map('ucfirst', $explodedViewHelperName));
+			} else {
+				$className = ucfirst($explodedViewHelperName[0]);
+			}
+			$className .= 'ViewHelper';
+			$name = $this->namespaces[$namespaceIdentifier] . $namespaceSeparator . $className;
+			$name = \TYPO3\CMS\Core\Core\ClassLoader::getClassNameForAlias($name);
+			// The name isn't cached in viewHelperNameToImplementationClassNameRuntimeCache here because the
+			// class could be overloaded by extbase object manager. Thus the cache is filled in
+			// initializeViewHelperAndAddItToStack after getting the real object from the object manager.
 		}
-		$className .= 'ViewHelper';
-		$name = $this->namespaces[$namespaceIdentifier] . $namespaceSeparator . $className;
 		return $name;
 	}
 
@@ -856,7 +870,7 @@ class TemplateParser {
 			}
 			return $arrayToBuild;
 		} else {
-			throw new \TYPO3\CMS\Fluid\Core\Parser\Exception('This exception should never be thrown, there is most likely some error in the regular expressions. Please post your template to the bugtracker at forge.typo3.org.', 1225136013);
+			throw new \TYPO3\CMS\Fluid\Core\Parser\Exception('This exception should never be thrown, there is most likely some error in the regular expressions. Please post your template to the bugtracker at forge.typo3.org.', 1225136014);
 		}
 	}
 
@@ -874,5 +888,3 @@ class TemplateParser {
 		$state->getNodeFromStack()->addChildNode($node);
 	}
 }
-
-?>

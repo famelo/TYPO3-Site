@@ -11,7 +11,10 @@ namespace TYPO3\CMS\Fluid\Tests\Unit\ViewHelpers\Format;
  * The TYPO3 project - inspiring people to share!                         *
  *                                                                        */
 
-class DateViewHelperTest extends \TYPO3\CMS\Extbase\Tests\Unit\BaseTestCase {
+/**
+ * Test case
+ */
+class DateViewHelperTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 
 	/**
 	 * @var array Backup of current locale, it is manipulated in tests
@@ -33,6 +36,7 @@ class DateViewHelperTest extends \TYPO3\CMS\Extbase\Tests\Unit\BaseTestCase {
 			'LC_TIME' => setlocale(LC_TIME, 0),
 		);
 		$this->timezone = @date_default_timezone_get();
+		$GLOBALS['TYPO3_CONF_VARS']['SYS']['ddmmyy'] = 'Y-m-d';
 	}
 
 	public function tearDown() {
@@ -40,6 +44,7 @@ class DateViewHelperTest extends \TYPO3\CMS\Extbase\Tests\Unit\BaseTestCase {
 			setlocale(constant($category), $locale);
 		}
 		date_default_timezone_set($this->timezone);
+		parent::tearDown();
 	}
 
 	/**
@@ -77,6 +82,26 @@ class DateViewHelperTest extends \TYPO3\CMS\Extbase\Tests\Unit\BaseTestCase {
 		$viewHelper->expects($this->once())->method('renderChildren')->will($this->returnValue(NULL));
 		$actualResult = $viewHelper->render();
 		$this->assertEquals('', $actualResult);
+	}
+
+	/**
+	 * @test
+	 */
+	public function viewHelperUsesDefaultIfNoSystemFormatIsAvailable() {
+		$GLOBALS['TYPO3_CONF_VARS']['SYS']['ddmmyy'] = '';
+		$viewHelper = new \TYPO3\CMS\Fluid\ViewHelpers\Format\DateViewHelper();
+		$actualResult = $viewHelper->render('@1391876733');
+		$this->assertEquals('2014-02-08', $actualResult);
+	}
+
+	/**
+	 * @test
+	 */
+	public function viewHelperUsesSystemFormat() {
+		$GLOBALS['TYPO3_CONF_VARS']['SYS']['ddmmyy'] = 'l, j. M y';
+		$viewHelper = new \TYPO3\CMS\Fluid\ViewHelpers\Format\DateViewHelper();
+		$actualResult = $viewHelper->render('@1391876733');
+		$this->assertEquals('Saturday, 8. Feb 14', $actualResult);
 	}
 
 	/**
@@ -228,5 +253,3 @@ class DateViewHelperTest extends \TYPO3\CMS\Extbase\Tests\Unit\BaseTestCase {
 		setlocale(LC_TIME, $locale);
 	}
 }
-
-?>

@@ -1,31 +1,20 @@
 <?php
 namespace TYPO3\CMS\Core\Tests\Unit\Resource;
 
-/***************************************************************
- *  Copyright notice
+/**
+ * This file is part of the TYPO3 CMS project.
  *
- *  (c) 2011-2013 Andreas Wolf <andreas.wolf@ikt-werk.de>
- *  All rights reserved
+ * It is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License, either version 2
+ * of the License, or any later version.
  *
- *  This script is part of the TYPO3 project. The TYPO3 project is
- *  free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
+ * For the full copyright and license information, please read the
+ * LICENSE.txt file that was distributed with this source code.
  *
- *  The GNU General Public License can be found at
- *  http://www.gnu.org/copyleft/gpl.html.
- *  A copy is found in the textfile GPL.txt and important notices to the license
- *  from the author is found in LICENSE.txt distributed with these scripts.
- *
- *
- *  This script is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  This copyright notice MUST APPEAR in all copies of the script!
- ***************************************************************/
+ * The TYPO3 project - inspiring people to share!
+ */
+
+use \org\bovigo\vfs\vfsStream;
 
 /**
  * Basic test case for the \TYPO3\CMS\Core\Resource\File tests
@@ -46,7 +35,7 @@ abstract class BaseTestCase extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	public function setUp() {
 		$this->mountDir = uniqid('mount-');
 		$this->basedir = uniqid('base-');
-		\vfsStream::setup($this->basedir);
+		vfsStream::setup($this->basedir);
 		// Add an entry for the mount directory to the VFS contents
 		$this->vfsContents = array($this->mountDir => array());
 	}
@@ -56,14 +45,14 @@ abstract class BaseTestCase extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	}
 
 	protected function mergeToVfsContents($contents) {
-		$this->vfsContents = \TYPO3\CMS\Core\Utility\GeneralUtility::array_merge_recursive_overrule($this->vfsContents, $contents);
+		\TYPO3\CMS\Core\Utility\ArrayUtility::mergeRecursiveWithOverrule($this->vfsContents, $contents);
 	}
 
 	protected function initializeVfs() {
-		if (is_callable('vfsStream::create') === FALSE) {
+		if (is_callable('org\\bovigo\\vfs\\vfsStream::create') === FALSE) {
 			$this->markTestSkipped('vfsStream::create() does not exist');
 		}
-		\vfsStream::create($this->vfsContents);
+		vfsStream::create($this->vfsContents);
 	}
 
 	/**
@@ -83,7 +72,7 @@ abstract class BaseTestCase extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	 * @return string
 	 */
 	protected function getUrlInMount($path) {
-		return \vfsStream::url($this->basedir . '/' . $this->mountDir . '/' . ltrim($path, '/'));
+		return vfsStream::url($this->basedir . '/' . $this->mountDir . '/' . ltrim($path, '/'));
 	}
 
 	/**
@@ -103,7 +92,7 @@ abstract class BaseTestCase extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	 * @return string
 	 */
 	protected function getUrl($path) {
-		return \vfsStream::url($this->basedir . '/' . ltrim($path, '/'));
+		return vfsStream::url($this->basedir . '/' . ltrim($path, '/'));
 	}
 
 	/**
@@ -168,5 +157,3 @@ abstract class BaseTestCase extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	}
 
 }
-
-?>

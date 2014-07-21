@@ -1,28 +1,18 @@
 <?php
 namespace TYPO3\CMS\Rtehtmlarea\Hook;
 
-/***************************************************************
- *  Copyright notice
+/**
+ * This file is part of the TYPO3 CMS project.
  *
- *  (c) 2012-2013 Stanislas Rolland <stanislas.rolland@typo3.org>
- *  All rights reserved
+ * It is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License, either version 2
+ * of the License, or any later version.
  *
- *  This script is part of the Typo3 project. The Typo3 project is
- *  free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
+ * For the full copyright and license information, please read the
+ * LICENSE.txt file that was distributed with this source code.
  *
- *  The GNU General Public License can be found at
- *  http://www.gnu.org/copyleft/gpl.html.
- *
- *  This script is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  This copyright notice MUST APPEAR in all copies of the script!
- ***************************************************************/
+ * The TYPO3 project - inspiring people to share!
+ */
 /**
  * Class for processing of the FAL soft references on img tags inserted in RTE content
  *
@@ -50,12 +40,11 @@ class SoftReferenceHook extends \TYPO3\CMS\Core\Database\SoftReferenceIndex {
 		$retVal = FALSE;
 		$this->tokenID_basePrefix = $table . ':' . $uid . ':' . $field . ':' . $structurePath . ':' . $spKey;
 		switch ($spKey) {
-		case 'rtehtmlarea_images':
-			$retVal = $this->findRef_rtehtmlarea_images($content, $spParams);
-			break;
-		default:
-			$retVal = FALSE;
-			break;
+			case 'rtehtmlarea_images':
+				$retVal = $this->findRef_rtehtmlarea_images($content, $spParams);
+				break;
+			default:
+				$retVal = FALSE;
 		}
 		return $retVal;
 	}
@@ -92,7 +81,7 @@ class SoftReferenceHook extends \TYPO3\CMS\Core\Database\SoftReferenceIndex {
 					$imgTags[$k] = str_replace('data-htmlarea-file-uid="' . $fileUid . '"', 'data-htmlarea-file-uid="{softref:' . $tokenID . '}"', $imgTags[$k]);
 					$elements[$k]['subst'] = array(
 						'type' => 'db',
-						'recordRef' => ($fileTable ? $fileTable : 'sys_file') . ':' . $fileUid,
+						'recordRef' => ($fileTable ?: 'sys_file') . ':' . $fileUid,
 						'tokenID' => $tokenID,
 						'tokenValue' => $fileUid
 					);
@@ -110,6 +99,3 @@ class SoftReferenceHook extends \TYPO3\CMS\Core\Database\SoftReferenceIndex {
 	}
 
 }
-
-
-?>

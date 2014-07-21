@@ -1,10 +1,4 @@
 <?php
-/*
- * @deprecated since 6.0, the classname TBE_browser_recordList and this file is obsolete
- * and will be removed with 6.2. The class was renamed and is now located at:
- * typo3/sysext/backend/Classes/RecordList/ElementBrowserRecordList.php
- */
-require_once \TYPO3\CMS\Core\Utility\ExtensionManagementUtility::extPath('backend') . 'Classes/RecordList/ElementBrowserRecordList.php';
 /**
  * Class which generates the page tree
  *
@@ -26,7 +20,7 @@ class localPageTree extends \TYPO3\CMS\Backend\Tree\View\BrowseTreeView {
 	 * @todo Define visibility
 	 */
 	public function __construct() {
-		$this->thisScript = \TYPO3\CMS\Core\Utility\GeneralUtility::getIndpEnv('SCRIPT_NAME');
+		$this->determineScriptUrl();
 		$this->init();
 		$this->clause = ' AND doktype!=' . \TYPO3\CMS\Frontend\Page\PageRepository::DOKTYPE_RECYCLER . $this->clause;
 	}
@@ -57,7 +51,7 @@ class localPageTree extends \TYPO3\CMS\Backend\Tree\View\BrowseTreeView {
 	 * @todo Define visibility
 	 */
 	public function printTree($treeArr = '') {
-		$titleLen = intval($GLOBALS['BE_USER']->uc['titleLen']);
+		$titleLen = (int)$GLOBALS['BE_USER']->uc['titleLen'];
 		if (!is_array($treeArr)) {
 			$treeArr = $this->tree;
 		}
@@ -72,7 +66,7 @@ class localPageTree extends \TYPO3\CMS\Backend\Tree\View\BrowseTreeView {
 			} else {
 				$arrCol = '<td></td>';
 			}
-			$aOnClick = 'return jumpToUrl(\'' . $this->thisScript . '?act=' . $GLOBALS['SOBE']->browser->act . '&mode=' . $GLOBALS['SOBE']->browser->mode . '&expandPage=' . $v['row']['uid'] . '\');';
+			$aOnClick = 'return jumpToUrl(' . \TYPO3\CMS\Core\Utility\GeneralUtility::quoteJSvalue($this->getThisScript() . 'act=' . $GLOBALS['SOBE']->browser->act . '&mode=' . $GLOBALS['SOBE']->browser->mode . '&expandPage=' . $v['row']['uid']) . ');';
 			$cEbullet = $this->ext_isLinkable($v['row']['doktype'], $v['row']['uid']) ? '<a href="#" onclick="' . htmlspecialchars($aOnClick) . '"><img' . \TYPO3\CMS\Backend\Utility\IconUtility::skinImg($GLOBALS['BACK_PATH'], 'gfx/ol/arrowbullet.gif', 'width="18" height="16"') . ' alt="" /></a>' : '';
 			$out .= '
 				<tr class="' . $bgColorClass . '">
@@ -115,12 +109,13 @@ class localPageTree extends \TYPO3\CMS\Backend\Tree\View\BrowseTreeView {
 	 * @todo Define visibility
 	 */
 	public function PM_ATagWrap($icon, $cmd, $bMark = '') {
+		$name = '';
 		if ($bMark) {
 			$anchor = '#' . $bMark;
 			$name = ' name="' . $bMark . '"';
 		}
-		$aOnClick = 'return jumpToUrl(\'' . $this->thisScript . '?PM=' . $cmd . '\',\'' . $anchor . '\');';
-		return '<a href="#"' . $name . ' onclick="' . htmlspecialchars($aOnClick) . '">' . $icon . '</a>';
+		$aOnClick = 'return jumpToUrl(' . \TYPO3\CMS\Core\Utility\GeneralUtility::quoteJSvalue($this->getThisScript() . 'PM=' . $cmd) . ',' . \TYPO3\CMS\Core\Utility\GeneralUtility::quoteJSvalue($anchor) . ');';
+		return '<a href="#"' . htmlspecialchars($name) . ' onclick="' . htmlspecialchars($aOnClick) . '">' . $icon . '</a>';
 	}
 
 	/**
@@ -138,16 +133,6 @@ class localPageTree extends \TYPO3\CMS\Backend\Tree\View\BrowseTreeView {
 		}
 		return $content;
 	}
-
-}
-
-/**
- * Page tree for the RTE - totally the same, no changes needed. (Just for the sake of beauty - or confusion... :-)
- *
- * @author Kasper Skårhøj <kasperYYYY@typo3.com>
- */
-class rtePageTree extends localPageTree {
-
 
 }
 
@@ -184,9 +169,9 @@ class TBE_PageTree extends localPageTree {
 			$ficon = \TYPO3\CMS\Backend\Utility\IconUtility::getIcon('pages', $v);
 			$onClick = 'return insertElement(\'pages\', \'' . $v['uid'] . '\', \'db\', ' . \TYPO3\CMS\Core\Utility\GeneralUtility::quoteJSvalue($v['title']) . ', \'\', \'\', \'' . $ficon . '\',\'\',1);';
 		} else {
-			$onClick = htmlspecialchars('return jumpToUrl(\'' . $this->thisScript . '?act=' . $GLOBALS['SOBE']->browser->act . '&mode=' . $GLOBALS['SOBE']->browser->mode . '&expandPage=' . $v['uid'] . '\');');
+			$onClick = 'return jumpToUrl(' . \TYPO3\CMS\Core\Utility\GeneralUtility::quoteJSvalue($this->getThisScript() . 'act=' . $GLOBALS['SOBE']->browser->act . '&mode=' . $GLOBALS['SOBE']->browser->mode . '&expandPage=' . $v['uid']) . ');';
 		}
-		return '<a href="#" onclick="' . $onClick . '">' . $title . '</a>';
+		return '<a href="#" onclick="' . htmlspecialchars($onClick) . '">' . $title . '</a>';
 	}
 
 }
@@ -211,7 +196,7 @@ class localFolderTree extends \TYPO3\CMS\Backend\Tree\View\FolderTreeView {
 	 * @todo Define visibility
 	 */
 	public function __construct() {
-		$this->thisScript = \TYPO3\CMS\Core\Utility\GeneralUtility::getIndpEnv('SCRIPT_NAME');
+		$this->determineScriptUrl();
 		parent::__construct();
 	}
 
@@ -225,7 +210,7 @@ class localFolderTree extends \TYPO3\CMS\Backend\Tree\View\FolderTreeView {
 	 */
 	public function wrapTitle($title, \TYPO3\CMS\Core\Resource\Folder $folderObject) {
 		if ($this->ext_isLinkable($folderObject)) {
-			$aOnClick = 'return jumpToUrl(\'' . $this->thisScript . '?act=' . $GLOBALS['SOBE']->browser->act . '&mode=' . $GLOBALS['SOBE']->browser->mode . '&expandFolder=' . rawurlencode($folderObject->getCombinedIdentifier()) . '\');';
+			$aOnClick = 'return jumpToUrl(' . \TYPO3\CMS\Core\Utility\GeneralUtility::quoteJSvalue($this->getThisScript() . 'act=' . $GLOBALS['SOBE']->browser->act . '&mode=' . $GLOBALS['SOBE']->browser->mode . '&expandFolder=' . rawurlencode($folderObject->getCombinedIdentifier())) . ');';
 			return '<a href="#" onclick="' . htmlspecialchars($aOnClick) . '">' . $title . '</a>';
 		} else {
 			return '<span class="typo3-dimmed">' . $title . '</span>';
@@ -240,7 +225,7 @@ class localFolderTree extends \TYPO3\CMS\Backend\Tree\View\FolderTreeView {
 	 * @todo Define visibility
 	 */
 	public function ext_isLinkable(\TYPO3\CMS\Core\Resource\Folder $folderObject) {
-		if (!$folderObject->getStorage()->isPublic() || strstr($folderObject->getIdentifier(), '_recycler_') || strstr($folderObject->getIdentifier(), '_temp_')) {
+		if (strstr($folderObject->getIdentifier(), '_recycler_') || strstr($folderObject->getIdentifier(), '_temp_')) {
 			return FALSE;
 		} else {
 			return TRUE;
@@ -258,23 +243,14 @@ class localFolderTree extends \TYPO3\CMS\Backend\Tree\View\FolderTreeView {
 	 * @todo Define visibility
 	 */
 	public function PM_ATagWrap($icon, $cmd, $bMark = '') {
+		$name = $anchor = '';
 		if ($bMark) {
 			$anchor = '#' . $bMark;
 			$name = ' name="' . $bMark . '"';
 		}
-		$aOnClick = 'return jumpToUrl(\'' . $this->thisScript . '?PM=' . $cmd . '\',\'' . $anchor . '\');';
-		return '<a href="#"' . $name . ' onclick="' . htmlspecialchars($aOnClick) . '">' . $icon . '</a>';
+		$aOnClick = 'return jumpToUrl(' . \TYPO3\CMS\Core\Utility\GeneralUtility::quoteJSvalue($this->getThisScript() . 'PM=' . $cmd) . ',' . \TYPO3\CMS\Core\Utility\GeneralUtility::quoteJSvalue($anchor) . ');';
+		return '<a href="#"' . htmlspecialchars($name) . ' onclick="' . htmlspecialchars($aOnClick) . '">' . $icon . '</a>';
 	}
-
-}
-
-/**
- * Folder tree for the RTE - totally the same, no changes needed. (Just for the sake of beauty - or confusion... :-)
- *
- * @author Kasper Skårhøj <kasperYYYY@typo3.com>
- */
-class rteFolderTree extends localFolderTree {
-
 
 }
 
@@ -290,11 +266,6 @@ class TBE_FolderTree extends localFolderTree {
 	 * @todo Define visibility
 	 */
 	public $ext_noTempRecyclerDirs = 0;
-
-	/**
-	 * @var array
-	 */
-	protected $scope;
 
 	/**
 	 * Returns TRUE if the input "record" contains a folder which can be linked.
@@ -321,41 +292,11 @@ class TBE_FolderTree extends localFolderTree {
 	 */
 	public function wrapTitle($title, $folderObject) {
 		if ($this->ext_isLinkable($folderObject)) {
-			$aOnClick = 'return jumpToUrl(\'' . $this->thisScript . '?act=' . $GLOBALS['SOBE']->browser->act . '&mode=' . $GLOBALS['SOBE']->browser->mode . '&expandFolder=' . rawurlencode($folderObject->getCombinedIdentifier()) . '\');';
+			$aOnClick = 'return jumpToUrl(' . \TYPO3\CMS\Core\Utility\GeneralUtility::quoteJSvalue($this->getThisScript() . 'act=' . $GLOBALS['SOBE']->browser->act . '&mode=' . $GLOBALS['SOBE']->browser->mode . '&expandFolder=' . rawurlencode($folderObject->getCombinedIdentifier())) . ');';
 			return '<a href="#" onclick="' . htmlspecialchars($aOnClick) . '">' . $title . '</a>';
 		} else {
 			return '<span class="typo3-dimmed">' . $title . '</span>';
 		}
 	}
 
-	/**
-	 * Wrap the plus/minus icon in a link
-	 *
-	 * @param string $icon HTML string to wrap, probably an image tag.
-	 * @param string $cmd Command for 'PM' get var
-	 * @param boolean $isExpand Whether to be expanded
-	 * @return string Link-wrapped input string
-	 * @internal
-	 */
-	public function PMiconATagWrap($icon, $cmd, $isExpand = TRUE) {
-		$this->scope = array(
-			'class' => get_class($this),
-			'script' => $this->thisScript,
-			'ext_noTempRecyclerDirs' => $this->ext_noTempRecyclerDirs,
-			'browser' => array(
-				'mode' => $GLOBALS['SOBE']->browser->mode,
-				'act' => $GLOBALS['SOBE']->browser->act,
-			),
-		);
-
-		return parent::PMiconATagWrap($icon, $cmd, $isExpand);
-	}
 }
-
-/*
- * @deprecated since 6.0, the classname browse_links and this file is obsolete
- * and will be removed with 6.2. The class was renamed and is now located at:
- * typo3/sysext/recordlist/Classes/Browser/ElementBrowser.php
- */
-require_once \TYPO3\CMS\Core\Utility\ExtensionManagementUtility::extPath('recordlist') . 'Classes/Browser/ElementBrowser.php';
-?>

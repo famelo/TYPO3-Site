@@ -1,31 +1,23 @@
 <?php
 namespace TYPO3\CMS\Backend\Controller\Wizard;
 
-/***************************************************************
- *  Copyright notice
+/**
+ * This file is part of the TYPO3 CMS project.
  *
- *  (c) 1999-2013 Kasper Skårhøj (kasperYYYY@typo3.com)
- *  All rights reserved
+ * It is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License, either version 2
+ * of the License, or any later version.
  *
- *  This script is part of the TYPO3 project. The TYPO3 project is
- *  free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
+ * For the full copyright and license information, please read the
+ * LICENSE.txt file that was distributed with this source code.
  *
- *  The GNU General Public License can be found at
- *  http://www.gnu.org/copyleft/gpl.html.
- *  A copy is found in the textfile GPL.txt and important notices to the license
- *  from the author is found in LICENSE.txt distributed with these scripts.
- *
- *
- *  This script is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  This copyright notice MUST APPEAR in all copies of the script!
- ***************************************************************/
+ * The TYPO3 project - inspiring people to share!
+ */
+
+use TYPO3\CMS\Backend\Utility\BackendUtility;
+use TYPO3\CMS\Backend\Utility\IconUtility;
+use TYPO3\CMS\Core\Utility\GeneralUtility;
+use TYPO3\CMS\Core\Utility\MathUtility;
 
 /**
  * Script Class for rendering the Table Wizard
@@ -48,12 +40,6 @@ class TableController {
 	 * @todo Define visibility
 	 */
 	public $content;
-
-	// List of files to include.
-	/**
-	 * @todo Define visibility
-	 */
-	public $include_once = array();
 
 	// TRUE, then <input> fields are shown, not textareas.
 	/**
@@ -110,31 +96,35 @@ class TableController {
 	public $tableParsing_delimiter;
 
 	/**
+	 * Constructor
+	 */
+	public function __construct() {
+		$GLOBALS['LANG']->includeLLFile('EXT:lang/locallang_wizards.xlf');
+		$GLOBALS['SOBE'] = $this;
+
+		$this->init();
+	}
+
+	/**
 	 * Initialization of the class
 	 *
 	 * @return void
-	 * @todo Define visibility
 	 */
-	public function init() {
+	protected function init() {
 		// GPvars:
-		$this->P = \TYPO3\CMS\Core\Utility\GeneralUtility::_GP('P');
-		$this->TABLECFG = \TYPO3\CMS\Core\Utility\GeneralUtility::_GP('TABLE');
+		$this->P = GeneralUtility::_GP('P');
+		$this->TABLECFG = GeneralUtility::_GP('TABLE');
 		// Setting options:
 		$this->xmlStorage = $this->P['params']['xmlOutput'];
-		$this->numNewRows = \TYPO3\CMS\Core\Utility\MathUtility::forceIntegerInRange($this->P['params']['numNewRows'], 1, 50, 5);
+		$this->numNewRows = MathUtility::forceIntegerInRange($this->P['params']['numNewRows'], 1, 50, 5);
 		// Textareas or input fields:
 		$this->inputStyle = isset($this->TABLECFG['textFields']) ? $this->TABLECFG['textFields'] : 1;
 		// Document template object:
-		$this->doc = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Backend\\Template\\DocumentTemplate');
+		$this->doc = GeneralUtility::makeInstance('TYPO3\\CMS\\Backend\\Template\\DocumentTemplate');
 		$this->doc->backPath = $GLOBALS['BACK_PATH'];
-		$this->doc->setModuleTemplate('templates/wizard_table.html');
-		$this->doc->JScode = $this->doc->wrapScriptTags('
-			function jumpToUrl(URL,formEl) {	//
-				window.location.href = URL;
-			}
-		');
+		$this->doc->setModuleTemplate('EXT:backend/Resources/Private/Templates/wizard_table.html');
 		// Setting form tag:
-		list($rUri) = explode('#', \TYPO3\CMS\Core\Utility\GeneralUtility::getIndpEnv('REQUEST_URI'));
+		list($rUri) = explode('#', GeneralUtility::getIndpEnv('REQUEST_URI'));
 		$this->doc->form = '<form action="' . htmlspecialchars($rUri) . '" method="post" name="wizardForm">';
 		$this->tableParsing_delimiter = '|';
 		$this->tableParsing_quote = '';
@@ -144,13 +134,12 @@ class TableController {
 	 * Main function, rendering the table wizard
 	 *
 	 * @return void
-	 * @todo Define visibility
 	 */
 	public function main() {
 		if ($this->P['table'] && $this->P['field'] && $this->P['uid']) {
 			$this->content .= $this->doc->section($GLOBALS['LANG']->getLL('table_title'), $this->tableWizard(), 0, 1);
 		} else {
-			$this->content .= $this->doc->section($GLOBALS['LANG']->getLL('table_title'), '<span class="typo3-red">' . $GLOBALS['LANG']->getLL('table_noData', 1) . '</span>', 0, 1);
+			$this->content .= $this->doc->section($GLOBALS['LANG']->getLL('table_title'), '<span class="typo3-red">' . $GLOBALS['LANG']->getLL('table_noData', TRUE) . '</span>', 0, 1);
 		}
 		// Setting up the buttons and markers for docheader
 		$docHeaderButtons = $this->getButtons();
@@ -189,17 +178,17 @@ class TableController {
 		);
 		if ($this->P['table'] && $this->P['field'] && $this->P['uid']) {
 			// CSH
-			$buttons['csh'] = \TYPO3\CMS\Backend\Utility\BackendUtility::cshItem('xMOD_csh_corebe', 'wizard_table_wiz', $GLOBALS['BACK_PATH'], '');
+			$buttons['csh'] = BackendUtility::cshItem('xMOD_csh_corebe', 'wizard_table_wiz', $GLOBALS['BACK_PATH'], '');
 			// CSH Buttons
-			$buttons['csh_buttons'] = \TYPO3\CMS\Backend\Utility\BackendUtility::cshItem('xMOD_csh_corebe', 'wizard_table_wiz_buttons', $GLOBALS['BACK_PATH'], '');
+			$buttons['csh_buttons'] = BackendUtility::cshItem('xMOD_csh_corebe', 'wizard_table_wiz_buttons', $GLOBALS['BACK_PATH'], '');
 			// Close
-			$buttons['close'] = '<a href="#" onclick="' . htmlspecialchars(('jumpToUrl(unescape(\'' . rawurlencode(\TYPO3\CMS\Core\Utility\GeneralUtility::sanitizeLocalUrl($this->P['returnUrl'])) . '\')); return false;')) . '">' . \TYPO3\CMS\Backend\Utility\IconUtility::getSpriteIcon('actions-document-close', array('title' => $GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.xlf:rm.closeDoc', TRUE))) . '</a>';
+			$buttons['close'] = '<a href="#" onclick="' . htmlspecialchars(('jumpToUrl(unescape(\'' . rawurlencode(GeneralUtility::sanitizeLocalUrl($this->P['returnUrl'])) . '\')); return false;')) . '">' . IconUtility::getSpriteIcon('actions-document-close', array('title' => $GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.xlf:rm.closeDoc', TRUE))) . '</a>';
 			// Save
-			$buttons['save'] = '<input type="image" class="c-inputButton" name="savedok"' . \TYPO3\CMS\Backend\Utility\IconUtility::skinImg($this->doc->backPath, 'gfx/savedok.gif') . ' title="' . $GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.xlf:rm.saveDoc', 1) . '" />';
+			$buttons['save'] = '<input type="image" class="c-inputButton" name="savedok"' . IconUtility::skinImg($this->doc->backPath, 'gfx/savedok.gif') . ' title="' . $GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.xlf:rm.saveDoc', TRUE) . '" />';
 			// Save & Close
-			$buttons['save_close'] = '<input type="image" class="c-inputButton" name="saveandclosedok"' . \TYPO3\CMS\Backend\Utility\IconUtility::skinImg($this->doc->backPath, 'gfx/saveandclosedok.gif') . ' title="' . $GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.xlf:rm.saveCloseDoc', 1) . '" />';
+			$buttons['save_close'] = '<input type="image" class="c-inputButton" name="saveandclosedok"' . IconUtility::skinImg($this->doc->backPath, 'gfx/saveandclosedok.gif') . ' title="' . $GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.xlf:rm.saveCloseDoc', TRUE) . '" />';
 			// Reload
-			$buttons['reload'] = '<input type="image" class="c-inputButton" name="_refresh"' . \TYPO3\CMS\Backend\Utility\IconUtility::skinImg($this->doc->backPath, 'gfx/refresh_n.gif') . ' title="' . $GLOBALS['LANG']->getLL('forms_refresh', 1) . '" />';
+			$buttons['reload'] = '<input type="image" class="c-inputButton" name="_refresh"' . IconUtility::skinImg($this->doc->backPath, 'gfx/refresh_n.gif') . ' title="' . $GLOBALS['LANG']->getLL('forms_refresh', TRUE) . '" />';
 		}
 		return $buttons;
 	}
@@ -215,7 +204,7 @@ class TableController {
 			throw new \RuntimeException('Wizard Error: No access', 1349692692);
 		}
 		// First, check the references by selecting the record:
-		$row = \TYPO3\CMS\Backend\Utility\BackendUtility::getRecord($this->P['table'], $this->P['uid']);
+		$row = BackendUtility::getRecord($this->P['table'], $this->P['uid']);
 		if (!is_array($row)) {
 			throw new \RuntimeException('Wizard Error: No reference to record', 1294587125);
 		}
@@ -244,10 +233,10 @@ class TableController {
 	 */
 	public function getConfigCode($row) {
 		// Get delimiter settings
-		$flexForm = \TYPO3\CMS\Core\Utility\GeneralUtility::xml2array($row['pi_flexform']);
+		$flexForm = GeneralUtility::xml2array($row['pi_flexform']);
 		if (is_array($flexForm)) {
-			$this->tableParsing_quote = $flexForm['data']['s_parsing']['lDEF']['tableparsing_quote']['vDEF'] ? chr(intval($flexForm['data']['s_parsing']['lDEF']['tableparsing_quote']['vDEF'])) : '';
-			$this->tableParsing_delimiter = $flexForm['data']['s_parsing']['lDEF']['tableparsing_delimiter']['vDEF'] ? chr(intval($flexForm['data']['s_parsing']['lDEF']['tableparsing_delimiter']['vDEF'])) : '|';
+			$this->tableParsing_quote = $flexForm['data']['s_parsing']['lDEF']['tableparsing_quote']['vDEF'] ? chr((int)$flexForm['data']['s_parsing']['lDEF']['tableparsing_quote']['vDEF']) : '';
+			$this->tableParsing_delimiter = $flexForm['data']['s_parsing']['lDEF']['tableparsing_delimiter']['vDEF'] ? chr((int)$flexForm['data']['s_parsing']['lDEF']['tableparsing_delimiter']['vDEF']) : '|';
 		}
 		// If some data has been submitted, then construct
 		if (isset($this->TABLECFG['c'])) {
@@ -256,7 +245,7 @@ class TableController {
 			// Convert to string (either line based or XML):
 			if ($this->xmlStorage) {
 				// Convert the input array to XML:
-				$bodyText = \TYPO3\CMS\Core\Utility\GeneralUtility::array2xml_cs($this->TABLECFG['c'], 'T3TableWizard');
+				$bodyText = GeneralUtility::array2xml_cs($this->TABLECFG['c'], 'T3TableWizard');
 				// Setting cfgArr directly from the input:
 				$cfgArr = $this->TABLECFG['c'];
 			} else {
@@ -268,7 +257,7 @@ class TableController {
 			// If a save button has been pressed, then save the new field content:
 			if ($_POST['savedok_x'] || $_POST['saveandclosedok_x']) {
 				// Make TCEmain object:
-				$tce = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\DataHandling\\DataHandler');
+				$tce = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\DataHandling\\DataHandler');
 				$tce->stripslashes_values = 0;
 				// Put content into the data array:
 				$data = array();
@@ -278,13 +267,13 @@ class TableController {
 				$tce->process_datamap();
 				// If the save/close button was pressed, then redirect the screen:
 				if ($_POST['saveandclosedok_x']) {
-					\TYPO3\CMS\Core\Utility\HttpUtility::redirect(\TYPO3\CMS\Core\Utility\GeneralUtility::sanitizeLocalUrl($this->P['returnUrl']));
+					\TYPO3\CMS\Core\Utility\HttpUtility::redirect(GeneralUtility::sanitizeLocalUrl($this->P['returnUrl']));
 				}
 			}
 		} else {
 			// If nothing has been submitted, load the $bodyText variable from the selected database row:
 			if ($this->xmlStorage) {
-				$cfgArr = \TYPO3\CMS\Core\Utility\GeneralUtility::xml2array($row[$this->P['field']]);
+				$cfgArr = GeneralUtility::xml2array($row[$this->P['field']]);
 			} else {
 				// Regular linebased table configuration:
 				$cfgArr = $this->cfgString2CfgArray($row[$this->P['field']], $row[$this->colsFieldName]);
@@ -319,7 +308,7 @@ class TableController {
 						$cells[] = '<input type="text"' . $this->doc->formWidth(20) . ' name="TABLE[c][' . ($k + 1) * 2 . '][' . ($a + 1) * 2 . ']" value="' . htmlspecialchars($cellContent) . '" />';
 					} else {
 						$cellContent = preg_replace('/<br[ ]?[\\/]?>/i', LF, $cellContent);
-						$cells[] = '<textarea ' . $this->doc->formWidth(20) . ' rows="5" name="TABLE[c][' . ($k + 1) * 2 . '][' . ($a + 1) * 2 . ']">' . \TYPO3\CMS\Core\Utility\GeneralUtility::formatForTextarea($cellContent) . '</textarea>';
+						$cells[] = '<textarea ' . $this->doc->formWidth(20) . ' rows="5" name="TABLE[c][' . ($k + 1) * 2 . '][' . ($a + 1) * 2 . ']">' . GeneralUtility::formatForTextarea($cellContent) . '</textarea>';
 					}
 					// Increment counter:
 					$a++;
@@ -330,17 +319,17 @@ class TableController {
 				$ctrl = '';
 				$brTag = $this->inputStyle ? '' : '<br />';
 				if ($k != 0) {
-					$ctrl .= '<input type="image" name="TABLE[row_up][' . ($k + 1) * 2 . ']"' . \TYPO3\CMS\Backend\Utility\IconUtility::skinImg($this->doc->backPath, 'gfx/pil2up.gif', '') . $onClick . ' title="' . $GLOBALS['LANG']->getLL('table_up', 1) . '" />' . $brTag;
+					$ctrl .= '<input type="image" name="TABLE[row_up][' . ($k + 1) * 2 . ']"' . IconUtility::skinImg($this->doc->backPath, 'gfx/pil2up.gif', '') . $onClick . ' title="' . $GLOBALS['LANG']->getLL('table_up', TRUE) . '" />' . $brTag;
 				} else {
-					$ctrl .= '<input type="image" name="TABLE[row_bottom][' . ($k + 1) * 2 . ']"' . \TYPO3\CMS\Backend\Utility\IconUtility::skinImg($this->doc->backPath, 'gfx/turn_up.gif', '') . $onClick . ' title="' . $GLOBALS['LANG']->getLL('table_bottom', 1) . '" />' . $brTag;
+					$ctrl .= '<input type="image" name="TABLE[row_bottom][' . ($k + 1) * 2 . ']"' . IconUtility::skinImg($this->doc->backPath, 'gfx/turn_up.gif', '') . $onClick . ' title="' . $GLOBALS['LANG']->getLL('table_bottom', TRUE) . '" />' . $brTag;
 				}
-				$ctrl .= '<input type="image" name="TABLE[row_remove][' . ($k + 1) * 2 . ']"' . \TYPO3\CMS\Backend\Utility\IconUtility::skinImg($this->doc->backPath, 'gfx/garbage.gif', '') . $onClick . ' title="' . $GLOBALS['LANG']->getLL('table_removeRow', 1) . '" />' . $brTag;
+				$ctrl .= '<input type="image" name="TABLE[row_remove][' . ($k + 1) * 2 . ']"' . IconUtility::skinImg($this->doc->backPath, 'gfx/garbage.gif', '') . $onClick . ' title="' . $GLOBALS['LANG']->getLL('table_removeRow', TRUE) . '" />' . $brTag;
 				if ($k + 1 != $countLines) {
-					$ctrl .= '<input type="image" name="TABLE[row_down][' . ($k + 1) * 2 . ']"' . \TYPO3\CMS\Backend\Utility\IconUtility::skinImg($this->doc->backPath, 'gfx/pil2down.gif', '') . $onClick . ' title="' . $GLOBALS['LANG']->getLL('table_down', 1) . '" />' . $brTag;
+					$ctrl .= '<input type="image" name="TABLE[row_down][' . ($k + 1) * 2 . ']"' . IconUtility::skinImg($this->doc->backPath, 'gfx/pil2down.gif', '') . $onClick . ' title="' . $GLOBALS['LANG']->getLL('table_down', TRUE) . '" />' . $brTag;
 				} else {
-					$ctrl .= '<input type="image" name="TABLE[row_top][' . ($k + 1) * 2 . ']"' . \TYPO3\CMS\Backend\Utility\IconUtility::skinImg($this->doc->backPath, 'gfx/turn_down.gif', '') . $onClick . ' title="' . $GLOBALS['LANG']->getLL('table_top', 1) . '" />' . $brTag;
+					$ctrl .= '<input type="image" name="TABLE[row_top][' . ($k + 1) * 2 . ']"' . IconUtility::skinImg($this->doc->backPath, 'gfx/turn_down.gif', '') . $onClick . ' title="' . $GLOBALS['LANG']->getLL('table_top', TRUE) . '" />' . $brTag;
 				}
-				$ctrl .= '<input type="image" name="TABLE[row_add][' . ($k + 1) * 2 . ']"' . \TYPO3\CMS\Backend\Utility\IconUtility::skinImg($this->doc->backPath, 'gfx/add.gif', '') . $onClick . ' title="' . $GLOBALS['LANG']->getLL('table_addRow', 1) . '" />' . $brTag;
+				$ctrl .= '<input type="image" name="TABLE[row_add][' . ($k + 1) * 2 . ']"' . IconUtility::skinImg($this->doc->backPath, 'gfx/add.gif', '') . $onClick . ' title="' . $GLOBALS['LANG']->getLL('table_addRow', TRUE) . '" />' . $brTag;
 				$tRows[] = '
 					<tr class="bgColor4">
 						<td class="bgColor5"><a name="ANC_' . ($k + 1) * 2 . '"></a><span class="c-wizButtonsV">' . $ctrl . '</span></td>
@@ -364,17 +353,17 @@ class TableController {
 			foreach ($firstRow as $temp) {
 				$ctrl = '';
 				if ($a != 0) {
-					$ctrl .= '<input type="image" name="TABLE[col_left][' . ($a + 1) * 2 . ']"' . \TYPO3\CMS\Backend\Utility\IconUtility::skinImg($this->doc->backPath, 'gfx/pil2left.gif', '') . ' title="' . $GLOBALS['LANG']->getLL('table_left', 1) . '" />';
+					$ctrl .= '<input type="image" name="TABLE[col_left][' . ($a + 1) * 2 . ']"' . IconUtility::skinImg($this->doc->backPath, 'gfx/pil2left.gif', '') . ' title="' . $GLOBALS['LANG']->getLL('table_left', TRUE) . '" />';
 				} else {
-					$ctrl .= '<input type="image" name="TABLE[col_end][' . ($a + 1) * 2 . ']"' . \TYPO3\CMS\Backend\Utility\IconUtility::skinImg($this->doc->backPath, 'gfx/turn_left.gif', '') . ' title="' . $GLOBALS['LANG']->getLL('table_end', 1) . '" />';
+					$ctrl .= '<input type="image" name="TABLE[col_end][' . ($a + 1) * 2 . ']"' . IconUtility::skinImg($this->doc->backPath, 'gfx/turn_left.gif', '') . ' title="' . $GLOBALS['LANG']->getLL('table_end', TRUE) . '" />';
 				}
-				$ctrl .= '<input type="image" name="TABLE[col_remove][' . ($a + 1) * 2 . ']"' . \TYPO3\CMS\Backend\Utility\IconUtility::skinImg($this->doc->backPath, 'gfx/garbage.gif', '') . ' title="' . $GLOBALS['LANG']->getLL('table_removeColumn', 1) . '" />';
+				$ctrl .= '<input type="image" name="TABLE[col_remove][' . ($a + 1) * 2 . ']"' . IconUtility::skinImg($this->doc->backPath, 'gfx/garbage.gif', '') . ' title="' . $GLOBALS['LANG']->getLL('table_removeColumn', TRUE) . '" />';
 				if ($a + 1 != $cols) {
-					$ctrl .= '<input type="image" name="TABLE[col_right][' . ($a + 1) * 2 . ']"' . \TYPO3\CMS\Backend\Utility\IconUtility::skinImg($this->doc->backPath, 'gfx/pil2right.gif', '') . ' title="' . $GLOBALS['LANG']->getLL('table_right', 1) . '" />';
+					$ctrl .= '<input type="image" name="TABLE[col_right][' . ($a + 1) * 2 . ']"' . IconUtility::skinImg($this->doc->backPath, 'gfx/pil2right.gif', '') . ' title="' . $GLOBALS['LANG']->getLL('table_right', TRUE) . '" />';
 				} else {
-					$ctrl .= '<input type="image" name="TABLE[col_start][' . ($a + 1) * 2 . ']"' . \TYPO3\CMS\Backend\Utility\IconUtility::skinImg($this->doc->backPath, 'gfx/turn_right.gif', '') . ' title="' . $GLOBALS['LANG']->getLL('table_start', 1) . '" />';
+					$ctrl .= '<input type="image" name="TABLE[col_start][' . ($a + 1) * 2 . ']"' . IconUtility::skinImg($this->doc->backPath, 'gfx/turn_right.gif', '') . ' title="' . $GLOBALS['LANG']->getLL('table_start', TRUE) . '" />';
 				}
-				$ctrl .= '<input type="image" name="TABLE[col_add][' . ($a + 1) * 2 . ']"' . \TYPO3\CMS\Backend\Utility\IconUtility::skinImg($this->doc->backPath, 'gfx/add.gif', '') . ' title="' . $GLOBALS['LANG']->getLL('table_addColumn', 1) . '" />';
+				$ctrl .= '<input type="image" name="TABLE[col_add][' . ($a + 1) * 2 . ']"' . IconUtility::skinImg($this->doc->backPath, 'gfx/add.gif', '') . ' title="' . $GLOBALS['LANG']->getLL('table_addColumn', TRUE) . '" />';
 				$cells[] = '<span class="c-wizButtonsH">' . $ctrl . '</span>';
 				// Incr. counter:
 				$a++;
@@ -457,69 +446,69 @@ class TableController {
 			$kk = key($this->TABLECFG['row_down']);
 			$cmd = 'row_down';
 		}
-		if ($cmd && \TYPO3\CMS\Core\Utility\MathUtility::canBeInterpretedAsInteger($kk)) {
+		if ($cmd && MathUtility::canBeInterpretedAsInteger($kk)) {
 			if (substr($cmd, 0, 4) == 'row_') {
 				switch ($cmd) {
-				case 'row_remove':
-					unset($this->TABLECFG['c'][$kk]);
-					break;
-				case 'row_add':
-					for ($a = 1; $a <= $this->numNewRows; $a++) {
-						// Checking if set: The point is that any new row inbetween existing rows
-						// will be TRUE after one row is added while if rows are added in the bottom
-						// of the table there will be no existing rows to stop the addition of new rows
-						// which means it will add up to $this->numNewRows rows then.
-						if (!isset($this->TABLECFG['c'][($kk + $a)])) {
-							$this->TABLECFG['c'][$kk + $a] = array();
-						} else {
-							break;
+					case 'row_remove':
+						unset($this->TABLECFG['c'][$kk]);
+						break;
+					case 'row_add':
+						for ($a = 1; $a <= $this->numNewRows; $a++) {
+							// Checking if set: The point is that any new row inbetween existing rows
+							// will be TRUE after one row is added while if rows are added in the bottom
+							// of the table there will be no existing rows to stop the addition of new rows
+							// which means it will add up to $this->numNewRows rows then.
+							if (!isset($this->TABLECFG['c'][($kk + $a)])) {
+								$this->TABLECFG['c'][$kk + $a] = array();
+							} else {
+								break;
+							}
 						}
-					}
-					break;
-				case 'row_top':
-					$this->TABLECFG['c'][1] = $this->TABLECFG['c'][$kk];
-					unset($this->TABLECFG['c'][$kk]);
-					break;
-				case 'row_bottom':
-					$this->TABLECFG['c'][10000000] = $this->TABLECFG['c'][$kk];
-					unset($this->TABLECFG['c'][$kk]);
-					break;
-				case 'row_up':
-					$this->TABLECFG['c'][$kk - 3] = $this->TABLECFG['c'][$kk];
-					unset($this->TABLECFG['c'][$kk]);
-					break;
-				case 'row_down':
-					$this->TABLECFG['c'][$kk + 3] = $this->TABLECFG['c'][$kk];
-					unset($this->TABLECFG['c'][$kk]);
-					break;
+						break;
+					case 'row_top':
+						$this->TABLECFG['c'][1] = $this->TABLECFG['c'][$kk];
+						unset($this->TABLECFG['c'][$kk]);
+						break;
+					case 'row_bottom':
+						$this->TABLECFG['c'][10000000] = $this->TABLECFG['c'][$kk];
+						unset($this->TABLECFG['c'][$kk]);
+						break;
+					case 'row_up':
+						$this->TABLECFG['c'][$kk - 3] = $this->TABLECFG['c'][$kk];
+						unset($this->TABLECFG['c'][$kk]);
+						break;
+					case 'row_down':
+						$this->TABLECFG['c'][$kk + 3] = $this->TABLECFG['c'][$kk];
+						unset($this->TABLECFG['c'][$kk]);
+						break;
 				}
 				ksort($this->TABLECFG['c']);
 			}
 			if (substr($cmd, 0, 4) == 'col_') {
 				foreach ($this->TABLECFG['c'] as $cAK => $value) {
 					switch ($cmd) {
-					case 'col_remove':
-						unset($this->TABLECFG['c'][$cAK][$kk]);
-						break;
-					case 'col_add':
-						$this->TABLECFG['c'][$cAK][$kk + 1] = '';
-						break;
-					case 'col_start':
-						$this->TABLECFG['c'][$cAK][1] = $this->TABLECFG['c'][$cAK][$kk];
-						unset($this->TABLECFG['c'][$cAK][$kk]);
-						break;
-					case 'col_end':
-						$this->TABLECFG['c'][$cAK][1000000] = $this->TABLECFG['c'][$cAK][$kk];
-						unset($this->TABLECFG['c'][$cAK][$kk]);
-						break;
-					case 'col_left':
-						$this->TABLECFG['c'][$cAK][$kk - 3] = $this->TABLECFG['c'][$cAK][$kk];
-						unset($this->TABLECFG['c'][$cAK][$kk]);
-						break;
-					case 'col_right':
-						$this->TABLECFG['c'][$cAK][$kk + 3] = $this->TABLECFG['c'][$cAK][$kk];
-						unset($this->TABLECFG['c'][$cAK][$kk]);
-						break;
+						case 'col_remove':
+							unset($this->TABLECFG['c'][$cAK][$kk]);
+							break;
+						case 'col_add':
+							$this->TABLECFG['c'][$cAK][$kk + 1] = '';
+							break;
+						case 'col_start':
+							$this->TABLECFG['c'][$cAK][1] = $this->TABLECFG['c'][$cAK][$kk];
+							unset($this->TABLECFG['c'][$cAK][$kk]);
+							break;
+						case 'col_end':
+							$this->TABLECFG['c'][$cAK][1000000] = $this->TABLECFG['c'][$cAK][$kk];
+							unset($this->TABLECFG['c'][$cAK][$kk]);
+							break;
+						case 'col_left':
+							$this->TABLECFG['c'][$cAK][$kk - 3] = $this->TABLECFG['c'][$cAK][$kk];
+							unset($this->TABLECFG['c'][$cAK][$kk]);
+							break;
+						case 'col_right':
+							$this->TABLECFG['c'][$cAK][$kk + 3] = $this->TABLECFG['c'][$cAK][$kk];
+							unset($this->TABLECFG['c'][$cAK][$kk]);
+							break;
 					}
 					ksort($this->TABLECFG['c'][$cAK]);
 				}
@@ -575,7 +564,7 @@ class TableController {
 		if (!$cols && trim($tLines[0])) {
 			$cols = count(explode($this->tableParsing_delimiter, $tLines[0]));
 		}
-		$cols = $cols ? $cols : 4;
+		$cols = $cols ?: 4;
 		// Traverse the number of table elements:
 		$cfgArr = array();
 		foreach ($tLines as $k => $v) {
@@ -583,7 +572,7 @@ class TableController {
 			$vParts = explode($this->tableParsing_delimiter, $v);
 			// Traverse columns:
 			for ($a = 0; $a < $cols; $a++) {
-				if ($this->tableParsing_quote && substr($vParts[$a], 0, 1) == $this->tableParsing_quote && substr($vParts[$a], -1, 1) == $this->tableParsing_quote) {
+				if ($this->tableParsing_quote && $vParts[$a][0] === $this->tableParsing_quote && substr($vParts[$a], -1, 1) === $this->tableParsing_quote) {
 					$vParts[$a] = substr(trim($vParts[$a]), 1, -1);
 				}
 				$cfgArr[$k][$a] = $vParts[$a];
@@ -602,8 +591,8 @@ class TableController {
 	 * @todo: Refactor to remove duplicate code (see FormsController, RteController)
 	 */
 	protected function checkEditAccess($table, $uid) {
-		$calcPRec = \TYPO3\CMS\Backend\Utility\BackendUtility::getRecord($table, $uid);
-		\TYPO3\CMS\Backend\Utility\BackendUtility::fixVersioningPid($table, $calcPRec);
+		$calcPRec = BackendUtility::getRecord($table, $uid);
+		BackendUtility::fixVersioningPid($table, $calcPRec);
 		if (is_array($calcPRec)) {
 			// If pages:
 			if ($table == 'pages') {
@@ -611,7 +600,7 @@ class TableController {
 				$hasAccess = $CALC_PERMS & 2 ? TRUE : FALSE;
 			} else {
 				// Fetching pid-record first.
-				$CALC_PERMS = $GLOBALS['BE_USER']->calcPerms(\TYPO3\CMS\Backend\Utility\BackendUtility::getRecord('pages', $calcPRec['pid']));
+				$CALC_PERMS = $GLOBALS['BE_USER']->calcPerms(BackendUtility::getRecord('pages', $calcPRec['pid']));
 				$hasAccess = $CALC_PERMS & 16 ? TRUE : FALSE;
 			}
 			// Check internals regarding access:
@@ -624,6 +613,3 @@ class TableController {
 		return $hasAccess;
 	}
 }
-
-
-?>

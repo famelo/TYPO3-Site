@@ -242,6 +242,9 @@ class SimpleFileBackend extends \TYPO3\CMS\Core\Cache\Backend\AbstractBackend im
 		}
 		$cacheEntryPathAndFilename = $this->cacheDirectory . $entryIdentifier . $this->cacheEntryFileExtension;
 		rename($temporaryCacheEntryPathAndFilename, $cacheEntryPathAndFilename);
+		if ($this->cacheEntryFileExtension === '.php') {
+			\TYPO3\CMS\Core\Utility\OpcodeCacheUtility::clearAllActive($cacheEntryPathAndFilename);
+		}
 	}
 
 	/**
@@ -309,8 +312,7 @@ class SimpleFileBackend extends \TYPO3\CMS\Core\Cache\Backend\AbstractBackend im
 	 * @api
 	 */
 	public function flush() {
-		\TYPO3\CMS\Core\Utility\GeneralUtility::flushDirectory($this->cacheDirectory);
-		$this->createFinalCacheDirectory($this->cacheDirectory);
+		\TYPO3\CMS\Core\Utility\GeneralUtility::flushDirectory($this->cacheDirectory, TRUE);
 	}
 
 	/**
@@ -357,12 +359,9 @@ class SimpleFileBackend extends \TYPO3\CMS\Core\Cache\Backend\AbstractBackend im
 	public function requireOnce($entryIdentifier) {
 		$pathAndFilename = $this->cacheDirectory . $entryIdentifier . $this->cacheEntryFileExtension;
 		if ($entryIdentifier !== basename($entryIdentifier)) {
-			throw new \InvalidArgumentException('The specified entry identifier must not contain a path segment.', 1282073036);
+			throw new \InvalidArgumentException('The specified entry identifier must not contain a path segment.', 1282073037);
 		}
 		return file_exists($pathAndFilename) ? require_once $pathAndFilename : FALSE;
 	}
 
 }
-
-
-?>

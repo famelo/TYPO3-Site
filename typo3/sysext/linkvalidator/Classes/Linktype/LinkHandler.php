@@ -1,29 +1,18 @@
 <?php
 namespace TYPO3\CMS\Linkvalidator\Linktype;
 
-/***************************************************************
- *  Copyright notice
+/**
+ * This file is part of the TYPO3 CMS project.
  *
- *  (c) 2005 - 2013 Jochen Rieger (j.rieger@connecta.ag)
- *  (c) 2010 - 2013 Michael Miousse (michael.miousse@infoglobe.ca)
- *  All rights reserved
+ * It is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License, either version 2
+ * of the License, or any later version.
  *
- *  This script is part of the TYPO3 project. The TYPO3 project is
- *  free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
+ * For the full copyright and license information, please read the
+ * LICENSE.txt file that was distributed with this source code.
  *
- *  The GNU General Public License can be found at
- *  http://www.gnu.org/copyleft/gpl.html.
- *
- *  This script is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  This copyright notice MUST APPEAR in all copies of the script!
- ***************************************************************/
+ * The TYPO3 project - inspiring people to share!
+ */
 
 /**
  * This class provides Check Link Handler plugin implementation
@@ -66,8 +55,8 @@ class LinkHandler extends \TYPO3\CMS\Linkvalidator\Linktype\AbstractLinktype {
 		$parts = explode(':', $url);
 		if (count($parts) == 3) {
 			$tableName = htmlspecialchars($parts[1]);
-			$rowid = intval($parts[2]);
-			$row = $GLOBALS['TYPO3_DB']->exec_SELECTgetSingleRow('*', $tableName, 'uid = ' . intval($rowid));
+			$rowid = (int)$parts[2];
+			$row = $GLOBALS['TYPO3_DB']->exec_SELECTgetSingleRow('*', $tableName, 'uid = ' . (int)$rowid);
 			if ($row) {
 				if ($row['deleted'] == '1') {
 					$errorParams['errorType'] = self::DELETED;
@@ -117,17 +106,22 @@ class LinkHandler extends \TYPO3\CMS\Linkvalidator\Linktype\AbstractLinktype {
 			$title = $this->tsconfig['properties'][$tableName . '.']['label'];
 		}
 		switch ($errorType) {
-		case self::DELETED:
-			$response = $GLOBALS['LANG']->getLL('list.report.rowdeleted');
-			$response = str_replace('###title###', $title, $response);
-			$response = str_replace('###uid###', $errorParams['uid'], $response);
-			break;
-		default:
-			$response = $GLOBALS['LANG']->getLL('list.report.rownotexisting');
-			$response = str_replace('###uid###', $errorParams['uid'], $response);
-			break;
+			case self::DELETED:
+				$response = str_replace(
+					array(
+						'###title###',
+						'###uid###'
+					),
+					array(
+						$title,
+						$errorParams['uid']
+					),
+					$GLOBALS['LANG']->getLL('list.report.rowdeleted')
+				);
+				break;
+			default:
+				$response = str_replace('###uid###', $errorParams['uid'], $GLOBALS['LANG']->getLL('list.report.rownotexisting'));
 		}
 		return $response;
 	}
 }
-?>

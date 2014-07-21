@@ -1,31 +1,18 @@
 <?php
 namespace TYPO3\CMS\Core\Utility;
 
-/***************************************************************
- *  Copyright notice
+/**
+ * This file is part of the TYPO3 CMS project.
  *
- *  (c) 2011-2013 Susanne Moog <typo3@susanne-moog.de>
- *  All rights reserved
+ * It is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License, either version 2
+ * of the License, or any later version.
  *
- *  This script is part of the TYPO3 project. The TYPO3 project is
- *  free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
+ * For the full copyright and license information, please read the
+ * LICENSE.txt file that was distributed with this source code.
  *
- *  The GNU General Public License can be found at
- *  http://www.gnu.org/copyleft/gpl.html.
- *  A copy is found in the textfile GPL.txt and important notices to the license
- *  from the author is found in LICENSE.txt distributed with these scripts.
- *
- *
- *  This script is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  This copyright notice MUST APPEAR in all copies of the script!
- ***************************************************************/
+ * The TYPO3 project - inspiring people to share!
+ */
 /**
  * Class with helper functions for mathematical calculations
  *
@@ -44,7 +31,7 @@ class MathUtility {
 	 */
 	static public function forceIntegerInRange($theInt, $min, $max = 2000000000, $defaultValue = 0) {
 		// Returns $theInt as an integer in the integerspace from $min to $max
-		$theInt = intval($theInt);
+		$theInt = (int)$theInt;
 		// If the input value is zero after being converted to integer,
 		// defaultValue may set another default value for it.
 		if ($defaultValue && !$theInt) {
@@ -66,7 +53,7 @@ class MathUtility {
 	 * @return integer
 	 */
 	static public function convertToPositiveInteger($theInt) {
-		$theInt = intval($theInt);
+		$theInt = (int)$theInt;
 		if ($theInt < 0) {
 			$theInt = 0;
 		}
@@ -86,7 +73,29 @@ class MathUtility {
 		if ($var === '' || is_object($var) || is_array($var)) {
 			return FALSE;
 		}
-		return (string) intval($var) === (string) $var;
+		return (string) (int)$var === (string) $var;
+	}
+
+	/**
+	 * Tests if the input can be interpreted as float.
+	 *
+	 * Note: Float casting from objects or arrays is considered undefined and thus will return false.
+	 *
+	 * @see http://www.php.net/manual/en/language.types.float.php, section "Formally" for the notation
+	 * @param mixed $var Any input variable to test
+	 * @return boolean Returns TRUE if string is a float
+	 */
+	static public function canBeInterpretedAsFloat($var) {
+		$pattern_lnum = '[0-9]+';
+		$pattern_dnum = '([0-9]*[\.]' . $pattern_lnum . ')|(' . $pattern_lnum . '[\.][0-9]*)';
+		$pattern_exp_dnum = '[+-]?((' . $pattern_lnum . '|' . $pattern_dnum . ')([eE][+-]?' . $pattern_lnum . ')?)';
+
+		if ($var === '' || is_object($var) || is_array($var)) {
+			return FALSE;
+		}
+
+		$matches = preg_match('/^' . $pattern_exp_dnum . '$/', $var);
+		return $matches === 1;
 	}
 
 	/**
@@ -152,7 +161,7 @@ class MathUtility {
 	 *
 	 * @param string $string Input string, eg "(123 + 456) / 789 - 4
 	 * @return integer Calculated value. Or error string.
-	 * @see calculateWithPriorityToAdditionAndSubtraction(), tslib_cObj::stdWrap()
+	 * @see calculateWithPriorityToAdditionAndSubtraction(), \TYPO3\CMS\Frontend\ContentObject\ContentObjectRenderer::stdWrap()
 	 */
 	static public function calculateWithParentheses($string) {
 		$securC = 100;
@@ -195,6 +204,3 @@ class MathUtility {
 	}
 
 }
-
-
-?>

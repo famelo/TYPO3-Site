@@ -1,31 +1,22 @@
 <?php
 namespace TYPO3\CMS\Frontend\ContentObject;
 
-/***************************************************************
- *  Copyright notice
+/**
+ * This file is part of the TYPO3 CMS project.
  *
- *  (c) 2012-2013 Ingmar Schlecht <ingmar@typo3.org>
- *  All rights reserved
+ * It is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License, either version 2
+ * of the License, or any later version.
  *
- *  This script is part of the TYPO3 project. The TYPO3 project is
- *  free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
+ * For the full copyright and license information, please read the
+ * LICENSE.txt file that was distributed with this source code.
  *
- *  The GNU General Public License can be found at
- *  http://www.gnu.org/copyleft/gpl.html.
- *  A copy is found in the textfile GPL.txt and important notices to the license
- *  from the author is found in LICENSE.txt distributed with these scripts.
- *
- *
- *  This script is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  This copyright notice MUST APPEAR in all copies of the script!
- ***************************************************************/
+ * The TYPO3 project - inspiring people to share!
+ */
+
+use TYPO3\CMS\Core\Utility\GeneralUtility;
+use TYPO3\CMS\Core\Utility\MathUtility;
+
 /**
  * Contains FILES content object
  *
@@ -34,14 +25,31 @@ namespace TYPO3\CMS\Frontend\ContentObject;
 class FilesContentObject extends \TYPO3\CMS\Frontend\ContentObject\AbstractContentObject {
 
 	/**
+	 * @var \TYPO3\CMS\Core\Resource\FileCollectionRepository|NULL
+	 */
+	protected $collectionRepository = NULL;
+
+	/**
+	 * @var \TYPO3\CMS\Core\Resource\ResourceFactory|NULL
+	 */
+	protected $fileFactory = NULL;
+
+	/**
+	 * @var \TYPO3\CMS\Core\Resource\FileRepository|NULL
+	 */
+	protected $fileRepository = NULL;
+
+	/**
 	 * Rendering the cObject FILES
 	 *
 	 * @param array $conf Array of TypoScript properties
 	 * @return string Output
 	 */
 	public function render($conf = array()) {
-		/** @var \TYPO3\CMS\Core\Resource\FileRepository $fileRepository */
-		$fileRepository = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Resource\\FileRepository');
+		if (!empty($conf['if.']) && !$this->cObj->checkIf($conf['if.'])) {
+			return '';
+		}
+
 		$fileObjects = array();
 		// Getting the files
 		if ($conf['references'] || $conf['references.']) {
@@ -54,29 +62,22 @@ class FilesContentObject extends \TYPO3\CMS\Frontend\ContentObject\AbstractConte
 			}# or: sys_file_references with uid 27:
 			references = 27
 			 */
-			$referencesUid = $this->stdWrapValue('references', $conf);
-			$referencesUidArray = \TYPO3\CMS\Core\Utility\GeneralUtility::intExplode(',', $referencesUid, TRUE);
+			$referencesUid = $this->cObj->stdWrapValue('references', $conf);
+			$referencesUidArray = GeneralUtility::intExplode(',', $referencesUid, TRUE);
 			foreach ($referencesUidArray as $referenceUid) {
 				try {
-					$this->addToArray($fileRepository->findFileReferenceByUid($referenceUid), $fileObjects);
+					$this->addToArray(
+						$this->getFileFactory()->getFileReferenceObject($referenceUid),
+						$fileObjects
+					);
 				} catch (\TYPO3\CMS\Core\Resource\Exception $e) {
 					/** @var \TYPO3\CMS\Core\Log\Logger $logger */
-					$logger = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\CMS\Core\Log\LogManager')->getLogger();
+					$logger = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Log\\LogManager')->getLogger(__CLASS__);
 					$logger->warning('The file-reference with uid  "' . $referenceUid . '" could not be found and won\'t be included in frontend output');
 				}
 			}
 
-			// It's important that this always stays "fieldName" and not be renamed to "field" as it would otherwise collide with the stdWrap key of that name
-			$referencesFieldName = $this->stdWrapValue('fieldName', $conf['references.']);
-			if ($referencesFieldName) {
-				$table = $this->cObj->getCurrentTable();
-				if ($table === 'pages' && isset($this->cObj->data['_LOCALIZED_UID']) && intval($this->cObj->data['sys_language_uid']) > 0) {
-					$table = 'pages_language_overlay';
-				}
-				$referencesForeignTable = $this->stdWrapValue('table', $conf['references.'], $table);
-				$referencesForeignUid = $this->stdWrapValue('uid', $conf['references.'], isset($this->cObj->data['_LOCALIZED_UID']) ? $this->cObj->data['_LOCALIZED_UID'] : $this->cObj->data['uid']);
-				$this->addToArray($fileRepository->findByRelation($referencesForeignTable, $referencesFieldName, $referencesForeignUid), $fileObjects);
-			}
+			$this->handleFileReferences($conf, (array)$this->cObj->data, $fileObjects);
 		}
 		if ($conf['files'] || $conf['files.']) {
 			/*
@@ -85,49 +86,45 @@ class FilesContentObject extends \TYPO3\CMS\Frontend\ContentObject\AbstractConte
 			files = 12,14,15# using stdWrap:
 			files.field = some_field
 			 */
-			$fileUids = \TYPO3\CMS\Core\Utility\GeneralUtility::trimExplode(',', $this->stdWrapValue('files', $conf), TRUE);
+			$fileUids = GeneralUtility::intExplode(',', $this->cObj->stdWrapValue('files', $conf), TRUE);
 			foreach ($fileUids as $fileUid) {
 				try {
-					$this->addToArray($fileRepository->findByUid($fileUid), $fileObjects);
+					$this->addToArray($this->getFileFactory()->getFileObject($fileUid), $fileObjects);
 				} catch (\TYPO3\CMS\Core\Resource\Exception $e) {
 					/** @var \TYPO3\CMS\Core\Log\Logger $logger */
-					$logger = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\CMS\Core\Log\LogManager')->getLogger();
+					$logger = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Log\\LogManager')->getLogger(__CLASS__);
 					$logger->warning('The file with uid  "' . $fileUid . '" could not be found and won\'t be included in frontend output');
 				}
 			}
 		}
 		if ($conf['collections'] || $conf['collections.']) {
-			$collectionUids = \TYPO3\CMS\Core\Utility\GeneralUtility::trimExplode(',', $this->stdWrapValue('collections', $conf), TRUE);
-			/** @var \TYPO3\CMS\Core\Resource\FileCollectionRepository $collectionRepository */
-			$collectionRepository = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Resource\\FileCollectionRepository');
+			$collectionUids = GeneralUtility::intExplode(',', $this->cObj->stdWrapValue('collections', $conf), TRUE);
 			foreach ($collectionUids as $collectionUid) {
 				try {
-					$fileCollection = $collectionRepository->findByUid($collectionUid);
+					$fileCollection = $this->getCollectionRepository()->findByUid($collectionUid);
 					if ($fileCollection instanceof \TYPO3\CMS\Core\Resource\Collection\AbstractFileCollection) {
 						$fileCollection->loadContents();
 						$this->addToArray($fileCollection->getItems(), $fileObjects);
 					}
 				} catch (\TYPO3\CMS\Core\Resource\Exception $e) {
 					/** @var \TYPO3\CMS\Core\Log\Logger $logger */
-					$logger = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\CMS\Core\Log\LogManager')->getLogger();
+					$logger = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Log\\LogManager')->getLogger(__CLASS__);
 					$logger->warning('The file-collection with uid  "' . $collectionUid . '" could not be found or contents could not be loaded and won\'t be included in frontend output');
 				}
 			}
 		}
 		if ($conf['folders'] || $conf['folders.']) {
-			$folderIdentifiers = \TYPO3\CMS\Core\Utility\GeneralUtility::trimExplode(',', $this->stdWrapValue('folders', $conf));
-			/** @var \TYPO3\CMS\Core\Resource\ResourceFactory $fileFactory */
-			$fileFactory = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Resource\\ResourceFactory');
+			$folderIdentifiers = GeneralUtility::trimExplode(',', $this->cObj->stdWrapValue('folders', $conf));
 			foreach ($folderIdentifiers as $folderIdentifier) {
 				if ($folderIdentifier) {
 					try {
-						$folder = $fileFactory->getFolderObjectFromCombinedIdentifier($folderIdentifier);
+						$folder = $this->getFileFactory()->getFolderObjectFromCombinedIdentifier($folderIdentifier);
 						if ($folder instanceof \TYPO3\CMS\Core\Resource\Folder) {
 							$this->addToArray(array_values($folder->getFiles()), $fileObjects);
 						}
 					} catch (\TYPO3\CMS\Core\Resource\Exception $e) {
 						/** @var \TYPO3\CMS\Core\Log\Logger $logger */
-						$logger = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\CMS\Core\Log\LogManager')->getLogger();
+						$logger = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Log\\LogManager')->getLogger(__CLASS__);
 						$logger->warning('The folder with identifier  "' . $folderIdentifier . '" could not be found and won\'t be included in frontend output');
 					}
 				}
@@ -137,33 +134,196 @@ class FilesContentObject extends \TYPO3\CMS\Frontend\ContentObject\AbstractConte
 		$content = '';
 		// optionSplit applied to conf to allow differnt settings per file
 		$splitConf = $GLOBALS['TSFE']->tmpl->splitConfArray($conf, count($fileObjects));
+
 		// Enable sorting for multiple fileObjects
 		$sortingProperty = '';
 		if ($conf['sorting'] || $conf['sorting.']) {
-			$sortingProperty = $this->stdWrapValue('sorting', $conf);
+			$sortingProperty = $this->cObj->stdWrapValue('sorting', $conf);
 		}
 		if ($sortingProperty !== '' && count($fileObjects) > 1) {
-			usort($fileObjects, function(\TYPO3\CMS\Core\Resource\FileInterface $a, \TYPO3\CMS\Core\Resource\FileInterface $b) use($sortingProperty) {
+			@usort($fileObjects, function(\TYPO3\CMS\Core\Resource\FileInterface $a, \TYPO3\CMS\Core\Resource\FileInterface $b) use($sortingProperty) {
 				if ($a->hasProperty($sortingProperty) && $b->hasProperty($sortingProperty)) {
 					return strnatcasecmp($a->getProperty($sortingProperty), $b->getProperty($sortingProperty));
 				} else {
 					return 0;
 				}
 			});
+			if (is_array($conf['sorting.']) && isset($conf['sorting.']['direction']) && strtolower($conf['sorting.']['direction']) === 'desc') {
+				$fileObjects = array_reverse($fileObjects);
+			}
 		}
-		foreach ($fileObjects as $key => $fileObject) {
+
+		$availableFileObjectCount = count($fileObjects);
+
+		$start = 0;
+		if (!empty($conf['begin'])) {
+			$start = (int)$conf['begin'];
+		}
+		if (!empty($conf['begin.'])) {
+			$start = (int)$this->cObj->stdWrap($start, $conf['begin.']);
+		}
+		$start = MathUtility::forceIntegerInRange($start, 0, $availableFileObjectCount);
+
+		$limit = $availableFileObjectCount;
+		if (!empty($conf['maxItems'])) {
+			$limit = (int)$conf['maxItems'];
+		}
+		if (!empty($conf['maxItems.'])) {
+			$limit = (int)$this->cObj->stdWrap($limit, $conf['maxItems.']);
+		}
+
+		$end = MathUtility::forceIntegerInRange($start + $limit, $start, $availableFileObjectCount);
+
+		$GLOBALS['TSFE']->register['FILES_COUNT'] = min($limit, $availableFileObjectCount);
+		$fileObjectCounter = 0;
+		$keys = array_keys($fileObjects);
+		for ($i = $start; $i < $end; $i++) {
+			$key = $keys[$i];
+			$fileObject = $fileObjects[$key];
+
+			$GLOBALS['TSFE']->register['FILE_NUM_CURRENT'] = $fileObjectCounter;
 			$this->cObj->setCurrentFile($fileObject);
 			$content .= $this->cObj->cObjGetSingle($splitConf[$key]['renderObj'], $splitConf[$key]['renderObj.']);
+			$fileObjectCounter++;
 		}
 		$content = $this->cObj->stdWrap($content, $conf['stdWrap.']);
 		return $content;
 	}
 
 	/**
+	 * Sets the file factory.
+	 *
+	 * @param \TYPO3\CMS\Core\Resource\ResourceFactory $fileFactory
+	 * @return void
+	 */
+	public function setFileFactory($fileFactory) {
+		$this->fileFactory = $fileFactory;
+	}
+
+	/**
+	 * Returns the file factory.
+	 *
+	 * @return \TYPO3\CMS\Core\Resource\ResourceFactory
+	 */
+	public function getFileFactory() {
+		if ($this->fileFactory === NULL) {
+			$this->fileFactory = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Resource\\ResourceFactory');
+		}
+
+		return $this->fileFactory;
+	}
+
+	/**
+	 * Sets the file repository.
+	 *
+	 * @param \TYPO3\CMS\Core\Resource\FileRepository $fileRepository
+	 * @return void
+	 */
+	public function setFileRepository($fileRepository) {
+		$this->fileRepository = $fileRepository;
+	}
+
+	/**
+	 * Returns the file repository.
+	 *
+	 * @return \TYPO3\CMS\Core\Resource\FileRepository
+	 */
+	public function getFileRepository() {
+		if ($this->fileRepository === NULL) {
+			$this->fileRepository = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Resource\\FileRepository');
+		}
+
+		return $this->fileRepository;
+	}
+
+	/**
+	 * Sets the collection repository.
+	 *
+	 * @param \TYPO3\CMS\Core\Resource\FileCollectionRepository $collectionRepository
+	 * @return void
+	 */
+	public function setCollectionRepository($collectionRepository) {
+		$this->collectionRepository = $collectionRepository;
+	}
+
+	/**
+	 * Returns the collection repository.
+	 *
+	 * @return \TYPO3\CMS\Core\Resource\FileCollectionRepository
+	 */
+	public function getCollectionRepository() {
+		if ($this->collectionRepository === NULL) {
+			$this->collectionRepository = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Resource\\FileCollectionRepository');
+		}
+
+		return $this->collectionRepository;
+	}
+
+	/**
+	 * Handles and resolves file references.
+	 *
+	 * @param array $configuration TypoScript configuration
+	 * @param array $element The parent element referencing to files
+	 * @param array $fileObjects Collection of file objects
+	 * @return void
+	 */
+	protected function handleFileReferences(array $configuration, array $element, array &$fileObjects) {
+		if (empty($configuration['references.'])) {
+			return;
+		}
+
+		// It's important that this always stays "fieldName" and not be renamed to "field" as it would otherwise collide with the stdWrap key of that name
+		$referencesFieldName = $this->cObj->stdWrapValue('fieldName', $configuration['references.']);
+
+		// If no reference fieldName is set, there's nothing to do
+		if (empty($referencesFieldName)) {
+			return;
+		}
+
+		$currentId = !empty($element['uid']) ? $element['uid'] : 0;
+		$tableName = $this->cObj->getCurrentTable();
+
+		// Fetch the references of the default element
+		$referencesForeignTable = $this->cObj->stdWrapValue('table', $configuration['references.'], $tableName);
+		$referencesForeignUid = $this->cObj->stdWrapValue('uid', $configuration['references.'], $currentId);
+
+		$pageRepository = $this->getPageRepository();
+		// Fetch element if definition has been modified via TypoScript
+		if ($referencesForeignTable !== $tableName || $referencesForeignUid !== $currentId) {
+			$element = $pageRepository->getRawRecord(
+				$referencesForeignTable,
+				$referencesForeignUid,
+				'*',
+				FALSE
+			);
+
+			$pageRepository->versionOL($referencesForeignTable, $element, TRUE);
+			if ($referencesForeignTable === 'pages') {
+				$element = $pageRepository->getPageOverlay($element);
+			} else {
+				$element = $pageRepository->getRecordOverlay(
+					$referencesForeignTable,
+					$element,
+					$GLOBALS['TSFE']->sys_language_content,
+					$GLOBALS['TSFE']->sys_language_contentOL
+				);
+			}
+		}
+
+		$references = $pageRepository->getFileReferences(
+			$referencesForeignTable,
+			$referencesFieldName,
+			$element
+		);
+
+		$this->addToArray($references, $fileObjects);
+	}
+
+	/**
 	 * Adds $newItems to $theArray, which is passed by reference. Array must only consist of numerical keys.
 	 *
-	 * @param mixed	$newItems Array with new items or single object that's added.
-	 * @param array	$theArray The array the new items should be added to. Must only contain numeric keys (for array_merge() to add items instead of replacing).
+	 * @param mixed $newItems Array with new items or single object that's added.
+	 * @param array $theArray The array the new items should be added to. Must only contain numeric keys (for array_merge() to add items instead of replacing).
 	 */
 	protected function addToArray($newItems, array &$theArray) {
 		if (is_array($newItems)) {
@@ -180,13 +340,17 @@ class FilesContentObject extends \TYPO3\CMS\Frontend\ContentObject\AbstractConte
 	 * @param array $config The TypoScript array.
 	 * @param string $defaultValue Optional default value.
 	 * @return string Value of the config variable
+	 * @deprecated since TYPO3 CMS 6.2, use ContentObjectRenderer::stdWrapValue() instead. Will be removed two versions later.
 	 */
 	protected function stdWrapValue($key, array $config, $defaultValue = '') {
-		$stdWrapped = $this->cObj->stdWrap($config[$key], $config[$key . '.']);
-		return $stdWrapped ? $stdWrapped : $defaultValue;
+		return $this->cObj->stdWrapValue($key, $config, $defaultValue);
+	}
+
+	/**
+	 * @return \TYPO3\CMS\Frontend\Page\PageRepository
+	 */
+	protected function getPageRepository() {
+		return $GLOBALS['TSFE']->sys_page;
 	}
 
 }
-
-
-?>

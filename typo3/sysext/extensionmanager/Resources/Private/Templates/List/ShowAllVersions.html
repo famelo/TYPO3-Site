@@ -7,7 +7,7 @@
 </f:section>
 
 <f:section name="module-headline">
-	<h2><f:translate key="showAllVersions" /> {extensionKey}</h2>
+	<h1><f:translate key="showAllVersions" /> {extensionKey}</h1>
 </f:section>
 
 <f:section name="Content">
@@ -58,7 +58,7 @@
 		</table>
 	</f:if>
 
-	<table id="terVersionTable" class="typo3-extension-list">
+	<table id="terVersionTable" class="t3-table typo3-extension-list">
 		<f:render partial="List/TerShowVersionsTable" arguments="{extensions: extensions}" />
 	</table>
 </f:section>

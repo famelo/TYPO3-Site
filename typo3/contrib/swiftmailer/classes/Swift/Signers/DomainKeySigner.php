@@ -216,9 +216,9 @@ class Swift_Signers_DomainKeySigner implements Swift_Signers_HeaderSigner
     public function unbind(Swift_InputByteStream $is)
     {
         // Don't have to mirror anything
-        foreach ($this->_bound as $k => $el) {
-            if ($el == $is) {
-                unset($this->_bound[$k]);
+        foreach ($this->_bound as $k => $stream) {
+            if ($stream === $is) {
+            	unset($this->_bound[$k]);
 
                 return;
             }
@@ -474,7 +474,6 @@ class Swift_Signers_DomainKeySigner implements Swift_Signers_HeaderSigner
 
     private function _addToHash($string)
     {
-        echo $string;
         $this->_canonData .= $string;
         hash_update($this->_hashHandler, $string);
     }
@@ -493,17 +492,13 @@ class Swift_Signers_DomainKeySigner implements Swift_Signers_HeaderSigner
     private function _getEncryptedHash()
     {
         $signature = '';
-        $sig2 = '';
-        openssl_sign($this->_canonData, $sig2, $this->_privateKey, 'sha1');
-        var_dump($this->_hash);
-        var_dump($this->_privateKey);
-        if (openssl_private_encrypt($this->_hash, $signature, $this->_privateKey)) {
-            var_dump($this->_canonData, base64_encode($sig2), base64_encode($signature));
-
-            return $sig2;
+        $pkeyId=openssl_get_privatekey($this->_privateKey);
+        if (!$pkeyId) {
+            throw new Swift_SwiftException('Unable to load DomainKey Private Key ['.openssl_error_string().']');
+        }
+        if (openssl_sign($this->_canonData, $signature, $pkeyId, OPENSSL_ALGO_SHA1)) {
             return $signature;
         }
-
-        return '';
+        throw new Swift_SwiftException('Unable to sign DomainKey Hash  ['.openssl_error_string().']');
     }
 }

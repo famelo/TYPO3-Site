@@ -14,31 +14,23 @@ $EM_CONF[$_EXTKEY] = array(
 	'category' => 'services',
 	'author' => 'Dmitry Dulepov',
 	'author_email' => 'dmitry@typo3.org',
-	'shy' => '',
-	'dependencies' => '',
-	'conflicts' => 'naw_openid,naw_openid_be',
-	'priority' => '',
-	'module' => '',
+	'author_company' => 'TYPO3 core team',
 	'state' => 'stable',
-	'internal' => '',
 	'uploadfolder' => 0,
 	'createDirs' => '',
-	'modify_tables' => 'fe_users,be_users',
 	'clearCacheOnLoad' => 0,
-	'lockType' => 'system',
-	'author_company' => 'TYPO3 core team',
-	'version' => '6.1.0',
+	'version' => '6.2.0',
 	'constraints' => array(
 		'depends' => array(
-			'typo3' => '6.1.0-6.1.99',
+			'typo3' => '6.2.0-6.2.99',
+			'sv' => '6.2.0-6.2.99',
+			'setup' => '6.2.0-6.2.99',
 		),
 		'conflicts' => array(
 			'naw_openid' => '',
 			'naw_openid_be' => ''
 		),
-		'suggests' => array()
+		'suggests' => array(),
 	),
-	'suggests' => array(),
 	'_md5_values_when_last_written' => '',
 );
-?>

@@ -1,38 +1,24 @@
 <?php
 namespace TYPO3\CMS\Extbase\DomainObject;
 
-/***************************************************************
- *  Copyright notice
+/**
+ * This file is part of the TYPO3 CMS project.
  *
- *  (c) 2010-2013 Extbase Team (http://forge.typo3.org/projects/typo3v4-mvc)
- *  Extbase is a backport of TYPO3 Flow. All credits go to the TYPO3 Flow team.
- *  All rights reserved
+ * It is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License, either version 2
+ * of the License, or any later version.
  *
- *  This script is part of the TYPO3 project. The TYPO3 project is
- *  free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
+ * For the full copyright and license information, please read the
+ * LICENSE.txt file that was distributed with this source code.
  *
- *  The GNU General Public License can be found at
- *  http://www.gnu.org/copyleft/gpl.html.
- *  A copy is found in the textfile GPL.txt and important notices to the license
- *  from the author is found in LICENSE.txt distributed with these scripts.
- *
- *
- *  This script is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  This copyright notice MUST APPEAR in all copies of the script!
- ***************************************************************/
+ * The TYPO3 project - inspiring people to share!
+ */
 /**
  * A generic Domain Object.
  *
  * All Model domain objects need to inherit from either AbstractEntity or AbstractValueObject, as this provides important framework information.
  */
-abstract class AbstractDomainObject implements \TYPO3\CMS\Extbase\DomainObject\DomainObjectInterface, \TYPO3\CMS\Extbase\Persistence\ObjectMonitoringInterface {
+abstract class AbstractDomainObject implements DomainObjectInterface, \TYPO3\CMS\Extbase\Persistence\ObjectMonitoringInterface {
 
 	/**
 	 * @var int The uid of the record. The uid is only unique in the context of the database table.
@@ -64,7 +50,7 @@ abstract class AbstractDomainObject implements \TYPO3\CMS\Extbase\DomainObject\D
 	/**
 	 * @var array An array holding the clean property values. Set right after reconstitution of the object
 	 */
-	private $_cleanProperties;
+	private $_cleanProperties = array();
 
 	/**
 	 * This is the magic __wakeup() method. It's invoked by the unserialize statement in the reconstitution process
@@ -83,11 +69,11 @@ abstract class AbstractDomainObject implements \TYPO3\CMS\Extbase\DomainObject\D
 	/**
 	 * Getter for uid.
 	 *
-	 * @return int the uid or NULL if none set yet.
+	 * @return integer the uid or NULL if none set yet.
 	 */
 	public function getUid() {
 		if ($this->uid !== NULL) {
-			return (integer) $this->uid;
+			return (int)$this->uid;
 		} else {
 			return NULL;
 		}
@@ -103,20 +89,20 @@ abstract class AbstractDomainObject implements \TYPO3\CMS\Extbase\DomainObject\D
 		if ($pid === NULL) {
 			$this->pid = NULL;
 		} else {
-			$this->pid = (integer) $pid;
+			$this->pid = (int)$pid;
 		}
 	}
 
 	/**
 	 * Getter for the pid.
 	 *
-	 * @return int The pid or NULL if none set yet.
+	 * @return integer The pid or NULL if none set yet.
 	 */
 	public function getPid() {
 		if ($this->pid === NULL) {
 			return NULL;
 		} else {
-			return (integer) $this->pid;
+			return (int)$this->pid;
 		}
 	}
 
@@ -153,7 +139,7 @@ abstract class AbstractDomainObject implements \TYPO3\CMS\Extbase\DomainObject\D
 	public function _getProperties() {
 		$properties = get_object_vars($this);
 		foreach ($properties as $propertyName => $propertyValue) {
-			if (substr($propertyName, 0, 1) === '_') {
+			if ($propertyName[0] === '_') {
 				unset($properties[$propertyName]);
 			}
 		}
@@ -193,7 +179,7 @@ abstract class AbstractDomainObject implements \TYPO3\CMS\Extbase\DomainObject\D
 			$this->_cleanProperties = array();
 			$properties = get_object_vars($this);
 			foreach ($properties as $propertyName => $propertyValue) {
-				if (substr($propertyName, 0, 1) === '_') {
+				if ($propertyName[0] === '_') {
 					continue;
 				}
 				// Do not memorize "internal" properties
@@ -211,9 +197,6 @@ abstract class AbstractDomainObject implements \TYPO3\CMS\Extbase\DomainObject\D
 	 */
 	public function _memorizePropertyCleanState($propertyName) {
 		$propertyValue = $this->{$propertyName};
-		if (!is_array($this->_cleanProperties)) {
-			$this->_cleanProperties = array();
-		}
 		if (is_object($propertyValue)) {
 			$this->_cleanProperties[$propertyName] = clone $propertyValue;
 			// We need to make sure the clone and the original object
@@ -243,15 +226,11 @@ abstract class AbstractDomainObject implements \TYPO3\CMS\Extbase\DomainObject\D
 	 * Returns the clean value of the given property. The returned value will be NULL if the clean state was not memorized before, or
 	 * if the clean value is NULL.
 	 *
-	 * @param string $propertyName The name of the property to be memorized. If omittet all persistable properties are memorized.
+	 * @param string $propertyName The name of the property to be memorized.
 	 * @return mixed The clean property value or NULL
 	 */
 	public function _getCleanProperty($propertyName) {
-		if (is_array($this->_cleanProperties)) {
-			return isset($this->_cleanProperties[$propertyName]) ? $this->_cleanProperties[$propertyName] : NULL;
-		} else {
-			return NULL;
-		}
+		return isset($this->_cleanProperties[$propertyName]) ? $this->_cleanProperties[$propertyName] : NULL;
 	}
 
 	/**
@@ -291,7 +270,7 @@ abstract class AbstractDomainObject implements \TYPO3\CMS\Extbase\DomainObject\D
 		// In case it is an object and it implements the ObjectMonitoringInterface, we call _isDirty() instead of a simple comparison of objects.
 		// We do this, because if the object itself contains a lazy loaded property, the comparison of the objects might fail even if the object didn't change
 		if (is_object($currentValue)) {
-			if ($currentValue instanceof \TYPO3\CMS\Extbase\DomainObject\DomainObjectInterface) {
+			if ($currentValue instanceof DomainObjectInterface) {
 				$result = !is_object($previousValue) || get_class($previousValue) !== get_class($currentValue) || $currentValue->getUid() !== $previousValue->getUid();
 			} elseif ($currentValue instanceof \TYPO3\CMS\Extbase\Persistence\ObjectMonitoringInterface) {
 				$result = !is_object($previousValue) || $currentValue->_isDirty() || get_class($previousValue) !== get_class($currentValue);
@@ -344,5 +323,3 @@ abstract class AbstractDomainObject implements \TYPO3\CMS\Extbase\DomainObject\D
 		return get_class($this) . ':' . (string) $this->uid;
 	}
 }
-
-?>

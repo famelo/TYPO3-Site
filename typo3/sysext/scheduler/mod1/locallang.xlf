@@ -111,6 +111,12 @@
 			<trans-unit id="label.start" xml:space="preserve">
 				<source>Start (HH:MM DD-MM-YYYY)</source>
 			</trans-unit>
+			<trans-unit id="label.fileStorageIndexing.storage" xml:space="preserve">
+				<source>Storage to index</source>
+			</trans-unit>
+			<trans-unit id="label.fileStorageExtraction.fileCount" xml:space="preserve">
+				<source>Number of files per run</source>
+			</trans-unit>
 			<trans-unit id="label.tableGarbageCollection.allTables" xml:space="preserve">
 				<source>Clean all available tables</source>
 			</trans-unit>
@@ -134,6 +140,9 @@
 			</trans-unit>
 			<trans-unit id="label.type.single" xml:space="preserve">
 				<source>Single</source>
+			</trans-unit>
+			<trans-unit id="label.group" xml:space="preserve">
+				<source>Task group</source>
 			</trans-unit>
 			<trans-unit id="msg.addError" xml:space="preserve">
 				<source>The task could not be added.</source>
@@ -310,7 +319,7 @@
 				<source>Disabled, will not be executed, except manually</source>
 			</trans-unit>
 			<trans-unit id="status.legend.failure" xml:space="preserve">
-				<source>Failure! An error occured during the last execution (move over bullet for more details)</source>
+				<source>Failure! An error occurred during the last execution (move over bullet for more details)</source>
 			</trans-unit>
 			<trans-unit id="status.legend.late" xml:space="preserve">
 				<source>Late, will run with next execution</source>

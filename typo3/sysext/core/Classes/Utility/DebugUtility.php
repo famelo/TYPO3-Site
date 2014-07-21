@@ -1,31 +1,18 @@
 <?php
 namespace TYPO3\CMS\Core\Utility;
 
-/***************************************************************
- * Copyright notice
+/**
+ * This file is part of the TYPO3 CMS project.
  *
- * (c) 2010-2013 Steffen Kamper <steffen@typo3.org>
- * All rights reserved
+ * It is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License, either version 2
+ * of the License, or any later version.
  *
- * This script is part of the TYPO3 project. The TYPO3 project is
- * free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
+ * For the full copyright and license information, please read the
+ * LICENSE.txt file that was distributed with this source code.
  *
- * The GNU General Public License can be found at
- * http://www.gnu.org/copyleft/gpl.html.
- * A copy is found in the textfile GPL.txt and important notices to the license
- * from the author is found in LICENSE.txt distributed with these scripts.
- *
- *
- * This script is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * This copyright notice MUST APPEAR in all copies of the script!
- ***************************************************************/
+ * The TYPO3 project - inspiring people to share!
+ */
 /**
  * Class to handle debug
  *
@@ -52,11 +39,6 @@ class DebugUtility {
 	';
 
 	/**
-	 * @var \TYPO3\CMS\Core\Encoder\JavaScriptEncoder
-	 */
-	static protected $javaScriptEncoder;
-
-	/**
 	 * Debug
 	 *
 	 * @param string $var
@@ -77,9 +59,9 @@ class DebugUtility {
 			$tabHeader = $header ?: 'Debug';
 			$script = '
 				(function debug() {
-					var debugMessage = "' . static::getJavaScriptEncoder()->encode($debug) . '";
-					var header = "' . static::getJavaScriptEncoder()->encode($tabHeader) . '";
-					var group = "' . static::getJavaScriptEncoder()->encode($group) . '";
+					var debugMessage = ' . GeneralUtility::quoteJSvalue($debug) . ';
+					var header = ' . GeneralUtility::quoteJSvalue($tabHeader) . ';
+					var group = ' . GeneralUtility::quoteJSvalue($group) . ';
 
 					if (typeof Ext !== "object" && (top && typeof top.Ext !== "object")) {
 						document.write(debugMessage);
@@ -114,26 +96,12 @@ class DebugUtility {
 	}
 
 	/**
-	 * Replaces special characters for the usage inside javascript
-	 *
-	 * @param string $string
-	 * @param boolean $asObject
-	 * @return string
-	 * @deprecated since 6.0 will be removed with 6.2
-	 */
-	static public function prepareVariableForJavascript($string, $asObject) {
-		GeneralUtility::logDeprecatedFunction();
-		return self::getJavaScriptEncoder()->encode($string);
-	}
-
-	/**
 	 * Converts a variable to a string
 	 *
 	 * @param mixed $variable
 	 * @return string
 	 */
 	static public function convertVariableToString($variable) {
-		$string = '';
 		if (is_array($variable)) {
 			$string = self::viewArray($variable);
 		} elseif (is_object($variable)) {
@@ -159,9 +127,9 @@ class DebugUtility {
 		$debugString = self::convertVariableToString($debugVariable);
 		$script = '
 			(function debug() {
-				var debugMessage = "' . static::getJavaScriptEncoder()->encode($debugString) . '",
-					header = "' . static::getJavaScriptEncoder()->encode($header) . '",
-					group = "' . static::getJavaScriptEncoder()->encode($group) . '",
+				var debugMessage = ' . GeneralUtility::quoteJSvalue($debugString) . ',
+					header = ' . GeneralUtility::quoteJSvalue($header) . ',
+					group = ' . GeneralUtility::quoteJSvalue($group) . ',
 
 					browserWindow = function(debug, header, group) {
 						var newWindow = window.open("", "TYPO3DebugWindow_" + group,
@@ -210,7 +178,7 @@ class DebugUtility {
 			$pathFragment = $dat['class'] . $dat['type'] . $dat['function'];
 			// add the path of the included file
 			if (in_array($dat['function'], array('require', 'include', 'require_once', 'include_once'))) {
-				$pathFragment .= '(' . substr($dat['args'][0], strlen(PATH_site)) . '),' . substr($dat['file'], strlen(PATH_site));
+				$pathFragment .= '(' . \TYPO3\CMS\Core\Utility\PathUtility::stripPathSitePrefix($dat['args'][0]) . '),' . \TYPO3\CMS\Core\Utility\PathUtility::stripPathSitePrefix($dat['file']);
 			}
 			$path[] = $pathFragment . '#' . $dat['line'];
 		}
@@ -350,17 +318,4 @@ class DebugUtility {
 		echo self::viewArray($array_in);
 	}
 
-	/**
-	 * @return \TYPO3\CMS\Core\Encoder\JavaScriptEncoder
-	 */
-	static protected function getJavaScriptEncoder() {
-		if (empty(self::$javaScriptEncoder)) {
-			self::$javaScriptEncoder = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Encoder\\JavaScriptEncoder');
-		}
-
-		return self::$javaScriptEncoder;
-	}
 }
-
-
-?>

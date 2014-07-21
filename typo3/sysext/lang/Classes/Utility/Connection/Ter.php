@@ -1,27 +1,17 @@
 <?php
 namespace TYPO3\CMS\Lang\Utility\Connection;
-/***************************************************************
- *  Copyright notice
+/**
+ * This file is part of the TYPO3 CMS project.
  *
- *  (c) 2012-2013 Sebastian Fischer <typo3@evoweb.de>
- *  All rights reserved
+ * It is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License, either version 2
+ * of the License, or any later version.
  *
- *  This script is part of the TYPO3 project. The TYPO3 project is
- *  free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
+ * For the full copyright and license information, please read the
+ * LICENSE.txt file that was distributed with this source code.
  *
- *  The GNU General Public License can be found at
- *  http://www.gnu.org/copyleft/gpl.html.
- *
- *  This script is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  This copyright notice MUST APPEAR in all copies of the script!
- ***************************************************************/
+ * The TYPO3 project - inspiring people to share!
+ */
 
 /**
  * Extends of extensionmanager ter connection to enrich with translation related methods
@@ -40,7 +30,7 @@ class Ter extends \TYPO3\CMS\Extensionmanager\Utility\Connection\TerUtility {
 	public function fetchTranslationStatus($extensionKey, $mirrorUrl) {
 		$result = FALSE;
 		$extPath = \TYPO3\CMS\Core\Utility\GeneralUtility::strtolower($extensionKey);
-		$mirrorUrl .= $extPath{0} . '/' . $extPath{1} . '/' . $extPath . '-l10n/' . $extPath . '-l10n.xml';
+		$mirrorUrl .= $extPath[0] . '/' . $extPath[1] . '/' . $extPath . '-l10n/' . $extPath . '-l10n.xml';
 		$remote = \TYPO3\CMS\Core\Utility\GeneralUtility::getURL($mirrorUrl, 0, array(TYPO3_user_agent));
 
 		if ($remote !== FALSE) {
@@ -111,10 +101,12 @@ class Ter extends \TYPO3\CMS\Extensionmanager\Utility\Connection\TerUtility {
 						$current[key($current)] = $oldCurrent;
 						unset($oldCurrent);
 						break;
-						// If "complete", then it's a value. If the attribute "base64" is set, then decode the value, otherwise just set it.
+						// If "complete", then it's a value. Omits the tag if the value is empty.
 					case 'complete':
-							// Had to cast it as a string - otherwise it would be evaluate FALSE if tested with isset()!!
-						$current[$tagName] = (string) $val['value'];
+						$trimmedValue = trim((string)$val['value']);
+						if ($trimmedValue !== '') {
+							$current[$tagName] = $trimmedValue;
+						}
 						break;
 				}
 			}
@@ -173,7 +165,7 @@ class Ter extends \TYPO3\CMS\Extensionmanager\Utility\Connection\TerUtility {
 	 */
 	protected function fetchTranslation($extensionKey, $language, $mirrorUrl) {
 		$extensionPath = \TYPO3\CMS\Core\Utility\GeneralUtility::strtolower($extensionKey);
-		$mirrorUrl .= $extensionPath{0} . '/' . $extensionPath{1} . '/' . $extensionPath .
+		$mirrorUrl .= $extensionPath[0] . '/' . $extensionPath[1] . '/' . $extensionPath .
 			'-l10n/' . $extensionPath . '-l10n-' . $language . '.zip';
 		$l10nResponse = \TYPO3\CMS\Core\Utility\GeneralUtility::getURL($mirrorUrl, 0, array(TYPO3_user_agent));
 
@@ -223,7 +215,7 @@ class Ter extends \TYPO3\CMS\Extensionmanager\Utility\Connection\TerUtility {
 						}
 					}
 				} else {
-					throw new \TYPO3\CMS\Lang\Exception\Lang('Extension directory missing in zip file!', 1352566904);
+					throw new \TYPO3\CMS\Lang\Exception\Lang('Extension directory missing in zip file!', 1352566905);
 				}
 			}
 		} else {
@@ -233,5 +225,3 @@ class Ter extends \TYPO3\CMS\Extensionmanager\Utility\Connection\TerUtility {
 		return $result;
 	}
 }
-
-?>

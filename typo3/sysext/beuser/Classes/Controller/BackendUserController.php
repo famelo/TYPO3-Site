@@ -1,30 +1,19 @@
 <?php
 namespace TYPO3\CMS\Beuser\Controller;
 
-/***************************************************************
- *  Copyright notice
+/**
+ * This file is part of the TYPO3 CMS project.
  *
- *  (c) 2012-2013 Felix Kopp <felix-source@phorax.com>
- *  All rights reserved
+ * It is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License, either version 2
+ * of the License, or any later version.
  *
- *  This script is part of the TYPO3 project. The TYPO3 project is
- *  free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
+ * For the full copyright and license information, please read the
+ * LICENSE.txt file that was distributed with this source code.
  *
- *  The GNU General Public License can be found at
- *  http://www.gnu.org/copyleft/gpl.html.
- *  A copy is found in the textfile GPL.txt and important notices to the license
- *  from the author is found in LICENSE.txt distributed with these scripts.
- *
- *  This script is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  This copyright notice MUST APPEAR in all copies of the script!
- ***************************************************************/
+ * The TYPO3 project - inspiring people to share!
+ */
+use TYPO3\CMS\Backend\Utility\BackendUtility;
 
 /**
  * Backend module user administration controller
@@ -121,7 +110,7 @@ class BackendUserController extends \TYPO3\CMS\Extbase\Mvc\Controller\ActionCont
 		}
 		$compareUserList = $this->moduleData->getCompareUserList();
 		$this->view->assign('demand', $demand);
-		$this->view->assign('returnUrl', 'mod.php?M=tools_BeuserTxBeuser');
+		$this->view->assign('returnUrl', rawurlencode(BackendUtility::getModuleUrl('system_BeuserTxBeuser')));
 		$this->view->assign('dateFormat', $GLOBALS['TYPO3_CONF_VARS']['SYS']['ddmmyy']);
 		$this->view->assign('timeFormat', $GLOBALS['TYPO3_CONF_VARS']['SYS']['hhmm']);
 		$this->view->assign('backendUsers', $this->backendUserRepository->findDemanded($demand));
@@ -165,7 +154,7 @@ class BackendUserController extends \TYPO3\CMS\Extbase\Mvc\Controller\ActionCont
 	 * Attaches one backend user to the compare list
 	 *
 	 * @param integer $uid
-	 * @retun void
+	 * @return void
 	 */
 	public function addToCompareListAction($uid) {
 		$this->moduleData->attachUidCompareUser($uid);
@@ -177,7 +166,7 @@ class BackendUserController extends \TYPO3\CMS\Extbase\Mvc\Controller\ActionCont
 	 * Removes given backend user to the compare list
 	 *
 	 * @param integer $uid
-	 * @retun void
+	 * @return void
 	 */
 	public function removeFromCompareListAction($uid) {
 		$this->moduleData->detachUidCompareUser($uid);
@@ -196,7 +185,7 @@ class BackendUserController extends \TYPO3\CMS\Extbase\Mvc\Controller\ActionCont
 	protected function terminateBackendUserSessionAction(\TYPO3\CMS\Beuser\Domain\Model\BackendUser $backendUser, $sessionId) {
 		$GLOBALS['TYPO3_DB']->exec_DELETEquery(
 			'be_sessions',
-			'ses_userid = "' . intval($backendUser->getUid()) . '" AND ses_id = ' . $GLOBALS['TYPO3_DB']->fullQuoteStr($sessionId, 'be_sessions') . ' LIMIT 1'
+			'ses_userid = "' . (int)$backendUser->getUid() . '" AND ses_id = ' . $GLOBALS['TYPO3_DB']->fullQuoteStr($sessionId, 'be_sessions') . ' LIMIT 1'
 		);
 		if ($GLOBALS['TYPO3_DB']->sql_affected_rows() == 1) {
 			$message = 'Session successfully terminated.';
@@ -218,23 +207,26 @@ class BackendUserController extends \TYPO3\CMS\Extbase\Mvc\Controller\ActionCont
 			$updateData['ses_userid'] = $targetUser['uid'];
 			// User switchback or replace current session?
 			if ($switchBack) {
-				$updateData['ses_backuserid'] = intval($GLOBALS['BE_USER']->user['uid']);
+				$updateData['ses_backuserid'] = (int)$GLOBALS['BE_USER']->user['uid'];
+
+				// Set backend user listing module as starting module for switchback
+				$GLOBALS['BE_USER']->uc['startModuleOnFirstLogin'] = 'system_BeuserTxBeuser';
+				$GLOBALS['BE_USER']->writeUC();
 			}
 
 			$whereClause = 'ses_id=' . $GLOBALS['TYPO3_DB']->fullQuoteStr($GLOBALS['BE_USER']->id, 'be_sessions');
 			$whereClause .= ' AND ses_name=' . $GLOBALS['TYPO3_DB']->fullQuoteStr(\TYPO3\CMS\Core\Authentication\BackendUserAuthentication::getCookieName(), 'be_sessions');
-			$whereClause .= ' AND ses_userid=' . intval($GLOBALS['BE_USER']->user['uid']);
+			$whereClause .= ' AND ses_userid=' . (int)$GLOBALS['BE_USER']->user['uid'];
 
 			$GLOBALS['TYPO3_DB']->exec_UPDATEquery(
 				'be_sessions',
 				$whereClause,
 				$updateData
 			);
+
 			$redirectUrl = $GLOBALS['BACK_PATH'] . 'index.php' . ($GLOBALS['TYPO3_CONF_VARS']['BE']['interfaces'] ? '' : '?commandLI=1');
 			\TYPO3\CMS\Core\Utility\HttpUtility::redirect($redirectUrl);
 		}
 	}
 
 }
-
-?>

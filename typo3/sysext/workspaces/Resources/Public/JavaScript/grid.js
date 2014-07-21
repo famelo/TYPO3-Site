@@ -1,28 +1,15 @@
-/***************************************************************
- *  Copyright notice
+/**
+ * This file is part of the TYPO3 CMS project.
  *
- *  (c) 2010 Workspaces Team (http://forge.typo3.org/projects/show/typo3v4-workspaces)
- *  All rights reserved
+ * It is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License, either version 2
+ * of the License, or any later version.
  *
- *  This script is part of the TYPO3 project. The TYPO3 project is
- *  free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
+ * For the full copyright and license information, please read the
+ * LICENSE.txt file that was distributed with this source code.
  *
- *  The GNU General Public License can be found at
- *  http://www.gnu.org/copyleft/gpl.html.
- *  A copy is found in the textfile GPL.txt and important notices to the license
- *  from the author is found in LICENSE.txt distributed with these scripts.
- *
- *
- *  This script is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  This copyright notice MUST APPEAR in all copies of the script!
- ***************************************************************/
+ * The TYPO3 project - inspiring people to share!
+ */
 
 Ext.ns('TYPO3.Workspaces');
 
@@ -81,9 +68,11 @@ TYPO3.Workspaces.SelectionModel = new Ext.grid.CheckboxSelectionModel({
 			var record = selection.grid.getSelectionModel().getSelections();
 			if (record.length > 0) {
 				TYPO3.Workspaces.Toolbar.selectStateActionCombo.setDisabled(false);
+				TYPO3.Workspaces.Toolbar.selectionActionCombo.setDisabled(false);
 				TYPO3.Workspaces.Toolbar.selectStateMassActionCombo.setDisabled(true);
 			} else {
 				TYPO3.Workspaces.Toolbar.selectStateActionCombo.setDisabled(true);
+				TYPO3.Workspaces.Toolbar.selectionActionCombo.setDisabled(true);
 				TYPO3.Workspaces.Toolbar.selectStateMassActionCombo.setDisabled(false);
 			}
 		}
@@ -96,25 +85,20 @@ TYPO3.Workspaces.WorkspaceGrid = new Ext.grid.GridPanel({
 			this.colModel = new Ext.grid.ColumnModel({
 				columns: [
 					TYPO3.Workspaces.RowExpander,
-					TYPO3.Workspaces.Configuration.Integrity,
 					{id: 'uid', dataIndex : 'uid', width: 40, sortable: true, header : TYPO3.l10n.localize('column.uid'), hidden: true, filterable : true },
 					{id: 't3ver_oid', dataIndex : 't3ver_oid', width: 40, sortable: true, header : TYPO3.l10n.localize('column.oid'), hidden: true, filterable : true },
 					{id: 'workspace_Title', dataIndex : 'workspace_Title', width: 120, sortable: true, header : TYPO3.l10n.localize('column.workspaceName'), hidden: true, filter : {type : 'string'}},
 					TYPO3.Workspaces.Configuration.WsPath,
-					TYPO3.Workspaces.Configuration.Language,
 					TYPO3.Workspaces.Configuration.LivePath,
 					TYPO3.Workspaces.Configuration.WsTitleWithIcon,
 					TYPO3.Workspaces.Configuration.TitleWithIcon,
-					TYPO3.Workspaces.Configuration.ChangeDate
-				],
+					TYPO3.Workspaces.Configuration.ChangeDate,
+					TYPO3.Workspaces.Configuration.Integrity,
+					TYPO3.Workspaces.Configuration.Language
+				].concat(TYPO3.Workspaces.Helpers.getAdditionalColumnHandler()),
 				listeners: {
-
-					columnmoved: function(colModel) {
-						TYPO3.Workspaces.Actions.updateColModel(colModel);
-					},
-					hiddenchange: function(colModel) {
-						TYPO3.Workspaces.Actions.updateColModel(colModel);
-					}
+					columnmoved: TYPO3.Workspaces.Actions.updateColModel,
+					hiddenchange: TYPO3.Workspaces.Actions.updateColModel
 				}
 			});
 		} else {
@@ -122,32 +106,26 @@ TYPO3.Workspaces.WorkspaceGrid = new Ext.grid.GridPanel({
 				columns: [
 					TYPO3.Workspaces.SelectionModel,
 					TYPO3.Workspaces.RowExpander,
-					TYPO3.Workspaces.Configuration.Integrity,
 					{id: 'uid', dataIndex : 'uid', width: 40, sortable: true, header : TYPO3.l10n.localize('column.uid'), hidden: true, filterable : true },
 					{id: 't3ver_oid', dataIndex : 't3ver_oid', width: 40, sortable: true, header : TYPO3.l10n.localize('column.oid'), hidden: true, filterable : true },
 					{id: 'workspace_Title', dataIndex : 'workspace_Title', width: 120, sortable: true, header : TYPO3.l10n.localize('column.workspaceName'), hidden: true, filter : {type : 'string'}},
 					TYPO3.Workspaces.Configuration.WsPath,
-					TYPO3.Workspaces.Configuration.Language,
 					TYPO3.Workspaces.Configuration.LivePath,
 					TYPO3.Workspaces.Configuration.WsTitleWithIcon,
 					TYPO3.Workspaces.Configuration.SwapButton,
 					TYPO3.Workspaces.Configuration.TitleWithIcon,
 					TYPO3.Workspaces.Configuration.ChangeDate,
 					TYPO3.Workspaces.Configuration.Stage,
-					TYPO3.Workspaces.Configuration.RowButtons
-				],
+					TYPO3.Workspaces.Configuration.RowButtons,
+					TYPO3.Workspaces.Configuration.Integrity,
+					TYPO3.Workspaces.Configuration.Language
+				].concat(TYPO3.Workspaces.Helpers.getAdditionalColumnHandler()),
 				listeners: {
-
-					columnmoved: function(colModel) {
-						TYPO3.Workspaces.Actions.updateColModel(colModel);
-					},
-					hiddenchange: function(colModel) {
-						TYPO3.Workspaces.Actions.updateColModel(colModel);
-					}
+					columnmoved: TYPO3.Workspaces.Actions.updateColModel,
+					hiddenchange: TYPO3.Workspaces.Actions.updateColModel
 				}
 			});
 		}
-
 	},
 	border : true,
 	store : TYPO3.Workspaces.MainStore,

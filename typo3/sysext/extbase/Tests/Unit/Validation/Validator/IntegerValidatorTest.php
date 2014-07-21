@@ -2,7 +2,7 @@
 namespace TYPO3\CMS\Extbase\Tests\Unit\Validation\Validator;
 
 /*                                                                        *
- * This script belongs to the Extbase framework.                            *
+ * This script belongs to the Extbase framework.                          *
  *                                                                        *
  * It is free software; you can redistribute it and/or modify it under    *
  * the terms of the GNU Lesser General Public License as published by the *
@@ -20,7 +20,6 @@ namespace TYPO3\CMS\Extbase\Tests\Unit\Validation\Validator;
  *                                                                        *
  * The TYPO3 project - inspiring people to share!                         *
  *                                                                        */
-require_once __DIR__ . '/AbstractValidatorTestcase.php';
 
 /**
  * Testcase for the integer validator
@@ -30,6 +29,10 @@ require_once __DIR__ . '/AbstractValidatorTestcase.php';
 class IntegerValidatorTest extends \TYPO3\CMS\Extbase\Tests\Unit\Validation\Validator\AbstractValidatorTestcase {
 
 	protected $validatorClassName = 'TYPO3\\CMS\\Extbase\\Validation\\Validator\\IntegerValidator';
+
+	public function setup() {
+		$this->validator = $this->getMock($this->validatorClassName, array('translateErrorMessage'));
+	}
 
 	/**
 	 * Data provider with valid integers
@@ -88,5 +91,3 @@ class IntegerValidatorTest extends \TYPO3\CMS\Extbase\Tests\Unit\Validation\Vali
 		$this->assertEquals(1, count($this->validator->validate('not a number')->getErrors()));
 	}
 }
-
-?>

@@ -1,31 +1,18 @@
 <?php
 namespace TYPO3\CMS\Core\Category\Collection;
 
-/***************************************************************
- * Copyright notice
+/**
+ * This file is part of the TYPO3 CMS project.
  *
- * (c) 2012-2013 Fabien Udriot <fabien.udriot@typo3.org>
- * All rights reserved
+ * It is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License, either version 2
+ * of the License, or any later version.
  *
- * This script is part of the TYPO3 project. The TYPO3 project is
- * free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
+ * For the full copyright and license information, please read the
+ * LICENSE.txt file that was distributed with this source code.
  *
- * The GNU General Public License can be found at
- * http://www.gnu.org/copyleft/gpl.html.
- * A copy is found in the textfile GPL.txt and important notices to the license
- * from the author is found in LICENSE.txt distributed with these scripts.
- *
- *
- * This script is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU General Public License for more details.
- *
- * This copyright notice MUST APPEAR in all copies of the script!
- ***************************************************************/
+ * The TYPO3 project - inspiring people to share!
+ */
 /**
  * Category Collection to handle records attached to a category
  *
@@ -41,17 +28,28 @@ class CategoryCollection extends \TYPO3\CMS\Core\Collection\AbstractRecordCollec
 	static protected $storageTableName = 'sys_category';
 
 	/**
+	 * Name of the categories-relation field (used in the MM_match_fields/fieldname property of the TCA)
+	 *
+	 * @var string
+	 */
+	protected $relationFieldName = 'categories';
+
+	/**
 	 * Creates this object.
 	 *
 	 * @param string $tableName Name of the table to be working on
+	 * @param string $fieldName Name of the field where the categories relations are defined
 	 * @throws \RuntimeException
 	 */
-	public function __construct($tableName = NULL) {
+	public function __construct($tableName = NULL, $fieldName = NULL) {
 		parent::__construct();
 		if (!empty($tableName)) {
 			$this->setItemTableName($tableName);
 		} elseif (empty($this->itemTableName)) {
 			throw new \RuntimeException('TYPO3\\CMS\\Core\\Category\\Collection\\CategoryCollection needs a valid itemTableName.', 1341826168);
+		}
+		if (!empty($fieldName)) {
+			$this->setRelationFieldName($fieldName);
 		}
 	}
 
@@ -65,7 +63,11 @@ class CategoryCollection extends \TYPO3\CMS\Core\Collection\AbstractRecordCollec
 	 */
 	static public function create(array $collectionRecord, $fillItems = FALSE) {
 		/** @var $collection \TYPO3\CMS\Core\Category\Collection\CategoryCollection */
-		$collection = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Category\\Collection\\CategoryCollection', $collectionRecord['table_name']);
+		$collection = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance(
+			'TYPO3\\CMS\\Core\\Category\\Collection\\CategoryCollection',
+			$collectionRecord['table_name'],
+			$collectionRecord['field_name']
+		);
 		$collection->fromArray($collectionRecord);
 		if ($fillItems) {
 			$collection->loadContents();
@@ -81,12 +83,18 @@ class CategoryCollection extends \TYPO3\CMS\Core\Collection\AbstractRecordCollec
 	 *
 	 * @param integer $id Id of database record to be loaded
 	 * @param boolean $fillItems Populates the entries directly on load, might be bad for memory on large collections
-	 * @param string $tableName the table name
+	 * @param string $tableName Name of table from which entries should be loaded
+	 * @param string $fieldName Name of the categories relation field
 	 * @return \TYPO3\CMS\Core\Collection\CollectionInterface
 	 */
-	static public function load($id, $fillItems = FALSE, $tableName = '') {
-		$collectionRecord = $GLOBALS['TYPO3_DB']->exec_SELECTgetSingleRow('*', static::$storageTableName, 'uid=' . intval($id) . \TYPO3\CMS\Backend\Utility\BackendUtility::deleteClause(static::$storageTableName));
+	static public function load($id, $fillItems = FALSE, $tableName = '', $fieldName = '') {
+		$collectionRecord = $GLOBALS['TYPO3_DB']->exec_SELECTgetSingleRow(
+			'*',
+			static::$storageTableName,
+			'uid = ' . (int)$id . \TYPO3\CMS\Backend\Utility\BackendUtility::deleteClause(static::$storageTableName)
+		);
 		$collectionRecord['table_name'] = $tableName;
+		$collectionRecord['field_name'] = $fieldName;
 		return self::create($collectionRecord, $fillItems);
 	}
 
@@ -99,20 +107,30 @@ class CategoryCollection extends \TYPO3\CMS\Core\Collection\AbstractRecordCollec
 	 */
 	protected function getCollectedRecords() {
 		$relatedRecords = array();
-		/** @var $GLOBALS['TYPO3_DB'] \TYPO3\CMS\Core\Database\DatabaseConnection */
-		$resource = $this->getDatabase()->exec_SELECT_mm_query(
+		// Assemble where clause
+		$where = 'AND ' . self::$storageTableName . '.uid = ' . (int)$this->getIdentifier();
+		// Add condition on tablenames fields
+		$where .= ' AND sys_category_record_mm.tablenames = ' . $this->getDatabaseConnection()->fullQuoteStr(
+			$this->getItemTableName(),
+			'sys_category_record_mm'
+		);
+		// Add condition on fieldname field
+		$where .= ' AND sys_category_record_mm.fieldname = ' . $this->getDatabaseConnection()->fullQuoteStr(
+			$this->getRelationFieldName(),
+			'sys_category_record_mm'
+		);
+		$resource = $this->getDatabaseConnection()->exec_SELECT_mm_query(
 			$this->getItemTableName() . '.*',
 			self::$storageTableName,
 			'sys_category_record_mm',
 			$this->getItemTableName(),
-			'AND ' . self::$storageTableName . '.uid=' . intval($this->getIdentifier())
-				. ' AND sys_category_record_mm.tablenames = "' . $this->getItemTableName() . '"'
+			$where
 		);
 		if ($resource) {
-			while ($record = $this->getDatabase()->sql_fetch_assoc($resource)) {
+			while ($record = $this->getDatabaseConnection()->sql_fetch_assoc($resource)) {
 				$relatedRecords[] = $record;
 			}
-			$this->getDatabase()->sql_free_result($resource);
+			$this->getDatabaseConnection()->sql_free_result($resource);
 		}
 		return $relatedRecords;
 	}
@@ -215,6 +233,24 @@ class CategoryCollection extends \TYPO3\CMS\Core\Collection\AbstractRecordCollec
 	}
 
 	/**
+	 * Sets the name of the categories relation field
+	 *
+	 * @param string $field
+	 */
+	public function setRelationFieldName($field) {
+		$this->relationFieldName = $field;
+	}
+
+	/**
+	 * Gets the name of the categories relation field
+	 *
+	 * @return string
+	 */
+	public function getRelationFieldName() {
+		return $this->relationFieldName;
+	}
+
+	/**
 	 * Getter for the storage table name
 	 *
 	 * @return string
@@ -237,11 +273,8 @@ class CategoryCollection extends \TYPO3\CMS\Core\Collection\AbstractRecordCollec
 	 *
 	 * @return \TYPO3\CMS\Core\Database\DatabaseConnection
 	 */
-	protected function getDatabase() {
+	protected function getDatabaseConnection() {
 		return $GLOBALS['TYPO3_DB'];
 	}
 
 }
-
-
-?>

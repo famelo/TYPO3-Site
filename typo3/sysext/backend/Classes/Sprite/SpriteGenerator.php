@@ -1,31 +1,22 @@
 <?php
 namespace TYPO3\CMS\Backend\Sprite;
 
-/***************************************************************
- *  Copyright notice
+/**
+ * This file is part of the TYPO3 CMS project.
  *
- *  (c) 2010-2013 Steffen Ritter <info@steffen-ritter.net>
- *  All rights reserved
+ * It is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License, either version 2
+ * of the License, or any later version.
  *
- *  This script is part of the TYPO3 project. The TYPO3 project is
- *  free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
+ * For the full copyright and license information, please read the
+ * LICENSE.txt file that was distributed with this source code.
  *
- *  The GNU General Public License can be found at
- *  http://www.gnu.org/copyleft/gpl.html.
- *  A copy is found in the textfile GPL.txt and important notices to the license
- *  from the author is found in LICENSE.txt distributed with these scripts.
- *
- *
- *  This script is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  This copyright notice MUST APPEAR in all copies of the script!
- ***************************************************************/
+ * The TYPO3 project - inspiring people to share!
+ */
+
+use TYPO3\CMS\Core\Html\HtmlParser;
+use TYPO3\CMS\Core\Utility\GeneralUtility;
+
 /**
  * Sprite generator
  *
@@ -47,6 +38,17 @@ class SpriteGenerator {
 ';
 
 	/**
+	 * Template creating CSS for the high density spritefile
+	 *
+	 * @var string
+	 */
+	protected $templateSpriteHighDensity =  '
+.backgroundsize .###NAMESPACE###-###SPRITENAME### {
+	background-image: url(\'###SPRITEURL###\') !important;
+	background-size:###BGWIDTH### ###BGHEIGHT###;
+}
+';
+	/**
 	 * Template creating CSS for position and size of a single icon
 	 *
 	 * @var string
@@ -56,6 +58,11 @@ class SpriteGenerator {
 ###SIZE_INFO###
 }
 ';
+
+	/**
+	 * @var boolean
+	 */
+	protected $enableHighDensitySprite = TRUE;
 
 	/**
 	 * Most common icon-width in the sprite
@@ -111,7 +118,7 @@ class SpriteGenerator {
 	 *
 	 * @var boolean
 	 */
-	protected $ommitSpriteNameInIconName = FALSE;
+	protected $omitSpriteNameInIconName = FALSE;
 
 	/**
 	 * Namespace of css classes
@@ -168,7 +175,6 @@ class SpriteGenerator {
 	 * Initializes the configuration of the spritegenerator
 	 *
 	 * @param string $spriteName The name of the sprite to be generated
-	 * @return void
 	 */
 	public function __construct($spriteName) {
 		$this->spriteName = $spriteName;
@@ -178,7 +184,7 @@ class SpriteGenerator {
 	 * Sets namespace of css code
 	 *
 	 * @param string $nameSpace
-	 * @return \TYPO3\CMS\Backend\Sprite\SpriteGenerator An instance of $this, to enable chaining.
+	 * @return SpriteGenerator An instance of $this, to enable "chaining".
 	 */
 	public function setNamespace($nameSpace) {
 		$this->nameSpace = $nameSpace;
@@ -189,7 +195,7 @@ class SpriteGenerator {
 	 * Sets the spritename
 	 *
 	 * @param string $spriteName The name of the sprite to be generated
-	 * @return \TYPO3\CMS\Backend\Sprite\SpriteGenerator An instance of $this, to enable chaining.
+	 * @return SpriteGenerator An instance of $this, to enable "chaining".
 	 */
 	public function setSpriteName($spriteName) {
 		$this->spriteName = $spriteName;
@@ -200,7 +206,7 @@ class SpriteGenerator {
 	 * Sets the sprite-graphics target-folder
 	 *
 	 * @param string $folder The target folder where the generated sprite is stored
-	 * @return \TYPO3\CMS\Backend\Sprite\SpriteGenerator An instance of $this, to enable chaining.
+	 * @return SpriteGenerator An instance of $this, to enable "chaining".
 	 */
 	public function setSpriteFolder($folder) {
 		$this->spriteFolder = $folder;
@@ -211,7 +217,7 @@ class SpriteGenerator {
 	 * Sets the sprite-css target-folder
 	 *
 	 * @param string $folder the target folder where the generated CSS files are stored
-	 * @return \TYPO3\CMS\Backend\Sprite\SpriteGenerator An instance of $this, to enable chaining.
+	 * @return SpriteGenerator An instance of $this, to enable "chaining".
 	 */
 	public function setCSSFolder($folder) {
 		$this->cssFolder = $folder;
@@ -219,13 +225,36 @@ class SpriteGenerator {
 	}
 
 	/**
+	 * Enables/Disables HighDensitySprite Generation
+	 *
+	 * @param boolean $enable
+	 * @return SpriteGenerator An instance of $this, to enable "chaining".
+	 */
+	public function setEnableHighDensitySprite($enable = TRUE) {
+		$this->enableHighDensitySprite = $enable;
+		return $this;
+	}
+
+	/**
 	 * Setter do enable the exclusion of the sprites-name from iconnames
 	 *
 	 * @param boolean $value
-	 * @return \TYPO3\CMS\Backend\Sprite\SpriteGenerator An instance of $this, to enable chaining.
+	 * @return SpriteGenerator An instance of $this, to enable "chaining".
+	 * @deprecated since 6.2, will be removed two versions later - use setOmitSpriteNameInIconName() instead
 	 */
 	public function setOmmitSpriteNameInIconName($value) {
-		$this->ommitSpriteNameInIconName = is_bool($value) ? $value : FALSE;
+		GeneralUtility::logDeprecatedFunction();
+		return $this->setOmitSpriteNameInIconName($value);
+	}
+
+	/**
+	 * Setter do enable the exclusion of the sprites-name from iconnames
+	 *
+	 * @param boolean $value
+	 * @return SpriteGenerator An instance of $this, to enable "chaining".
+	 */
+	public function setOmitSpriteNameInIconName($value) {
+		$this->omitSpriteNameInIconName = is_bool($value) ? $value : FALSE;
 		return $this;
 	}
 
@@ -233,10 +262,10 @@ class SpriteGenerator {
 	 * Setter to adjust how much space is between to icons in the sprite
 	 *
 	 * @param integer $value
-	 * @return \TYPO3\CMS\Backend\Sprite\SpriteGenerator An instance of $this, to enable chaining.
+	 * @return SpriteGenerator An instance of $this, to enable "chaining".
 	 */
 	public function setIconSpace($value) {
-		$this->space = intval($value);
+		$this->space = (int)$value;
 		return $this;
 	}
 
@@ -244,7 +273,7 @@ class SpriteGenerator {
 	 * Setter for timestamp inclusion: imageFiles will be included with ?timestamp
 	 *
 	 * @param boolean $value
-	 * @return \TYPO3\CMS\Backend\Sprite\SpriteGenerator An instance of $this, to enable chaining.
+	 * @return SpriteGenerator An instance of $this, to enable "chaining".
 	 */
 	public function setIncludeTimestampInCSS($value) {
 		$this->includeTimestampInCSS = is_bool($value) ? $value : TRUE;
@@ -277,13 +306,16 @@ class SpriteGenerator {
 	 * @return array
 	 */
 	public function generateSpriteFromArray(array $files) {
-		if (!$this->ommitSpriteNameInIconName) {
+		if (!$this->omitSpriteNameInIconName) {
 			$this->spriteBases[] = $this->spriteName;
 		}
 		$this->buildFileInformationCache($files);
 		// Calculate Icon Position in sprite
 		$this->calculateSpritePositions();
 		$this->generateGraphic();
+		if ($this->enableHighDensitySprite) {
+			$this->generateHighDensityGraphic();
+		}
 		$this->generateCSS();
 		$iconNames = array_keys($this->iconsData);
 		natsort($iconNames);
@@ -317,9 +349,23 @@ class SpriteGenerator {
 		$markerArray['###SPRITEURL###'] .= $this->spriteName . '.png' . $timestamp;
 		foreach ($this->spriteBases as $base) {
 			$markerArray['###SPRITENAME###'] = $base;
-			$cssData .= \TYPO3\CMS\Core\Html\HtmlParser::substituteMarkerArray($this->templateSprite, $markerArray);
+			$cssData .= HtmlParser::substituteMarkerArray($this->templateSprite, $markerArray);
+
+			if ($this->enableHighDensitySprite) {
+				$highDensityMarkerArray = array_merge($markerArray, array(
+					'###BGWIDTH###' => $this->spriteWidth . 'px',
+					'###BGHEIGHT###' => $this->spriteHeight . 'px',
+					'###SPRITEURL###' => str_replace(
+						$this->spriteName . '.png',
+						$this->spriteName . '@x2.png',
+						$markerArray['###SPRITEURL###']
+					)
+				));
+				$cssData .= HtmlParser::substituteMarkerArray($this->templateSpriteHighDensity, $highDensityMarkerArray);
+			}
 		}
-		foreach ($this->iconsData as $key => $data) {
+
+		foreach ($this->iconsData as $data) {
 			$temp = $data['iconNameParts'];
 			array_shift($temp);
 			$cssName = implode('-', $temp);
@@ -336,9 +382,9 @@ class SpriteGenerator {
 			if ($data['width'] != $this->defaultWidth) {
 				$markerArrayIcons['###SIZE_INFO###'] .= TAB . 'width: ' . $data['width'] . 'px;' . LF;
 			}
-			$cssData .= \TYPO3\CMS\Core\Html\HtmlParser::substituteMarkerArray($this->templateIcon, $markerArrayIcons);
+			$cssData .= HtmlParser::substituteMarkerArray($this->templateIcon, $markerArrayIcons);
 		}
-		\TYPO3\CMS\Core\Utility\GeneralUtility::writeFile(PATH_site . $this->cssFolder . $this->spriteName . '.css', $cssData);
+		GeneralUtility::writeFile(PATH_site . $this->cssFolder . $this->spriteName . '.css', $cssData);
 	}
 
 	/**
@@ -350,8 +396,8 @@ class SpriteGenerator {
 		// Fix window paths
 		$this->cssFolder = str_replace('\\', '/', $this->cssFolder);
 		$this->spriteFolder = str_replace('\\', '/', $this->spriteFolder);
-		$cssPathSegments = \TYPO3\CMS\Core\Utility\GeneralUtility::trimExplode('/', trim($this->cssFolder, '/'));
-		$graphicPathSegments = \TYPO3\CMS\Core\Utility\GeneralUtility::trimExplode('/', trim($this->spriteFolder, '/'));
+		$cssPathSegments = GeneralUtility::trimExplode('/', trim($this->cssFolder, '/'));
+		$graphicPathSegments = GeneralUtility::trimExplode('/', trim($this->spriteFolder, '/'));
 		$i = 0;
 		while (isset($cssPathSegments[$i]) && isset($graphicPathSegments[$i]) && $cssPathSegments[$i] == $graphicPathSegments[$i]) {
 			unset($cssPathSegments[$i]);
@@ -363,7 +409,7 @@ class SpriteGenerator {
 		}
 		$completePath = array_merge($cssPathSegments, $graphicPathSegments);
 		$path = implode('/', $completePath);
-		return \TYPO3\CMS\Core\Utility\GeneralUtility::resolveBackPath($path);
+		return GeneralUtility::resolveBackPath($path);
 	}
 
 	/**
@@ -372,10 +418,9 @@ class SpriteGenerator {
 	 * @return void
 	 */
 	protected function generateGraphic() {
-		$tempSprite = \TYPO3\CMS\Core\Utility\GeneralUtility::tempnam($this->spriteName);
-		$filePath = array(
-			'mainFile' => PATH_site . $this->spriteFolder . $this->spriteName . '.png'
-		);
+		$tempSprite = GeneralUtility::tempnam($this->spriteName, '.png');
+		$filePath = PATH_site . $this->spriteFolder . $this->spriteName . '.png';
+
 		// Create black true color image with given size
 		$newSprite = imagecreatetruecolor($this->spriteWidth, $this->spriteHeight);
 		imagesavealpha($newSprite, TRUE);
@@ -388,23 +433,53 @@ class SpriteGenerator {
 				imagecopy($newSprite, $currentIcon, $icon['left'], $icon['top'], 0, 0, $icon['width'], $icon['height']);
 			}
 		}
-		imagepng($newSprite, $tempSprite . '.png');
-		\TYPO3\CMS\Core\Utility\GeneralUtility::upload_copy_move($tempSprite . '.png', $filePath['mainFile']);
-		\TYPO3\CMS\Core\Utility\GeneralUtility::unlink_tempfile($tempSprite . '.png');
+		imagepng($newSprite, $tempSprite);
+		GeneralUtility::upload_copy_move($tempSprite, $filePath);
+		GeneralUtility::unlink_tempfile($tempSprite);
 	}
 
 	/**
+	 * The actual sprite generator, renders the command for IM/GM and executes
+	 *
+	 * @return void
+	 */
+	protected function generateHighDensityGraphic() {
+		$tempSprite = GeneralUtility::tempnam($this->spriteName . '@x2', '.png');
+		$filePath = PATH_site . $this->spriteFolder . $this->spriteName . '@x2.png';
+
+		// Create black true color image with given size
+		$newSprite = imagecreatetruecolor($this->spriteWidth * 2, $this->spriteHeight * 2);
+		imagesavealpha($newSprite, TRUE);
+		// Make it transparent
+		imagefill($newSprite, 0, 0, imagecolorallocatealpha($newSprite, 0, 255, 255, 127));
+		foreach ($this->iconsData as $icon) {
+			$function = 'imagecreatefrom' . strtolower($icon['fileExtension']);
+			if (function_exists($function)) {
+				if ($icon['fileNameHighDensity'] !== FALSE) {
+					// copy HighDensity file
+					$currentIcon = $function($icon['fileNameHighDensity']);
+					imagecopy($newSprite, $currentIcon, $icon['left'] * 2, $icon['top'] * 2, 0, 0, $icon['width'] * 2, $icon['height'] * 2);
+				} else {
+					// scale up normal file
+					$currentIcon = $function($icon['fileName']);
+					imagecopyresized($newSprite, $currentIcon, $icon['left'] * 2, $icon['top'] * 2, 0, 0, $icon['width'] * 2, $icon['height'] * 2, $icon['width'], $icon['height']);
+				}
+			}
+		}
+		imagepng($newSprite, $tempSprite);
+		GeneralUtility::upload_copy_move($tempSprite, $filePath);
+		GeneralUtility::unlink_tempfile($tempSprite);
+	}
+	/**
 	 * Arranges icons in sprites,
-	 * afterwards all icons have information about ther position in sprite
+	 * afterwards all icons have information about the position in sprite
 	 */
 	protected function calculateSpritePositions() {
-		$currentLeft = 0;
-		$currentTop = 0;
 		// Calculate width of every icon-size-group
 		$sizes = array();
 		foreach ($this->iconSizes as $sizeTag => $count) {
 			$size = $this->explodeSizeTag($sizeTag);
-			$rowWidth = ceil(sqrt($count)) * $size['width'];
+			$rowWidth = (int)ceil(sqrt($count)) * $size['width'];
 			while (isset($sizes[$rowWidth])) {
 				$rowWidth++;
 			}
@@ -412,7 +487,8 @@ class SpriteGenerator {
 		}
 		// Reverse sorting: widest group to top
 		krsort($sizes);
-		// Integerate all icons grouped by icons size into the sprite
+		$currentTop = 0;
+		// Integrate all icons grouped by icons size into the sprite
 		foreach ($sizes as $sizeTag) {
 			$size = $this->explodeSizeTag($sizeTag);
 			$currentLeft = 0;
@@ -453,21 +529,21 @@ class SpriteGenerator {
 	 * @return array Returns an array with all files key: iconname, value: fileName
 	 */
 	protected function getFolder($directoryPath) {
-		$subFolders = \TYPO3\CMS\Core\Utility\GeneralUtility::get_dirs(PATH_site . $directoryPath);
-		if (!$this->ommitSpriteNameInIconName) {
+		$subFolders = GeneralUtility::get_dirs(PATH_site . $directoryPath);
+		if (!$this->omitSpriteNameInIconName) {
 			$subFolders[] = '';
 		}
 		$resultArray = array();
 		foreach ($subFolders as $folder) {
 			if ($folder !== '.svn') {
-				$icons = \TYPO3\CMS\Core\Utility\GeneralUtility::getFilesInDir(PATH_site . $directoryPath . $folder . '/', 'gif,png,jpg');
+				$icons = GeneralUtility::getFilesInDir(PATH_site . $directoryPath . $folder . '/', 'gif,png,jpg');
 				if (!in_array($folder, $this->spriteBases) && count($icons) && $folder !== '') {
 					$this->spriteBases[] = $folder;
 				}
 				foreach ($icons as $icon) {
 					$fileInfo = pathinfo($icon);
 					$iconName = ($folder ? $folder . '-' : '') . $fileInfo['filename'];
-					if (!$this->ommitSpriteNameInIconName) {
+					if (!$this->omitSpriteNameInIconName) {
 						$iconName = $this->spriteName . '-' . $iconName;
 					}
 					$resultArray[$iconName] = $directoryPath . $folder . '/' . $icon;
@@ -485,7 +561,7 @@ class SpriteGenerator {
 	 */
 	protected function buildFileInformationCache(array $files) {
 		foreach ($files as $iconName => $iconFile) {
-			$iconNameParts = \TYPO3\CMS\Core\Utility\GeneralUtility::trimExplode('-', $iconName);
+			$iconNameParts = GeneralUtility::trimExplode('-', $iconName);
 			if (!in_array($iconNameParts[0], $this->spriteBases)) {
 				$this->spriteBases[] = $iconNameParts[0];
 			}
@@ -500,8 +576,15 @@ class SpriteGenerator {
 				'width' => $imageInfo[0],
 				'height' => $imageInfo[1],
 				'left' => 0,
-				'top' => 0
+				'top' => 0,
+				'fileNameHighDensity' => FALSE
 			);
+			if ($this->enableHighDensitySprite) {
+				$highDensityFile = str_replace('.' . $fileInfo['extension'], '@x2.' . $fileInfo['extension'], $iconFile);
+				if (@file_exists(PATH_site . $highDensityFile)) {
+					$this->iconsData[$iconName]['fileNameHighDensity'] = $highDensityFile;
+				}
+			}
 			$sizeTag = $imageInfo[0] . 'x' . $imageInfo[1];
 			if (isset($this->iconSizes[$sizeTag])) {
 				$this->iconSizes[$sizeTag] += 1;
@@ -525,7 +608,7 @@ class SpriteGenerator {
 	 * @return array
 	 */
 	protected function explodeSizeTag($tag = '') {
-		$size = \TYPO3\CMS\Core\Utility\GeneralUtility::trimExplode('x', $tag);
+		$size = GeneralUtility::trimExplode('x', $tag);
 		return array(
 			'width' => $size[0],
 			'height' => $size[1]
@@ -533,6 +616,3 @@ class SpriteGenerator {
 	}
 
 }
-
-
-?>

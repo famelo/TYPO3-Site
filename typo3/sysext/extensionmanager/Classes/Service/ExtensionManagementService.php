@@ -1,31 +1,20 @@
 <?php
 namespace TYPO3\CMS\Extensionmanager\Service;
 
-/***************************************************************
- *  Copyright notice
+/**
+ * This file is part of the TYPO3 CMS project.
  *
- *  (c) 2012-2013 Susanne Moog, <susanne.moog@typo3.org>
- *  All rights reserved
+ * It is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License, either version 2
+ * of the License, or any later version.
  *
- *  This script is part of the TYPO3 project. The TYPO3 project is
- *  free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
+ * For the full copyright and license information, please read the
+ * LICENSE.txt file that was distributed with this source code.
  *
- *  The GNU General Public License can be found at
- *  http://www.gnu.org/copyleft/gpl.html.
- *  A copy is found in the textfile GPL.txt and important notices to the license
- *  from the author is found in LICENSE.txt distributed with these scripts.
- *
- *
- *  This script is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  This copyright notice MUST APPEAR in all copies of the script!
- ***************************************************************/
+ * The TYPO3 project - inspiring people to share!
+ */
+use TYPO3\CMS\Extensionmanager\Domain\Model\Extension;
+
 /**
  * Service class for managing multiple step processes (dependencies for example)
  *
@@ -35,117 +24,126 @@ class ExtensionManagementService implements \TYPO3\CMS\Core\SingletonInterface {
 
 	/**
 	 * @var \TYPO3\CMS\Extensionmanager\Domain\Model\DownloadQueue
+	 * @inject
 	 */
 	protected $downloadQueue;
 
 	/**
 	 * @var \TYPO3\CMS\Extensionmanager\Utility\DependencyUtility
+	 * @inject
 	 */
 	protected $dependencyUtility;
 
 	/**
 	 * @var \TYPO3\CMS\Extensionmanager\Utility\InstallUtility
+	 * @inject
 	 */
 	protected $installUtility;
 
 	/**
+	 * @var \TYPO3\CMS\Extensionmanager\Utility\ExtensionModelUtility
+	 * @inject
+	 */
+	protected $extensionModelUtility;
+
+	/**
 	 * @var \TYPO3\CMS\Extensionmanager\Utility\ListUtility
+	 * @inject
 	 */
 	protected $listUtility;
 
 	/**
-	 * @param \TYPO3\CMS\Extensionmanager\Domain\Model\DownloadQueue $downloadQueue
-	 * @return void
-	 */
-	public function injectDownloadQueue(\TYPO3\CMS\Extensionmanager\Domain\Model\DownloadQueue $downloadQueue) {
-		$this->downloadQueue = $downloadQueue;
-	}
-
-	/**
-	 * @param \TYPO3\CMS\Extensionmanager\Utility\DependencyUtility $dependencyUtility
-	 * @return void
-	 */
-	public function injectDependencyUtility(\TYPO3\CMS\Extensionmanager\Utility\DependencyUtility $dependencyUtility) {
-		$this->dependencyUtility = $dependencyUtility;
-	}
-
-	/**
-	 * @param \TYPO3\CMS\Extensionmanager\Utility\InstallUtility $installUtility
-	 * @return void
-	 */
-	public function injectInstallUtility(\TYPO3\CMS\Extensionmanager\Utility\InstallUtility $installUtility) {
-		$this->installUtility = $installUtility;
-	}
-
-	/**
-	 * @param \TYPO3\CMS\Extensionmanager\Utility\ListUtility $listUtility
-	 * @return void
-	 */
-	public function injectListUtility(\TYPO3\CMS\Extensionmanager\Utility\ListUtility $listUtility) {
-		$this->listUtility = $listUtility;
-	}
-
-	/**
 	 * @var \TYPO3\CMS\Extensionmanager\Utility\DownloadUtility
+	 * @inject
 	 */
 	protected $downloadUtility;
 
 	/**
-	 * @param \TYPO3\CMS\Extensionmanager\Utility\DownloadUtility $downloadUtility
-	 * @return void
+	 * @var bool
 	 */
-	public function injectDownloadUtility(\TYPO3\CMS\Extensionmanager\Utility\DownloadUtility $downloadUtility) {
-		$this->downloadUtility = $downloadUtility;
-	}
+	protected $skipSystemDependencyCheck = FALSE;
 
 	/**
 	 * @param string $extensionKey
 	 * @return void
 	 */
 	public function markExtensionForInstallation($extensionKey) {
+		// We have to check for dependencies of the extension first, before marking it for installation
+		// because this extension might have dependencies, which need to be installed first
+		$this->dependencyUtility->checkDependencies(
+			$this->extensionModelUtility->mapExtensionArrayToModel(
+				$this->installUtility->enrichExtensionWithDetails($extensionKey)
+			)
+		);
 		$this->downloadQueue->addExtensionToInstallQueue($extensionKey);
+	}
+
+	/**
+	 * Mark an extension for copy
+	 *
+	 * @param string $extensionKey
+	 * @param string $sourceFolder
+	 * @return void
+	 */
+	public function markExtensionForCopy($extensionKey, $sourceFolder) {
+		$this->downloadQueue->addExtensionToCopyQueue($extensionKey, $sourceFolder);
 	}
 
 	/**
 	 * Mark an extension for download
 	 *
-	 * @param \TYPO3\CMS\Extensionmanager\Domain\Model\Extension $extension
+	 * @param Extension $extension
 	 * @return void
 	 */
-	public function markExtensionForDownload(\TYPO3\CMS\Extensionmanager\Domain\Model\Extension $extension) {
+	public function markExtensionForDownload(Extension $extension) {
+		// We have to check for dependencies of the extension first, before marking it for download
+		// because this extension might have dependencies, which need to be downloaded and installed first
+		$this->dependencyUtility->checkDependencies($extension);
 		$this->downloadQueue->addExtensionToQueue($extension);
-		$this->dependencyUtility->buildExtensionDependenciesTree($extension);
 	}
 
 	/**
-	 * @param \TYPO3\CMS\Extensionmanager\Domain\Model\Extension $extension
+	 * @param Extension $extension
 	 * @return void
 	 */
-	public function markExtensionForUpdate(\TYPO3\CMS\Extensionmanager\Domain\Model\Extension $extension) {
+	public function markExtensionForUpdate(Extension $extension) {
+		// We have to check for dependencies of the extension first, before marking it for download
+		// because this extension might have dependencies, which need to be downloaded and installed first
+		$this->dependencyUtility->checkDependencies($extension);
 		$this->downloadQueue->addExtensionToQueue($extension, 'update');
-		$this->dependencyUtility->buildExtensionDependenciesTree($extension);
 	}
 
 	/**
-	 * @param \TYPO3\CMS\Extensionmanager\Domain\Model\Extension|array $extension
-	 * @return array
+	 * Enables or disables the dependency check for system environment (PHP, TYPO3) before extension installation
+	 *
+	 * @param bool $skipSystemDependencyCheck
 	 */
-	public function resolveDependenciesAndInstall($extension) {
-		if (!is_array($extension) && !$extension instanceof \TYPO3\CMS\Extensionmanager\Domain\Model\Extension) {
-			throw new \TYPO3\CMS\Extensionmanager\Exception\ExtensionManagerException('Extension must be array or object.', 1350891642);
+	public function setSkipSystemDependencyCheck($skipSystemDependencyCheck) {
+		$this->skipSystemDependencyCheck = $skipSystemDependencyCheck;
+	}
+
+	/**
+	 * Install the extension
+	 *
+	 * @param Extension $extension
+	 * @return bool|array Returns FALSE if dependencies cannot be resolved, otherwise array with installation information
+	 */
+	public function installExtension(Extension $extension) {
+		$this->downloadExtension($extension);
+
+		if (!$this->checkDependencies($extension)) {
+			return FALSE;
 		}
-		$this->dependencyUtility->buildExtensionDependenciesTree($extension);
-		if ($extension instanceof \TYPO3\CMS\Extensionmanager\Domain\Model\Extension) {
-			// We have a TER Extension, which should be downloaded first.
-			$this->downloadQueue->addExtensionToQueue($extension);
-			$extensionKey = $extension->getExtensionKey();
-		} else {
-			$extensionKey = $extension['key'];
-		}
-		$queue = $this->downloadQueue->getExtensionQueue();
-		$downloadedDependencies = array();
+
 		$updatedDependencies = array();
 		$installedDependencies = array();
+		$queue = $this->downloadQueue->getExtensionQueue();
+		$copyQueue = $this->downloadQueue->getExtensionCopyStorage();
+
+		if (count($copyQueue) > 0) {
+			$this->copyDependencies($copyQueue);
+		}
+		$downloadedDependencies = array();
 		if (array_key_exists('download', $queue)) {
 			$downloadedDependencies = $this->downloadDependencies($queue['download']);
 		}
@@ -154,7 +152,7 @@ class ExtensionManagementService implements \TYPO3\CMS\Core\SingletonInterface {
 			$updatedDependencies = $this->uninstallDependenciesToBeUpdated($queue['update']);
 		}
 		// add extension at the end of the download queue
-		$this->downloadQueue->addExtensionToInstallQueue($extensionKey);
+		$this->downloadQueue->addExtensionToInstallQueue($extension->getExtensionKey());
 		$installQueue = $this->downloadQueue->getExtensionInstallStorage();
 		if (count($installQueue) > 0) {
 			$installedDependencies = $this->installDependencies($installQueue);
@@ -163,10 +161,73 @@ class ExtensionManagementService implements \TYPO3\CMS\Core\SingletonInterface {
 	}
 
 	/**
+	 * Returns the unresolved dependency errors
+	 *
+	 * @return array
+	 */
+	public function getDependencyErrors() {
+		return $this->dependencyUtility->getDependencyErrors();
+	}
+
+	/**
+	 * Download an extension
+	 *
+	 * @param Extension $extension
+	 */
+	protected function downloadExtension(Extension $extension) {
+		$this->downloadMainExtension($extension);
+		$this->setInExtensionRepository($extension->getExtensionKey());
+	}
+
+	/**
+	 * Check dependencies for an extension and its required extensions
+	 *
+	 * @param Extension $extension
+	 * @return bool Returns TRUE if all dependencies can be resolved, otherwise FALSE
+	 */
+	protected function checkDependencies(Extension $extension) {
+		$this->dependencyUtility->setSkipSystemDependencyCheck($this->skipSystemDependencyCheck);
+		$this->dependencyUtility->checkDependencies($extension);
+
+		return !$this->dependencyUtility->hasDependencyErrors();
+	}
+
+	/**
+	 * Sets the path to the repository in an extension
+	 * (Initialisation/Extensions) depending on the extension
+	 * that is currently installed
+	 *
+	 * @param string $extensionKey
+	 */
+	protected function setInExtensionRepository($extensionKey) {
+		$paths = Extension::returnInstallPaths();
+		$path = $paths[$this->downloadUtility->getDownloadPath()];
+		$localExtensionStorage = $path . $extensionKey . '/Initialisation/Extensions/';
+		$this->dependencyUtility->setLocalExtensionStorage($localExtensionStorage);
+	}
+
+	/**
+	 * Copies locally provided extensions to typo3conf/ext
+	 *
+	 * @param array $copyQueue
+	 * @return void
+	 */
+	protected function copyDependencies(array $copyQueue) {
+		$installPaths = Extension::returnAllowedInstallPaths();
+		foreach ($copyQueue as $extensionKey => $sourceFolder) {
+			$destination = $installPaths['Local'] . $extensionKey;
+			\TYPO3\CMS\Core\Utility\GeneralUtility::mkdir($destination);
+			\TYPO3\CMS\Core\Utility\GeneralUtility::copyDirectory($sourceFolder . $extensionKey, $destination);
+			$this->markExtensionForInstallation($extensionKey);
+			$this->downloadQueue->removeExtensionFromCopyQueue($extensionKey);
+		}
+	}
+
+	/**
 	 * Uninstall extensions that will be updated
 	 * This is not strictly necessary but cleaner all in all
 	 *
-	 * @param array<Tx_Extensionmanager_Domain_Model_Extension> $updateQueue
+	 * @param Extension[] $updateQueue
 	 * @return array
 	 */
 	protected function uninstallDependenciesToBeUpdated(array $updateQueue) {
@@ -185,9 +246,13 @@ class ExtensionManagementService implements \TYPO3\CMS\Core\SingletonInterface {
 	 * @return array
 	 */
 	protected function installDependencies(array $installQueue) {
+		if (!empty($installQueue)) {
+			$this->emitWillInstallExtensionsSignal($installQueue);
+		}
 		$resolvedDependencies = array();
 		foreach ($installQueue as $extensionKey => $extensionDetails) {
 			$this->installUtility->install($extensionDetails);
+			$this->emitHasInstalledExtensionSignal($extensionDetails);
 			if (!is_array($resolvedDependencies['installed'])) {
 				$resolvedDependencies['installed'] = array();
 			}
@@ -200,7 +265,7 @@ class ExtensionManagementService implements \TYPO3\CMS\Core\SingletonInterface {
 	 * Download dependencies
 	 * expects an array of extension objects to download
 	 *
-	 * @param array<Tx_Extensionmanager_Domain_Model_Extension> $downloadQueue
+	 * @param Extension[] $downloadQueue
 	 * @return array
 	 */
 	protected function downloadDependencies(array $downloadQueue) {
@@ -217,11 +282,12 @@ class ExtensionManagementService implements \TYPO3\CMS\Core\SingletonInterface {
 	/**
 	 * Get and resolve dependencies
 	 *
-	 * @param \TYPO3\CMS\Extensionmanager\Domain\Model\Extension $extension
+	 * @param Extension $extension
 	 * @return array
 	 */
-	public function getAndResolveDependencies(\TYPO3\CMS\Extensionmanager\Domain\Model\Extension $extension) {
-		$this->dependencyUtility->buildExtensionDependenciesTree($extension);
+	public function getAndResolveDependencies(Extension $extension) {
+		$this->dependencyUtility->setSkipSystemDependencyCheck($this->skipSystemDependencyCheck);
+		$this->dependencyUtility->checkDependencies($extension);
 		$installQueue = $this->downloadQueue->getExtensionInstallStorage();
 		if (is_array($installQueue) && count($installQueue) > 0) {
 			$installQueue = array('install' => $installQueue);
@@ -229,7 +295,47 @@ class ExtensionManagementService implements \TYPO3\CMS\Core\SingletonInterface {
 		return array_merge($this->downloadQueue->getExtensionQueue(), $installQueue);
 	}
 
+	/**
+	 * Downloads the extension the user wants to install
+	 * This is separated from downloading the dependencies
+	 * as an extension is able to provide it's own dependencies
+	 *
+	 * @param Extension $extension
+	 * @return void
+	 */
+	public function downloadMainExtension(Extension $extension) {
+		// The extension object has a uid if the extension is not present in the system
+		// or an update of a present extension is triggered.
+		if ($extension->getUid()) {
+			$this->downloadUtility->download($extension);
+		}
+	}
+
+	/**
+	 * @param array $installQueue
+	 */
+	protected function emitWillInstallExtensionsSignal(array $installQueue) {
+		$this->getSignalSlotDispatcher()->dispatch(__CLASS__, 'willInstallExtensions', array($installQueue));
+	}
+
+	/**
+	 * @param string $extensionKey
+	 */
+	protected function emitHasInstalledExtensionSignal($extensionKey) {
+		$this->getSignalSlotDispatcher()->dispatch(__CLASS__, 'hasInstalledExtensions', array($extensionKey));
+	}
+
+	/**
+	 * Get the SignalSlot dispatcher
+	 *
+	 * @return \TYPO3\CMS\Extbase\SignalSlot\Dispatcher
+	 */
+	protected function getSignalSlotDispatcher() {
+		if (!isset($this->signalSlotDispatcher)) {
+			$this->signalSlotDispatcher = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Extbase\\Object\\ObjectManager')
+				->get('TYPO3\\CMS\\Extbase\\SignalSlot\\Dispatcher');
+		}
+		return $this->signalSlotDispatcher;
+	}
+
 }
-
-
-?>

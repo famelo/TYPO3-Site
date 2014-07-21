@@ -1,37 +1,29 @@
 <?php
 namespace TYPO3\CMS\Extensionmanager\Domain\Model;
 
-/***************************************************************
- *  Copyright notice
+/**
+ * This file is part of the TYPO3 CMS project.
  *
- *  (c) 2012-2013 Susanne Moog, <typo3@susannemoog.de>
- *  All rights reserved
+ * It is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License, either version 2
+ * of the License, or any later version.
  *
- *  This script is part of the TYPO3 project. The TYPO3 project is
- *  free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
+ * For the full copyright and license information, please read the
+ * LICENSE.txt file that was distributed with this source code.
  *
- *  The GNU General Public License can be found at
- *  http://www.gnu.org/copyleft/gpl.html.
- *  A copy is found in the textfile GPL.txt and important notices to the license
- *  from the author is found in LICENSE.txt distributed with these scripts.
- *
- *
- *  This script is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  This copyright notice MUST APPEAR in all copies of the script!
- ***************************************************************/
+ * The TYPO3 project - inspiring people to share!
+ */
 /**
  * Main extension model
  *
  * @author Susanne Moog <typo3@susannemoog.de>
  */
 class Extension extends \TYPO3\CMS\Extbase\DomainObject\AbstractEntity {
+
+	/**
+	 * Category index for distributions
+	 */
+	const DISTRIBUTION_CATEGORY = 10;
 
 	/**
 	 * Contains default categories.
@@ -47,7 +39,8 @@ class Extension extends \TYPO3\CMS\Extbase\DomainObject\AbstractEntity {
 		5 => 'services',
 		6 => 'templates',
 		8 => 'doc',
-		9 => 'example'
+		9 => 'example',
+		Extension::DISTRIBUTION_CATEGORY => 'distribution'
 	);
 
 	/**
@@ -68,6 +61,7 @@ class Extension extends \TYPO3\CMS\Extbase\DomainObject\AbstractEntity {
 
 	/**
 	 * @var \TYPO3\CMS\Extbase\Object\ObjectManager
+	 * @inject
 	 */
 	protected $objectManager;
 
@@ -163,14 +157,6 @@ class Extension extends \TYPO3\CMS\Extbase\DomainObject\AbstractEntity {
 	protected $position = 0;
 
 	/**
-	 * @param \TYPO3\CMS\Extbase\Object\ObjectManager $objectManager
-	 * @return void
-	 */
-	public function injectObjectManager(\TYPO3\CMS\Extbase\Object\ObjectManager $objectManager) {
-		$this->objectManager = $objectManager;
-	}
-
-	/**
 	 * @param string $authorEmail
 	 * @return void
 	 */
@@ -238,8 +224,8 @@ class Extension extends \TYPO3\CMS\Extbase\DomainObject\AbstractEntity {
 	public function getCategoryIndexFromStringOrNumber($category) {
 		$categoryIndex = 4;
 		if (\TYPO3\CMS\Core\Utility\MathUtility::canBeInterpretedAsInteger($category)) {
-			$categoryIndex = (integer)$category;
-			if ($categoryIndex < 0 || $categoryIndex > 9) {
+			$categoryIndex = (int)$category;
+			if ($categoryIndex < 0 || $categoryIndex > 10) {
 				$categoryIndex = 4;
 			}
 		} elseif (is_string($category)) {
@@ -507,9 +493,9 @@ class Extension extends \TYPO3\CMS\Extbase\DomainObject\AbstractEntity {
 	 */
 	public function getDependencies() {
 		if (!is_object($this->dependencies)) {
-			/** @var $dependencyUtility \TYPO3\CMS\Extensionmanager\Utility\DependencyUtility */
-			$dependencyUtility = $this->objectManager->get('TYPO3\\CMS\\Extensionmanager\\Utility\\DependencyUtility');
-			$this->setDependencies($dependencyUtility->convertDependenciesToObjects($this->getSerializedDependencies()));
+			/** @var $extensionModelUtility \TYPO3\CMS\Extensionmanager\Utility\ExtensionModelUtility */
+			$extensionModelUtility = $this->objectManager->get('TYPO3\\CMS\\Extensionmanager\\Utility\\ExtensionModelUtility');
+			$this->setDependencies($extensionModelUtility->convertDependenciesToObjects($this->getSerializedDependencies()));
 		}
 		return $this->dependencies;
 	}
@@ -582,5 +568,3 @@ class Extension extends \TYPO3\CMS\Extbase\DomainObject\AbstractEntity {
 	}
 
 }
-
-?>

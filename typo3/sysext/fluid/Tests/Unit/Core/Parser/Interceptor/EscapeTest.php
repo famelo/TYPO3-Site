@@ -12,9 +12,9 @@ namespace TYPO3\CMS\Fluid\Tests\Unit\Core\Parser\Interceptor;
  *                                                                        */
 
 /**
- * Testcase for Interceptor\Escape
+ * Test case
  */
-class EscapeTest extends \TYPO3\CMS\Extbase\Tests\Unit\BaseTestCase {
+class EscapeTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 
 	/**
 	 * @var \TYPO3\CMS\Fluid\Core\Parser\Interceptor\Escape
@@ -92,11 +92,9 @@ class EscapeTest extends \TYPO3\CMS\Extbase\Tests\Unit\BaseTestCase {
 		$mockObjectManager = $this->getMock('TYPO3\\CMS\\Extbase\\Object\\ObjectManagerInterface');
 		$mockObjectManager->expects($this->at(0))->method('get')->with('TYPO3\\CMS\\Fluid\\ViewHelpers\\Format\\HtmlspecialcharsViewHelper')->will($this->returnValue($mockEscapeViewHelper));
 		$mockObjectManager->expects($this->at(1))->method('get')->with('TYPO3\\CMS\\Fluid\\Core\\Parser\\SyntaxTree\\ViewHelperNode', $mockEscapeViewHelper, array('value' => $mockNode))->will($this->returnValue($this->mockNode));
-		$this->escapeInterceptor->injectObjectManager($mockObjectManager);
+		$this->escapeInterceptor->_set('objectManager', $mockObjectManager);
 
 		$actualResult = $this->escapeInterceptor->process($mockNode, $interceptorPosition, $this->mockParsingState);
 		$this->assertSame($this->mockNode, $actualResult);
 	}
 }
-
-?>

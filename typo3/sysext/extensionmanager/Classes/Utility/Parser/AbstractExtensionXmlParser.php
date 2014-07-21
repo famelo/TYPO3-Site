@@ -1,29 +1,18 @@
 <?php
 namespace TYPO3\CMS\Extensionmanager\Utility\Parser;
 
-/***************************************************************
- * Copyright notice
+/**
+ * This file is part of the TYPO3 CMS project.
  *
- * (c) 2010-2013 Marcus Krause <marcus#exp2010@t3sec.info>
- *	 Steffen Kamper <info@sk-typo3.de>
- * All rights reserved
+ * It is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License, either version 2
+ * of the License, or any later version.
  *
- * This script is part of the TYPO3 project. The TYPO3 project is
- * free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
+ * For the full copyright and license information, please read the
+ * LICENSE.txt file that was distributed with this source code.
  *
- * The GNU General Public License can be found at
- * http://www.gnu.org/copyleft/gpl.html.
- *
- * This script is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU General Public License for more details.
- *
- * This copyright notice MUST APPEAR in all copies of the script!
- ***************************************************************/
+ * The TYPO3 project - inspiring people to share!
+ */
 /**
  * Module: Extension manager - Extension.xml abstract parser
  *
@@ -37,7 +26,7 @@ namespace TYPO3\CMS\Extensionmanager\Utility\Parser;
  * @author Steffen Kamper <info@sk-typo3.de>
  * @since 2010-02-09
  */
-abstract class AbstractExtensionXmlParser extends \TYPO3\CMS\Extensionmanager\Utility\Parser\AbstractXmlParser {
+abstract class AbstractExtensionXmlParser extends AbstractXmlParser {
 
 	/**
 	 * Keeps current author company of an extension's version.
@@ -407,13 +396,12 @@ abstract class AbstractExtensionXmlParser extends \TYPO3\CMS\Extensionmanager\Ut
 		$dependenciesArray = unserialize($dependencies);
 		if (is_array($dependenciesArray)) {
 			foreach ($dependenciesArray as $version) {
-				$newDependencies[$version['kind']][$version['extensionKey']] = $version['versionRange'];
+				if (!empty($version['kind']) && !empty($version['extensionKey'])) {
+					$newDependencies[$version['kind']][$version['extensionKey']] = $version['versionRange'];
+				}
 			}
 		}
 		return serialize($newDependencies);
 	}
 
 }
-
-
-?>

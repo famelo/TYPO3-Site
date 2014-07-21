@@ -31,11 +31,13 @@ class PropertyMapper implements \TYPO3\CMS\Core\SingletonInterface {
 
 	/**
 	 * @var \TYPO3\CMS\Extbase\Object\ObjectManagerInterface
+	 * @inject
 	 */
 	protected $objectManager;
 
 	/**
 	 * @var \TYPO3\CMS\Extbase\Property\PropertyMappingConfigurationBuilder
+	 * @inject
 	 */
 	protected $configurationBuilder;
 
@@ -52,27 +54,11 @@ class PropertyMapper implements \TYPO3\CMS\Core\SingletonInterface {
 	protected $typeConverters = array();
 
 	/**
-	 * A list of property mapping messages (errors, warnings) which have occured on last mapping.
+	 * A list of property mapping messages (errors, warnings) which have occurred on last mapping.
 	 *
 	 * @var \TYPO3\CMS\Extbase\Error\Result
 	 */
 	protected $messages;
-
-	/**
-	 * @param \TYPO3\CMS\Extbase\Object\ObjectManagerInterface $objectManager
-	 * @return void
-	 */
-	public function injectObjectManager(\TYPO3\CMS\Extbase\Object\ObjectManagerInterface $objectManager) {
-		$this->objectManager = $objectManager;
-	}
-
-	/**
-	 * @param \TYPO3\CMS\Extbase\Property\PropertyMappingConfigurationBuilder $propertyMappingConfigurationBuilder
-	 * @return void
-	 */
-	public function injectPropertyMappingConfigurationBuilder(\TYPO3\CMS\Extbase\Property\PropertyMappingConfigurationBuilder $propertyMappingConfigurationBuilder) {
-		$this->configurationBuilder = $propertyMappingConfigurationBuilder;
-	}
 
 	/**
 	 * Lifecycle method, called after all dependencies have been injected.
@@ -143,9 +129,6 @@ class PropertyMapper implements \TYPO3\CMS\Core\SingletonInterface {
 	 */
 	protected function doMapping($source, $targetType, \TYPO3\CMS\Extbase\Property\PropertyMappingConfigurationInterface $configuration, &$currentPropertyPath) {
 		if (is_object($source)) {
-			// This is needed to correctly convert old class names to new ones
-			// This compatibility layer will be removed with 7.0
-			$targetType = \TYPO3\CMS\Core\Core\ClassLoader::getClassNameForAlias($targetType);
 			$targetType = $this->parseCompositeType($targetType);
 			if ($source instanceof $targetType) {
 				return $source;
@@ -219,6 +202,10 @@ class PropertyMapper implements \TYPO3\CMS\Core\SingletonInterface {
 		}
 
 		$targetType = $this->parseCompositeType($targetType);
+		// This is needed to correctly convert old class names to new ones
+		// This compatibility layer will be removed with 7.0
+		$targetType = \TYPO3\CMS\Core\Core\ClassLoader::getClassNameForAlias($targetType);
+
 		$converter = NULL;
 
 		if (\TYPO3\CMS\Extbase\Utility\TypeHandlingUtility::isSimpleType($targetType)) {
@@ -365,5 +352,3 @@ class PropertyMapper implements \TYPO3\CMS\Core\SingletonInterface {
 	}
 
 }
-
-?>

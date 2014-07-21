@@ -1,29 +1,18 @@
 <?php
 namespace TYPO3\CMS\Extensionmanager\Utility\Parser;
 
-/***************************************************************
- * Copyright notice
+/**
+ * This file is part of the TYPO3 CMS project.
  *
- * (c) 2010-2013 Marcus Krause <marcus#exp2010@t3sec.info>
- *	 Steffen Kamper <info@sk-typo3.de>
- * All rights reserved
+ * It is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License, either version 2
+ * of the License, or any later version.
  *
- * This script is part of the TYPO3 project. The TYPO3 project is
- * free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
+ * For the full copyright and license information, please read the
+ * LICENSE.txt file that was distributed with this source code.
  *
- * The GNU General Public License can be found at
- * http://www.gnu.org/copyleft/gpl.html.
- *
- * This script is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU General Public License for more details.
- *
- * This copyright notice MUST APPEAR in all copies of the script!
- ***************************************************************/
+ * The TYPO3 project - inspiring people to share!
+ */
 /**
  * Abstract parser for TYPO3's mirror.xml file.
  *
@@ -31,7 +20,7 @@ namespace TYPO3\CMS\Extensionmanager\Utility\Parser;
  * @author Steffen Kamper <info@sk-typo3.de>
  * @since 2010-02-09
  */
-abstract class AbstractMirrorXmlParser extends \TYPO3\CMS\Extensionmanager\Utility\Parser\AbstractXmlParser {
+abstract class AbstractMirrorXmlParser extends AbstractXmlParser {
 
 	/**
 	 * Keeps country of currently processed mirror.
@@ -83,7 +72,7 @@ abstract class AbstractMirrorXmlParser extends \TYPO3\CMS\Extensionmanager\Utili
 	protected $title = NULL;
 
 	/**
-	 * Returns an assoziative array of all mirror properties.
+	 * Returns an associative array of all mirror properties.
 	 *
 	 * Valid array keys of returned array are:
 	 * country, host, path, sponsorlink, sponsorlogo, sponsorname, title
@@ -189,10 +178,8 @@ abstract class AbstractMirrorXmlParser extends \TYPO3\CMS\Extensionmanager\Utili
 	 * @see $country, $host, $path, $sponsorlink, $sponsorlogo, $sponsorname, $title
 	 */
 	protected function resetProperties() {
-		$this->title = ($this->host = ($this->path = ($this->country = ($this->sponsorname = ($this->sponsorlink = $this->sponsorlogo)))));
+		$this->title = $this->host = $this->path = $this->country
+			= $this->sponsorname = $this->sponsorlink = $this->sponsorlogo = NULL;
 	}
 
 }
-
-
-?>

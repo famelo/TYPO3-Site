@@ -1,31 +1,20 @@
 <?php
 namespace TYPO3\CMS\IndexedSearch\Controller;
 
-/***************************************************************
- *  Copyright notice
+/**
+ * This file is part of the TYPO3 CMS project.
  *
- *  (c) 1999-2013 Kasper Skårhøj (kasperYYYY@typo3.com)
- *  All rights reserved
+ * It is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License, either version 2
+ * of the License, or any later version.
  *
- *  This script is part of the TYPO3 project. The TYPO3 project is
- *  free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
+ * For the full copyright and license information, please read the
+ * LICENSE.txt file that was distributed with this source code.
  *
- *  The GNU General Public License can be found at
- *  http://www.gnu.org/copyleft/gpl.html.
- *  A copy is found in the textfile GPL.txt and important notices to the license
- *  from the author is found in LICENSE.txt distributed with these scripts.
- *
- *
- *  This script is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  This copyright notice MUST APPEAR in all copies of the script!
- ***************************************************************/
+ * The TYPO3 project - inspiring people to share!
+ */
+
+use TYPO3\CMS\Backend\Utility\BackendUtility;
 
 /**
  * Backend module providing boring statistics of the index-tables.
@@ -68,6 +57,14 @@ class ModuleController {
 	public $content;
 
 	/**
+	 * Constructor
+	 */
+	public function __construct() {
+		$GLOBALS['BE_USER']->modAccess($GLOBALS['MCONF'], TRUE);
+		\TYPO3\CMS\Core\Utility\ExtensionManagementUtility::isLoaded('indexed_search', TRUE);
+	}
+
+	/**
 	 * Initialization
 	 *
 	 * @return 	void
@@ -80,12 +77,6 @@ class ModuleController {
 		$this->doc->form = '<form action="" method="post">';
 		$this->doc->backPath = $GLOBALS['BACK_PATH'];
 		$this->doc->setModuleTemplate(\TYPO3\CMS\Core\Utility\ExtensionManagementUtility::extRelPath('indexed_search') . '/mod/mod_template.html');
-		// JavaScript
-		$this->doc->JScodeArray['indexed_search'] = '
-			script_ended = 0;
-			function jumpToUrl(URL) {
-				window.location.href = URL;
-			}';
 		$this->doc->tableLayout = array(
 			'defRow' => array(
 				'0' => array('<td valign="top" nowrap>', '</td>'),
@@ -114,7 +105,7 @@ class ModuleController {
 			)
 		);
 		// cleanse settings
-		$this->MOD_SETTINGS = \TYPO3\CMS\Backend\Utility\BackendUtility::getModuleData($this->MOD_MENU, \TYPO3\CMS\Core\Utility\GeneralUtility::_GP('SET'), $this->MCONF['name'], 'ses');
+		$this->MOD_SETTINGS = BackendUtility::getModuleData($this->MOD_MENU, \TYPO3\CMS\Core\Utility\GeneralUtility::_GP('SET'), $this->MCONF['name'], 'ses');
 	}
 
 	/**
@@ -127,25 +118,25 @@ class ModuleController {
 		$this->content = $this->doc->header('Indexing Engine Statistics');
 		$this->content .= $this->doc->spacer(5);
 		switch ($this->MOD_SETTINGS['function']) {
-		case 'stat':
-			$this->content .= $this->doc->section('Records', $this->doc->table($this->getRecordsNumbers()), 0, 1);
-			$this->content .= $this->doc->spacer(15);
-			$this->content .= $this->doc->section('index_phash TYPES', $this->doc->table($this->getPhashTypes()), 1);
-			$this->content .= $this->doc->spacer(15);
-			break;
-		case 'externalDocs':
-			$this->content .= $this->doc->section('External documents', $this->doc->table($this->getPhashExternalDocs()), 0, 1);
-			$this->content .= $this->doc->spacer(15);
-			break;
-		case 'typo3pages':
-			$this->content .= $this->doc->section('TYPO3 Pages', $this->doc->table($this->getPhashT3pages()), 0, 1);
-			$this->content .= $this->doc->spacer(15);
-			break;
+			case 'stat':
+				$this->content .= $this->doc->section('Records', $this->doc->table($this->getRecordsNumbers()), 0, 1);
+				$this->content .= $this->doc->spacer(15);
+				$this->content .= $this->doc->section('index_phash TYPES', $this->doc->table($this->getPhashTypes()), 1);
+				$this->content .= $this->doc->spacer(15);
+				break;
+			case 'externalDocs':
+				$this->content .= $this->doc->section('External documents', $this->doc->table($this->getPhashExternalDocs()), 0, 1);
+				$this->content .= $this->doc->spacer(15);
+				break;
+			case 'typo3pages':
+				$this->content .= $this->doc->section('TYPO3 Pages', $this->doc->table($this->getPhashT3pages()), 0, 1);
+				$this->content .= $this->doc->spacer(15);
+				break;
 		}
 		$docHeaderButtons = $this->getButtons();
 		$markers = array(
 			'CSH' => $docHeaderButtons['csh'],
-			'FUNC_MENU' => \TYPO3\CMS\Backend\Utility\BackendUtility::getFuncMenu(0, 'SET[function]', $this->MOD_SETTINGS['function'], $this->MOD_MENU['function']),
+			'FUNC_MENU' => BackendUtility::getFuncMenu(0, 'SET[function]', $this->MOD_SETTINGS['function'], $this->MOD_MENU['function']),
 			'CONTENT' => $this->content
 		);
 		$this->content = $this->doc->startPage('Indexing Engine Statistics');
@@ -278,9 +269,9 @@ class ModuleController {
 				htmlentities(\TYPO3\CMS\Core\Utility\GeneralUtility::fixed_lgd_cs($row['item_title'], 30)),
 				\TYPO3\CMS\Core\Utility\GeneralUtility::formatSize($row['item_size']),
 				$this->getNumberOfWords($row['phash']),
-				\TYPO3\CMS\Backend\Utility\BackendUtility::datetime($row['item_mtime']),
-				\TYPO3\CMS\Backend\Utility\BackendUtility::datetime($row['crdate']),
-				$row['tstamp'] != $row['crdate'] ? \TYPO3\CMS\Backend\Utility\BackendUtility::datetime($row['tstamp']) : '',
+				BackendUtility::datetime($row['item_mtime']),
+				BackendUtility::datetime($row['crdate']),
+				$row['tstamp'] != $row['crdate'] ? BackendUtility::datetime($row['tstamp']) : '',
 				$row['parsetime'],
 				$this->getNumberOfSections($row['phash']) . '/' . $grListRec[0]['pcount'] . '/' . $this->getNumberOfFulltext($row['phash']),
 				$row['pcount'] . '/' . $this->formatFeGroup($grListRec),
@@ -289,7 +280,7 @@ class ModuleController {
 				$row['phash']
 			);
 			if ($row['pcount'] > 1) {
-				$res2 = $GLOBALS['TYPO3_DB']->exec_SELECTquery('index_phash.*', 'index_phash', 'phash_grouping=' . intval($row['phash_grouping']) . ' AND phash<>' . intval($row['phash']));
+				$res2 = $GLOBALS['TYPO3_DB']->exec_SELECTquery('index_phash.*', 'index_phash', 'phash_grouping=' . (int)$row['phash_grouping'] . ' AND phash<>' . (int)$row['phash']);
 				while ($row2 = $GLOBALS['TYPO3_DB']->sql_fetch_assoc($res2)) {
 					$grListRec = $this->getGrlistRecord($row2['phash']);
 					$recList[] = array(
@@ -297,9 +288,9 @@ class ModuleController {
 						'',
 						\TYPO3\CMS\Core\Utility\GeneralUtility::formatSize($row2['item_size']),
 						$this->getNumberOfWords($row2['phash']),
-						\TYPO3\CMS\Backend\Utility\BackendUtility::datetime($row2['item_mtime']),
-						\TYPO3\CMS\Backend\Utility\BackendUtility::datetime($row2['crdate']),
-						$row2['tstamp'] != $row2['crdate'] ? \TYPO3\CMS\Backend\Utility\BackendUtility::datetime($row2['tstamp']) : '',
+						BackendUtility::datetime($row2['item_mtime']),
+						BackendUtility::datetime($row2['crdate']),
+						$row2['tstamp'] != $row2['crdate'] ? BackendUtility::datetime($row2['tstamp']) : '',
 						$row2['parsetime'],
 						$this->getNumberOfSections($row2['phash']) . '/' . $grListRec[0]['pcount'] . '/' . $this->getNumberOfFulltext($row2['phash']),
 						'-/' . $this->formatFeGroup($grListRec),
@@ -343,9 +334,9 @@ class ModuleController {
 				htmlentities(\TYPO3\CMS\Core\Utility\GeneralUtility::fixed_lgd_cs($row['item_title'], 30)),
 				\TYPO3\CMS\Core\Utility\GeneralUtility::formatSize($row['item_size']),
 				$this->getNumberOfWords($row['phash']),
-				\TYPO3\CMS\Backend\Utility\BackendUtility::datetime($row['item_mtime']),
-				\TYPO3\CMS\Backend\Utility\BackendUtility::datetime($row['crdate']),
-				$row['tstamp'] != $row['crdate'] ? \TYPO3\CMS\Backend\Utility\BackendUtility::datetime($row['tstamp']) : '',
+				BackendUtility::datetime($row['item_mtime']),
+				BackendUtility::datetime($row['crdate']),
+				$row['tstamp'] != $row['crdate'] ? BackendUtility::datetime($row['tstamp']) : '',
 				$row['parsetime'],
 				$this->getNumberOfSections($row['phash']) . '/' . $grListRec[0]['pcount'] . '/' . $this->getNumberOfFulltext($row['phash']),
 				$row['pcount'],
@@ -354,7 +345,7 @@ class ModuleController {
 				htmlentities(\TYPO3\CMS\Core\Utility\GeneralUtility::fixed_lgd_cs($row['data_filename'], 100))
 			);
 			if ($row['pcount'] > 1) {
-				$res2 = $GLOBALS['TYPO3_DB']->exec_SELECTquery('index_phash.*', 'index_phash', 'phash_grouping=' . intval($row['phash_grouping']) . ' AND phash<>' . intval($row['phash']));
+				$res2 = $GLOBALS['TYPO3_DB']->exec_SELECTquery('index_phash.*', 'index_phash', 'phash_grouping=' . (int)$row['phash_grouping'] . ' AND phash<>' . (int)$row['phash']);
 				while ($row2 = $GLOBALS['TYPO3_DB']->sql_fetch_assoc($res2)) {
 					$cHash = count(unserialize($row2['cHashParams'])) ? $this->formatCHash(unserialize($row2['cHashParams'])) : '';
 					$grListRec = $this->getGrlistRecord($row2['phash']);
@@ -363,8 +354,8 @@ class ModuleController {
 						'',
 						$this->getNumberOfWords($row2['phash']),
 						'',
-						\TYPO3\CMS\Backend\Utility\BackendUtility::datetime($row2['crdate']),
-						$row2['tstamp'] != $row2['crdate'] ? \TYPO3\CMS\Backend\Utility\BackendUtility::datetime($row2['tstamp']) : '',
+						BackendUtility::datetime($row2['crdate']),
+						$row2['tstamp'] != $row2['crdate'] ? BackendUtility::datetime($row2['tstamp']) : '',
 						$row2['parsetime'],
 						$this->getNumberOfSections($row2['phash']) . '/' . $grListRec[0]['pcount'] . '/' . $this->getNumberOfFulltext($row2['phash']),
 						'',
@@ -417,7 +408,7 @@ class ModuleController {
 	 * @todo Define visibility
 	 */
 	public function getNumberOfSections($phash) {
-		return $GLOBALS['TYPO3_DB']->exec_SELECTcountRows('phash', 'index_section', 'phash=' . intval($phash));
+		return $GLOBALS['TYPO3_DB']->exec_SELECTcountRows('phash', 'index_section', 'phash=' . (int)$phash);
 	}
 
 	/**
@@ -428,7 +419,7 @@ class ModuleController {
 	 * @todo Define visibility
 	 */
 	public function getNumberOfWords($phash) {
-		$res = $GLOBALS['TYPO3_DB']->exec_SELECTquery('count(*)', 'index_rel', 'phash=' . intval($phash));
+		$res = $GLOBALS['TYPO3_DB']->exec_SELECTquery('count(*)', 'index_rel', 'phash=' . (int)$phash);
 		$row = $GLOBALS['TYPO3_DB']->sql_fetch_row($res);
 		return $row[0];
 	}
@@ -441,7 +432,7 @@ class ModuleController {
 	 * @todo Define visibility
 	 */
 	public function getGrlistRecord($phash) {
-		$res = $GLOBALS['TYPO3_DB']->exec_SELECTquery('index_grlist.*', 'index_grlist', 'phash=' . intval($phash));
+		$res = $GLOBALS['TYPO3_DB']->exec_SELECTquery('index_grlist.*', 'index_grlist', 'phash=' . (int)$phash);
 		$allRows = array();
 		while ($row = $GLOBALS['TYPO3_DB']->sql_fetch_assoc($res)) {
 			$row['pcount'] = $GLOBALS['TYPO3_DB']->sql_num_rows($res);
@@ -458,7 +449,7 @@ class ModuleController {
 	 * @todo Define visibility
 	 */
 	public function getNumberOfFulltext($phash) {
-		return $GLOBALS['TYPO3_DB']->exec_SELECTcountRows('phash', 'index_fulltext', 'phash=' . intval($phash));
+		return $GLOBALS['TYPO3_DB']->exec_SELECTcountRows('phash', 'index_fulltext', 'phash=' . (int)$phash);
 	}
 
 	/**
@@ -505,6 +496,3 @@ class ModuleController {
 	}
 
 }
-
-
-?>

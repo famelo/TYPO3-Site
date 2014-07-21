@@ -1,55 +1,41 @@
 <?php
 namespace TYPO3\CMS\Extbase\Configuration;
 
-/***************************************************************
- *  Copyright notice
+/**
+ * This file is part of the TYPO3 CMS project.
  *
- *  (c) 2010-2013 Extbase Team (http://forge.typo3.org/projects/typo3v4-mvc)
- *  Extbase is a backport of TYPO3 Flow. All credits go to the TYPO3 Flow team.
- *  All rights reserved
+ * It is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License, either version 2
+ * of the License, or any later version.
  *
- *  This script is part of the TYPO3 project. The TYPO3 project is
- *  free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
+ * For the full copyright and license information, please read the
+ * LICENSE.txt file that was distributed with this source code.
  *
- *  The GNU General Public License can be found at
- *  http://www.gnu.org/copyleft/gpl.html.
- *  A copy is found in the textfile GPL.txt and important notices to the license
- *  from the author is found in LICENSE.txt distributed with these scripts.
- *
- *
- *  This script is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  This copyright notice MUST APPEAR in all copies of the script!
- ***************************************************************/
+ * The TYPO3 project - inspiring people to share!
+ */
 /**
  * A general purpose configuration manager used in backend mode.
  */
 class BackendConfigurationManager extends \TYPO3\CMS\Extbase\Configuration\AbstractConfigurationManager {
 
 	/**
-	 * @var \TYPO3\CMS\Core\Database\QueryGenerator Needed to recursively fetch a page tree
+	 * Needed to recursively fetch a page tree
+	 *
+	 * @var \TYPO3\CMS\Core\Database\QueryGenerator
+	 * @inject
 	 */
 	protected $queryGenerator;
-
-	/**
-	 * Inject query generator
-	 *
-	 * @param \TYPO3\CMS\Core\Database\QueryGenerator $queryGenerator
-	 */
-	public function injectQueryGenerator(\TYPO3\CMS\Core\Database\QueryGenerator $queryGenerator) {
-		$this->queryGenerator = $queryGenerator;
-	}
 
 	/**
 	 * @var array
 	 */
 	protected $typoScriptSetupCache = array();
+
+	/**
+	 * stores the current page ID
+	 * @var integer
+	 */
+	protected $currentPageId;
 
 	/**
 	 * Returns TypoScript Setup array from current Environment.
@@ -100,7 +86,8 @@ class BackendConfigurationManager extends \TYPO3\CMS\Extbase\Configuration\Abstr
 		if ($pluginName !== NULL) {
 			$pluginSignature = strtolower($extensionName . '_' . $pluginName);
 			if (is_array($setup['module.']['tx_' . $pluginSignature . '.'])) {
-				$pluginConfiguration = \TYPO3\CMS\Core\Utility\GeneralUtility::array_merge_recursive_overrule($pluginConfiguration, $this->typoScriptService->convertTypoScriptArrayToPlainArray($setup['module.']['tx_' . $pluginSignature . '.']));
+				$overruleConfiguration = $this->typoScriptService->convertTypoScriptArrayToPlainArray($setup['module.']['tx_' . $pluginSignature . '.']);
+				\TYPO3\CMS\Core\Utility\ArrayUtility::mergeRecursiveWithOverrule($pluginConfiguration, $overruleConfiguration);
 			}
 		}
 		return $pluginConfiguration;
@@ -132,22 +119,56 @@ class BackendConfigurationManager extends \TYPO3\CMS\Extbase\Configuration\Abstr
 	 * @return integer current page id. If no page is selected current root page id is returned
 	 */
 	protected function getCurrentPageId() {
-		$pageId = (integer) \TYPO3\CMS\Core\Utility\GeneralUtility::_GP('id');
-		if ($pageId > 0) {
-			return $pageId;
+		if ($this->currentPageId !== NULL) {
+			return $this->currentPageId;
 		}
-		// get current site root
-		$rootPages = $GLOBALS['TYPO3_DB']->exec_SELECTgetRows('uid', 'pages', 'deleted=0 AND hidden=0 AND is_siteroot=1', '', '', '1');
-		if (count($rootPages) > 0) {
-			return $rootPages[0]['uid'];
+
+		$this->currentPageId = $this->getCurrentPageIdFromGetPostData() ?: $this->getCurrentPageIdFromCurrentSiteRoot();
+		$this->currentPageId = $this->currentPageId ?: $this->getCurrentPageIdFromRootTemplate();
+		$this->currentPageId = $this->currentPageId ?: self::DEFAULT_BACKEND_STORAGE_PID;
+
+		return $this->currentPageId;
+	}
+
+	/**
+	 * Gets the current page ID from the GET/POST data.
+	 *
+	 * @return int the page UID, will be 0 if none has been set
+	 */
+	protected function getCurrentPageIdFromGetPostData() {
+		return (int)\TYPO3\CMS\Core\Utility\GeneralUtility::_GP('id');
+	}
+
+	/**
+	 * Gets the current page ID from the first site root in tree.
+	 *
+	 * @return int the page UID, will be 0 if none has been set
+	 */
+	protected function getCurrentPageIdFromCurrentSiteRoot() {
+		$rootPage = $GLOBALS['TYPO3_DB']->exec_SELECTgetSingleRow(
+			'uid', 'pages', 'deleted=0 AND hidden=0 AND is_siteroot=1', '', 'sorting'
+		);
+		if (empty($rootPage)) {
+			return 0;
 		}
-		// get root template
-		$rootTemplates = $GLOBALS['TYPO3_DB']->exec_SELECTgetRows('pid', 'sys_template', 'deleted=0 AND hidden=0 AND root=1', '', '', '1');
-		if (count($rootTemplates) > 0) {
-			return $rootTemplates[0]['pid'];
+
+		return (int)$rootPage['uid'];
+	}
+
+	/**
+	 * Gets the current page ID from the first created root template.
+	 *
+	 * @return int the page UID, will be 0 if none has been set
+	 */
+	protected function getCurrentPageIdFromRootTemplate() {
+		$rootTemplate = $GLOBALS['TYPO3_DB']->exec_SELECTgetSingleRow(
+			'pid', 'sys_template', 'deleted=0 AND hidden=0 AND root=1', '', 'crdate'
+		);
+		if (empty($rootTemplate)) {
+			return 0;
 		}
-		// fallback
-		return self::DEFAULT_BACKEND_STORAGE_PID;
+
+		return (int)$rootTemplate['pid'];
 	}
 
 	/**
@@ -203,5 +224,3 @@ class BackendConfigurationManager extends \TYPO3\CMS\Extbase\Configuration\Abstr
 	}
 
 }
-
-?>

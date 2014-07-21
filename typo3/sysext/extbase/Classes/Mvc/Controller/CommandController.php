@@ -1,29 +1,20 @@
 <?php
 namespace TYPO3\CMS\Extbase\Mvc\Controller;
 
-/***************************************************************
- *  Copyright notice
- *  All rights reserved
+/**
+ * This file is part of the TYPO3 CMS project.
  *
- *  This class is a backport of the corresponding class of TYPO3 Flow.
- *  All credits go to the TYPO3 Flow team.
+ * It is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License, either version 2
+ * of the License, or any later version.
  *
- *  This script is part of the TYPO3 project. The TYPO3 project is
- *  free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
+ * For the full copyright and license information, please read the
+ * LICENSE.txt file that was distributed with this source code.
  *
- *  The GNU General Public License can be found at
- *  http://www.gnu.org/copyleft/gpl.html.
- *
- *  This script is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  This copyright notice MUST APPEAR in all copies of the script!
- ***************************************************************/
+ * The TYPO3 project - inspiring people to share!
+ */
+use TYPO3\CMS\Core\Authentication\AbstractUserAuthentication;
+
 /**
  * A controller which processes requests from the command line
  *
@@ -56,7 +47,21 @@ class CommandController implements \TYPO3\CMS\Extbase\Mvc\Controller\CommandCont
 	protected $commandMethodName = '';
 
 	/**
+	 * Whether the command needs admin access to perform its job
+	 *
+	 * @var bool
+	 * @api
+	 */
+	protected $requestAdminPermissions = FALSE;
+
+	/**
+	 * @var AbstractUserAuthentication
+	 */
+	protected $userAuthentication;
+
+	/**
 	 * @var \TYPO3\CMS\Extbase\Reflection\ReflectionService
+	 * @inject
 	 */
 	protected $reflectionService;
 
@@ -66,20 +71,13 @@ class CommandController implements \TYPO3\CMS\Extbase\Mvc\Controller\CommandCont
 	protected $objectManager;
 
 	/**
-	 * @param \TYPO3\CMS\Extbase\Reflection\ReflectionService $reflectionService
-	 * @return void
-	 */
-	public function injectReflectionService(\TYPO3\CMS\Extbase\Reflection\ReflectionService $reflectionService) {
-		$this->reflectionService = $reflectionService;
-	}
-
-	/**
 	 * @param \TYPO3\CMS\Extbase\Object\ObjectManagerInterface $objectManager
 	 * @return void
 	 */
 	public function injectObjectManager(\TYPO3\CMS\Extbase\Object\ObjectManagerInterface $objectManager) {
 		$this->objectManager = $objectManager;
 		$this->arguments = $this->objectManager->get('TYPO3\\CMS\\Extbase\\Mvc\\Controller\\Arguments');
+		$this->userAuthentication = isset($GLOBALS['BE_USER']) ? $GLOBALS['BE_USER'] : NULL;
 	}
 
 	/**
@@ -209,11 +207,39 @@ class CommandController implements \TYPO3\CMS\Extbase\Mvc\Controller\CommandCont
 		foreach ($this->arguments as $argument) {
 			$preparedArguments[] = $argument->getValue();
 		}
+		$originalRole = $this->ensureAdminRoleIfRequested();
 		$commandResult = call_user_func_array(array($this, $this->commandMethodName), $preparedArguments);
+		$this->restoreUserRole($originalRole);
 		if (is_string($commandResult) && strlen($commandResult) > 0) {
 			$this->response->appendContent($commandResult);
 		} elseif (is_object($commandResult) && method_exists($commandResult, '__toString')) {
 			$this->response->appendContent((string) $commandResult);
+		}
+	}
+
+	/**
+	 * Set admin permissions for currently authenticated user if requested
+	 * and returns the original state or NULL
+	 *
+	 * @return NULL|int
+	 */
+	protected function ensureAdminRoleIfRequested() {
+		if (!$this->requestAdminPermissions || !$this->userAuthentication || !isset($this->userAuthentication->user['admin'])) {
+			return NULL;
+		}
+		$originalRole = $this->userAuthentication->user['admin'];
+		$this->userAuthentication->user['admin'] = 1;
+		return $originalRole;
+	}
+
+	/**
+	 * Restores the original user role
+	 *
+	 * @param NULL|int $originalRole
+	 */
+	protected function restoreUserRole($originalRole) {
+		if ($originalRole !== NULL) {
+			$this->userAuthentication->user['admin'] = $originalRole;
 		}
 	}
 
@@ -270,5 +296,3 @@ class CommandController implements \TYPO3\CMS\Extbase\Mvc\Controller\CommandCont
 		die($exitCode);
 	}
 }
-
-?>

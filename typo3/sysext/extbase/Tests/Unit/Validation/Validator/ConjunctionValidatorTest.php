@@ -20,12 +20,11 @@ namespace TYPO3\CMS\Extbase\Tests\Unit\Validation\Validator;
  *                                                                        *
  * The TYPO3 project - inspiring people to share!                         *
  *                                                                        */
+
 /**
- * Testcase for the Conjunction Validator
- *
- * @license http://www.gnu.org/licenses/lgpl.html GNU Lesser General Public License, version 3 or later
+ * Test case
  */
-class ConjunctionValidatorTest extends \TYPO3\CMS\Extbase\Tests\Unit\BaseTestCase {
+class ConjunctionValidatorTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 
 	/**
 	 * @test
@@ -36,7 +35,7 @@ class ConjunctionValidatorTest extends \TYPO3\CMS\Extbase\Tests\Unit\BaseTestCas
 		$conjunctionValidator = new $proxyClassName(array());
 		$mockValidator = $this->getMock('TYPO3\\CMS\\Extbase\\Validation\\Validator\\ValidatorInterface');
 		$conjunctionValidator->addValidator($mockValidator);
-		$this->assertTrue($conjunctionValidator->getValidators()->contains($mockValidator));
+		$this->assertTrue($conjunctionValidator->_get('validators')->contains($mockValidator));
 	}
 
 	/**
@@ -103,8 +102,8 @@ class ConjunctionValidatorTest extends \TYPO3\CMS\Extbase\Tests\Unit\BaseTestCas
 		$validatorConjunction->addValidator($validator1);
 		$validatorConjunction->addValidator($validator2);
 		$validatorConjunction->removeValidator($validator1);
-		$this->assertFalse($validatorConjunction->getValidators()->contains($validator1));
-		$this->assertTrue($validatorConjunction->getValidators()->contains($validator2));
+		$this->assertFalse($validatorConjunction->_get('validators')->contains($validator1));
+		$this->assertTrue($validatorConjunction->_get('validators')->contains($validator2));
 	}
 
 	/**
@@ -132,5 +131,3 @@ class ConjunctionValidatorTest extends \TYPO3\CMS\Extbase\Tests\Unit\BaseTestCas
 		$this->assertSame(2, count($validatorConjunction));
 	}
 }
-
-?>

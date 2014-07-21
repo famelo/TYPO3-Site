@@ -1,48 +1,37 @@
 <?php
 namespace TYPO3\CMS\Scheduler\Tests\Unit\CronCommand;
 
-/***************************************************************
- *  Copyright notice
- *
- *  (c) 2010-2013 Christian Kuhn <lolli@schwarzbu.ch>
- *  All rights reserved
- *
- *  This script is part of the TYPO3 project. The TYPO3 project is
- *  free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
- *
- *  The GNU General Public License can be found at
- *  http://www.gnu.org/copyleft/gpl.html.
- *
- *  This script is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  This copyright notice MUST APPEAR in all copies of the script!
- ***************************************************************/
 /**
- * Test case for class "tx_scheduler_CronCmd_Normalize"
+ * This file is part of the TYPO3 CMS project.
+ *
+ * It is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License, either version 2
+ * of the License, or any later version.
+ *
+ * For the full copyright and license information, please read the
+ * LICENSE.txt file that was distributed with this source code.
+ *
+ * The TYPO3 project - inspiring people to share!
+ */
+/**
+ * Test case
  *
  * @author Christian Kuhn <lolli@schwarzbu.ch>
  */
 class NormalizeCommandTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 
 	/**
-	 * Create a subclass of tx_scheduler_CronCmd_Normalize with
-	 * protected methods made public
+	 * Create a subclass with protected methods made public
 	 *
 	 * @return string Name of the accessible proxy class
 	 */
 	protected function getAccessibleProxy() {
 		$className = 'NormalizeCommand' . uniqid();
-		$fullClassName = 'TYPO3\\CMS\\Scheduler\\CronCommand\\' . $className;
+		$fullClassName = __NAMESPACE__ . '\\' . $className;
 		if (!class_exists($className, FALSE)) {
 			eval(
-				'namespace TYPO3\CMS\Scheduler\CronCommand;' .
-				'class ' . $className . ' extends NormalizeCommand {' .
+				'namespace ' . __NAMESPACE__ . ';' .
+				'class ' . $className . ' extends \\TYPO3\\CMS\\Scheduler\\CronCommand\\NormalizeCommand {' .
 				'  public static function convertKeywordsToCronCommand($cronCommand) {' .
 				'    return parent::convertKeywordsToCronCommand($cronCommand);' .
 				'  }' .
@@ -185,23 +174,23 @@ class NormalizeCommandTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	 */
 	static public function normalizeMonthAndWeekdayFieldValidDataProvider() {
 		return array(
-			'*' => array('*', TRUE, '*'),
-			'string 1' => array('1', TRUE, '1'),
+			'* monthField' => array('*', TRUE, '*'),
+			'string 1 monthField' => array('1', TRUE, '1'),
 			'jan' => array('jan', TRUE, '1'),
 			'feb/2' => array('feb/2', TRUE, '2'),
 			'jan-feb/2' => array('jan-feb/2', TRUE, '1'),
-			'1-2' => array('1-2', TRUE, '1,2'),
+			'1-2 monthField' => array('1-2', TRUE, '1,2'),
 			'1-3/2,feb,may,6' => array('1-3/2,feb,may,6', TRUE, '1,2,3,5,6'),
 			'*/4' => array('*/4', TRUE, '1,5,9'),
-			'*' => array('*', FALSE, '*'),
-			'string 1' => array('1', FALSE, '1'),
+			'* !monthField' => array('*', FALSE, '*'),
+			'string 1, !monthField' => array('1', FALSE, '1'),
 			'fri' => array('fri', FALSE, '5'),
 			'sun' => array('sun', FALSE, '7'),
 			'string 0 for sunday' => array('0', FALSE, '7'),
 			'0,1' => array('0,1', FALSE, '1,7'),
 			'*/3' => array('*/3', FALSE, '1,4,7'),
 			'tue/2' => array('tue/2', FALSE, '2'),
-			'1-2' => array('1-2', FALSE, '1,2'),
+			'1-2 !monthField' => array('1-2', FALSE, '1,2'),
 			'tue-fri/2' => array('tue-fri/2', FALSE, '2,4'),
 			'1-3/2,tue,fri,6' => array('1-3/2,tue,fri,6', FALSE, '1,2,3,5,6')
 		);
@@ -289,7 +278,6 @@ class NormalizeCommandTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 			'4-3' => array('4-3', 0, 59),
 			'/2' => array('/2', 0, 59),
 			'/' => array('/', 0, 59),
-			'string foo' => array('foo', 0, 59),
 			'left bound too low' => array('2-4', 3, 4),
 			'right bound too high' => array('2-4', 2, 3),
 			'left and right bound' => array('2-5', 2, 4),
@@ -667,6 +655,3 @@ class NormalizeCommandTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	}
 
 }
-
-
-?>

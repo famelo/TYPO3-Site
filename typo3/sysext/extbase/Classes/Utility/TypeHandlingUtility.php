@@ -104,6 +104,16 @@ class TypeHandlingUtility {
 	}
 
 	/**
+	 * Returns TRUE if the $type is a CMS core type object.
+	 *
+	 * @param string $type
+	 * @return boolean
+	 */
+	static public function isCoreType($type) {
+		return is_subclass_of($type, 'TYPO3\\CMS\\Core\\Type\\TypeInterface');
+	}
+
+	/**
 	 * Returns TRUE if the $type is a collection type.
 	 *
 	 * @param string $type
@@ -118,15 +128,6 @@ class TypeHandlingUtility {
 			foreach (self::$collectionTypes as $collectionType) {
 				if (is_subclass_of($type, $collectionType) === TRUE) {
 					return TRUE;
-				}
-			}
-
-				// is_subclass_of does not check for interfaces in PHP < 5.3.7
-			if (version_compare(PHP_VERSION, '5.3.7', '<') === TRUE) {
-				foreach (self::$collectionTypes as $collectionType) {
-					if (in_array($collectionType, class_implements($type)) === TRUE) {
-						return TRUE;
-					}
 				}
 			}
 		}
@@ -149,5 +150,3 @@ class TypeHandlingUtility {
 		return $binaryData;
 	}
 }
-
-?>

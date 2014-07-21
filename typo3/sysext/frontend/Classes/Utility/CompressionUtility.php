@@ -1,28 +1,18 @@
 <?php
 namespace TYPO3\CMS\Frontend\Utility;
 
-/***************************************************************
- *  Copyright notice
+/**
+ * This file is part of the TYPO3 CMS project.
  *
- *  (c) 2009-2013 Dmitry Dulepov <dmitry@typo3.org>
- *  All rights reserved
+ * It is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License, either version 2
+ * of the License, or any later version.
  *
- *  This script is part of the TYPO3 project. The TYPO3 project is
- *  free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
+ * For the full copyright and license information, please read the
+ * LICENSE.txt file that was distributed with this source code.
  *
- *  The GNU General Public License can be found at
- *  http://www.gnu.org/copyleft/gpl.html.
- *
- *  This script is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  This copyright notice MUST APPEAR in all copies of the script!
- ***************************************************************/
+ * The TYPO3 project - inspiring people to share!
+ */
 /**
  * This class contains compression functions for the TYPO3 Frontend. It can be
  * used only in EXT:cms/tslib/index_ts.php
@@ -45,7 +35,7 @@ class CompressionUtility implements \TYPO3\CMS\Core\SingletonInterface {
 	 * is enabled.
 	 *
 	 * @param string $outputBuffer Output buffer to compress
-	 * @param integer $mode One of PHP_OUTPUT_HANDLER_xxx contants
+	 * @param integer $mode One of PHP_OUTPUT_HANDLER_xxx constants
 	 * @return string Compressed string
 	 * @see ob_start()
 	 * @see ob_gzhandler()
@@ -72,6 +62,3 @@ class CompressionUtility implements \TYPO3\CMS\Core\SingletonInterface {
 	}
 
 }
-
-
-?>

@@ -1,31 +1,18 @@
 <?php
 namespace TYPO3\CMS\Core\Resource;
 
-/***************************************************************
- * Copyright notice
+/**
+ * This file is part of the TYPO3 CMS project.
  *
- * (c) 2012-2013 Benjamin Mack <benni@typo3.org>
- * All rights reserved
+ * It is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License, either version 2
+ * of the License, or any later version.
  *
- * This script is part of the TYPO3 project. The TYPO3 project is
- * free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
+ * For the full copyright and license information, please read the
+ * LICENSE.txt file that was distributed with this source code.
  *
- * The GNU General Public License can be found at
- * http://www.gnu.org/copyleft/gpl.html.
- * A copy is found in the textfile GPL.txt and important notices to the license
- * from the author is found in LICENSE.txt distributed with these scripts.
- *
- *
- * This script is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU General Public License for more details.
- *
- * This copyright notice MUST APPEAR in all copies of the script!
- ***************************************************************/
+ * The TYPO3 project - inspiring people to share!
+ */
 
 /**
  * Representation of a specific processed version of a file. These are created by the FileProcessingService,
@@ -62,7 +49,7 @@ class ProcessedFile extends AbstractFile {
 	const CONTEXT_IMAGEPREVIEW = 'Image.Preview';
 	/**
 	 * Standard processing context for the frontend, that was previously
-	 * in tslib_cObj::getImgResource which only takes cropping, masking and scaling
+	 * in \TYPO3\CMS\Frontend\ContentObject\ContentObjectRenderer::getImgResource which only takes cropping, masking and scaling
 	 * into account
 	 */
 	const CONTEXT_IMAGECROPSCALEMASK = 'Image.CropScaleMask';
@@ -142,8 +129,8 @@ class ProcessedFile extends AbstractFile {
 	 * @return ProcessedFile
 	 */
 	protected function reconstituteFromDatabaseRecord(array $databaseRow) {
-		$this->taskType = empty($this->taskType) ? $databaseRow['task_type'] : $this->taskType;
-		$this->processingConfiguration = empty($this->processingConfiguration) ? unserialize($databaseRow['configuration']) : $this->processingConfiguration;
+		$this->taskType = $this->taskType ?: $databaseRow['task_type'];
+		$this->processingConfiguration = $this->processingConfiguration ?: unserialize($databaseRow['configuration']);
 
 		$this->originalFileSha1 = $databaseRow['originalfilesha1'];
 		$this->identifier = $databaseRow['identifier'];
@@ -357,11 +344,13 @@ class ProcessedFile extends AbstractFile {
 			$properties['name'] = $this->getName();
 		}
 
+		$properties['configuration'] = serialize($this->processingConfiguration);
+
 		return array_merge($properties, array(
 			'storage' => $this->getStorage()->getUid(),
 			'checksum' => $this->calculateChecksum(),
 			'task_type' => $this->taskType,
-			'configuration' => serialize($this->processingConfiguration),
+			'configurationsha1' => sha1($properties['configuration']),
 			'original' => $this->originalFile->getUid(),
 			'originalfilesha1' => $this->originalFileSha1
 		));
@@ -403,10 +392,13 @@ class ProcessedFile extends AbstractFile {
 	}
 
 	/**
+	 * Delete processed file
+	 *
+	 * @param boolean $force
 	 * @return boolean
 	 */
-	public function delete() {
-		if ($this->isUnchanged()) {
+	public function delete($force = FALSE) {
+		if (!$force && $this->isUnchanged()) {
 			return FALSE;
 		}
 		return parent::delete();
@@ -445,6 +437,11 @@ class ProcessedFile extends AbstractFile {
 	 */
 	public function needsReprocessing() {
 		$fileMustBeRecreated = FALSE;
+
+		// if original is missing we can not reprocess the file
+		if ($this->originalFile->isMissing()) {
+			return FALSE;
+		}
 
 		// processedFile does not exist
 		if (!$this->usesOriginalFile() && !$this->exists()) {
@@ -518,5 +515,3 @@ class ProcessedFile extends AbstractFile {
 	}
 
 }
-
-?>

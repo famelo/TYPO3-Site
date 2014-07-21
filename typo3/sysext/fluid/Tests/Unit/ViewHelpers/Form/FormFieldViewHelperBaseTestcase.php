@@ -20,7 +20,6 @@ namespace TYPO3\CMS\Fluid\Tests\Unit\ViewHelpers\Form;
  *                                                                        *
  * The TYPO3 project - inspiring people to share!                         *
  *                                                                        */
-require_once __DIR__ . '/../ViewHelperBaseTestcase.php';
 
 /**
  * Test for the Abstract Form view helper
@@ -45,9 +44,7 @@ abstract class FormFieldViewHelperBaseTestcase extends \TYPO3\CMS\Fluid\Tests\Un
 	 * @return void
 	 */
 	protected function injectDependenciesIntoViewHelper(\TYPO3\CMS\Fluid\Core\ViewHelper\AbstractViewHelper $viewHelper) {
-		$viewHelper->injectConfigurationManager($this->mockConfigurationManager);
+		$viewHelper->_set('configurationManager', $this->mockConfigurationManager);
 		parent::injectDependenciesIntoViewHelper($viewHelper);
 	}
 }
-
-?>

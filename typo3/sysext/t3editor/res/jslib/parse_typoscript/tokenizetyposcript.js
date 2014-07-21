@@ -1,3 +1,16 @@
+/**
+ * This file is part of the TYPO3 CMS project.
+ *
+ * It is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License, either version 2
+ * of the License, or any later version.
+ *
+ * For the full copyright and license information, please read the
+ * LICENSE.txt file that was distributed with this source code.
+ *
+ * The TYPO3 project - inspiring people to share!
+ */
+
 /* Tokenizer for TypoScript code
  *
  * based on tokenizejavascript.js by Marijn Haverbeke
@@ -245,7 +258,6 @@ var typoscriptWords = {
 	'compensateFieldWidth': 'reserved',
 	'compX': 'reserved',
 	'compY': 'reserved',
-	'condensedMode': 'reserved',
 	'conf': 'reserved',
 	'constants': 'reserved',
 	'content_from_pid_allowOutsideDomain': 'reserved',
@@ -296,7 +308,6 @@ var typoscriptWords = {
 	'disableCharsetHeader': 'reserved',
 	'disabled': 'reserved',
 	'disableDelete': 'reserved',
-	'disableDocModuleInAB': 'reserved',
 	'disableDocSelector': 'reserved',
 	'disableHideAtCopy': 'reserved',
 	'disableIconLinkToContextmenu': 'reserved',
@@ -338,7 +349,6 @@ var typoscriptWords = {
 	'edit_docModuleUplaod': 'reserved',
 	'edit_docModuleUpload': 'reserved',
 	'edit_RTE': 'reserved',
-	'edit_wideDocument': 'reserved',
 	'editFieldsAtATime': 'reserved',
 	'editFormsOnPage': 'reserved',
 	'editIcons': 'reserved',
@@ -393,7 +403,6 @@ var typoscriptWords = {
 	'fontTag': 'reserved',
 	'forceDisplayFieldIcons': 'reserved',
 	'forceDisplayIcons': 'reserved',
-	'forceNoPopup': 'reserved',
 	'forceTemplateParsing': 'reserved',
 	'forceTypeValue': 'reserved',
 	'format': 'reserved',
@@ -1574,7 +1583,6 @@ var typoscriptWords = {
 	'compensateFieldWidth': 'reserved',
 	'compX': 'reserved',
 	'compY': 'reserved',
-	'condensedMode': 'reserved',
 	'conf': 'reserved',
 	'constants': 'reserved',
 	'content_from_pid_allowOutsideDomain': 'reserved',
@@ -1625,7 +1633,6 @@ var typoscriptWords = {
 	'disableCharsetHeader': 'reserved',
 	'disabled': 'reserved',
 	'disableDelete': 'reserved',
-	'disableDocModuleInAB': 'reserved',
 	'disableDocSelector': 'reserved',
 	'disableHideAtCopy': 'reserved',
 	'disableIconLinkToContextmenu': 'reserved',
@@ -1667,7 +1674,6 @@ var typoscriptWords = {
 	'edit_docModuleUplaod': 'reserved',
 	'edit_docModuleUpload': 'reserved',
 	'edit_RTE': 'reserved',
-	'edit_wideDocument': 'reserved',
 	'editFieldsAtATime': 'reserved',
 	'editFormsOnPage': 'reserved',
 	'editIcons': 'reserved',
@@ -1722,7 +1728,6 @@ var typoscriptWords = {
 	'fontTag': 'reserved',
 	'forceDisplayFieldIcons': 'reserved',
 	'forceDisplayIcons': 'reserved',
-	'forceNoPopup': 'reserved',
 	'forceTemplateParsing': 'reserved',
 	'forceTypeValue': 'reserved',
 	'format': 'reserved',

@@ -1,28 +1,18 @@
 <?php
 namespace TYPO3\CMS\Extensionmanager\Domain\Repository;
 
-/***************************************************************
- *  Copyright notice
+/**
+ * This file is part of the TYPO3 CMS project.
  *
- *  (c) 2012-2013 Susanne Moog, <typo3@susannemoog.de>
- *  All rights reserved
+ * It is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License, either version 2
+ * of the License, or any later version.
  *
- *  This script is part of the TYPO3 project. The TYPO3 project is
- *  free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
+ * For the full copyright and license information, please read the
+ * LICENSE.txt file that was distributed with this source code.
  *
- *  The GNU General Public License can be found at
- *  http://www.gnu.org/copyleft/gpl.html.
- *
- *  This script is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  This copyright notice MUST APPEAR in all copies of the script!
- ***************************************************************/
+ * The TYPO3 project - inspiring people to share!
+ */
 /**
  * A repository for extension configuration items
  *
@@ -64,10 +54,12 @@ class ConfigurationItemRepository {
 			$configuration = $this->mergeWithExistingConfiguration($defaultConfiguration, $extensionKey);
 			$hierarchicConfiguration = array();
 			foreach ($configuration as $configurationOption) {
-				$hierarchicConfiguration = \TYPO3\CMS\Core\Utility\GeneralUtility::array_merge_recursive_overrule(
-					$this->buildConfigurationArray($configurationOption, $extensionKey),
+				$originalConfiguration = $this->buildConfigurationArray($configurationOption, $extensionKey);
+				\TYPO3\CMS\Core\Utility\ArrayUtility::mergeRecursiveWithOverrule(
+					$originalConfiguration,
 					$hierarchicConfiguration
 				);
+				$hierarchicConfiguration = $originalConfiguration;
 			}
 
 			// Flip category array as it was merged the other way around
@@ -84,7 +76,8 @@ class ConfigurationItemRepository {
 			}
 			unset($tempConfiguration);
 
-			$resultArray = \TYPO3\CMS\Core\Utility\GeneralUtility::array_merge_recursive_overrule($hierarchicConfiguration, $metaInformation);
+			 \TYPO3\CMS\Core\Utility\ArrayUtility::mergeRecursiveWithOverrule($hierarchicConfiguration, $metaInformation);
+			$resultArray = $hierarchicConfiguration;
 		}
 
 		return $resultArray;
@@ -104,11 +97,11 @@ class ConfigurationItemRepository {
 		} elseif (\TYPO3\CMS\Core\Utility\GeneralUtility::isFirstPartOfStr($configurationOption['type'], 'options')) {
 			$configurationOption = $this->extractInformationForConfigFieldsOfTypeOptions($configurationOption);
 		}
-		if (\TYPO3\CMS\Extbase\Utility\LocalizationUtility::translate($configurationOption['label'], $extensionKey)) {
-			$configurationOption['label'] = \TYPO3\CMS\Extbase\Utility\LocalizationUtility::translate($configurationOption['label'], $extensionKey);
+		if ($this->translate($configurationOption['label'], $extensionKey)) {
+			$configurationOption['label'] = $this->translate($configurationOption['label'], $extensionKey);
 		}
 		$configurationOption['labels'] = \TYPO3\CMS\Core\Utility\GeneralUtility::trimExplode(':', $configurationOption['label'], FALSE, 2);
-		$configurationOption['subcat_name'] = $configurationOption['subcat_name'] ? $configurationOption['subcat_name'] : '__default';
+		$configurationOption['subcat_name'] = $configurationOption['subcat_name'] ?: '__default';
 		$hierarchicConfiguration[$configurationOption['cat']][$configurationOption['subcat_name']][$configurationOption['name']] = $configurationOption;
 		return $hierarchicConfiguration;
 	}
@@ -157,7 +150,7 @@ class ConfigurationItemRepository {
 	 * @return array
 	 */
 	protected function addMetaInformation(&$configuration) {
-		$metaInformation = $configuration['__meta__'] ? $configuration['__meta__'] : array();
+		$metaInformation = $configuration['__meta__'] ?: array();
 		unset($configuration['__meta__']);
 		return $metaInformation;
 	}
@@ -183,8 +176,8 @@ class ConfigurationItemRepository {
 		foreach ($flatExtensionConfig as $key => $value) {
 			$valuedCurrentExtensionConfig[$key]['value'] = $value;
 		}
-		$configuration = \TYPO3\CMS\Core\Utility\GeneralUtility::array_merge_recursive_overrule($defaultConfiguration, $valuedCurrentExtensionConfig);
-		return $configuration;
+		\TYPO3\CMS\Core\Utility\ArrayUtility::mergeRecursiveWithOverrule($defaultConfiguration, $valuedCurrentExtensionConfig);
+		return $defaultConfiguration;
 	}
 
 	/**
@@ -255,7 +248,20 @@ class ConfigurationItemRepository {
 		return $configurationObjectStorage;
 	}
 
+	/**
+	 * Returns the localized label of the LOCAL_LANG key, $key.
+	 * Wrapper for the static call.
+	 *
+	 * @param string $key The key from the LOCAL_LANG array for which to return the value.
+	 * @param string $extensionName The name of the extension
+	 * @return string|NULL The value from LOCAL_LANG or NULL if no translation was found.
+	 */
+	protected function translate($key, $extensionName) {
+		$translation = \TYPO3\CMS\Extbase\Utility\LocalizationUtility::translate($key, $extensionName);
+		if ($translation) {
+			return $translation;
+		}
+		return NULL;
+	}
+
 }
-
-
-?>

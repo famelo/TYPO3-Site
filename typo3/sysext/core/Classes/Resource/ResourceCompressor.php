@@ -1,32 +1,18 @@
 <?php
 namespace TYPO3\CMS\Core\Resource;
 
-/***************************************************************
- *  Copyright notice
+/**
+ * This file is part of the TYPO3 CMS project.
  *
- *  (c) 2010-2013 Steffen Gebert <steffen@steffen-gebert.de>
- *  (c) 2011-2013 Kai Vogel <kai.vogel@speedprogs.de>
- *  All rights reserved
+ * It is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License, either version 2
+ * of the License, or any later version.
  *
- *  This script is part of the TYPO3 project. The TYPO3 project is
- *  free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
+ * For the full copyright and license information, please read the
+ * LICENSE.txt file that was distributed with this source code.
  *
- *  The GNU General Public License can be found at
- *  http://www.gnu.org/copyleft/gpl.html.
- *  A copy is found in the textfile GPL.txt and important notices to the license
- *  from the author is found in LICENSE.txt distributed with these scripts.
- *
- *
- *  This script is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  This copyright notice MUST APPEAR in all copies of the script!
- ***************************************************************/
+ * The TYPO3 project - inspiring people to share!
+ */
 
 use TYPO3\CMS\Core\Utility\PathUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
@@ -84,7 +70,7 @@ class ResourceCompressor {
 			$this->createGzipped = TRUE;
 			// $compressionLevel can also be TRUE
 			if (\TYPO3\CMS\Core\Utility\MathUtility::canBeInterpretedAsInteger($compressionLevel)) {
-				$this->gzipCompressionLevel = intval($compressionLevel);
+				$this->gzipCompressionLevel = (int)$compressionLevel;
 			}
 		}
 		$this->setInitialPaths();
@@ -188,19 +174,26 @@ class ResourceCompressor {
 			$filenameFromMainDir = $this->getFilenameFromMainDir($fileOptions['file']);
 			// if $options['baseDirectories'] set, we only include files below these directories
 			if ((!isset($options['baseDirectories']) || $this->checkBaseDirectory($filenameFromMainDir, array_merge($options['baseDirectories'], array($this->targetDirectory)))) && $fileOptions['media'] === 'all') {
-				$filesToInclude[] = $filenameFromMainDir;
+				if ($fileOptions['forceOnTop']) {
+					array_unshift($filesToInclude, $filenameFromMainDir);
+				} else {
+					$filesToInclude[] = $filenameFromMainDir;
+				}
 				// remove the file from the incoming file array
 				unset($cssFiles[$key]);
 			}
 		}
-		if (count($filesToInclude)) {
+		if (!empty($filesToInclude)) {
 			$targetFile = $this->createMergedCssFile($filesToInclude);
 			$targetFileRelative = $this->relativePath . $targetFile;
 			$concatenatedOptions = array(
 				'file' => $targetFileRelative,
 				'rel' => 'stylesheet',
 				'media' => 'all',
-				'compress' => TRUE
+				'compress' => TRUE,
+				'excludeFromConcatenation' => TRUE,
+				'forceOnTop' => FALSE,
+				'allWrap' => ''
 			);
 			// place the merged stylesheet on top of the stylesheets
 			$cssFiles = array_merge(array($targetFileRelative => $concatenatedOptions), $cssFiles);
@@ -221,8 +214,16 @@ class ResourceCompressor {
 			if (empty($fileOptions['section']) || !empty($fileOptions['excludeFromConcatenation'])) {
 				continue;
 			}
+			if (!isset($filesToInclude[$fileOptions['section']])) {
+				$filesToInclude[$fileOptions['section']] = array();
+			}
 			// we remove BACK_PATH from $filename, so make it relative to root path
-			$filesToInclude[$fileOptions['section']][] = $this->getFilenameFromMainDir($fileOptions['file']);
+			$filenameFromMainDir = $this->getFilenameFromMainDir($fileOptions['file']);
+			if ($fileOptions['forceOnTop']) {
+				array_unshift($filesToInclude[$fileOptions['section']], $filenameFromMainDir);
+			} else {
+				$filesToInclude[$fileOptions['section']][] = $filenameFromMainDir;
+			}
 			// remove the file from the incoming file array
 			unset($jsFiles[$key]);
 		}
@@ -235,6 +236,7 @@ class ResourceCompressor {
 					'type' => 'text/javascript',
 					'section' => $section,
 					'compress' => TRUE,
+					'excludeFromConcatenation' => TRUE,
 					'forceOnTop' => FALSE,
 					'allWrap' => ''
 				);
@@ -306,7 +308,8 @@ class ResourceCompressor {
 			}
 			$filenameAbsolute = GeneralUtility::resolveBackPath($this->rootPath . $filename);
 			if (@file_exists($filenameAbsolute)) {
-				$unique .= $filenameAbsolute . filemtime($filenameAbsolute) . filesize($filenameAbsolute);
+				$fileStatus = stat($filenameAbsolute);
+				$unique .= $filenameAbsolute . $fileStatus['mtime'] . $fileStatus['size'];
 			} else {
 				$unique .= $filenameAbsolute;
 			}
@@ -345,6 +348,7 @@ class ResourceCompressor {
 			// if compression is enabled
 			if ($fileOptions['compress']) {
 				$filename = $this->compressCssFile($fileOptions['file']);
+				$fileOptions['compress'] = FALSE;
 				$fileOptions['file'] = $filename;
 				$filesAfterCompression[$filename] = $fileOptions;
 			} else {
@@ -370,7 +374,8 @@ class ResourceCompressor {
 		// generate the unique name of the file
 		$filenameAbsolute = GeneralUtility::resolveBackPath($this->rootPath . $this->getFilenameFromMainDir($filename));
 		if (@file_exists($filenameAbsolute)) {
-			$unique = $filenameAbsolute . filemtime($filenameAbsolute) . filesize($filenameAbsolute);
+			$fileStatus = stat($filenameAbsolute);
+			$unique = $filenameAbsolute . $fileStatus['mtime'] . $fileStatus['size'];
 		} else {
 			$unique = $filenameAbsolute;
 		}
@@ -493,6 +498,7 @@ class ResourceCompressor {
 			// If compression is enabled
 			if ($fileOptions['compress']) {
 				$compressedFilename = $this->compressJsFile($fileOptions['file']);
+				$fileOptions['compress'] = FALSE;
 				$fileOptions['file'] = $compressedFilename;
 				$filesAfterCompression[$compressedFilename] = $fileOptions;
 			} else {
@@ -512,7 +518,8 @@ class ResourceCompressor {
 		// generate the unique name of the file
 		$filenameAbsolute = GeneralUtility::resolveBackPath($this->rootPath . $this->getFilenameFromMainDir($filename));
 		if (@file_exists($filenameAbsolute)) {
-			$unique = $filenameAbsolute . filemtime($filenameAbsolute) . filesize($filenameAbsolute);
+			$fileStatus = stat($filenameAbsolute);
+			$unique = $filenameAbsolute . $fileStatus['mtime'] . $fileStatus['size'];
 		} else {
 			$unique = $filenameAbsolute;
 		}
@@ -649,13 +656,13 @@ class ResourceCompressor {
 		if (stripos($contents, '@charset') === FALSE && stripos($contents, '@import') === FALSE && stripos($contents, '@namespace') === FALSE) {
 			return $contents;
 		}
-		$regex = '/@(charset|import|namespace)\\s*(url)?\\s*\\(?\\s*["\']?[^"\']+["\']?\\s*\\)?.*;/i';
+		$regex = '/@(charset|import|namespace)\\s*(url)?\\s*\\(?\\s*["\']?[^"\'\\)]+["\']?\\s*\\)?\\s*;/i';
 		preg_match_all($regex, $contents, $matches);
 		if (!empty($matches[0])) {
 			// remove existing statements
 			$contents = str_replace($matches[0], '', $contents);
 			// add statements to the top of contents in the order they occur in original file
-			$contents = $comment . implode($comment, $matches[0]) . LF . $contents;
+			$contents = $comment . implode($comment, $matches[0]) . LF . trim($contents);
 		}
 		return $contents;
 	}
@@ -711,6 +718,3 @@ class ResourceCompressor {
 	}
 
 }
-
-
-?>

@@ -1,31 +1,18 @@
 <?php
 namespace TYPO3\CMS\Core\Utility;
 
-/***************************************************************
- * Copyright notice
+/**
+ * This file is part of the TYPO3 CMS project.
  *
- * (c) 2012-2013 Oliver Hader <oliver.hader@typo3.org>
- * All rights reserved
+ * It is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License, either version 2
+ * of the License, or any later version.
  *
- * This script is part of the TYPO3 project. The TYPO3 project is
- * free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
+ * For the full copyright and license information, please read the
+ * LICENSE.txt file that was distributed with this source code.
  *
- * The GNU General Public License can be found at
- * http://www.gnu.org/copyleft/gpl.html.
- * A copy is found in the textfile GPL.txt and important notices to the license
- * from the author is found in LICENSE.txt distributed with these scripts.
- *
- *
- * This script is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * This copyright notice MUST APPEAR in all copies of the script!
- ***************************************************************/
+ * The TYPO3 project - inspiring people to share!
+ */
 /**
  * Class with helper functions for file paths.
  *
@@ -205,7 +192,39 @@ class PathUtility {
 			return TRUE;
 		}
 		// Path starting with a / is always absolute, on every system
-		return substr($path, 0, 1) === '/';
+		return $path[0] === '/';
+	}
+
+	/**
+	 * Gets the (absolute) path of an include file based on the (absolute) path of a base file
+	 *
+	 * Does NOT do any sanity checks. This is a task for the calling function, e.g.
+	 * call GeneralUtility::getFileAbsFileName() on the result.
+	 * @see \TYPO3\CMS\Core\Utility\GeneralUtility::getFileAbsFileName()
+	 *
+	 * Resolves all dots and slashes between that paths of both files.
+	 * Whether the result is absolute or not, depends of the base file name.
+	 *
+	 * If the include file goes higher than a relative base file, then the result
+	 * will contain dots as a relative part.
+	 * <pre>
+	 *   base:    abc/one.txt
+	 *   include: ../../two.txt
+	 *   result:  ../two.txt
+	 * </pre>
+	 * The exact behavior, refer to getCanonicalPath().
+	 *
+	 * @param string $baseFilenameOrPath The name of the file or a path that serves as a base; a path will need to have a '/' at the end
+	 * @param string $includeFileName The name of the file that is included in the file
+	 * @return string The (absolute) path of the include file
+	 */
+	static public function getAbsolutePathOfRelativeReferencedFileOrPath($baseFilenameOrPath, $includeFileName) {
+		$fileName = static::basename($includeFileName);
+		$basePath = substr($baseFilenameOrPath, -1) === '/' ? $baseFilenameOrPath : static::dirname($baseFilenameOrPath);
+		$newDir = static::getCanonicalPath($basePath . '/' . static::dirname($includeFileName));
+		// Avoid double slash on empty path
+		$result = (($newDir !== '/') ? $newDir : '') . '/' . $fileName;
+		return $result;
 	}
 
 
@@ -277,6 +296,23 @@ class PathUtility {
 		return $protocol . $absolutePathPrefix . implode('/', $theDirParts);
 	}
 
+	/**
+	 * Strip first part of a path, equal to the length of PATH_site
+	 *
+	 * @param string $path
+	 * @return array
+	 * @internal
+	 */
+	static public function stripPathSitePrefix($path) {
+		static $pathSiteLength = NULL;
+
+		// calculate length when first needed
+		if (!isset($pathSiteLength)) {
+			$pathSiteLength = strlen(PATH_site);
+		}
+		return substr($path, $pathSiteLength);
+	}
+
 	/*********************
 	 *
 	 * Helper methods
@@ -293,6 +329,3 @@ class PathUtility {
 	}
 
 }
-
-
-?>

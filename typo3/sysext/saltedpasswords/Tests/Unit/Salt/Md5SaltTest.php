@@ -1,31 +1,18 @@
 <?php
 namespace TYPO3\CMS\Saltedpasswords\Tests\Unit\Salt;
 
-/***************************************************************
- *  Copyright notice
+/**
+ * This file is part of the TYPO3 CMS project.
  *
- *  (c) 2009-2013 Marcus Krause <marcus#exp2009@t3sec.info>
- *  All rights reserved
+ * It is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License, either version 2
+ * of the License, or any later version.
  *
- *  This script is part of the TYPO3 project. The TYPO3 project is
- *  free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
+ * For the full copyright and license information, please read the
+ * LICENSE.txt file that was distributed with this source code.
  *
- *  The GNU General Public License can be found at
- *  http://www.gnu.org/copyleft/gpl.html.
- *  A copy is found in the textfile GPL.txt and important notices to the license
- *  from the author is found in LICENSE.txt distributed with these scripts.
- *
- *
- *  This script is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  This copyright notice MUST APPEAR in all copies of the script!
- ***************************************************************/
+ * The TYPO3 project - inspiring people to share!
+ */
 
 /**
  * Testcases for Md5Salt
@@ -51,15 +38,6 @@ class Md5SaltTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	}
 
 	/**
-	 * Tears down objects and settings created in this testcase.
-	 *
-	 * @return void
-	 */
-	public function tearDown() {
-		$this->objectInstance = NULL;
-	}
-
-	/**
 	 * Prepares a message to be shown when a salted hashing is not supported.
 	 *
 	 * @return string Empty string if salted hashing method is available, otherwise an according warning
@@ -76,7 +54,7 @@ class Md5SaltTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	 * @test
 	 */
 	public function hasCorrectBaseClass() {
-		$hasCorrectBaseClass = 0 === strcmp('TYPO3\\CMS\\Saltedpasswords\\Salt\\Md5Salt', get_class($this->objectInstance)) ? TRUE : FALSE;
+		$hasCorrectBaseClass = get_class($this->objectInstance) === 'TYPO3\\CMS\\Saltedpasswords\\Salt\\Md5Salt';
 		// XCLASS ?
 		if (!$hasCorrectBaseClass && FALSE != get_parent_class($this->objectInstance)) {
 			$hasCorrectBaseClass = is_subclass_of($this->objectInstance, 'TYPO3\\CMS\\Saltedpasswords\\Salt\\Md5Salt');
@@ -132,7 +110,7 @@ class Md5SaltTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	/**
 	 * Tests authentication procedure with alphabet characters.
 	 *
-	 * Checks if a "plain-text password" is everytime mapped to the
+	 * Checks if a "plain-text password" is every time mapped to the
 	 * same "salted password hash" when using the same salt.
 	 *
 	 * @test
@@ -146,7 +124,7 @@ class Md5SaltTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	/**
 	 * Tests authentication procedure with numeric characters.
 	 *
-	 * Checks if a "plain-text password" is everytime mapped to the
+	 * Checks if a "plain-text password" is every time mapped to the
 	 * same "salted password hash" when using the same salt.
 	 *
 	 * @test
@@ -160,7 +138,7 @@ class Md5SaltTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	/**
 	 * Tests authentication procedure with US-ASCII special characters.
 	 *
-	 * Checks if a "plain-text password" is everytime mapped to the
+	 * Checks if a "plain-text password" is every time mapped to the
 	 * same "salted password hash" when using the same salt.
 	 *
 	 * @test
@@ -174,7 +152,7 @@ class Md5SaltTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	/**
 	 * Tests authentication procedure with latin1 special characters.
 	 *
-	 * Checks if a "plain-text password" is everytime mapped to the
+	 * Checks if a "plain-text password" is every time mapped to the
 	 * same "salted password hash" when using the same salt.
 	 *
 	 * @test
@@ -192,7 +170,7 @@ class Md5SaltTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	/**
 	 * Tests authentication procedure with latin1 umlauts.
 	 *
-	 * Checks if a "plain-text password" is everytime mapped to the
+	 * Checks if a "plain-text password" is every time mapped to the
 	 * same "salted password hash" when using the same salt.
 	 *
 	 * @test
@@ -234,7 +212,7 @@ class Md5SaltTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 			$password = str_repeat($pad, max($i, 1));
 			$saltedHashPasswordPrevious = $saltedHashPasswordCurrent;
 			$saltedHashPasswordCurrent = $this->objectInstance->getHashedPassword($password, $salt);
-			if ($i > 0 && 0 == strcmp($saltedHashPasswordPrevious, $saltedHashPasswordCurrent)) {
+			if ($i > 0 && $saltedHashPasswordPrevious === $saltedHashPasswordCurrent) {
 				$criticalPwLength = $i;
 				break;
 			}
@@ -252,6 +230,3 @@ class Md5SaltTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	}
 
 }
-
-
-?>

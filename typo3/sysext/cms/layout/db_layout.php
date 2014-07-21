@@ -1,44 +1,29 @@
 <?php
-/***************************************************************
- *  Copyright notice
+/**
+ * This file is part of the TYPO3 CMS project.
  *
- *  (c) 1999-2013 Kasper Skårhøj (kasperYYYY@typo3.com)
- *  All rights reserved
+ * It is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License, either version 2
+ * of the License, or any later version.
  *
- *  This script is part of the TYPO3 project. The TYPO3 project is
- *  free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
+ * For the full copyright and license information, please read the
+ * LICENSE.txt file that was distributed with this source code.
  *
- *  The GNU General Public License can be found at
- *  http://www.gnu.org/copyleft/gpl.html.
- *  A copy is found in the textfile GPL.txt and important notices to the license
- *  from the author is found in LICENSE.txt distributed with these scripts.
- *
- *
- *  This script is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  This copyright notice MUST APPEAR in all copies of the script!
- ***************************************************************/
+ * The TYPO3 project - inspiring people to share!
+ */
+
 /**
  * Module: Web>Page
  *
  * This module lets you view a page in a more Content Management like style than the ordinary record-list
  *
- * Revised for TYPO3 3.6 November/2003 by Kasper Skårhøj
- * XHTML compliant
- *
  * @author Kasper Skårhøj <kasperYYYY@typo3.com>
  */
 unset($MCONF);
-require 'conf.php';
+require __DIR__ . '/conf.php';
 require $BACK_PATH . 'init.php';
-$LANG->includeLLFile('EXT:cms/layout/locallang.xml');
-require_once 'class.tx_cms_layout.php';
+$LANG->includeLLFile('EXT:cms/layout/locallang.xlf');
+
 $BE_USER->modAccess($MCONF, 1);
 // Will open up records locked by current user. It's assumed that the locking should end if this script is hit.
 \TYPO3\CMS\Backend\Utility\BackendUtility::lockRecords();
@@ -70,7 +55,7 @@ class ext_posMap extends \TYPO3\CMS\Backend\Tree\View\PagePositionMap {
 	 * @todo Define visibility
 	 */
 	public function wrapRecordTitle($str, $row) {
-		$aOnClick = 'jumpToUrl(\'' . $GLOBALS['SOBE']->local_linkThisScript(array('edit_record' => ('tt_content:' . $row['uid']))) . '\');return false;';
+		$aOnClick = 'jumpToUrl(' . \TYPO3\CMS\Core\Utility\GeneralUtility::quoteJSvalue($GLOBALS['SOBE']->local_linkThisScript(array('edit_record' => ('tt_content:' . $row['uid'])))) . ');return false;';
 		return '<a href="#" onclick="' . htmlspecialchars($aOnClick) . '">' . $str . '</a>';
 	}
 
@@ -84,7 +69,7 @@ class ext_posMap extends \TYPO3\CMS\Backend\Tree\View\PagePositionMap {
 	 * @todo Define visibility
 	 */
 	public function wrapColumnHeader($str, $vv) {
-		$aOnClick = 'jumpToUrl(\'' . $GLOBALS['SOBE']->local_linkThisScript(array('edit_record' => ('_EDIT_COL:' . $vv))) . '\');return false;';
+		$aOnClick = 'jumpToUrl(' . \TYPO3\CMS\Core\Utility\GeneralUtility::quoteJSvalue($GLOBALS['SOBE']->local_linkThisScript(array('edit_record' => ('_EDIT_COL:' . $vv)))) . ');return false;';
 		return '<a href="#" onclick="' . htmlspecialchars($aOnClick) . '">' . $str . '</a>';
 	}
 
@@ -105,7 +90,7 @@ class ext_posMap extends \TYPO3\CMS\Backend\Tree\View\PagePositionMap {
 		} else {
 			$location = $GLOBALS['SOBE']->local_linkThisScript(array('edit_record' => 'tt_content:new/' . $pid . '/' . $vv));
 		}
-		return 'jumpToUrl(\'' . $location . '\');return false;';
+		return 'jumpToUrl(' . \TYPO3\CMS\Core\Utility\GeneralUtility::quoteJSvalue($location) . ');return false;';
 	}
 
 	/**
@@ -142,4 +127,3 @@ foreach ($SOBE->include_once as $INC_FILE) {
 $SOBE->clearCache();
 $SOBE->main();
 $SOBE->printContent();
-?>

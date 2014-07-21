@@ -7,7 +7,7 @@ return array(
 		'crdate' => 'crdate',
 		'cruser_id' => 'cruser_id',
 		'delete' => 'deleted',
-		'default_sortby' => 'ORDER BY title ASC',
+		'sortby' => 'sorting',
 		'dividers2tabs' => TRUE,
 		'versioningWS' => 2,
 		'rootLevel' => -1,
@@ -24,6 +24,9 @@ return array(
 		),
 		'typeicon_classes' => array(
 			'default' => 'mimetypes-x-sys_category'
+		),
+		'security' => array(
+			'ignoreRootLevelRestriction' => TRUE,
 		)
 	),
 	'interface' => array(
@@ -73,14 +76,6 @@ return array(
 		'l10n_diffsource' => array(
 			'config' => array(
 				'type' => 'passthrough'
-			)
-		),
-		't3ver_label' => array(
-			'displayCond' => 'FIELD:t3ver_label:REQ:true',
-			'label' => 'LLL:EXT:lang/locallang_general.xlf:LGL.versionLabel',
-			'config' => array(
-				'type' => 'none',
-				'cols' => 27
 			)
 		),
 		'hidden' => array(
@@ -144,9 +139,14 @@ return array(
 				'type' => 'select',
 				'renderMode' => 'tree',
 				'foreign_table' => 'sys_category',
-				'foreign_table_where' => ' AND sys_category.sys_language_uid IN (-1,0) ORDER BY sys_category.title ASC',
+				'foreign_table_where' => ' AND sys_category.sys_language_uid IN (-1,0) ORDER BY sys_category.sorting ASC',
 				'treeConfig' => array(
-					'parentField' => 'parent'
+					'parentField' => 'parent',
+					'appearance' => array(
+						'expandAll' => TRUE,
+						'showHeader' => TRUE,
+						'maxLevels' => 99,
+					),
 				)
 			)
 		),
@@ -158,9 +158,10 @@ return array(
 				'internal_type' => 'db',
 				'allowed' => '*',
 				'MM' => 'sys_category_record_mm',
+				'MM_oppositeUsage' => array(),
+				'size' => 10,
 				'show_thumbs' => FALSE
 			)
 		)
 	)
 );
-?>

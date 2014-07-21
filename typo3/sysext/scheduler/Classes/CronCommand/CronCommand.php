@@ -1,30 +1,20 @@
 <?php
 namespace TYPO3\CMS\Scheduler\CronCommand;
 
-/***************************************************************
- *  Copyright notice
- *
- *  (c) 2008-2013 Markus Friedrich (markus.friedrich@dkd.de)
- *  All rights reserved
- *
- *  This script is part of the TYPO3 project. The TYPO3 project is
- *  free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
- *
- *  The GNU General Public License can be found at
- *  http://www.gnu.org/copyleft/gpl.html.
- *
- *  This script is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  This copyright notice MUST APPEAR in all copies of the script!
- ***************************************************************/
 /**
- * This class provides calulations for the cron command format.
+ * This file is part of the TYPO3 CMS project.
+ *
+ * It is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License, either version 2
+ * of the License, or any later version.
+ *
+ * For the full copyright and license information, please read the
+ * LICENSE.txt file that was distributed with this source code.
+ *
+ * The TYPO3 project - inspiring people to share!
+ */
+/**
+ * This class provides calculations for the cron command format.
  *
  * @author Markus Friedrich <markus.friedrich@dkd.de>
  * @author Christian Kuhn <lolli@schwarzbu.ch>
@@ -143,8 +133,8 @@ class CronCommand {
 	 * @return boolean TRUE if cron command conditions are met
 	 */
 	protected function minuteAndHourMatchesCronCommand($timestamp) {
-		$minute = intval(date('i', $timestamp));
-		$hour = intval(date('G', $timestamp));
+		$minute = (int)date('i', $timestamp);
+		$hour = (int)date('G', $timestamp);
 		$commandMatch = FALSE;
 		if ($this->isInCommandList($this->cronCommandSections[0], $minute) && $this->isInCommandList($this->cronCommandSections[1], $hour)) {
 			$commandMatch = TRUE;
@@ -171,8 +161,8 @@ class CronCommand {
 		// If both fields are restricted (i.e., aren't  *),  the  command will be run when either field
 		// matches the current time.  For example, `30 4 1,15 * 5' would cause
 		// a command to be run at 4:30 am on the 1st and 15th of each month, plus every Friday.
-		$isDayOfMonthRestricted = (string) $this->cronCommandSections[2] === '*' ? FALSE : TRUE;
-		$isDayOfWeekRestricted = (string) $this->cronCommandSections[4] === '*' ? FALSE : TRUE;
+		$isDayOfMonthRestricted = (string)$this->cronCommandSections[2] !== '*';
+		$isDayOfWeekRestricted = (string)$this->cronCommandSections[4] !== '*';
 		$commandMatch = FALSE;
 		if ($isInMonth) {
 			if ($isInDayOfMonth && $isDayOfMonthRestricted || $isInDayOfWeek && $isDayOfWeekRestricted || $isInDayOfMonth && !$isDayOfMonthRestricted && $isInDayOfWeek && !$isDayOfWeekRestricted) {
@@ -231,6 +221,3 @@ class CronCommand {
 	}
 
 }
-
-
-?>

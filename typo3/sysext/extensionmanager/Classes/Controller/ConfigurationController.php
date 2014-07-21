@@ -1,50 +1,39 @@
 <?php
 namespace TYPO3\CMS\Extensionmanager\Controller;
 
-/***************************************************************
- *  Copyright notice
+/**
+ * This file is part of the TYPO3 CMS project.
  *
- *  (c) 2012-2013 Susanne Moog, <typo3@susannemoog.de>
- *  All rights reserved
+ * It is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License, either version 2
+ * of the License, or any later version.
  *
- *  This script is part of the TYPO3 project. The TYPO3 project is
- *  free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
+ * For the full copyright and license information, please read the
+ * LICENSE.txt file that was distributed with this source code.
  *
- *  The GNU General Public License can be found at
- *  http://www.gnu.org/copyleft/gpl.html.
- *  A copy is found in the textfile GPL.txt and important notices to the license
- *  from the author is found in LICENSE.txt distributed with these scripts.
- *
- *
- *  This script is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  This copyright notice MUST APPEAR in all copies of the script!
- ***************************************************************/
+ * The TYPO3 project - inspiring people to share!
+ */
+use TYPO3\CMS\Extensionmanager\Domain\Model\Extension;
+use TYPO3\CMS\Extensionmanager\Exception\ExtensionManagerException;
+
 /**
  * Controller for configuration related actions.
  *
  * @author Susanne Moog <typo3@susannemoog.de>
  */
-class ConfigurationController extends \TYPO3\CMS\Extensionmanager\Controller\AbstractController {
+class ConfigurationController extends AbstractController {
 
 	/**
 	 * @var \TYPO3\CMS\Extensionmanager\Domain\Repository\ConfigurationItemRepository
+	 * @inject
 	 */
 	protected $configurationItemRepository;
 
 	/**
-	 * @param \TYPO3\CMS\Extensionmanager\Domain\Repository\ConfigurationItemRepository $configurationItemRepository
-	 * @return void
+	 * @var \TYPO3\CMS\Extensionmanager\Domain\Repository\ExtensionRepository
+	 * @inject
 	 */
-	public function injectConfigurationItemRepository(\TYPO3\CMS\Extensionmanager\Domain\Repository\ConfigurationItemRepository $configurationItemRepository) {
-		$this->configurationItemRepository = $configurationItemRepository;
-	}
+	protected $extensionRepository;
 
 	/**
 	 * Show the extension configuration form. The whole form field handling is done
@@ -56,14 +45,25 @@ class ConfigurationController extends \TYPO3\CMS\Extensionmanager\Controller\Abs
 	 */
 	public function showConfigurationFormAction(array $extension) {
 		if (!array_key_exists('key', $extension)) {
-			throw new \TYPO3\CMS\Extensionmanager\Exception\ExtensionManagerException(
+			throw new ExtensionManagerException(
 				'Extension key not found.',
 				1359206803
 			);
 		}
-		$this->view
-			->assign('configuration', $this->configurationItemRepository->findByExtensionKey($extension['key']))
-			->assign('extension', $extension);
+		$configuration = $this->configurationItemRepository->findByExtensionKey($extension['key']);
+		if ($configuration) {
+			$this->view
+				->assign('configuration', $configuration)
+				->assign('extension', $extension);
+		} else {
+			/** @var Extension $extension */
+			$extension = $this->extensionRepository->findOneByCurrentVersionByExtensionKey($extension['key']);
+			// Extension has no configuration and is a distribution
+			if ($extension->getCategory() === Extension::DISTRIBUTION_CATEGORY) {
+				$this->redirect('welcome', 'Distribution', NULL, array('extension' => $extension->getUid()));
+			}
+			throw new ExtensionManagerException('The extension ' . htmlspecialchars($extension['key']) . ' has no configuration.');
+		}
 	}
 
 	/**
@@ -77,13 +77,32 @@ class ConfigurationController extends \TYPO3\CMS\Extensionmanager\Controller\Abs
 	public function saveAction(array $config, $extensionKey) {
 		/** @var $configurationUtility \TYPO3\CMS\Extensionmanager\Utility\ConfigurationUtility */
 		$configurationUtility = $this->objectManager->get('TYPO3\\CMS\\Extensionmanager\\Utility\\ConfigurationUtility');
-		$currentFullConfiguration = $configurationUtility->getCurrentConfiguration($extensionKey);
-		$newConfiguration = \TYPO3\CMS\Core\Utility\GeneralUtility::array_merge_recursive_overrule($currentFullConfiguration, $config);
-		$configurationUtility->writeConfiguration($configurationUtility->convertValuedToNestedConfiguration($newConfiguration), $extensionKey);
-		$this->redirect('showConfigurationForm', NULL, NULL, array('extension' => array('key' => $extensionKey)));
+		$newConfiguration = $configurationUtility->getCurrentConfiguration($extensionKey);
+		\TYPO3\CMS\Core\Utility\ArrayUtility::mergeRecursiveWithOverrule($newConfiguration, $config);
+		$configurationUtility->writeConfiguration(
+			$configurationUtility->convertValuedToNestedConfiguration($newConfiguration),
+			$extensionKey
+		);
+		$this->emitAfterExtensionConfigurationWriteSignal($newConfiguration);
+		/** @var Extension $extension */
+		$extension = $this->extensionRepository->findOneByCurrentVersionByExtensionKey($extensionKey);
+		// Different handling for distribution installation
+		if ($extension instanceof Extension &&
+			$extension->getCategory() === Extension::DISTRIBUTION_CATEGORY
+		) {
+			$this->redirect('welcome', 'Distribution', NULL, array('extension' => $extension->getUid()));
+		} else {
+			$this->redirect('showConfigurationForm', NULL, NULL, array('extension' => array('key' => $extensionKey)));
+		}
+	}
+
+	/**
+	 * Emits a signal after the configuration file was written
+	 *
+	 * @param array $newConfiguration
+	 */
+	protected function emitAfterExtensionConfigurationWriteSignal(array $newConfiguration) {
+		$this->signalSlotDispatcher->dispatch(__CLASS__, 'afterExtensionConfigurationWrite', array($newConfiguration, $this));
 	}
 
 }
-
-
-?>

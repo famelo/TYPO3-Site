@@ -11,8 +11,6 @@ namespace TYPO3\CMS\Fluid\Tests\Unit\ViewHelpers\Form;
  * The TYPO3 project - inspiring people to share!                         *
  *                                                                        */
 
-require_once(__DIR__ . '/FormFieldViewHelperBaseTestcase.php');
-
 /**
  * Test for the "Hidden" Form view helper
  */
@@ -43,11 +41,9 @@ class HiddenViewHelperTest extends \TYPO3\CMS\Fluid\Tests\Unit\ViewHelpers\Form\
 
 		$this->viewHelper->expects($this->once())->method('getName')->will($this->returnValue('foo'));
 		$this->viewHelper->expects($this->once())->method('getValue')->will($this->returnValue('bar'));
-		$this->viewHelper->injectTagBuilder($mockTagBuilder);
+		$this->viewHelper->_set('tag', $mockTagBuilder);
 
 		$this->viewHelper->initialize();
 		$this->viewHelper->render();
 	}
 }
-
-?>

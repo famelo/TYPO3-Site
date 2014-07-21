@@ -1,28 +1,18 @@
 <?php
 namespace TYPO3\CMS\Core\FormProtection;
 
-/***************************************************************
- * Copyright notice
+/**
+ * This file is part of the TYPO3 CMS project.
  *
- * (c) 2010-2013 Oliver Klee <typo3-coding@oliverklee.de>
- * All rights reserved
+ * It is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License, either version 2
+ * of the License, or any later version.
  *
- * This script is part of the TYPO3 project. The TYPO3 project is
- * free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
+ * For the full copyright and license information, please read the
+ * LICENSE.txt file that was distributed with this source code.
  *
- * The GNU General Public License can be found at
- * http://www.gnu.org/copyleft/gpl.html.
- *
- * This script is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * This copyright notice MUST APPEAR in all copies of the script!
- ***************************************************************/
+ * The TYPO3 project - inspiring people to share!
+ */
 
 /**
  * This class creates and manages instances of the various form protection
@@ -91,16 +81,16 @@ class FormProtectionFactory {
 	 */
 	static protected function getClassNameByState() {
 		switch (TRUE) {
-		case self::isInstallToolSession():
-			$className = 'TYPO3\\CMS\\Core\\FormProtection\\InstallToolFormProtection';
-			break;
-		case self::isBackendSession():
-			$className = 'TYPO3\\CMS\\Core\\FormProtection\\BackendFormProtection';
-			break;
-		case self::isFrontendSession():
+			case self::isInstallToolSession():
+				$className = 'TYPO3\\CMS\\Core\\FormProtection\\InstallToolFormProtection';
+				break;
+			case self::isBackendSession():
+				$className = 'TYPO3\\CMS\\Core\\FormProtection\\BackendFormProtection';
+				break;
+			case self::isFrontendSession():
 
-		default:
-			$className = 'TYPO3\\CMS\\Core\\FormProtection\\DisabledFormProtection';
+			default:
+				$className = 'TYPO3\\CMS\\Core\\FormProtection\\DisabledFormProtection';
 		}
 		return $className;
 	}
@@ -111,7 +101,7 @@ class FormProtectionFactory {
 	 * @return boolean
 	 */
 	static protected function isInstallToolSession() {
-		return defined(TYPO3_enterInstallScript) && TYPO3_enterInstallScript;
+		return defined('TYPO3_enterInstallScript') && TYPO3_enterInstallScript;
 	}
 
 	/**
@@ -120,7 +110,7 @@ class FormProtectionFactory {
 	 * @return boolean
 	 */
 	static protected function isBackendSession() {
-		return isset($GLOBALS['BE_USER']) && $GLOBALS['BE_USER'] instanceof \TYPO3\CMS\Core\Authentication\BackendUserAuthentication && isset($GLOBALS['BE_USER']->user['uid']) && !(TYPO3_MODE === 'FE');
+		return isset($GLOBALS['BE_USER']) && $GLOBALS['BE_USER'] instanceof \TYPO3\CMS\Core\Authentication\BackendUserAuthentication && isset($GLOBALS['BE_USER']->user['uid']);
 	}
 
 	/**
@@ -180,6 +170,3 @@ class FormProtectionFactory {
 	}
 
 }
-
-
-?>

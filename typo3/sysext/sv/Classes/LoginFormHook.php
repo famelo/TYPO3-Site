@@ -1,28 +1,18 @@
 <?php
 namespace TYPO3\CMS\Sv;
 
-/***************************************************************
- *  Copyright notice
+/**
+ * This file is part of the TYPO3 CMS project.
  *
- *  (c) 2009-2013 Dmitry Dulepov <dmitry@typo3.org>
- *  All rights reserved
+ * It is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License, either version 2
+ * of the License, or any later version.
  *
- *  This script is part of the TYPO3 project. The TYPO3 project is
- *  free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
+ * For the full copyright and license information, please read the
+ * LICENSE.txt file that was distributed with this source code.
  *
- *  The GNU General Public License can be found at
- *  http://www.gnu.org/copyleft/gpl.html.
- *
- *  This script is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  This copyright notice MUST APPEAR in all copies of the script!
- ***************************************************************/
+ * The TYPO3 project - inspiring people to share!
+ */
 /**
  * This class contains a BE login form hook. It adds all necessary JavaScript
  * for the superchallenged authentication.
@@ -41,18 +31,18 @@ class LoginFormHook {
 	public function getLoginFormTag(array $params, \TYPO3\CMS\Backend\Controller\LoginController &$pObj) {
 		// Get the code according to the login level
 		switch ($pObj->loginSecurityLevel) {
-		case 'challenged':
+			case 'challenged':
 
-		case 'superchallenged':
-			$_SESSION['login_challenge'] = $this->getChallenge();
-			$content = '<form action="index.php" method="post" name="loginform" ' . 'onsubmit="doChallengeResponse(' . ($pObj->loginSecurityLevel == 'challenged' ? 0 : 1) . ');">' . '<input type="hidden" name="challenge" value="' . htmlspecialchars($_SESSION['login_challenge']) . '" />';
-			break;
-		case 'normal':
-			$content = '<form action="index.php" method="post" name="loginform" onsubmit="document.loginform.userident.value=document.loginform.p_field.value;document.loginform.p_field.value=\'\';return true;">';
-			break;
-		default:
-			// No code for unknown level!
-			$content = '';
+			case 'superchallenged':
+				$_SESSION['login_challenge'] = $this->getChallenge();
+				$content = '<form action="index.php" method="post" name="loginform" ' . 'onsubmit="doChallengeResponse(' . ($pObj->loginSecurityLevel == 'challenged' ? 0 : 1) . ');">' . '<input type="hidden" name="challenge" value="' . htmlspecialchars($_SESSION['login_challenge']) . '" />';
+				break;
+			case 'normal':
+				$content = '<form action="index.php" method="post" name="loginform" onsubmit="document.loginform.userident.value=document.loginform.p_field.value;document.loginform.p_field.value=\'\';return true;">';
+				break;
+			default:
+				// No code for unknown level!
+				$content = '';
 		}
 		return $content;
 	}
@@ -68,7 +58,7 @@ class LoginFormHook {
 		$content = '';
 		if ($pObj->loginSecurityLevel == 'superchallenged' || $pObj->loginSecurityLevel == 'challenged') {
 			$content = '
-				<script type="text/javascript" src="md5.js"></script>
+				<script type="text/javascript" src="sysext/backend/Resources/Public/JavaScript/md5.js"></script>
 				' . $GLOBALS['TBE_TEMPLATE']->wrapScriptTags('
 					function doChallengeResponse(superchallenged) {	//
 						password = document.loginform.p_field.value;
@@ -98,6 +88,3 @@ class LoginFormHook {
 	}
 
 }
-
-
-?>

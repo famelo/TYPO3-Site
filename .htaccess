@@ -83,6 +83,14 @@ RewriteEngine On
 # Change this path, if your TYPO3 installation is located in a subdirectory of the website root.
 #RewriteBase /
 
+# Rules to set ApplicationContext based on hostname
+#RewriteCond %{HTTP_HOST} ^dev\.example\.com$
+#RewriteRule .? - [E=TYPO3_CONTEXT:Development]
+#RewriteCond %{HTTP_HOST} ^staging\.example\.com$
+#RewriteRule .? - [E=TYPO3_CONTEXT:Production/Staging]
+#RewriteCond %{HTTP_HOST} ^www\.example\.com$
+#RewriteRule .? - [E=TYPO3_CONTEXT:Production]
+
 # Rule for versioned static files, configured through:
 # - $TYPO3_CONF_VARS['BE']['versionNumberInFilename']
 # - $TYPO3_CONF_VARS['FE']['versionNumberInFilename']
@@ -105,8 +113,8 @@ RewriteRule ^typo3conf/ext/[^/]+/Resources/Private/ - [F]
 
 # Stop rewrite processing, if we are in the typo3/ directory.
 # For httpd.conf, use this line instead of the next one:
-# RewriteRule ^/TYPO3root/(typo3/|t3lib/|fileadmin/|typo3conf/|typo3temp/|uploads/|favicon\.ico) - [L]
-RewriteRule ^(typo3/|t3lib/|fileadmin/|typo3conf/|typo3temp/|uploads/|favicon\.ico) - [L]
+# RewriteRule ^/TYPO3root/(typo3/|fileadmin/|typo3conf/|typo3temp/|uploads/|favicon\.ico) - [L]
+RewriteRule ^(typo3/|fileadmin/|typo3conf/|typo3temp/|uploads/|favicon\.ico) - [L]
 
 # If the file/symlink/directory does not exist => Redirect to index.php.
 # For httpd.conf, you need to prefix each '%{REQUEST_FILENAME}' with '%{DOCUMENT_ROOT}'.

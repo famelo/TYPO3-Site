@@ -1,31 +1,18 @@
 <?php
 namespace TYPO3\CMS\Core\Resource;
 
-/***************************************************************
- *  Copyright notice
+/**
+ * This file is part of the TYPO3 CMS project.
  *
- *  (c) 2011-2013 Ingmar Schlecht <ingmar@typo3.org>
- *  All rights reserved
+ * It is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License, either version 2
+ * of the License, or any later version.
  *
- *  This script is part of the TYPO3 project. The TYPO3 project is
- *  free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
+ * For the full copyright and license information, please read the
+ * LICENSE.txt file that was distributed with this source code.
  *
- *  The GNU General Public License can be found at
- *  http://www.gnu.org/copyleft/gpl.html.
- *  A copy is found in the textfile GPL.txt and important notices to the license
- *  from the author is found in LICENSE.txt distributed with these scripts.
- *
- *
- *  This script is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  This copyright notice MUST APPEAR in all copies of the script!
- ***************************************************************/
+ * The TYPO3 project - inspiring people to share!
+ */
 
 use TYPO3\CMS\Core\Utility\PathUtility;
 
@@ -138,7 +125,11 @@ abstract class AbstractFile implements FileInterface {
 	 * @return mixed Property value
 	 */
 	public function getProperty($key) {
-		return $this->properties[$key];
+		if ($this->hasProperty($key)) {
+			return $this->properties[$key];
+		} else {
+			return NULL;
+		}
 	}
 
 	/**
@@ -157,6 +148,15 @@ abstract class AbstractFile implements FileInterface {
 	 */
 	public function getIdentifier() {
 		return $this->identifier;
+	}
+
+	/**
+	 * Get hashed identifier
+	 *
+	 * @return string
+	 */
+	public function getHashedIdentifier() {
+		return $this->properties['identifier_hash'];
 	}
 
 	/**
@@ -189,7 +189,7 @@ abstract class AbstractFile implements FileInterface {
 		if ($this->deleted) {
 			throw new \RuntimeException('File has been deleted.', 1329821480);
 		}
-		return $this->properties['size'];
+		return $this->properties['size'] ?: array_pop($this->getStorage()->getFileInfoByIdentifier($this->getIdentifier(), array('size')));
 	}
 
 	/**
@@ -259,9 +259,7 @@ abstract class AbstractFile implements FileInterface {
 	 * @return array file information
 	 */
 	public function getMimeType() {
-		// TODO this will be slow - use the cached version if possible
-		$stat = $this->getStorage()->getFileInfo($this);
-		return $stat['mimetype'];
+		return $this->properties['mimetype'] ?: array_pop($this->getStorage()->getFileInfoByIdentifier($this->getIdentifier(), array('mimetype')));
 	}
 
 	/**
@@ -285,25 +283,25 @@ abstract class AbstractFile implements FileInterface {
 			$mimeType = $this->getMimeType();
 			list($fileType) = explode('/', $mimeType);
 			switch (strtolower($fileType)) {
-			case 'text':
-				$this->properties['type'] = self::FILETYPE_TEXT;
-				break;
-			case 'image':
-				$this->properties['type'] = self::FILETYPE_IMAGE;
-				break;
-			case 'audio':
-				$this->properties['type'] = self::FILETYPE_AUDIO;
-				break;
-			case 'video':
-				$this->properties['type'] = self::FILETYPE_VIDEO;
-				break;
-			case 'application':
+				case 'text':
+					$this->properties['type'] = self::FILETYPE_TEXT;
+					break;
+				case 'image':
+					$this->properties['type'] = self::FILETYPE_IMAGE;
+					break;
+				case 'audio':
+					$this->properties['type'] = self::FILETYPE_AUDIO;
+					break;
+				case 'video':
+					$this->properties['type'] = self::FILETYPE_VIDEO;
+					break;
+				case 'application':
 
-			case 'software':
-				$this->properties['type'] = self::FILETYPE_APPLICATION;
-				break;
-			default:
-				$this->properties['type'] = self::FILETYPE_UNKNOWN;
+				case 'software':
+					$this->properties['type'] = self::FILETYPE_APPLICATION;
+					break;
+				default:
+					$this->properties['type'] = self::FILETYPE_UNKNOWN;
 			}
 		}
 		return $this->properties['type'];
@@ -344,30 +342,18 @@ abstract class AbstractFile implements FileInterface {
 	/****************************************
 	 * STORAGE AND MANAGEMENT RELATED METHDOS
 	 ****************************************/
+
 	/**
 	 * Get the storage this file is located in
 	 *
 	 * @return ResourceStorage
+	 * @throws \RuntimeException
 	 */
 	public function getStorage() {
 		if ($this->storage === NULL) {
-			$this->loadStorage();
+			throw new \RuntimeException('You\'re using fileObjects without a storage.', 1381570091);
 		}
 		return $this->storage;
-	}
-
-	/**
-	 * Loads the storage object of this file object.
-	 *
-	 * @return void
-	 */
-	protected function loadStorage() {
-		$storageUid = $this->getProperty('storage');
-		if (\TYPO3\CMS\Core\Utility\MathUtility::canBeInterpretedAsInteger($storageUid)) {
-			/** @var $fileFactory ResourceFactory */
-			$fileFactory = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Resource\\ResourceFactory');
-			$this->storage = $fileFactory->getStorageObject($storageUid);
-		}
 	}
 
 	/**
@@ -389,18 +375,12 @@ abstract class AbstractFile implements FileInterface {
 	 * \TYPO3\CMS\Core\Resource-internal usage; don't use it to move files.
 	 *
 	 * @internal Should only be used by other parts of the File API (e.g. drivers after moving a file)
-	 * @param integer|ResourceStorage $storage
+	 * @param ResourceStorage $storage
 	 * @return File
 	 */
-	public function setStorage($storage) {
-		// Do not check for deleted file here as we might need this method for the recycler later on
-		if (is_object($storage) && $storage instanceof ResourceStorage) {
-			$this->storage = $storage;
-			$this->properties['storage'] = $storage->getUid();
-		} else {
-			$this->properties['storage'] = $storage;
-			$this->storage = NULL;
-		}
+	public function setStorage(ResourceStorage $storage) {
+		$this->storage = $storage;
+		$this->properties['storage'] = $storage->getUid();
 		return $this;
 	}
 
@@ -409,10 +389,11 @@ abstract class AbstractFile implements FileInterface {
 	 *
 	 * @internal Should only be used by other parts of the File API (e.g. drivers after moving a file)
 	 * @param string $identifier
-	 * @return string
+	 * @return File
 	 */
 	public function setIdentifier($identifier) {
 		$this->identifier = $identifier;
+		return $this;
 	}
 
 	/**
@@ -433,7 +414,7 @@ abstract class AbstractFile implements FileInterface {
 	/**
 	 * Deletes this file from its storage. This also means that this object becomes useless.
 	 *
-	 * @return bool TRUE if deletion succeeded
+	 * @return boolean TRUE if deletion succeeded
 	 */
 	public function delete() {
 		// The storage will mark this file as deleted
@@ -519,14 +500,14 @@ abstract class AbstractFile implements FileInterface {
 	 *
 	 * @param bool  $relativeToCurrentScript   Determines whether the URL returned should be relative to the current script, in case it is relative at all (only for the LocalDriver)
 	 *
-	 * @throws \RuntimeException
-	 * @return string
+	 * @return null|string
 	 */
 	public function getPublicUrl($relativeToCurrentScript = FALSE) {
 		if ($this->deleted) {
-			throw new \RuntimeException('File has been deleted.', 1329821485);
+			return NULL;
+		} else {
+			return $this->getStorage()->getPublicUrl($this, $relativeToCurrentScript);
 		}
-		return $this->getStorage()->getPublicUrl($this, $relativeToCurrentScript);
 	}
 
 	/**
@@ -558,7 +539,12 @@ abstract class AbstractFile implements FileInterface {
 	 */
 	abstract public function updateProperties(array $properties);
 
+	/**
+	 * Returns the parent folder.
+	 *
+	 * @return FolderInterface
+	 */
+	public function getParentFolder() {
+		return $this->getStorage()->getFolder($this->getStorage()->getFolderIdentifierFromFileIdentifier($this->getIdentifier()));
+	}
 }
-
-
-?>

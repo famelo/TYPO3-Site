@@ -1,29 +1,18 @@
 <?php
 namespace TYPO3\CMS\Extensionmanager\Utility\Repository;
 
-/***************************************************************
- * Copyright notice
+/**
+ * This file is part of the TYPO3 CMS project.
  *
- * (c) 2010-2013 Marcus Krause <marcus#exp2010@t3sec.info>
- * Steffen Kamper <info@sk-typo3.de>
- * All rights reserved
+ * It is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License, either version 2
+ * of the License, or any later version.
  *
- * This script is part of the TYPO3 project. The TYPO3 project is
- * free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
+ * For the full copyright and license information, please read the
+ * LICENSE.txt file that was distributed with this source code.
  *
- * The GNU General Public License can be found at
- * http://www.gnu.org/copyleft/gpl.html.
- *
- * This script is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU General Public License for more details.
- *
- * This copyright notice MUST APPEAR in all copies of the script!
- ***************************************************************/
+ * The TYPO3 project - inspiring people to share!
+ */
 /**
  * Central utility class for repository handling.
  *
@@ -80,8 +69,10 @@ class Helper implements \TYPO3\CMS\Core\SingletonInterface {
 	public function __construct() {
 		/** @var $objectManager \TYPO3\CMS\Extbase\Object\ObjectManager */
 		$this->objectManager = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Extbase\\Object\\ObjectManager');
+		/** @var \TYPO3\CMS\Extensionmanager\Domain\Repository\RepositoryRepository $repositoryRepository */
 		$repositoryRepository = $this->objectManager->get('TYPO3\\CMS\\Extensionmanager\\Domain\\Repository\\RepositoryRepository');
 		$this->extensionRepository = $this->objectManager->get('TYPO3\\CMS\\Extensionmanager\\Domain\\Repository\\ExtensionRepository');
+		/** @var \TYPO3\CMS\Extensionmanager\Domain\Model\Repository $repository */
 		$repository = $repositoryRepository->findByUid(1);
 		if (is_object($repository)) {
 			$this->setRepository($repository);
@@ -159,7 +150,7 @@ class Helper implements \TYPO3\CMS\Core\SingletonInterface {
 	 * @see getRemoteExtListFile()
 	 */
 	public function getLocalExtListFile() {
-		$absFilePath = PATH_site . 'typo3temp/' . intval($this->repository->getUid()) . '.extensions.xml.gz';
+		$absFilePath = PATH_site . 'typo3temp/' . (int)$this->repository->getUid() . '.extensions.xml.gz';
 		return $absFilePath;
 	}
 
@@ -197,7 +188,7 @@ class Helper implements \TYPO3\CMS\Core\SingletonInterface {
 	 * @see getRemoteMirrorListFile()
 	 */
 	public function getLocalMirrorListFile() {
-		$absFilePath = PATH_site . 'typo3temp/' . intval($this->repository->getUid()) . '.mirrors.xml.gz';
+		$absFilePath = PATH_site . 'typo3temp/' . (int)$this->repository->getUid() . '.mirrors.xml.gz';
 		return $absFilePath;
 	}
 
@@ -315,6 +306,3 @@ class Helper implements \TYPO3\CMS\Core\SingletonInterface {
 	}
 
 }
-
-
-?>

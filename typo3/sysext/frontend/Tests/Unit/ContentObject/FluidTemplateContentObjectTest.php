@@ -1,28 +1,18 @@
 <?php
 namespace TYPO3\CMS\Frontend\Tests\Unit\ContentObject;
 
-/***************************************************************
- *  Copyright notice
+/**
+ * This file is part of the TYPO3 CMS project.
  *
- *  (c) 2012-2013 Christian Kuhn <lolli@schwarzbu.ch>
- *  All rights reserved
+ * It is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License, either version 2
+ * of the License, or any later version.
  *
- *  This script is part of the TYPO3 project. The TYPO3 project is
- *  free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
+ * For the full copyright and license information, please read the
+ * LICENSE.txt file that was distributed with this source code.
  *
- *  The GNU General Public License can be found at
- *  http://www.gnu.org/copyleft/gpl.html.
- *
- *  This script is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  This copyright notice MUST APPEAR in all copies of the script!
- ***************************************************************/
+ * The TYPO3 project - inspiring people to share!
+ */
 /**
  * Testcase
  *
@@ -79,13 +69,14 @@ class FluidTemplateContentObjectTest extends \TYPO3\CMS\Core\Tests\UnitTestCase 
 	 */
 	public function tearDown() {
 		\TYPO3\CMS\Core\Utility\GeneralUtility::resetSingletonInstances($this->singletonInstances);
+		parent::tearDown();
 	}
 
 	/**
 	 * Add a mock standalone view to fixture
 	 */
 	protected function addMockViewToFixture() {
-		$this->standaloneView = $this->getMock('TYPO3\\CMS\\Fluid\\View\\StandaloneView');
+		$this->standaloneView = $this->getMock('TYPO3\\CMS\\Fluid\\View\\StandaloneView', array(), array(), '', FALSE);
 		$this->request = $this->getMock('TYPO3\\CMS\\Extbase\\Mvc\\Request');
 		$this->standaloneView
 			->expects($this->any())
@@ -576,40 +567,4 @@ class FluidTemplateContentObjectTest extends \TYPO3\CMS\Core\Tests\UnitTestCase 
 			->with('baz', array('foo' => 'bar'));
 		$this->fixture->render($configuration);
 	}
-
-	/**
-	 * @test
-	 */
-	public function renderWorksWithNestedFluidtemplate() {
-		$this->addMockViewToFixture();
-		$configuration = array(
-			'10' => 'FLUIDTEMPLATE',
-			'10.' => array(
-				'template' => 'TEXT',
-				'template.' => array(
-					'value' => 'A{anotherFluidTemplate}C'
-				),
-				'variables.' => array(
-					'anotherFluidTemplate' => 'FLUIDTEMPLATE',
-					'anotherFluidTemplate.' => array(
-						'template' => 'TEXT',
-						'template.' => array(
-							'value' => 'B',
-						),
-					),
-				),
-			),
-		);
-		$expectedResult = 'ABC';
-
-		// not using mocks - actual rendering
-		$contentObjectRenderer = new \TYPO3\CMS\Frontend\ContentObject\ContentObjectRenderer;
-		$fluidTemplateContentObject = new \TYPO3\CMS\Frontend\ContentObject\ContentObjectArrayContentObject(
-			$contentObjectRenderer
-		);
-		$result = $fluidTemplateContentObject->render($configuration);
-
-		$this->assertEquals($expectedResult, $result);
-	}
 }
-?>

@@ -1,34 +1,24 @@
 <?php
 namespace TYPO3\CMS\Extensionmanager\Tests\Unit\Utility;
 
-/***************************************************************
- * Copyright notice
+/**
+ * This file is part of the TYPO3 CMS project.
  *
- * (c) 2012-2013 Oliver Hader <oliver.hader@typo3.org>
- * All rights reserved
+ * It is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License, either version 2
+ * of the License, or any later version.
  *
- * This script is part of the TYPO3 project. The TYPO3 project is
- * free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
+ * For the full copyright and license information, please read the
+ * LICENSE.txt file that was distributed with this source code.
  *
- * The GNU General Public License can be found at
- * http://www.gnu.org/copyleft/gpl.html.
- *
- * This script is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * This copyright notice MUST APPEAR in all copies of the script!
- ***************************************************************/
+ * The TYPO3 project - inspiring people to share!
+ */
 
 /**
  * Configuration utility test
  *
  */
-class ConfigurationUtilityTest extends \TYPO3\CMS\Extbase\Tests\Unit\BaseTestCase {
+class ConfigurationUtilityTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 
 	/**
 	 * @test
@@ -61,7 +51,6 @@ class ConfigurationUtilityTest extends \TYPO3\CMS\Extbase\Tests\Unit\BaseTestCas
 			),
 		);
 
-		$GLOBALS['TYPO3_LOADED_EXT'][$extensionKey]= array();
 		$GLOBALS['TYPO3_CONF_VARS']['EXT']['extConf'][$extensionKey] = serialize($currentConfiguration);
 		$actual = $configurationUtility->getCurrentConfiguration($extensionKey);
 		$this->assertEquals($expected, $actual);
@@ -74,12 +63,17 @@ class ConfigurationUtilityTest extends \TYPO3\CMS\Extbase\Tests\Unit\BaseTestCas
 		/** @var $configurationUtility \TYPO3\CMS\Extensionmanager\Utility\ConfigurationUtility|\TYPO3\CMS\Core\Tests\AccessibleObjectInterface|\PHPUnit_Framework_MockObject_MockObject */
 		$configurationUtility = $this->getAccessibleMock(
 			'TYPO3\\CMS\\Extensionmanager\\Utility\\ConfigurationUtility',
-			array('getDefaultConfigurationRawString')
+			array('getDefaultConfigurationRawString', 'getExtensionPathInformation')
 		);
 		$configurationUtility
 			->expects($this->once())
 			->method('getDefaultConfigurationRawString')
 			->will($this->returnValue('foo'));
+
+		$configurationUtility
+			->expects($this->once())
+			->method('getExtensionPathInformation')
+			->will($this->returnValue(NULL));
 
 		$tsStyleConfig = $this->getMock('TYPO3\\CMS\\Core\\TypoScript\\ConfigurationForm');
 
@@ -96,7 +90,7 @@ class ConfigurationUtilityTest extends \TYPO3\CMS\Extbase\Tests\Unit\BaseTestCas
 				'cat' => 'basic',
 				'subcat_name' => 'enable',
 				'subcat' => 'a/enable/z',
-				'type' => 'user[EXT:saltedpasswords/classes/class.tx_saltedpasswords_emconfhelper.php:TYPO3\\CMS\\Saltedpasswords\\Utility\\ExtensionManagerConfigurationUtility->checkConfigurationFrontend]',
+				'type' => 'user[TYPO3\\CMS\\Saltedpasswords\\Utility\\ExtensionManagerConfigurationUtility->checkConfigurationFrontend]',
 				'label' => 'Frontend configuration check',
 				'name' => 'checkConfigurationFE',
 				'value' => '0',
@@ -130,7 +124,7 @@ class ConfigurationUtilityTest extends \TYPO3\CMS\Extbase\Tests\Unit\BaseTestCas
 				'cat' => 'basic',
 				'subcat_name' => 'enable',
 				'subcat' => 'a/enable/z',
-				'type' => 'user[EXT:saltedpasswords/classes/class.tx_saltedpasswords_emconfhelper.php:TYPO3\\CMS\\Saltedpasswords\\Utility\\ExtensionManagerConfigurationUtility->checkConfigurationFrontend]',
+				'type' => 'user[TYPO3\\CMS\\Saltedpasswords\\Utility\\ExtensionManagerConfigurationUtility->checkConfigurationFrontend]',
 				'label' => 'Frontend configuration check',
 				'name' => 'checkConfigurationFE',
 				'value' => '0',
@@ -253,9 +247,9 @@ class ConfigurationUtilityTest extends \TYPO3\CMS\Extbase\Tests\Unit\BaseTestCas
 	 * @return void
 	 */
 	public function convertValuedToNestedConfiguration(array $configuration, array $expected) {
-		/** @var $fixture \TYPO3\CMS\Extensionmanager\Utility\ConfigurationUtility */
-		$fixture = $this->objectManager->get('TYPO3\\CMS\\Extensionmanager\\Utility\\ConfigurationUtility');
-		$this->assertEquals($expected, $fixture->convertValuedToNestedConfiguration($configuration));
+		/** @var $subject \TYPO3\CMS\Extensionmanager\Utility\ConfigurationUtility|\PHPUnit_Framework_MockObject_MockObject|\TYPO3\CMS\Core\Tests\AccessibleObjectInterface */
+		$subject = $this->getAccessibleMock('TYPO3\\CMS\\Extensionmanager\\Utility\\ConfigurationUtility', array('dummy'), array(), '', FALSE);
+		$this->assertEquals($expected, $subject->convertValuedToNestedConfiguration($configuration));
 	}
 
 	/**
@@ -319,9 +313,8 @@ class ConfigurationUtilityTest extends \TYPO3\CMS\Extbase\Tests\Unit\BaseTestCas
 	 * @return void
 	 */
 	public function convertNestedToValuedConfiguration(array $configuration, array $expected) {
-		/** @var $fixture \TYPO3\CMS\Extensionmanager\Utility\ConfigurationUtility */
-		$fixture = $this->objectManager->get('TYPO3\\CMS\\Extensionmanager\\Utility\\ConfigurationUtility');
-		$this->assertEquals($expected, $fixture->convertNestedToValuedConfiguration($configuration));
+		/** @var $subject \TYPO3\CMS\Extensionmanager\Utility\ConfigurationUtility|\PHPUnit_Framework_MockObject_MockObject|\TYPO3\CMS\Core\Tests\AccessibleObjectInterface */
+		$subject = $this->getAccessibleMock('TYPO3\\CMS\\Extensionmanager\\Utility\\ConfigurationUtility', array('dummy'), array(), '', FALSE);
+		$this->assertEquals($expected, $subject->convertNestedToValuedConfiguration($configuration));
 	}
 }
-?>

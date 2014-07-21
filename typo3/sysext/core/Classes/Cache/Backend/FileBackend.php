@@ -1,28 +1,18 @@
 <?php
 namespace TYPO3\CMS\Core\Cache\Backend;
 
-/***************************************************************
- *  Copyright notice
+/**
+ * This file is part of the TYPO3 CMS project.
  *
- *  (c) 2009-2013 Ingo Renner <ingo@typo3.org>
- *  All rights reserved
+ * It is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License, either version 2
+ * of the License, or any later version.
  *
- *  This script is part of the TYPO3 project. The TYPO3 project is
- *  free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
+ * For the full copyright and license information, please read the
+ * LICENSE.txt file that was distributed with this source code.
  *
- *  The GNU General Public License can be found at
- *  http://www.gnu.org/copyleft/gpl.html.
- *
- *  This script is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  This copyright notice MUST APPEAR in all copies of the script!
- ***************************************************************/
+ * The TYPO3 project - inspiring people to share!
+ */
 /**
  * A caching backend which stores cache entries in files
  *
@@ -174,6 +164,9 @@ class FileBackend extends \TYPO3\CMS\Core\Cache\Backend\SimpleFileBackend implem
 		if ($result === FALSE) {
 			throw new \TYPO3\CMS\Core\Cache\Exception('The cache file "' . $cacheEntryPathAndFilename . '" could not be written.', 1222361632);
 		}
+		if ($this->cacheEntryFileExtension === '.php') {
+			\TYPO3\CMS\Core\Utility\OpcodeCacheUtility::clearAllActive($cacheEntryPathAndFilename);
+		}
 	}
 
 	/**
@@ -195,7 +188,7 @@ class FileBackend extends \TYPO3\CMS\Core\Cache\Backend\SimpleFileBackend implem
 		if ($this->isCacheFileExpired($pathAndFilename)) {
 			return FALSE;
 		}
-		$dataSize = (int) file_get_contents($pathAndFilename, NULL, NULL, (filesize($pathAndFilename) - self::DATASIZE_DIGITS), self::DATASIZE_DIGITS);
+		$dataSize = (int)file_get_contents($pathAndFilename, NULL, NULL, (filesize($pathAndFilename) - self::DATASIZE_DIGITS), self::DATASIZE_DIGITS);
 		return file_get_contents($pathAndFilename, NULL, NULL, 0, $dataSize);
 	}
 
@@ -264,9 +257,9 @@ class FileBackend extends \TYPO3\CMS\Core\Cache\Backend\SimpleFileBackend implem
 				continue;
 			}
 			$cacheEntryPathAndFilename = $directoryIterator->getPathname();
-			$index = (int) file_get_contents($cacheEntryPathAndFilename, NULL, NULL, (filesize($cacheEntryPathAndFilename) - self::DATASIZE_DIGITS), self::DATASIZE_DIGITS);
+			$index = (int)file_get_contents($cacheEntryPathAndFilename, NULL, NULL, (filesize($cacheEntryPathAndFilename) - self::DATASIZE_DIGITS), self::DATASIZE_DIGITS);
 			$metaData = file_get_contents($cacheEntryPathAndFilename, NULL, NULL, $index);
-			$expiryTime = (int) substr($metaData, 0, self::EXPIRYTIME_LENGTH);
+			$expiryTime = (int)substr($metaData, 0, self::EXPIRYTIME_LENGTH);
 			if ($expiryTime !== 0 && $expiryTime < $now) {
 				continue;
 			}
@@ -323,8 +316,8 @@ class FileBackend extends \TYPO3\CMS\Core\Cache\Backend\SimpleFileBackend implem
 		if (file_exists($cacheEntryPathAndFilename) === FALSE) {
 			return TRUE;
 		}
-		$index = (int) file_get_contents($cacheEntryPathAndFilename, NULL, NULL, (filesize($cacheEntryPathAndFilename) - self::DATASIZE_DIGITS), self::DATASIZE_DIGITS);
-		$expiryTime = intval(file_get_contents($cacheEntryPathAndFilename, NULL, NULL, $index, self::EXPIRYTIME_LENGTH));
+		$index = (int)file_get_contents($cacheEntryPathAndFilename, NULL, NULL, (filesize($cacheEntryPathAndFilename) - self::DATASIZE_DIGITS), self::DATASIZE_DIGITS);
+		$expiryTime = (int)file_get_contents($cacheEntryPathAndFilename, NULL, NULL, $index, self::EXPIRYTIME_LENGTH);
 		return $expiryTime !== 0 && $expiryTime < $GLOBALS['EXEC_TIME'];
 	}
 
@@ -396,6 +389,3 @@ class FileBackend extends \TYPO3\CMS\Core\Cache\Backend\SimpleFileBackend implem
 	}
 
 }
-
-
-?>

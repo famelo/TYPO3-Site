@@ -1,28 +1,18 @@
 <?php
 namespace TYPO3\CMS\Rsaauth\Storage;
 
-/***************************************************************
- *  Copyright notice
+/**
+ * This file is part of the TYPO3 CMS project.
  *
- *  (c) 2009-2013 Dmitry Dulepov <dmitry@typo3.org>
- *  All rights reserved
+ * It is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License, either version 2
+ * of the License, or any later version.
  *
- *  This script is part of the TYPO3 project. The TYPO3 project is
- *  free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
+ * For the full copyright and license information, please read the
+ * LICENSE.txt file that was distributed with this source code.
  *
- *  The GNU General Public License can be found at
- *  http://www.gnu.org/copyleft/gpl.html.
- *
- *  This script is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  This copyright notice MUST APPEAR in all copies of the script!
- ***************************************************************/
+ * The TYPO3 project - inspiring people to share!
+ */
 /**
  * This class contains a "split" storage for the data. It keeps part of the data
  * in the database, part in the database.
@@ -45,7 +35,7 @@ class SplitStorage extends \TYPO3\CMS\Rsaauth\Storage\AbstractStorage {
 	 * Obtains a key from the database
 	 *
 	 * @return string The key or NULL
-	 * @see tx_rsaauth_abstract_storage::get()
+	 * @see \TYPO3\CMS\Rsaauth\Storage\AbstractStorage::get()
 	 */
 	public function get() {
 		$result = NULL;
@@ -67,7 +57,7 @@ class SplitStorage extends \TYPO3\CMS\Rsaauth\Storage\AbstractStorage {
 	 *
 	 * @param string $key The key
 	 * @return void
-	 * @see 	tx_rsaauth_abstract_storage::put()
+	 * @see \TYPO3\CMS\Rsaauth\Storage\AbstractStorage::put()
 	 */
 	public function put($key) {
 		if ($key == NULL) {
@@ -82,7 +72,7 @@ class SplitStorage extends \TYPO3\CMS\Rsaauth\Storage\AbstractStorage {
 			// Get split point. First part is always smaller than the second
 			// because it goes to the file system
 			$keyLength = strlen($key);
-			$splitPoint = rand(intval($keyLength / 10), intval($keyLength / 2));
+			$splitPoint = rand((int)($keyLength / 10), (int)($keyLength / 2));
 			// Get key parts
 			$keyPart1 = substr($key, 0, $splitPoint);
 			$keyPart2 = substr($key, $splitPoint);
@@ -105,6 +95,3 @@ class SplitStorage extends \TYPO3\CMS\Rsaauth\Storage\AbstractStorage {
 	}
 
 }
-
-
-?>

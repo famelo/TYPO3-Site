@@ -1,28 +1,18 @@
 <?php
 namespace TYPO3\CMS\Sv\Report;
 
-/***************************************************************
- *  Copyright notice
+/**
+ * This file is part of the TYPO3 CMS project.
  *
- *  (c) 2009-2013 Francois Suter <francois@typo3.org>
- *  All rights reserved
+ * It is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License, either version 2
+ * of the License, or any later version.
  *
- *  This script is part of the TYPO3 project. The TYPO3 project is
- *  free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
+ * For the full copyright and license information, please read the
+ * LICENSE.txt file that was distributed with this source code.
  *
- *  The GNU General Public License can be found at
- *  http://www.gnu.org/copyleft/gpl.html.
- *
- *  This script is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  This copyright notice MUST APPEAR in all copies of the script!
- ***************************************************************/
+ * The TYPO3 project - inspiring people to share!
+ */
 /**
  * This class provides a report displaying a list of all installed services
  * Code inspired by EXT:dam/lib/class.tx_dam_svlist.php by René Fritz
@@ -45,7 +35,7 @@ class ServicesListReport implements \TYPO3\CMS\Reports\ReportInterface {
 	 */
 	public function __construct(\TYPO3\CMS\Reports\Controller\ReportController $reportsModule) {
 		$this->reportsModule = $reportsModule;
-		$GLOBALS['LANG']->includeLLFile('EXT:sv/reports/locallang.xml');
+		$GLOBALS['LANG']->includeLLFile('EXT:sv/Resources/Private/Language/locallang.xlf');
 	}
 
 	/**
@@ -130,9 +120,9 @@ class ServicesListReport implements \TYPO3\CMS\Reports\ReportInterface {
 		if (!empty($serviceInformation['description'])) {
 			$serviceDescription .= '<p class="service-description">' . $serviceInformation['description'] . '</p>';
 		}
-		$serviceSubtypes = empty($serviceInformation['serviceSubTypes']) ? '-' : implode(', ', $serviceInformation['serviceSubTypes']);
-		$serviceOperatingSystem = empty($serviceInformation['os']) ? $GLOBALS['LANG']->getLL('any') : $serviceInformation['os'];
-		$serviceRequiredExecutables = empty($serviceInformation['exec']) ? '-' : $serviceInformation['exec'];
+		$serviceSubtypes = $serviceInformation['serviceSubTypes'] ? implode(', ', $serviceInformation['serviceSubTypes']) : '-';
+		$serviceOperatingSystem = $serviceInformation['os'] ?: $GLOBALS['LANG']->getLL('any');
+		$serviceRequiredExecutables = $serviceInformation['exec'] ?: '-';
 		$serviceAvailabilityClass = 'typo3-message message-error';
 		$serviceAvailable = $GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_common.xlf:no');
 		try {
@@ -249,6 +239,3 @@ class ServicesListReport implements \TYPO3\CMS\Reports\ReportInterface {
 	}
 
 }
-
-
-?>

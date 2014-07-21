@@ -1,33 +1,23 @@
 <?php
 namespace TYPO3\CMS\Extbase\Tests\Unit\Mvc\Controller;
 
-/***************************************************************
- *  Copyright notice
+/**
+ * This file is part of the TYPO3 CMS project.
  *
- *  This class is a backport of the corresponding class of TYPO3 Flow.
- *  All credits go to the TYPO3 Flow team.
- *  All rights reserved
+ * It is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License, either version 2
+ * of the License, or any later version.
  *
- *  This script is part of the TYPO3 project. The TYPO3 project is
- *  free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
+ * For the full copyright and license information, please read the
+ * LICENSE.txt file that was distributed with this source code.
  *
- *  The GNU General Public License can be found at
- *  http://www.gnu.org/copyleft/gpl.html.
- *  A copy is found in the textfile GPL.txt and important notices to the license
- *  from the author is found in LICENSE.txt distributed with these scripts.
- *
- *
- *  This script is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  This copyright notice MUST APPEAR in all copies of the script!
- ***************************************************************/
-class ActionControllerTest extends \TYPO3\CMS\Extbase\Tests\Unit\BaseTestCase {
+ * The TYPO3 project - inspiring people to share!
+ */
+
+/**
+ * Test case
+ */
+class ActionControllerTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 
 	/**
 	 * @var \TYPO3\CMS\Extbase\Mvc\Controller\ActionController|\PHPUnit_Framework_MockObject_MockObject|\TYPO3\CMS\Core\Tests\AccessibleObjectInterface
@@ -91,7 +81,7 @@ class ActionControllerTest extends \TYPO3\CMS\Extbase\Tests\Unit\BaseTestCase {
 		$mockController->expects($this->at(7))->method('buildControllerContext');
 		$mockController->expects($this->at(8))->method('resolveView');
 
-		$mockController->injectMvcPropertyMappingConfigurationService($configurationService);
+		$mockController->_set('mvcPropertyMappingConfigurationService', $configurationService);
 		$mockController->_set('arguments', new \TYPO3\CMS\Extbase\Mvc\Controller\Arguments());
 
 		$mockController->processRequest($mockRequest, $mockResponse);
@@ -112,7 +102,7 @@ class ActionControllerTest extends \TYPO3\CMS\Extbase\Tests\Unit\BaseTestCase {
 		$mockArgumentMappingResults->expects($this->once())->method('hasErrors')->will($this->returnValue(FALSE));
 		$mockController = $this->getAccessibleMock('TYPO3\\CMS\\Extbase\\Mvc\\Controller\\ActionController', array('fooAction', 'initializeAction'), array(), '', FALSE);
 		$mockSignalSlotDispatcher = $this->getMock('TYPO3\\CMS\Extbase\\SignalSlot\\Dispatcher', array(), array(), '', FALSE);
-		$mockController->injectSignalSlotDispatcher($mockSignalSlotDispatcher);
+		$mockController->_set('signalSlotDispatcher', $mockSignalSlotDispatcher);
 		$this->enableDeprecatedPropertyMapperInController($mockController);
 		$mockController->expects($this->once())->method('fooAction')->will($this->returnValue('the returned string'));
 		$mockController->_set('request', $mockRequest);
@@ -138,7 +128,7 @@ class ActionControllerTest extends \TYPO3\CMS\Extbase\Tests\Unit\BaseTestCase {
 		$mockArgumentMappingResults->expects($this->once())->method('hasErrors')->will($this->returnValue(FALSE));
 		$mockController = $this->getAccessibleMock('TYPO3\\CMS\\Extbase\\Mvc\\Controller\\ActionController', array('fooAction', 'initializeAction'), array(), '', FALSE);
 		$mockSignalSlotDispatcher = $this->getMock('TYPO3\\CMS\Extbase\\SignalSlot\\Dispatcher', array(), array(), '', FALSE);
-		$mockController->injectSignalSlotDispatcher($mockSignalSlotDispatcher);
+		$mockController->_set('signalSlotDispatcher', $mockSignalSlotDispatcher);
 		$this->enableDeprecatedPropertyMapperInController($mockController);
 		$mockController->expects($this->once())->method('fooAction');
 		$mockController->_set('request', $mockRequest);
@@ -188,7 +178,7 @@ class ActionControllerTest extends \TYPO3\CMS\Extbase\Tests\Unit\BaseTestCase {
 		$mockArgumentMappingResults->expects($this->once())->method('hasErrors')->will($this->returnValue(FALSE));
 		$mockController = $this->getAccessibleMock('TYPO3\\CMS\\Extbase\\Mvc\\Controller\\ActionController', array('fooAction', 'initializeAction'), array(), '', FALSE);
 		$mockSignalSlotDispatcher = $this->getMock('TYPO3\\CMS\Extbase\\SignalSlot\\Dispatcher', array(), array(), '', FALSE);
-		$mockController->injectSignalSlotDispatcher($mockSignalSlotDispatcher);
+		$mockController->_set('signalSlotDispatcher', $mockSignalSlotDispatcher);
 		$this->enableDeprecatedPropertyMapperInController($mockController);
 		$mockController->expects($this->once())->method('fooAction')->with('Default value');
 		$mockController->_set('request', $mockRequest);
@@ -225,6 +215,7 @@ class ActionControllerTest extends \TYPO3\CMS\Extbase\Tests\Unit\BaseTestCase {
 	 */
 	public function resolveViewObjectNameUsesViewObjectNamePatternToResolveViewObjectName() {
 		$mockRequest = $this->getMock('TYPO3\\CMS\\Extbase\\Mvc\\Request', array(), array(), '', FALSE);
+		$mockRequest->expects($this->once())->method('getControllerVendorName')->will($this->returnValue('MyVendor'));
 		$mockRequest->expects($this->once())->method('getControllerExtensionName')->will($this->returnValue('MyPackage'));
 		$mockRequest->expects($this->once())->method('getControllerName')->will($this->returnValue('MyController'));
 		$mockRequest->expects($this->once())->method('getControllerActionName')->will($this->returnValue('MyAction'));
@@ -233,7 +224,7 @@ class ActionControllerTest extends \TYPO3\CMS\Extbase\Tests\Unit\BaseTestCase {
 		$mockController = $this->getAccessibleMock('TYPO3\\CMS\\Extbase\\Mvc\\Controller\\ActionController', array('dummy'), array(), '', FALSE);
 		$mockController->_set('request', $mockRequest);
 		$mockController->_set('objectManager', $mockObjectManager);
-		$mockController->_set('viewObjectNamePattern', 'RandomViewObjectPattern_@package_@controller_@action_@format');
+		$mockController->_set('namespacesViewObjectNamePattern', 'RandomViewObject@vendor\@extension\View\@controller\@action@format');
 		$mockController->_call('resolveViewObjectName');
 	}
 
@@ -315,6 +306,7 @@ class ActionControllerTest extends \TYPO3\CMS\Extbase\Tests\Unit\BaseTestCase {
 	 * @author Robert Lemke <robert@typo3.org>
 	 */
 	public function initializeActionMethodArgumentsRegistersArgumentsFoundInTheSignatureOfTheCurrentActionMethod() {
+		$this->markTestSkipped('Triggers "UnexpectedValueException: Serialized string cannot be empty", with phpunit since PHP in 5.4.29 and 5.5.13, needs investigation, see https://github.com/sebastianbergmann/phpunit-mock-objects/issues/178');
 		$mockRequest = $this->getMock('TYPO3\\CMS\\Extbase\\Mvc\\Request', array(), array(), '', FALSE);
 		$mockArguments = $this->getMock('TYPO3\\CMS\\Extbase\\Mvc\\Controller\\Arguments', array('addNewArgument', 'removeAll'), array(), '', FALSE);
 		$mockArguments->expects($this->at(0))->method('addNewArgument')->with('stringArgument', 'string', TRUE);
@@ -349,7 +341,7 @@ class ActionControllerTest extends \TYPO3\CMS\Extbase\Tests\Unit\BaseTestCase {
 		);
 		$mockReflectionService = $this->getMock('TYPO3\\CMS\\Extbase\\Reflection\\ReflectionService', array(), array(), '', FALSE);
 		$mockReflectionService->expects($this->once())->method('getMethodParameters')->with(get_class($mockController), 'fooAction')->will($this->returnValue($methodParameters));
-		$mockController->injectReflectionService($mockReflectionService);
+		$mockController->_set('reflectionService', $mockReflectionService);
 		$mockController->_set('request', $mockRequest);
 		$mockController->_set('arguments', $mockArguments);
 		$mockController->_set('actionMethodName', 'fooAction');
@@ -396,7 +388,7 @@ class ActionControllerTest extends \TYPO3\CMS\Extbase\Tests\Unit\BaseTestCase {
 		);
 		$mockReflectionService = $this->getMock('TYPO3\\CMS\\Extbase\\Reflection\\ReflectionService', array(), array(), '', FALSE);
 		$mockReflectionService->expects($this->once())->method('getMethodParameters')->with(get_class($mockController), 'fooAction')->will($this->returnValue($methodParameters));
-		$mockController->injectReflectionService($mockReflectionService);
+		$mockController->_set('reflectionService', $mockReflectionService);
 		$mockController->_set('request', $mockRequest);
 		$mockController->_set('arguments', $mockArguments);
 		$mockController->_set('actionMethodName', 'fooAction');
@@ -423,7 +415,7 @@ class ActionControllerTest extends \TYPO3\CMS\Extbase\Tests\Unit\BaseTestCase {
 		);
 		$mockReflectionService = $this->getMock('TYPO3\\CMS\\Extbase\\Reflection\\ReflectionService', array(), array(), '', FALSE);
 		$mockReflectionService->expects($this->once())->method('getMethodParameters')->with(get_class($mockController), 'fooAction')->will($this->returnValue($methodParameters));
-		$mockController->injectReflectionService($mockReflectionService);
+		$mockController->_set('reflectionService', $mockReflectionService);
 		$mockController->_set('request', $mockRequest);
 		$mockController->_set('arguments', $mockArguments);
 		$mockController->_set('actionMethodName', 'fooAction');
@@ -435,6 +427,7 @@ class ActionControllerTest extends \TYPO3\CMS\Extbase\Tests\Unit\BaseTestCase {
 	 * @author Sebastian Kurfürst <sbastian@typo3.org>
 	 */
 	public function initializeActionMethodValidatorsCorrectlyRegistersValidatorsBasedOnDataType() {
+		$this->markTestSkipped('Triggers "UnexpectedValueException: Serialized string cannot be empty", with phpunit since PHP in 5.4.29 and 5.5.13, needs investigation, see https://github.com/sebastianbergmann/phpunit-mock-objects/issues/178');
 		$mockController = $this->getAccessibleMock('TYPO3\\CMS\\Extbase\\Mvc\\Controller\\ActionController', array('fooAction'), array(), '', FALSE);
 		$this->enableDeprecatedPropertyMapperInController($mockController);
 		$argument = $this->getMock('TYPO3\\CMS\\Extbase\\Mvc\\Controller\\Argument', array('getName'), array(), '', FALSE);
@@ -448,8 +441,8 @@ class ActionControllerTest extends \TYPO3\CMS\Extbase\Tests\Unit\BaseTestCase {
 		$mockReflectionService->expects($this->once())->method('getMethodTagsValues')->with(get_class($mockController), 'fooAction')->will($this->returnValue($methodTagsValues));
 		$mockValidatorResolver = $this->getMock('TYPO3\\CMS\\Extbase\\Validation\\ValidatorResolver', array(), array(), '', FALSE);
 		$mockValidatorResolver->expects($this->once())->method('buildMethodArgumentsValidatorConjunctions')->with(get_class($mockController), 'fooAction')->will($this->returnValue($methodArgumentsValidatorConjunctions));
-		$mockController->injectReflectionService($mockReflectionService);
-		$mockController->injectValidatorResolver($mockValidatorResolver);
+		$mockController->_set('reflectionService', $mockReflectionService);
+		$mockController->_set('validatorResolver', $mockValidatorResolver);
 		$mockController->_set('arguments', $arguments);
 		$mockController->_set('actionMethodName', 'fooAction');
 		$mockController->_call('initializeActionMethodValidators');
@@ -461,6 +454,7 @@ class ActionControllerTest extends \TYPO3\CMS\Extbase\Tests\Unit\BaseTestCase {
 	 * @author Sebastian Kurfürst <sbastian@typo3.org>
 	 */
 	public function initializeActionMethodValidatorsRegistersModelBasedValidators() {
+		$this->markTestSkipped('Triggers "UnexpectedValueException: Serialized string cannot be empty", with phpunit since PHP in 5.4.29 and 5.5.13, needs investigation, see https://github.com/sebastianbergmann/phpunit-mock-objects/issues/178');
 		$mockController = $this->getAccessibleMock('TYPO3\\CMS\\Extbase\\Mvc\\Controller\\ActionController', array('fooAction'), array(), '', FALSE);
 		$this->enableDeprecatedPropertyMapperInController($mockController);
 		$argument = $this->getMock('TYPO3\\CMS\\Extbase\\Mvc\\Controller\\Argument', array('getName', 'getDataType'), array(), '', FALSE);
@@ -478,8 +472,8 @@ class ActionControllerTest extends \TYPO3\CMS\Extbase\Tests\Unit\BaseTestCase {
 		$mockValidatorResolver = $this->getMock('TYPO3\\CMS\\Extbase\\Validation\\ValidatorResolver', array(), array(), '', FALSE);
 		$mockValidatorResolver->expects($this->once())->method('buildMethodArgumentsValidatorConjunctions')->with(get_class($mockController), 'fooAction')->will($this->returnValue($methodArgumentsValidatorConjunctions));
 		$mockValidatorResolver->expects($this->once())->method('getBaseValidatorConjunction')->with('F3_Foo_Quux')->will($this->returnValue($quuxBaseValidatorConjunction));
-		$mockController->injectReflectionService($mockReflectionService);
-		$mockController->injectValidatorResolver($mockValidatorResolver);
+		$mockController->_set('reflectionService', $mockReflectionService);
+		$mockController->_set('validatorResolver', $mockValidatorResolver);
 		$mockController->_set('arguments', $arguments);
 		$mockController->_set('actionMethodName', 'fooAction');
 		$mockController->_call('initializeActionMethodValidators');
@@ -491,6 +485,7 @@ class ActionControllerTest extends \TYPO3\CMS\Extbase\Tests\Unit\BaseTestCase {
 	 * @author Sebastian Kurfürst <sbastian@typo3.org>
 	 */
 	public function initializeActionMethodValidatorsDoesNotRegisterModelBasedValidatorsIfDontValidateAnnotationIsSet() {
+		$this->markTestSkipped('Triggers "UnexpectedValueException: Serialized string cannot be empty", with phpunit since PHP in 5.4.29 and 5.5.13, needs investigation, see https://github.com/sebastianbergmann/phpunit-mock-objects/issues/178');
 		$mockController = $this->getAccessibleMock('TYPO3\\CMS\\Extbase\\Mvc\\Controller\\ActionController', array('fooAction'), array(), '', FALSE);
 		$this->enableDeprecatedPropertyMapperInController($mockController);
 		$argument = $this->getMock('TYPO3\\CMS\\Extbase\\Mvc\\Controller\\Argument', array('getName', 'getDataType'), array(), '', FALSE);
@@ -510,8 +505,8 @@ class ActionControllerTest extends \TYPO3\CMS\Extbase\Tests\Unit\BaseTestCase {
 		$mockValidatorResolver = $this->getMock('TYPO3\\CMS\\Extbase\\Validation\\ValidatorResolver', array(), array(), '', FALSE);
 		$mockValidatorResolver->expects($this->once())->method('buildMethodArgumentsValidatorConjunctions')->with(get_class($mockController), 'fooAction')->will($this->returnValue($methodArgumentsValidatorConjunctions));
 		$mockValidatorResolver->expects($this->any())->method('getBaseValidatorConjunction')->will($this->throwException(new \Exception('This should not be called because the dontvalidate annotation is set.')));
-		$mockController->injectReflectionService($mockReflectionService);
-		$mockController->injectValidatorResolver($mockValidatorResolver);
+		$mockController->_set('reflectionService', $mockReflectionService);
+		$mockController->_set('validatorResolver', $mockValidatorResolver);
 		$mockController->_set('arguments', $arguments);
 		$mockController->_set('actionMethodName', 'fooAction');
 		$mockController->_call('initializeActionMethodValidators');
@@ -583,7 +578,7 @@ class ActionControllerTest extends \TYPO3\CMS\Extbase\Tests\Unit\BaseTestCase {
 		$mockController->_set('arguments', array($argument1, $argument2));
 		$mockController->_set('request', $mockRequest);
 		$mockController->_set('actionMethodName', 'fooAction');
-		$mockController->injectReflectionService($mockReflectionService);
+		$mockController->_set('reflectionService', $mockReflectionService);
 		$mockController->_call('checkRequestHash');
 	}
 
@@ -610,7 +605,7 @@ class ActionControllerTest extends \TYPO3\CMS\Extbase\Tests\Unit\BaseTestCase {
 		$mockController->_set('arguments', array($argument1, $argument2));
 		$mockController->_set('request', $mockRequest);
 		$mockController->_set('actionMethodName', 'fooAction');
-		$mockController->injectReflectionService($mockReflectionService);
+		$mockController->_set('reflectionService', $mockReflectionService);
 		$mockController->_call('checkRequestHash');
 	}
 
@@ -624,6 +619,405 @@ class ActionControllerTest extends \TYPO3\CMS\Extbase\Tests\Unit\BaseTestCase {
 		$mockConfigurationManager->expects($this->any())->method('isFeatureEnabled')->with('rewrittenPropertyMapper')->will($this->returnValue(FALSE));
 		$actionController->injectConfigurationManager($mockConfigurationManager);
 	}
-}
 
-?>
+	/**
+	 * @test
+	 * @dataProvider templateRootPathDataProvider
+	 * @param array $configuration
+	 * @param array $expected
+	 */
+	public function setViewConfigurationResolvesTemplateRootPathsForTemplateRootPath($configuration, $expected) {
+		$mockController = $this->getAccessibleMock('TYPO3\\CMS\\Extbase\\Mvc\\Controller\\ActionController', array('dummy'), array(), '', FALSE);
+		$mockConfigurationManager = $this->getMock('TYPO3\\CMS\\Extbase\\Configuration\\ConfigurationManagerInterface');
+		$mockConfigurationManager->expects($this->any())->method('getConfiguration')->will($this->returnValue($configuration));
+		$mockController->injectConfigurationManager($mockConfigurationManager);
+		$mockController->_set('request', $this->getMock('TYPO3\\CMS\\Extbase\\Mvc\\Request'), array('getControllerExtensionKey'));
+		$view = $this->getMock('TYPO3\\CMS\\Extbase\\Mvc\\View\\ViewInterface', array('setControllerContext', 'assign', 'assignMultiple', 'canRender', 'render', 'initializeView', 'setTemplateRootPaths'));
+		$view->expects($this->once())->method('setTemplateRootPaths')->with($expected);
+		$mockController->_call('setViewConfiguration', $view);
+	}
+
+	/**
+	 * @return array
+	 */
+	public function templateRootPathDataProvider() {
+		return array(
+			'old behaviour only' => array(
+				array(
+					'view' => array(
+						'templateRootPath' => 'some path'
+					)
+				),
+				array('some path')
+			),
+			'new behaviour only with text keys' => array(
+				array(
+					'view' => array(
+						'templateRootPaths' => array(
+							'default' => 'some path',
+							'extended' => 'some other path'
+						)
+					)
+				),
+				array(
+					'extended' => 'some other path',
+					'default' => 'some path'
+				)
+			),
+			'new behaviour only with numerical keys' => array(
+				array(
+					'view' => array(
+						'templateRootPaths' => array(
+							'10' => 'some path',
+							'20' => 'some other path',
+							'15' => 'intermediate specific path'
+						)
+					)
+				),
+				array(
+					'20' => 'some other path',
+					'15' => 'intermediate specific path',
+					'10' => 'some path'
+				)
+			),
+			'new behaviour only with mixed keys' => array(
+				array(
+					'view' => array(
+						'templateRootPaths' => array(
+							'10' => 'some path',
+							'very_specific' => 'some other path',
+							'15' => 'intermediate specific path'
+						)
+					)
+				),
+				array(
+					'15' => 'intermediate specific path',
+					'very_specific' => 'some other path',
+					'10' => 'some path'
+				)
+			),
+			'old and new behaviour mixed with text keys' => array(
+				array(
+					'view' => array(
+						'templateRootPaths' => array(
+							'default' => 'some path',
+							'specific' => 'intermediate specific path',
+							'very_specific' => 'some other path'
+						),
+						'templateRootPath' => 'old path'
+					)
+				),
+				array(
+					'very_specific' => 'some other path',
+					'specific' => 'intermediate specific path',
+					'default' => 'some path',
+					'0' => 'old path'
+				)
+			),
+			'old and new behaviour mixed with numerical keys' => array(
+				array(
+					'view' => array(
+						'templateRootPaths' => array(
+							'10' => 'some path',
+							'20' => 'intermediate specific path',
+							'30' => 'some other path'
+						),
+						'templateRootPath' => 'old path'
+					)
+				),
+				array(
+					'30' => 'some other path',
+					'20' => 'intermediate specific path',
+					'10' => 'some path',
+					'31' => 'old path'
+				)
+			),
+			'old and new behaviour mixed with mixed keys' => array(
+				array(
+					'view' => array(
+						'templateRootPaths' => array(
+							'10' => 'some path',
+							'very_specific' => 'some other path',
+							'15' => 'intermediate specific path'
+						),
+						'templateRootPath' => 'old path'
+					)
+				),
+				array(
+					'15' => 'intermediate specific path',
+					'very_specific' => 'some other path',
+					'10' => 'some path',
+					'16' => 'old path'
+				)
+			)
+		);
+	}
+
+	/**
+	 * @test
+	 * @dataProvider layoutRootPathDataProvider
+	 *
+	 * @param array $configuration
+	 * @param array $expected
+	 */
+	public function setViewConfigurationResolvesLayoutRootPathsForLayoutRootPath($configuration, $expected) {
+		$mockController = $this->getAccessibleMock('TYPO3\\CMS\\Extbase\\Mvc\\Controller\\ActionController', array('dummy'), array(), '', FALSE);
+		$mockConfigurationManager = $this->getMock('TYPO3\\CMS\\Extbase\\Configuration\\ConfigurationManagerInterface');
+		$mockConfigurationManager->expects($this->any())->method('getConfiguration')->will($this->returnValue($configuration));
+		$mockController->injectConfigurationManager($mockConfigurationManager);
+		$mockController->_set('request', $this->getMock('TYPO3\\CMS\\Extbase\\Mvc\\Request'), array('getControllerExtensionKey'));
+		$view = $this->getMock('TYPO3\\CMS\\Extbase\\Mvc\\View\\ViewInterface', array('setControllerContext', 'assign', 'assignMultiple', 'canRender', 'render', 'initializeView', 'setlayoutRootPaths'));
+		$view->expects($this->once())->method('setlayoutRootPaths')->with($expected);
+		$mockController->_call('setViewConfiguration', $view);
+	}
+
+	/**
+	 * @return array
+	 */
+	public function layoutRootPathDataProvider() {
+		return array(
+			'old behaviour only' => array(
+				array(
+					'view' => array(
+						'layoutRootPath' => 'some path'
+					)
+				),
+				array('some path')
+			),
+			'new behaviour only with text keys' => array(
+				array(
+					'view' => array(
+						'layoutRootPaths' => array(
+							'default' => 'some path',
+							'extended' => 'some other path'
+						)
+					)
+				),
+				array(
+					'extended' => 'some other path',
+					'default' => 'some path'
+				)
+			),
+			'new behaviour only with numerical keys' => array(
+				array(
+					'view' => array(
+						'layoutRootPaths' => array(
+							'10' => 'some path',
+							'20' => 'some other path',
+							'15' => 'intermediate specific path'
+						)
+					)
+				),
+				array(
+					'20' => 'some other path',
+					'15' => 'intermediate specific path',
+					'10' => 'some path'
+				)
+			),
+			'new behaviour only with mixed keys' => array(
+				array(
+					'view' => array(
+						'layoutRootPaths' => array(
+							'10' => 'some path',
+							'very_specific' => 'some other path',
+							'15' => 'intermediate specific path'
+						)
+					)
+				),
+				array(
+					'15' => 'intermediate specific path',
+					'very_specific' => 'some other path',
+					'10' => 'some path'
+				)
+			),
+			'old and new behaviour mixed with text keys' => array(
+				array(
+					'view' => array(
+						'layoutRootPaths' => array(
+							'default' => 'some path',
+							'specific' => 'intermediate specific path',
+							'very_specific' => 'some other path'
+						),
+						'layoutRootPath' => 'old path'
+					)
+				),
+				array(
+					'very_specific' => 'some other path',
+					'specific' => 'intermediate specific path',
+					'default' => 'some path',
+					'0' => 'old path'
+				)
+			),
+			'old and new behaviour mixed with numerical keys' => array(
+				array(
+					'view' => array(
+						'layoutRootPaths' => array(
+							'10' => 'some path',
+							'20' => 'intermediate specific path',
+							'30' => 'some other path'
+						),
+						'layoutRootPath' => 'old path'
+					)
+				),
+				array(
+					'30' => 'some other path',
+					'20' => 'intermediate specific path',
+					'10' => 'some path',
+					'31' => 'old path'
+				)
+			),
+			'old and new behaviour mixed with mixed keys' => array(
+				array(
+					'view' => array(
+						'layoutRootPaths' => array(
+							'10' => 'some path',
+							'very_specific' => 'some other path',
+							'15' => 'intermediate specific path'
+						),
+						'layoutRootPath' => 'old path'
+					)
+				),
+				array(
+					'15' => 'intermediate specific path',
+					'very_specific' => 'some other path',
+					'10' => 'some path',
+					'16' => 'old path'
+				)
+			)
+		);
+	}
+
+	/**
+	 * @test
+	 * @dataProvider partialRootPathDataProvider
+	 *
+	 * @param array $configuration
+	 * @param array $expected
+	 */
+	public function setViewConfigurationResolvesPartialRootPathsForPartialRootPath($configuration, $expected) {
+		$mockController = $this->getAccessibleMock('TYPO3\\CMS\\Extbase\\Mvc\\Controller\\ActionController', array('dummy'), array(), '', FALSE);
+		$mockConfigurationManager = $this->getMock('TYPO3\\CMS\\Extbase\\Configuration\\ConfigurationManagerInterface');
+		$mockConfigurationManager->expects($this->any())->method('getConfiguration')->will($this->returnValue($configuration));
+		$mockController->injectConfigurationManager($mockConfigurationManager);
+		$mockController->_set('request', $this->getMock('TYPO3\\CMS\\Extbase\\Mvc\\Request'), array('getControllerExtensionKey'));
+		$view = $this->getMock('TYPO3\\CMS\\Extbase\\Mvc\\View\\ViewInterface', array('setControllerContext', 'assign', 'assignMultiple', 'canRender', 'render', 'initializeView', 'setpartialRootPaths'));
+		$view->expects($this->once())->method('setpartialRootPaths')->with($expected);
+		$mockController->_call('setViewConfiguration', $view);
+	}
+
+	/**
+	 * @return array
+	 */
+	public function partialRootPathDataProvider() {
+		return array(
+			'old behaviour only' => array(
+				array(
+					'view' => array(
+						'partialRootPath' => 'some path'
+					)
+				),
+				array('some path')
+			),
+			'new behaviour only with text keys' => array(
+				array(
+					'view' => array(
+						'partialRootPaths' => array(
+							'default' => 'some path',
+							'extended' => 'some other path'
+						)
+					)
+				),
+				array(
+					'extended' => 'some other path',
+					'default' => 'some path'
+				)
+			),
+			'new behaviour only with numerical keys' => array(
+				array(
+					'view' => array(
+						'partialRootPaths' => array(
+							'10' => 'some path',
+							'20' => 'some other path',
+							'15' => 'intermediate specific path'
+						)
+					)
+				),
+				array(
+					'20' => 'some other path',
+					'15' => 'intermediate specific path',
+					'10' => 'some path'
+				)
+			),
+			'new behaviour only with mixed keys' => array(
+				array(
+					'view' => array(
+						'partialRootPaths' => array(
+							'10' => 'some path',
+							'very_specific' => 'some other path',
+							'15' => 'intermediate specific path'
+						)
+					)
+				),
+				array(
+					'15' => 'intermediate specific path',
+					'very_specific' => 'some other path',
+					'10' => 'some path'
+				)
+			),
+			'old and new behaviour mixed with text keys' => array(
+				array(
+					'view' => array(
+						'partialRootPath' => 'old path',
+						'partialRootPaths' => array(
+							'default' => 'some path',
+							'specific' => 'intermediate specific path',
+							'very_specific' => 'some other path'
+						)
+					)
+				),
+				array(
+					'very_specific' => 'some other path',
+					'specific' => 'intermediate specific path',
+					'default' => 'some path',
+					'0' => 'old path'
+				)
+			),
+			'old and new behaviour mixed with numerical keys' => array(
+				array(
+					'view' => array(
+						'partialRootPaths' => array(
+							'10' => 'some path',
+							'20' => 'intermediate specific path',
+							'30' => 'some other path'
+						),
+						'partialRootPath' => 'old path'
+					)
+				),
+				array(
+					'30' => 'some other path',
+					'20' => 'intermediate specific path',
+					'10' => 'some path',
+					'31' => 'old path'
+				)
+			),
+			'old and new behaviour mixed with mixed keys' => array(
+				array(
+					'view' => array(
+						'partialRootPaths' => array(
+							'10' => 'some path',
+							'very_specific' => 'some other path',
+							'15' => 'intermediate specific path'
+						),
+						'partialRootPath' => 'old path'
+					)
+				),
+				array(
+					'15' => 'intermediate specific path',
+					'very_specific' => 'some other path',
+					'10' => 'some path',
+					'16' => 'old path'
+				)
+			)
+		);
+	}
+}

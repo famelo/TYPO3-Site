@@ -1,7 +1,7 @@
 <?php
 
 /*
-V5.14 8 Sept 2011  (c) 2000-2011 John Lim (jlim#natsoft.com). All rights reserved.
+V5.19  23-Apr-2014  (c) 2000-2014 John Lim (jlim#natsoft.com). All rights reserved.
   Released under both BSD license and Lesser GPL library license.
   Whenever there is any discrepancy between the two licenses,
   the BSD license will take precedence. See License.txt.
@@ -136,7 +136,7 @@ class perf_postgres extends adodb_perf{
 			}
 		}
 		$sql = str_replace('?',"''",$sql);
-		$s = '<p><strong>Explain</strong>: '.htmlspecialchars($sql).'</p>';
+		$s = '<p><b>Explain</b>: '.htmlspecialchars($sql).'</p>';
 		$rs = $this->conn->Execute('EXPLAIN '.$sql);
 		$this->conn->LogSQL($save);
 		$s .= '<pre>';
@@ -150,4 +150,3 @@ class perf_postgres extends adodb_perf{
 		return $s;
 	}
 }
-?>

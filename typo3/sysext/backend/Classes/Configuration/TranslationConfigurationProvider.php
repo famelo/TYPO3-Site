@@ -1,36 +1,22 @@
 <?php
 namespace TYPO3\CMS\Backend\Configuration;
 
-/***************************************************************
- *  Copyright notice
- *
- *  (c) 2006-2013 Kasper Skårhøj (kasperYYYY@typo3.com)
- *  All rights reserved
- *
- *  This script is part of the TYPO3 project. The TYPO3 project is
- *  free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
- *
- *  The GNU General Public License can be found at
- *  http://www.gnu.org/copyleft/gpl.html.
- *  A copy is found in the textfile GPL.txt and important notices to the license
- *  from the author is found in LICENSE.txt distributed with these scripts.
- *
- *
- *  This script is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  This copyright notice MUST APPEAR in all copies of the script!
- ***************************************************************/
 /**
- * Contains translation tools
+ * This file is part of the TYPO3 CMS project.
  *
- * @author Kasper Skårhøj <kasperYYYY@typo3.com>
+ * It is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License, either version 2
+ * of the License, or any later version.
+ *
+ * For the full copyright and license information, please read the
+ * LICENSE.txt file that was distributed with this source code.
+ *
+ * The TYPO3 project - inspiring people to share!
  */
+
+use TYPO3\CMS\Backend\Utility\BackendUtility;
+use TYPO3\CMS\Backend\Utility\IconUtility;
+
 /**
  * Contains translation tools
  *
@@ -52,7 +38,7 @@ class TranslationConfigurationProvider {
 	 * @todo Define visibility
 	 */
 	public function getSystemLanguages($page_id = 0, $backPath = '') {
-		$modSharedTSconfig = \TYPO3\CMS\Backend\Utility\BackendUtility::getModTSconfig($page_id, 'mod.SHARED');
+		$modSharedTSconfig = BackendUtility::getModTSconfig($page_id, 'mod.SHARED');
 		$languageIconTitles = array();
 		// fallback "old iconstyles"
 		if (preg_match('/\\.gif$/', $modSharedTSconfig['properties']['defaultLanguageFlag'])) {
@@ -76,13 +62,13 @@ class TranslationConfigurationProvider {
 		foreach ($sys_languages as $row) {
 			$languageIconTitles[$row['uid']] = $row;
 			if ($row['static_lang_isocode'] && \TYPO3\CMS\Core\Utility\ExtensionManagementUtility::isLoaded('static_info_tables')) {
-				$staticLangRow = \TYPO3\CMS\Backend\Utility\BackendUtility::getRecord('static_languages', $row['static_lang_isocode'], 'lg_iso_2');
+				$staticLangRow = BackendUtility::getRecord('static_languages', $row['static_lang_isocode'], 'lg_iso_2');
 				if ($staticLangRow['lg_iso_2']) {
 					$languageIconTitles[$row['uid']]['ISOcode'] = $staticLangRow['lg_iso_2'];
 				}
 			}
 			if (strlen($row['flag'])) {
-				$languageIconTitles[$row['uid']]['flagIcon'] = \TYPO3\CMS\Backend\Utility\IconUtility::mapRecordTypeToSpriteIconName('sys_language', $row);
+				$languageIconTitles[$row['uid']]['flagIcon'] = IconUtility::mapRecordTypeToSpriteIconName('sys_language', $row);
 			}
 		}
 		return $languageIconTitles;
@@ -103,7 +89,7 @@ class TranslationConfigurationProvider {
 	public function translationInfo($table, $uid, $sys_language_uid = 0, $row = NULL, $selFieldList = '') {
 		if ($GLOBALS['TCA'][$table] && $uid) {
 			if ($row === NULL) {
-				$row = \TYPO3\CMS\Backend\Utility\BackendUtility::getRecordWSOL($table, $uid);
+				$row = BackendUtility::getRecordWSOL($table, $uid);
 			}
 			if (is_array($row)) {
 				$trTable = $this->getTranslationTable($table);
@@ -111,7 +97,7 @@ class TranslationConfigurationProvider {
 					if ($trTable !== $table || $row[$GLOBALS['TCA'][$table]['ctrl']['languageField']] <= 0) {
 						if ($trTable !== $table || $row[$GLOBALS['TCA'][$table]['ctrl']['transOrigPointerField']] == 0) {
 							// Look for translations of this record, index by language field value:
-							$translationsTemp = $GLOBALS['TYPO3_DB']->exec_SELECTgetRows($selFieldList ? $selFieldList : 'uid,' . $GLOBALS['TCA'][$trTable]['ctrl']['languageField'], $trTable, $GLOBALS['TCA'][$trTable]['ctrl']['transOrigPointerField'] . '=' . intval($uid) . ' AND pid=' . intval(($table === 'pages' ? $row['uid'] : $row['pid'])) . ' AND ' . $GLOBALS['TCA'][$trTable]['ctrl']['languageField'] . (!$sys_language_uid ? '>0' : '=' . intval($sys_language_uid)) . \TYPO3\CMS\Backend\Utility\BackendUtility::deleteClause($trTable) . \TYPO3\CMS\Backend\Utility\BackendUtility::versioningPlaceholderClause($trTable));
+							$translationsTemp = $GLOBALS['TYPO3_DB']->exec_SELECTgetRows($selFieldList ? $selFieldList : 'uid,' . $GLOBALS['TCA'][$trTable]['ctrl']['languageField'], $trTable, $GLOBALS['TCA'][$trTable]['ctrl']['transOrigPointerField'] . '=' . (int)$uid . ' AND pid=' . (int)($table === 'pages' ? $row['uid'] : $row['pid']) . ' AND ' . $GLOBALS['TCA'][$trTable]['ctrl']['languageField'] . (!$sys_language_uid ? '>0' : '=' . (int)$sys_language_uid) . BackendUtility::deleteClause($trTable) . BackendUtility::versioningPlaceholderClause($trTable));
 							$translations = array();
 							$translations_errors = array();
 							foreach ($translationsTemp as $r) {
@@ -184,6 +170,3 @@ class TranslationConfigurationProvider {
 	}
 
 }
-
-
-?>

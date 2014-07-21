@@ -1,33 +1,21 @@
 <?php
 namespace TYPO3\CMS\CssStyledContent\Controller;
 
-/***************************************************************
- *  Copyright notice
+/**
+ * This file is part of the TYPO3 CMS project.
  *
- *  (c) 1999-2013 Kasper Skårhøj (kasperYYYY@typo3.com)
- *  All rights reserved
+ * It is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License, either version 2
+ * of the License, or any later version.
  *
- *  This script is part of the TYPO3 project. The TYPO3 project is
- *  free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
+ * For the full copyright and license information, please read the
+ * LICENSE.txt file that was distributed with this source code.
  *
- *  The GNU General Public License can be found at
- *  http://www.gnu.org/copyleft/gpl.html.
- *  A copy is found in the textfile GPL.txt and important notices to the license
- *  from the author is found in LICENSE.txt distributed with these scripts.
- *
- *
- *  This script is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  This copyright notice MUST APPEAR in all copies of the script!
- ***************************************************************/
+ * The TYPO3 project - inspiring people to share!
+ */
 
 use TYPO3\CMS\Core\Utility\GeneralUtility;
+use TYPO3\CMS\Core\Utility\MathUtility;
 
 /**
  * Plugin class - instantiated from TypoScript.
@@ -82,7 +70,7 @@ class CssStyledContentController extends \TYPO3\CMS\Frontend\Plugin\AbstractPlug
 			// Get bodytext field content, returning blank if empty:
 			$field = isset($conf['field']) && trim($conf['field']) ? trim($conf['field']) : 'bodytext';
 			$content = trim($this->cObj->data[$field]);
-			if (!strcmp($content, '')) {
+			if ($content === '') {
 				return '';
 			}
 			// Split into single lines:
@@ -92,7 +80,7 @@ class CssStyledContentController extends \TYPO3\CMS\Frontend\Plugin\AbstractPlug
 			}
 			unset($val);
 			// Set header type:
-			$type = intval($this->cObj->data['layout']);
+			$type = (int)$this->cObj->data['layout'];
 			// Compile list:
 			$out = '
 				<ul class="csc-bulletlist csc-bulletlist-' . $type . '">' . implode('', $lines) . '
@@ -119,7 +107,7 @@ class CssStyledContentController extends \TYPO3\CMS\Frontend\Plugin\AbstractPlug
 			// Get bodytext field content
 			$field = isset($conf['field']) && trim($conf['field']) ? trim($conf['field']) : 'bodytext';
 			$content = trim($this->cObj->data[$field]);
-			if (!strcmp($content, '')) {
+			if ($content === '') {
 				return '';
 			}
 			// get flexform values
@@ -130,13 +118,13 @@ class CssStyledContentController extends \TYPO3\CMS\Frontend\Plugin\AbstractPlug
 			$tableClass = $this->pi_getFFvalue($this->cObj->data['pi_flexform'], 'acctables_tableclass');
 			$delimiter = trim($this->pi_getFFvalue($this->cObj->data['pi_flexform'], 'tableparsing_delimiter', 's_parsing'));
 			if ($delimiter) {
-				$delimiter = chr(intval($delimiter));
+				$delimiter = chr((int)$delimiter);
 			} else {
 				$delimiter = '|';
 			}
 			$quotedInput = trim($this->pi_getFFvalue($this->cObj->data['pi_flexform'], 'tableparsing_quote', 's_parsing'));
 			if ($quotedInput) {
-				$quotedInput = chr(intval($quotedInput));
+				$quotedInput = chr((int)$quotedInput);
 			} else {
 				$quotedInput = '';
 			}
@@ -158,7 +146,7 @@ class CssStyledContentController extends \TYPO3\CMS\Frontend\Plugin\AbstractPlug
 				$cells = str_getcsv($v, $delimiter, $quotedInput);
 				$newCells = array();
 				for ($a = 0; $a < $cols; $a++) {
-					if (!strcmp(trim($cells[$a]), '')) {
+					if (trim($cells[$a]) === '') {
 						$cells[$a] = '&nbsp;';
 					}
 					$cellAttribs = $noStyles ? '' : ($a > 0 && $cols - 1 == $a ? ' class="td-last td-' . $a . '"' : ' class="td-' . $a . '"');
@@ -209,7 +197,7 @@ class CssStyledContentController extends \TYPO3\CMS\Frontend\Plugin\AbstractPlug
 			}
 			$tableContents .= $tmpTable;
 			// Set header type:
-			$type = intval($this->cObj->data['layout']);
+			$type = (int)$this->cObj->data['layout'];
 			// Table tag params.
 			$tableTagParams = $this->getTableAttributes($conf, $type);
 			if (!$noStyles) {
@@ -242,7 +230,7 @@ class CssStyledContentController extends \TYPO3\CMS\Frontend\Plugin\AbstractPlug
 			$this->pi_loadLL();
 			$out = '';
 			// Set layout type:
-			$type = intval($this->cObj->data['layout']);
+			$type = (int)$this->cObj->data['layout'];
 			// See if the file path variable is set, this takes precedence
 			$filePathConf = $this->cObj->stdWrap($conf['filePath'], $conf['filePath.']);
 			if ($filePathConf) {
@@ -250,7 +238,7 @@ class CssStyledContentController extends \TYPO3\CMS\Frontend\Plugin\AbstractPlug
 				list($path) = explode('|', $filePathConf);
 			} else {
 				// Get the list of files from the field
-				$field = trim($conf['field']) ? trim($conf['field']) : 'media';
+				$field = trim($conf['field']) ?: 'media';
 				$fileList = $this->cObj->data[$field];
 				$path = 'uploads/media/';
 				if (
@@ -263,7 +251,7 @@ class CssStyledContentController extends \TYPO3\CMS\Frontend\Plugin\AbstractPlug
 			}
 			$path = trim($path);
 			// Explode into an array:
-			$fileArray = GeneralUtility::trimExplode(',', $fileList, 1);
+			$fileArray = GeneralUtility::trimExplode(',', $fileList, TRUE);
 			// If there were files to list...:
 			if (count($fileArray)) {
 				// Get the descriptions for the files (if any):
@@ -314,6 +302,8 @@ class CssStyledContentController extends \TYPO3\CMS\Frontend\Plugin\AbstractPlug
 						$filesData[$key]['filesize'] = filesize($absPath);
 						$filesData[$key]['fileextension'] = strtolower($fI['extension']);
 						$filesData[$key]['description'] = trim($descriptions[$key]);
+						$filesData[$key]['titletext'] = trim($titles[$key]);
+						$filesData[$key]['alttext'] = trim($altTexts[$key]);
 						$conf['linkProc.']['title'] = trim($titles[$key]);
 						if (isset($altTexts[$key]) && !empty($altTexts[$key])) {
 							$altText = trim($altTexts[$key]);
@@ -328,6 +318,9 @@ class CssStyledContentController extends \TYPO3\CMS\Frontend\Plugin\AbstractPlug
 						$GLOBALS['TSFE']->register['fileSize'] = $filesData[$key]['filesize'];
 						$GLOBALS['TSFE']->register['fileExtension'] = $filesData[$key]['fileextension'];
 						$GLOBALS['TSFE']->register['description'] = $filesData[$key]['description'];
+						$GLOBALS['TSFE']->register['titleText'] = $filesData[$key]['titletext'];
+						$GLOBALS['TSFE']->register['altText'] = $filesData[$key]['alttext'];
+
 						$filesData[$key]['linkedFilenameParts'] = $this->beautifyFileLink(
 							explode('//**//', $this->cObj->filelink($fileName, $conf['linkProc.'])),
 							$fileName,
@@ -348,6 +341,8 @@ class CssStyledContentController extends \TYPO3\CMS\Frontend\Plugin\AbstractPlug
 					$GLOBALS['TSFE']->register['description'] = $fileData['description'];
 					$GLOBALS['TSFE']->register['fileSize'] = $fileData['filesize'];
 					$GLOBALS['TSFE']->register['fileExtension'] = $fileData['fileextension'];
+					$GLOBALS['TSFE']->register['titleText'] = $fileData['titletext'];
+					$GLOBALS['TSFE']->register['altText'] = $fileData['alttext'];
 					$outputEntries[] = $this->cObj->cObjGetSingle($splitConf[$key]['itemRendering'], $splitConf[$key]['itemRendering.']);
 				}
 				if (isset($conf['outerWrap'])) {
@@ -388,7 +383,7 @@ class CssStyledContentController extends \TYPO3\CMS\Frontend\Plugin\AbstractPlug
 			if (count($relationParts) >= $colCount) {
 				$out = array();
 				for ($a = 0; $a < $colCount; $a++) {
-					$currentRelationValue = intval($relationParts[$a]);
+					$currentRelationValue = (int)$relationParts[$a];
 					if ($currentRelationValue >= 1) {
 						$out[$a] = $currentRelationValue;
 					} else {
@@ -409,7 +404,7 @@ class CssStyledContentController extends \TYPO3\CMS\Frontend\Plugin\AbstractPlug
 				}
 			}
 		}
-		return $relations ? $relations : $equalRelations;
+		return $relations ?: $equalRelations;
 	}
 
 	/**
@@ -437,7 +432,7 @@ class CssStyledContentController extends \TYPO3\CMS\Frontend\Plugin\AbstractPlug
 			// this evenly distributes rounding errors across all images in this row.
 			$suggestedWidth = round($accumDesiredWidth - $accumWidth);
 			// finalImgWidth may not exceed $availableWidth
-			$finalImgWidth = (int) min($availableWidth, $suggestedWidth);
+			$finalImgWidth = (int)min($availableWidth, $suggestedWidth);
 			$accumWidth += $finalImgWidth;
 			$columnWidths[$a] = $finalImgWidth;
 		}
@@ -463,9 +458,14 @@ class CssStyledContentController extends \TYPO3\CMS\Frontend\Plugin\AbstractPlug
 		if (!$renderMethod || $renderMethod == 'table') {
 			return $this->cObj->IMGTEXT($conf);
 		}
+		$restoreRegisters = FALSE;
+		if (isset($conf['preRenderRegisters.'])) {
+			$restoreRegisters = TRUE;
+			$this->cObj->LOAD_REGISTER($conf['preRenderRegisters.'], 'LOAD_REGISTER');
+		}
 		// Specific configuration for the chosen rendering method
 		if (is_array($conf['rendering.'][$renderMethod . '.'])) {
-			$conf = $this->cObj->joinTSarrays($conf, $conf['rendering.'][$renderMethod . '.']);
+			$conf = array_replace_recursive($conf, $conf['rendering.'][$renderMethod . '.']);
 		}
 		// Image or Text with Image?
 		if (is_array($conf['text.'])) {
@@ -474,14 +474,24 @@ class CssStyledContentController extends \TYPO3\CMS\Frontend\Plugin\AbstractPlug
 		$imgList = trim($this->cObj->stdWrap($conf['imgList'], $conf['imgList.']));
 		if (!$imgList) {
 			// No images, that's easy
+			if ($restoreRegisters) {
+				$this->cObj->LOAD_REGISTER(array(), 'RESTORE_REGISTER');
+			}
 			return $content;
 		}
-		$imgs = GeneralUtility::trimExplode(',', $imgList);
-		$imgStart = intval($this->cObj->stdWrap($conf['imgStart'], $conf['imgStart.']));
+		$imgs = GeneralUtility::trimExplode(',', $imgList, TRUE);
+		if (count($imgs) === 0) {
+			// The imgList was not empty but did only contain empty values
+			if ($restoreRegisters) {
+				$this->cObj->LOAD_REGISTER(array(), 'RESTORE_REGISTER');
+			}
+			return $content;
+		}
+		$imgStart = (int)$this->cObj->stdWrap($conf['imgStart'], $conf['imgStart.']);
 		$imgCount = count($imgs) - $imgStart;
-		$imgMax = intval($this->cObj->stdWrap($conf['imgMax'], $conf['imgMax.']));
+		$imgMax = (int)$this->cObj->stdWrap($conf['imgMax'], $conf['imgMax.']);
 		if ($imgMax) {
-			$imgCount = \TYPO3\CMS\Core\Utility\MathUtility::forceIntegerInRange($imgCount, 0, $imgMax);
+			$imgCount = MathUtility::forceIntegerInRange($imgCount, 0, $imgMax);
 		}
 		$imgPath = $this->cObj->stdWrap($conf['imgPath'], $conf['imgPath.']);
 		// Does we need to render a "global caption" (below the whole image block)?
@@ -490,14 +500,18 @@ class CssStyledContentController extends \TYPO3\CMS\Frontend\Plugin\AbstractPlug
 			// If we just have one image, the caption relates to the image, so it is not "global"
 			$renderGlobalCaption = FALSE;
 		}
+		$imgListContainsReferenceUids = (bool)(isset($conf['imgListContainsReferenceUids.'])
+			? $this->cObj->stdWrap($conf['imgListContainsReferenceUids'], $conf['imgListContainsReferenceUids.'])
+			: $conf['imgListContainsReferenceUids']);
 		// Use the calculated information (amount of images, if global caption is wanted) to choose a different rendering method for the images-block
 		$GLOBALS['TSFE']->register['imageCount'] = $imgCount;
 		$GLOBALS['TSFE']->register['renderGlobalCaption'] = $renderGlobalCaption;
+		$fallbackRenderMethod = '';
 		if ($conf['fallbackRendering']) {
 			$fallbackRenderMethod = $this->cObj->cObjGetSingle($conf['fallbackRendering'], $conf['fallbackRendering.']);
 		}
 		if ($fallbackRenderMethod && is_array($conf['rendering.'][$fallbackRenderMethod . '.'])) {
-			$conf = $this->cObj->joinTSarrays($conf, $conf['rendering.'][$fallbackRenderMethod . '.']);
+			$conf = array_replace_recursive($conf, $conf['rendering.'][$fallbackRenderMethod . '.']);
 		}
 		// Set the accessibility mode which uses a different type of markup, used 4.7+
 		$accessibilityMode = FALSE;
@@ -515,24 +529,24 @@ class CssStyledContentController extends \TYPO3\CMS\Frontend\Plugin\AbstractPlug
 		$imagePosition = $position & 7;
 		// 0,8,16,24 (above,below,intext,intext-wrap)
 		$contentPosition = $position & 24;
-		$textMargin = intval($this->cObj->stdWrap($conf['textMargin'], $conf['textMargin.']));
+		$textMargin = (int)$this->cObj->stdWrap($conf['textMargin'], $conf['textMargin.']);
 		if (!$conf['textMargin_outOfText'] && $contentPosition < 16) {
 			$textMargin = 0;
 		}
-		$colspacing = intval($this->cObj->stdWrap($conf['colSpace'], $conf['colSpace.']));
-		$border = intval($this->cObj->stdWrap($conf['border'], $conf['border.'])) ? 1 : 0;
-		$borderThickness = intval($this->cObj->stdWrap($conf['borderThick'], $conf['borderThick.']));
-		$borderThickness = $borderThickness ? $borderThickness : 1;
-		$borderSpace = $conf['borderSpace'] && $border ? intval($conf['borderSpace']) : 0;
+		$colspacing = (int)$this->cObj->stdWrap($conf['colSpace'], $conf['colSpace.']);
+		$border = (int)$this->cObj->stdWrap($conf['border'], $conf['border.']) ? 1 : 0;
+		$borderThickness = (int)$this->cObj->stdWrap($conf['borderThick'], $conf['borderThick.']);
+		$borderThickness = $borderThickness ?: 1;
+		$borderSpace = $conf['borderSpace'] && $border ? (int)$conf['borderSpace'] : 0;
 		// Generate cols
-		$cols = intval($this->cObj->stdWrap($conf['cols'], $conf['cols.']));
+		$cols = (int)$this->cObj->stdWrap($conf['cols'], $conf['cols.']);
 		$colCount = $cols > 1 ? $cols : 1;
 		if ($colCount > $imgCount) {
 			$colCount = $imgCount;
 		}
 		$rowCount = ceil($imgCount / $colCount);
 		// Generate rows
-		$rows = intval($this->cObj->stdWrap($conf['rows'], $conf['rows.']));
+		$rows = (int)$this->cObj->stdWrap($conf['rows'], $conf['rows.']);
 		if ($rows > 1) {
 			$rowCount = $rows;
 			if ($rowCount > $imgCount) {
@@ -541,8 +555,8 @@ class CssStyledContentController extends \TYPO3\CMS\Frontend\Plugin\AbstractPlug
 			$colCount = $rowCount > 1 ? ceil($imgCount / $rowCount) : $imgCount;
 		}
 		// Max Width
-		$maxW = intval($this->cObj->stdWrap($conf['maxW'], $conf['maxW.']));
-		$maxWInText = intval($this->cObj->stdWrap($conf['maxWInText'], $conf['maxWInText.']));
+		$maxW = (int)$this->cObj->stdWrap($conf['maxW'], $conf['maxW.']);
+		$maxWInText = (int)$this->cObj->stdWrap($conf['maxWInText'], $conf['maxWInText.']);
 		$fiftyPercentWidthInText = round($maxW / 100 * 50);
 		// in Text
 		if ($contentPosition >= 16) {
@@ -557,26 +571,35 @@ class CssStyledContentController extends \TYPO3\CMS\Frontend\Plugin\AbstractPlug
 		$netW = $maxW - $colspacing * ($colCount - 1) - $colCount * $border * ($borderThickness + $borderSpace) * 2;
 		// Specify the maximum width for each column
 		$columnWidths = $this->getImgColumnWidths($conf, $colCount, $netW);
-		$image_compression = intval($this->cObj->stdWrap($conf['image_compression'], $conf['image_compression.']));
-		$image_effects = intval($this->cObj->stdWrap($conf['image_effects'], $conf['image_effects.']));
-		$image_frames = intval($this->cObj->stdWrap($conf['image_frames.']['key'], $conf['image_frames.']['key.']));
+		$image_compression = (int)$this->cObj->stdWrap($conf['image_compression'], $conf['image_compression.']);
+		$image_effects = (int)$this->cObj->stdWrap($conf['image_effects'], $conf['image_effects.']);
+		$image_frames = (int)$this->cObj->stdWrap($conf['image_frames.']['key'], $conf['image_frames.']['key.']);
 		// EqualHeight
-		$equalHeight = intval($this->cObj->stdWrap($conf['equalH'], $conf['equalH.']));
+		$equalHeight = (int)$this->cObj->stdWrap($conf['equalH'], $conf['equalH.']);
 		if ($equalHeight) {
-			// Initiate gifbuilder object in order to get dimensions AND calculate the imageWidth's
-			$gifCreator = GeneralUtility::makeInstance('TYPO3\\CMS\\Frontend\\Imaging\\GifBuilder');
-			$gifCreator->init();
 			$relations_cols = array();
 			// contains the individual width of all images after scaling to $equalHeight
 			$imgWidths = array();
 			for ($a = 0; $a < $imgCount; $a++) {
 				$imgKey = $a + $imgStart;
-				$imgInfo = $gifCreator->getImageDimensions($imgPath . $imgs[$imgKey]);
+
+				/** @var $file \TYPO3\CMS\Core\Resource\File */
+				if (MathUtility::canBeInterpretedAsInteger($imgs[$imgKey])) {
+					if ($imgListContainsReferenceUids) {
+						$file = $this->getResourceFactory()->getFileReferenceObject((int)$imgs[$imgKey])->getOriginalFile();
+					} else {
+						$file = $this->getResourceFactory()->getFileObject((int)$imgs[$imgKey]);
+					}
+
+				} else {
+					$file = $this->getResourceFactory()->getFileObjectFromCombinedIdentifier($imgPath . $imgs[$imgKey]);
+				}
+
 				// relationship between the original height and the wished height
-				$rel = $imgInfo[1] / $equalHeight;
+				$rel = $file->getProperty('height') / $equalHeight;
 				// if relations is zero, then the addition of this value is omitted as the image is not expected to display because of some error.
 				if ($rel) {
-					$imgWidths[$a] = $imgInfo[0] / $rel;
+					$imgWidths[$a] = $file->getProperty('width') / $rel;
 					// counts the total width of the row with the new height taken into consideration.
 					$relations_cols[(int)floor($a / $colCount)] += $imgWidths[$a];
 				}
@@ -595,8 +618,9 @@ class CssStyledContentController extends \TYPO3\CMS\Frontend\Plugin\AbstractPlug
 		for ($a = 0; $a < $imgCount; $a++) {
 			$imgKey = $a + $imgStart;
 			// If the image cannot be interpreted as integer (therefore filename and no FAL id), add the image path
-			if (\TYPO3\CMS\Core\Utility\MathUtility::canBeInterpretedAsInteger($imgs[$imgKey])) {
-				$totalImagePath = intval($imgs[$imgKey]);
+			if (MathUtility::canBeInterpretedAsInteger($imgs[$imgKey])) {
+				$totalImagePath = (int)$imgs[$imgKey];
+				$this->initializeCurrentFileInContentObjectRenderer($totalImagePath, $imgListContainsReferenceUids);
 			} else {
 				$totalImagePath = $imgPath . $imgs[$imgKey];
 			}
@@ -605,7 +629,7 @@ class CssStyledContentController extends \TYPO3\CMS\Frontend\Plugin\AbstractPlug
 			$GLOBALS['TSFE']->register['IMAGE_NUM_CURRENT'] = $imgKey;
 			$GLOBALS['TSFE']->register['ORIG_FILENAME'] = $totalImagePath;
 			$this->cObj->data[$this->cObj->currentValKey] = $totalImagePath;
-			$imgObjNum = intval($splitArr[$a]['imgObjNum']);
+			$imgObjNum = (int)$splitArr[$a]['imgObjNum'];
 			$imgConf = $conf[$imgObjNum . '.'];
 			if ($equalHeight) {
 				if ($a % $colCount == 0) {
@@ -633,7 +657,7 @@ class CssStyledContentController extends \TYPO3\CMS\Frontend\Plugin\AbstractPlug
 				// this evenly distributes rounding errors across all images in this row.
 				$suggestedWidth = round($accumDesiredWidth - $accumWidth);
 				// finalImgWidth may not exceed $availableWidth
-				$finalImgWidth = (int) min($availableWidth, $suggestedWidth);
+				$finalImgWidth = (int)min($availableWidth, $suggestedWidth);
 				$accumWidth += $finalImgWidth;
 				$imgConf['file.']['width'] = $finalImgWidth;
 				$imgConf['file.']['height'] = round($desiredHeight);
@@ -697,9 +721,11 @@ class CssStyledContentController extends \TYPO3\CMS\Frontend\Plugin\AbstractPlug
 					if ($image_compression == 1) {
 						$tempImport = $imgConf['file.']['import'];
 						$tempImport_dot = $imgConf['file.']['import.'];
+						$tempTreatIdAsReference = $imgConf['file.']['treatIdAsReference'];
 						unset($imgConf['file.']);
 						$imgConf['file.']['import'] = $tempImport;
 						$imgConf['file.']['import.'] = $tempImport_dot;
+						$imgConf['file.']['treatIdAsReference'] = $tempTreatIdAsReference;
 					} elseif (isset($this->cObj->image_compression[$image_compression])) {
 						$imgConf['file.']['params'] .= ' ' . $this->cObj->image_compression[$image_compression]['params'];
 						$imgConf['file.']['ext'] = $this->cObj->image_compression[$image_compression]['ext'];
@@ -708,7 +734,7 @@ class CssStyledContentController extends \TYPO3\CMS\Frontend\Plugin\AbstractPlug
 				}
 				if ($titleInLink && !$titleInLinkAndImg) {
 					// Check if the image will be linked
-					$link = $this->cObj->imageLinkWrap('', $totalImagePath, $imgConf['imageLinkWrap.']);
+					$link = $this->cObj->imageLinkWrap('', $this->cObj->getCurrentFile() ?: $totalImagePath, $imgConf['imageLinkWrap.']);
 					if ($link) {
 						// Title in A-tag only (set above: ATagParams), not in IMG-tag
 						unset($imgConf['titleText']);
@@ -805,6 +831,13 @@ class CssStyledContentController extends \TYPO3\CMS\Frontend\Plugin\AbstractPlug
 						// Register IMAGE_NUM_CURRENT for the caption
 						$GLOBALS['TSFE']->register['IMAGE_NUM_CURRENT'] = $imageKey;
 						$this->cObj->data[$this->cObj->currentValKey] = $origImages[$imageKey]['origFile'];
+						if (MathUtility::canBeInterpretedAsInteger($imgs[$imageKey])) {
+							$this->initializeCurrentFileInContentObjectRenderer((int)$imgs[$imageKey], $imgListContainsReferenceUids);
+						} elseif (!isset($imgs[$imageKey])) {
+							// If not all columns in the last row are filled $imageKey gets larger than
+							// the array. In that case we clear the current file.
+							$this->cObj->setCurrentFile(NULL);
+						}
 						// Get the image if not an empty cell
 						if (isset($imgsTag[$imageKey])) {
 							$image = $this->cObj->stdWrap($imgsTag[$imageKey], $conf['imgTagStdWrap.']);
@@ -861,9 +894,7 @@ class CssStyledContentController extends \TYPO3\CMS\Frontend\Plugin\AbstractPlug
 				}
 			}
 			// Set the margin for image + text, no wrap always to avoid multiple stylesheets
-			$noWrapMargin = (int) (($maxWInText ? $maxWInText : $fiftyPercentWidthInText) + intval(
-				$this->cObj->stdWrap($conf['textMargin'], $conf['textMargin.'])
-			));
+			$noWrapMargin = (int)(($maxWInText ? $maxWInText : $fiftyPercentWidthInText) + (int)$this->cObj->stdWrap($conf['textMargin'], $conf['textMargin.']));
 			$this->addPageStyle('.csc-textpic-intext-right-nowrap .csc-textpic-text', 'margin-right: ' . $noWrapMargin . 'px;');
 			$this->addPageStyle('.csc-textpic-intext-left-nowrap .csc-textpic-text', 'margin-left: ' . $noWrapMargin . 'px;');
 			// Beside Text where the image block width is not equal to maxW
@@ -880,7 +911,7 @@ class CssStyledContentController extends \TYPO3\CMS\Frontend\Plugin\AbstractPlug
 			}
 			// Add the border class if needed
 			if ($border) {
-				$classes[] = $conf['borderClass'] ? $conf['borderClass'] : 'csc-textpic-border';
+				$classes[] = $conf['borderClass'] ?: 'csc-textpic-border';
 			}
 			// Add the class for equal height if needed
 			if ($equalHeight) {
@@ -932,6 +963,9 @@ class CssStyledContentController extends \TYPO3\CMS\Frontend\Plugin\AbstractPlug
 					$GLOBALS['TSFE']->register['imagewidth'] = $origImages[$imgKey][0];
 					$GLOBALS['TSFE']->register['imagespace'] = $imageSpace;
 					$GLOBALS['TSFE']->register['imageheight'] = $origImages[$imgKey][1];
+					if (MathUtility::canBeInterpretedAsInteger($imgs[$imgKey])) {
+						$this->initializeCurrentFileInContentObjectRenderer(intval($imgs[$imgKey]), $imgListContainsReferenceUids);
+					}
 					if ($imageSpace > $maxImageSpace) {
 						$maxImageSpace = $imageSpace;
 					}
@@ -995,7 +1029,7 @@ class CssStyledContentController extends \TYPO3\CMS\Frontend\Plugin\AbstractPlug
 			}
 			$borderClass = '';
 			if ($border) {
-				$borderClass = $conf['borderClass'] ? $conf['borderClass'] : 'csc-textpic-border';
+				$borderClass = $conf['borderClass'] ?: 'csc-textpic-border';
 			}
 			// Multiple classes with all properties, to be styled in CSS
 			$class = '';
@@ -1026,11 +1060,46 @@ class CssStyledContentController extends \TYPO3\CMS\Frontend\Plugin\AbstractPlug
 				$images = $this->cObj->stdWrap($images, $conf['imageStdWrapNoWidth.']);
 			}
 		}
-		$output = $this->cObj->cObjGetSingle($conf['layout'], $conf['layout.']);
-		$output = str_replace('###TEXT###', $content, $output);
-		$output = str_replace('###IMAGES###', $images, $output);
-		$output = str_replace('###CLASSES###', $class, $output);
+
+		$output = str_replace(
+			array(
+				'###TEXT###',
+				'###IMAGES###',
+				'###CLASSES###'
+			),
+			array(
+				$content,
+				$images,
+				$class
+			),
+			$this->cObj->cObjGetSingle($conf['layout'], $conf['layout.'])
+		);
+
+		if ($restoreRegisters) {
+			$this->cObj->LOAD_REGISTER(array(), 'RESTORE_REGISTER');
+		}
+
 		return $output;
+	}
+
+	/**
+	 * Loads the file / file reference object and sets it in the
+	 * currentFile property of the ContentObjectRenderer.
+	 *
+	 * This makes the file data available during image rendering.
+	 *
+	 * @param int $fileUid The UID of the file or file reference (depending on $treatAsReference) that should be loaded.
+	 * @param bool $treatAsReference If TRUE the given UID will be used to load a file reference otherwise it will be used to load a regular file.
+	 * @return void
+	 */
+	protected function initializeCurrentFileInContentObjectRenderer($fileUid, $treatAsReference) {
+		$resourceFactory = \TYPO3\CMS\Core\Resource\ResourceFactory::getInstance();
+		if ($treatAsReference) {
+			$imageFile = $resourceFactory->getFileReferenceObject($fileUid);
+		} else {
+			$imageFile = $resourceFactory->getFileObject($fileUid);
+		}
+		$this->cObj->setCurrentFile($imageFile);
 	}
 
 	/***********************************
@@ -1053,7 +1122,7 @@ class CssStyledContentController extends \TYPO3\CMS\Frontend\Plugin\AbstractPlug
 			return $hookObject->renderSpace($content, $configuration);
 		}
 		if (isset($configuration['space']) && in_array($configuration['space'], array('before', 'after'))) {
-			$constant = (int) $configuration['constant'];
+			$constant = (int)$configuration['constant'];
 			if ($configuration['space'] === 'before') {
 				$value = $constant + $this->cObj->data['spaceBefore'];
 				$declaration = 'margin-top: ' . $value . 'px !important;';
@@ -1114,9 +1183,9 @@ class CssStyledContentController extends \TYPO3\CMS\Frontend\Plugin\AbstractPlug
 	public function getTableAttributes($conf, $type) {
 		// Initializing:
 		$tableTagParams_conf = $conf['tableParams_' . $type . '.'];
-		$border = $this->cObj->data['table_border'] ? intval($this->cObj->data['table_border']) : $tableTagParams_conf['border'];
-		$cellSpacing = $this->cObj->data['table_cellspacing'] ? intval($this->cObj->data['table_cellspacing']) : $tableTagParams_conf['cellspacing'];
-		$cellPadding = $this->cObj->data['table_cellpadding'] ? intval($this->cObj->data['table_cellpadding']) : $tableTagParams_conf['cellpadding'];
+		$border = $this->cObj->data['table_border'] ? (int)$this->cObj->data['table_border'] : $tableTagParams_conf['border'];
+		$cellSpacing = $this->cObj->data['table_cellspacing'] ? (int)$this->cObj->data['table_cellspacing'] : $tableTagParams_conf['cellspacing'];
+		$cellPadding = $this->cObj->data['table_cellpadding'] ? (int)$this->cObj->data['table_cellpadding'] : $tableTagParams_conf['cellpadding'];
 		$summary = trim(htmlspecialchars($this->pi_getFFvalue($this->cObj->data['pi_flexform'], 'acctables_summary')));
 		// Create table attributes and classes array:
 		$tableTagParams = ($classes = array());
@@ -1204,5 +1273,12 @@ class CssStyledContentController extends \TYPO3\CMS\Frontend\Plugin\AbstractPlug
 		}
 	}
 
+	/**
+	 * Get the ResourceFactory
+	 *
+	 * @return \TYPO3\CMS\Core\Resource\ResourceFactory
+	 */
+	protected function getResourceFactory() {
+		return \TYPO3\CMS\Core\Resource\ResourceFactory::getInstance();
+	}
 }
-?>

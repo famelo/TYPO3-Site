@@ -1,28 +1,18 @@
 <?php
 namespace TYPO3\CMS\Frontend\Tests\Unit\ContentObject;
 
-/***************************************************************
- *  Copyright notice
+/**
+ * This file is part of the TYPO3 CMS project.
  *
- *  (c) 2009-2013 Oliver Hader <oliver@typo3.org>
- *  All rights reserved
+ * It is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License, either version 2
+ * of the License, or any later version.
  *
- *  This script is part of the TYPO3 project. The TYPO3 project is
- *  free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
+ * For the full copyright and license information, please read the
+ * LICENSE.txt file that was distributed with this source code.
  *
- *  The GNU General Public License can be found at
- *  http://www.gnu.org/copyleft/gpl.html.
- *
- *  This script is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  This copyright notice MUST APPEAR in all copies of the script!
- ***************************************************************/
+ * The TYPO3 project - inspiring people to share!
+ */
 /**
  * Testcase for TYPO3\CMS\Frontend\ContentObject\ContentObjectRenderer
  *
@@ -50,6 +40,7 @@ class ContentObjectRendererTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	 * Set up
 	 */
 	public function setUp() {
+		$GLOBALS['TYPO3_DB'] = $this->getMock('TYPO3\\CMS\\Core\\Database\\DatabaseConnection', array());
 		$this->template = $this->getMock('TYPO3\\CMS\\Core\\TypoScript\\TemplateService', array('getFileName', 'linkData'));
 		$this->tsfe = $this->getAccessibleMock('TYPO3\\CMS\\Frontend\\Controller\\TypoScriptFrontendController', array('dummy'), array(), '', FALSE);
 		$this->tsfe->tmpl = $this->template;
@@ -61,7 +52,10 @@ class ContentObjectRendererTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 		$GLOBALS['TSFE']->csConvObj = new \TYPO3\CMS\Core\Charset\CharsetConverter();
 		$GLOBALS['TSFE']->renderCharset = 'utf-8';
 		$GLOBALS['TYPO3_CONF_VARS']['SYS']['TYPO3\\CMS\\Core\\Charset\\CharsetConverter_utils'] = 'mbstring';
-		$this->cObj = $this->getAccessibleMock('\\TYPO3\\CMS\\Frontend\\ContentObject\\ContentObjectRenderer', array('dummy'));
+		$this->cObj = $this->getAccessibleMock(
+			'TYPO3\\CMS\\Frontend\\ContentObject\\ContentObjectRenderer',
+			array('getResourceFactory')
+		);
 		$this->cObj->start(array(), 'tt_content');
 	}
 
@@ -87,14 +81,25 @@ class ContentObjectRendererTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	/**
 	 * @test
 	 */
-	public function getImgResourceHookGetsCalled() {
-		$this->template->expects($this->atLeastOnce())->method('getFileName')->with('typo3/clear.gif')->will($this->returnValue('typo3/clear.gif'));
+	public function getImgResourceCallsGetImgResourcePostProcessHook() {
+		$this->template
+			->expects($this->atLeastOnce())
+			->method('getFileName')
+			->with('typo3/clear.gif')
+			->will($this->returnValue('typo3/clear.gif'));
+
+		$resourceFactory = $this->getMock('TYPO3\\CMS\\Core\\Resource\\ResourceFactory', array(), array(), '', FALSE);
+		$this->cObj->expects($this->any())->method('getResourceFactory')->will($this->returnValue($resourceFactory));
+
 		$className = uniqid('tx_coretest');
 		$getImgResourceHookMock = $this->getMock('TYPO3\\CMS\\Frontend\\ContentObject\\ContentObjectGetImageResourceHookInterface', array('getImgResourcePostProcess'), array(), $className);
-		$getImgResourceHookMock->expects($this->once())->method('getImgResourcePostProcess')->will($this->returnCallback(array($this, 'isGetImgResourceHookCalledCallback')));
+		$getImgResourceHookMock
+			->expects($this->once())
+			->method('getImgResourcePostProcess')
+			->will($this->returnCallback(array($this, 'isGetImgResourceHookCalledCallback')));
 		$getImgResourceHookObjects = array($getImgResourceHookMock);
 		$this->cObj->_setRef('getImgResourceHookObjects', $getImgResourceHookObjects);
-		$this->cObj->IMAGE(array('file' => 'typo3/clear.gif'));
+		$this->cObj->getImgResource('typo3/clear.gif', array());
 	}
 
 	/**
@@ -153,19 +158,6 @@ class ContentObjectRendererTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 			array('SVG', 'ScalableVectorGraphics'),
 			array('EDITPANEL', 'EditPanel'),
 		);
-	}
-
-	/**
-	 * @test
-	 * @dataProvider getContentObjectValidContentObjectsDataProvider
-	 * @param string $name TypoScript name of content object
-	 * @param string $className Expected class name
-	 */
-	public function getContentObjectUsesExistingInstanceOfRequestedObjectType($name, $className) {
-		$fullClassName = 'TYPO3\\CMS\\Frontend\\ContentObject\\' . $className . 'ContentObject';
-		$contentObjectInstance = $this->getMock($fullClassName, array(), array(), '', FALSE);
-		$this->cObj->_set('contentObjects', array($className => $contentObjectInstance));
-		$this->assertSame($contentObjectInstance, $this->cObj->getContentObject($name));
 	}
 
 	/**
@@ -253,7 +245,7 @@ class ContentObjectRendererTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 		$_SERVER['QUERY_STRING'] = 'key1=value1';
 		$getQueryArgumentsConfiguration = array();
 		$overruleArguments = array(
-			// Should be overriden
+			// Should be overridden
 			'key1' => 'value1Overruled',
 			// Shouldn't be set: Parameter doesn't exist in source array and is not forced
 			'key2' => 'value2Overruled'
@@ -344,6 +336,70 @@ class ContentObjectRendererTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 		$this->assertEquals($expectedResult, $actualResult);
 		$getQueryArgumentsConfiguration['method'] = 'POST';
 		$actualResult = $this->cObj->getQueryArguments($getQueryArgumentsConfiguration, $overruleArguments, TRUE);
+		$this->assertEquals($expectedResult, $actualResult);
+	}
+
+	/**
+	 * @test
+	 */
+	public function getQueryArgumentsWithMethodPostGetMergesParameters() {
+		$_POST = array(
+			'key1' => 'POST1',
+			'key2' => 'POST2',
+			'key3' => array(
+				'key31' => 'POST31',
+				'key32' => 'POST32',
+				'key33' => array(
+					'key331' => 'POST331',
+					'key332' => 'POST332',
+				)
+			)
+		);
+		$_GET = array(
+			'key2' => 'GET2',
+			'key3' => array(
+				'key32' => 'GET32',
+				'key33' => array(
+					'key331' => 'GET331',
+				)
+			)
+		);
+		$getQueryArgumentsConfiguration = array();
+		$getQueryArgumentsConfiguration['method'] = 'POST,GET';
+		$expectedResult = $this->rawUrlEncodeSquareBracketsInUrl('&key1=POST1&key2=GET2&key3[key31]=POST31&key3[key32]=GET32&key3[key33][key331]=GET331&key3[key33][key332]=POST332');
+		$actualResult = $this->cObj->getQueryArguments($getQueryArgumentsConfiguration);
+		$this->assertEquals($expectedResult, $actualResult);
+	}
+
+	/**
+	 * @test
+	 */
+	public function getQueryArgumentsWithMethodGetPostMergesParameters() {
+		$_GET = array(
+			'key1' => 'GET1',
+			'key2' => 'GET2',
+			'key3' => array(
+				'key31' => 'GET31',
+				'key32' => 'GET32',
+				'key33' => array(
+					'key331' => 'GET331',
+					'key332' => 'GET332',
+				)
+			)
+		);
+		$_POST = array(
+			'key2' => 'POST2',
+			'key3' => array(
+				'key32' => 'POST32',
+				'key33' => array(
+					'key331' => 'POST331',
+				)
+			)
+		);
+		$getQueryArgumentsConfiguration = array();
+		$getQueryArgumentsConfiguration['method'] = 'GET,POST';
+		$expectedResult = $this->rawUrlEncodeSquareBracketsInUrl('&key1=GET1&key2=POST2&key3[key31]=GET31&key3[key32]=POST32&key3[key33][key331]=POST331&key3[key33][key332]=GET332');
+		$actualResult = $this->cObj->getQueryArguments($getQueryArgumentsConfiguration);
 		$this->assertEquals($expectedResult, $actualResult);
 	}
 
@@ -852,7 +908,7 @@ class ContentObjectRendererTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 				),
 				'00Alien000',
 			),
-			'pad string with padWith _ and type both and length 6' => array(
+			'pad string with padWith ___ and type both and length 6' => array(
 				'Alien',
 				array(
 					'length' => '6',
@@ -860,6 +916,44 @@ class ContentObjectRendererTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 					'type' => 'both',
 				),
 				'Alien_',
+			),
+			'pad string with padWith _ and type both and length 12, using stdWrap for length' => array(
+				'Alien',
+				array(
+					'length' => '1',
+					'length.' => array(
+						'wrap' => '|2',
+					),
+					'padWith' => '_',
+					'type' => 'both',
+				),
+				'___Alien____',
+			),
+			'pad string with padWith _ and type both and length 12, using stdWrap for padWidth' => array(
+				'Alien',
+				array(
+					'length' => '12',
+					'padWith' => '_',
+					'padWith.' => array(
+						'wrap' => '-|=',
+					),
+					'type' => 'both',
+				),
+				'-_=Alien-_=-',
+			),
+			'pad string with padWith _ and type both and length 12, using stdWrap for type' => array(
+				'Alien',
+				array(
+					'length' => '12',
+					'padWith' => '_',
+					'type' => 'both',
+					// make type become "left"
+					'type.' => array(
+						'substring' => '2,1',
+						'wrap' => 'lef|',
+					),
+				),
+				'_______Alien',
 			),
 		);
 	}
@@ -1038,7 +1132,34 @@ class ContentObjectRendererTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 					)
 				),
 				'There is an animal, an animal and an animal around the block! Yeah!'
-			)
+			),
+			'replacement with optionSplit, normal pattern' => array(
+				'There_is_a_cat,_a_dog_and_a_tiger_in_da_hood!_Yeah!',
+				array(
+					'replacement.' => array(
+						'10.' => array(
+							'search' => '_',
+							'replace' => '1 || 2 || 3',
+							'useOptionSplitReplace' => '1'
+						),
+					)
+				),
+				'There1is2a3cat,3a3dog3and3a3tiger3in3da3hood!3Yeah!'
+			),
+			'replacement with optionSplit, using regex' => array(
+				'There is a cat, a dog and a tiger in da hood! Yeah!',
+				array(
+					'replacement.' => array(
+						'10.' => array(
+							'search' => '#(a) (Cat|Dog|Tiger)#i',
+							'replace' => '${1} tiny ${2} || ${1} midsized ${2} || ${1} big ${2}',
+							'useOptionSplitReplace' => '1',
+							'useRegExp' => '1'
+						)
+					)
+				),
+				'There is a tiny cat, a midsized dog and a big tiger in da hood! Yeah!'
+			),
 		);
 		return $data;
 	}
@@ -1162,10 +1283,98 @@ class ContentObjectRendererTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	 * @test
 	 */
 	public function getQuery($table, $conf, $expected) {
+		$GLOBALS['TCA'] = array(
+			'pages' => array(
+				'ctrl' => array(
+					'enablecolumns' => array(
+						'disabled' => 'hidden'
+					)
+				)
+			),
+			'tt_content' => array(
+				'ctrl' => array(
+					'enablecolumns' => array(
+						'disabled' => 'hidden'
+					),
+					'versioningWS' => 2
+				)
+			),
+		);
 		$result = $this->cObj->getQuery($table, $conf, TRUE);
 		foreach ($expected as $field => $value) {
 			$this->assertEquals($value, $result[$field]);
 		}
+	}
+
+	/**
+	 * @test
+	 */
+	public function getQueryCallsGetTreeListWithNegativeValuesIfRecursiveIsSet() {
+		$GLOBALS['TCA'] = array(
+			'pages' => array(
+				'ctrl' => array(
+					'enablecolumns' => array(
+						'disabled' => 'hidden'
+					)
+				)
+			),
+			'tt_content' => array(
+				'ctrl' => array(
+					'enablecolumns' => array(
+						'disabled' => 'hidden'
+					)
+				)
+			),
+		);
+		$this->cObj = $this->getAccessibleMock('\\TYPO3\\CMS\\Frontend\\ContentObject\\ContentObjectRenderer', array('getTreeList'));
+		$this->cObj->start(array(), 'tt_content');
+		$conf = array(
+			'recursive' => '15',
+			'pidInList' => '16, -35'
+		);
+		$this->cObj->expects($this->at(0))
+			->method('getTreeList')
+			->with(-16, 15)
+			->will($this->returnValue('15,16'));
+		$this->cObj->expects($this->at(1))
+			->method('getTreeList')
+			->with(-35, 15)
+			->will($this->returnValue('15,35'));
+		$this->cObj->getQuery('tt_content', $conf, TRUE);
+	}
+
+	/**
+	 * @test
+	 */
+	public function getQueryCallsGetTreeListWithCurrentPageIfThisIsSet() {
+		$GLOBALS['TCA'] = array(
+			'pages' => array(
+				'ctrl' => array(
+					'enablecolumns' => array(
+						'disabled' => 'hidden'
+					)
+				)
+			),
+			'tt_content' => array(
+				'ctrl' => array(
+					'enablecolumns' => array(
+						'disabled' => 'hidden'
+					)
+				)
+			),
+		);
+		$this->cObj = $this->getAccessibleMock('\\TYPO3\\CMS\\Frontend\\ContentObject\\ContentObjectRenderer', array('getTreeList'));
+		$GLOBALS['TSFE']->id = 27;
+		$this->cObj->start(array(), 'tt_content');
+		$conf = array(
+			'pidInList' => 'this',
+			'recursive' => '4'
+		);
+		$this->cObj->expects($this->once())
+			->method('getTreeList')
+			->with(-27)
+			->will($this->returnValue('27'));
+		$this->cObj->getQuery('tt_content', $conf, TRUE);
 	}
 
 	/**
@@ -1361,6 +1570,63 @@ class ContentObjectRendererTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 		);
 	}
 
+	/**
+	 * Data provider for stdWrap_encodeForJavaScriptValue test
+	 *
+	 * @return array multi-dimensional array with the second level like this:
+	 * @see encodeForJavaScriptValue
+	 */
+	public function stdWrap_encodeForJavaScriptValueDataProvider() {
+		return array(
+			'double quote in string' => array(
+				'double quote"',
+				array(),
+				'\'double\u0020quote\u0022\''
+			),
+			'backslash in string' => array(
+				'backslash \\',
+				array(),
+				'\'backslash\u0020\u005C\''
+			),
+			'exclamation mark' => array(
+				'exclamation!',
+				array(),
+				'\'exclamation\u0021\''
+			),
+			'whitespace tab, newline and carriage return' => array(
+				"white\tspace\ns\r",
+				array(),
+				'\'white\u0009space\u000As\u000D\''
+			),
+			'single quote in string' => array(
+				'single quote \'',
+				array(),
+				'\'single\u0020quote\u0020\u0027\''
+			),
+			'tag' => array(
+				'<tag>',
+				array(),
+				'\'\u003Ctag\u003E\''
+			),
+			'ampersand in string' => array(
+				'amper&sand',
+				array(),
+				'\'amper\u0026sand\''
+			),
+		);
+	}
+
+	/**
+	 * Check if encodeForJavaScriptValue works properly
+	 *
+	 * @dataProvider stdWrap_encodeForJavaScriptValueDataProvider
+	 * @test
+	 */
+	public function stdWrap_encodeForJavaScriptValue($input, $conf, $expected) {
+		$result = $this->cObj->stdWrap_encodeForJavaScriptValue($input, $conf);
+		$this->assertEquals($expected, $result);
+	}
+
 
 	/////////////////////////////
 	// Tests concerning getData()
@@ -1439,20 +1705,15 @@ class ContentObjectRendererTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	}
 
 	/**
-	 * Checks if getData() works with type "file"
+	 * Basic check if getData gets the uid of a file object
 	 *
 	 * @test
 	 */
-	public function getDataWithTypeFile() {
-		$uid = rand();
-		$properties = array(
-			uniqid() => uniqid(),
-			uniqid() => uniqid(),
-			'uid' => $uid
-		);
-		$file = new \TYPO3\CMS\Core\Resource\File($properties);
+	public function getDataWithTypeFileReturnsUidOfFileObject() {
+		$uid = uniqid();
+		$file = $this->getMock('TYPO3\\CMS\\Core\\Resource\File', array(), array(), '', FALSE);
+		$file->expects($this->once())->method('getUid')->will($this->returnValue($uid));
 		$this->cObj->setCurrentFile($file);
-
 		$this->assertEquals($uid, $this->cObj->getData('file:current:uid'));
 	}
 
@@ -1495,7 +1756,7 @@ class ContentObjectRendererTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 		);
 
 		$GLOBALS['TSFE']->tmpl->rootLine = $rootline;
-		$this->assertEquals(2, $this->cObj->getData('level:dummy'));
+		$this->assertEquals(2, $this->cObj->getData('level'));
 	}
 
 	/**
@@ -1605,8 +1866,10 @@ class ContentObjectRendererTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	 */
 	public function getDataWithTypeDate() {
 		$format = 'Y-M-D';
+		$defaultFormat = 'd/m Y';
 
 		$this->assertEquals(date($format, $GLOBALS['EXEC_TIME']), $this->cObj->getData('date:' . $format));
+		$this->assertEquals(date($defaultFormat, $GLOBALS['EXEC_TIME']), $this->cObj->getData('date'));
 	}
 
 	/**
@@ -1630,7 +1893,7 @@ class ContentObjectRendererTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 		$value = uniqid('someValue');
 		$this->cObj->data[$key] = $value;
 		$this->cObj->currentValKey = $key;
-		$this->assertEquals($value, $this->cObj->getData('current:dummy'));
+		$this->assertEquals($value, $this->cObj->getData('current'));
 	}
 
 	/**
@@ -1752,6 +2015,563 @@ class ContentObjectRendererTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 
 		$this->assertEquals($expectedResult, $cleanedResult);
 	}
-}
 
-?>
+	/**
+	 * Checks if getData() works with type "debug:register"
+	 *
+	 * @test
+	 */
+	public function getDataWithTypeDebugRegister() {
+		$key = uniqid('someKey');
+		$value = uniqid('someValue');
+		$GLOBALS['TSFE']->register = array($key => $value);
+
+		$expectedResult = $key . $value;
+
+		$result = $this->cObj->getData('debug:register');
+		$cleanedResult = strip_tags($result);
+		$cleanedResult = str_replace("\r", '', $cleanedResult);
+		$cleanedResult = str_replace("\n", '', $cleanedResult);
+		$cleanedResult = str_replace("\t", '', $cleanedResult);
+		$cleanedResult = str_replace(' ', '', $cleanedResult);
+
+		$this->assertEquals($expectedResult, $cleanedResult);
+	}
+
+	/**
+	 * Checks if getData() works with type "data:page"
+	 *
+	 * @test
+	 */
+	public function getDataWithTypeDebugPage() {
+		$uid = rand();
+		$GLOBALS['TSFE']->page = array('uid' => $uid);
+
+		$expectedResult = 'uid' . $uid;
+
+		$result = $this->cObj->getData('debug:page');
+		$cleanedResult = strip_tags($result);
+		$cleanedResult = str_replace("\r", '', $cleanedResult);
+		$cleanedResult = str_replace("\n", '', $cleanedResult);
+		$cleanedResult = str_replace("\t", '', $cleanedResult);
+		$cleanedResult = str_replace(' ', '', $cleanedResult);
+
+		$this->assertEquals($expectedResult, $cleanedResult);
+	}
+
+	/**
+	 * @test
+	 */
+	public function getTreeListReturnsChildPageUids() {
+		$GLOBALS['TYPO3_DB']->expects($this->any())->method('exec_SELECTgetSingleRow')->with('treelist')->will($this->returnValue(NULL));
+		$GLOBALS['TSFE']->sys_page
+			->expects($this->any())
+			->method('getRawRecord')
+			->will(
+				$this->onConsecutiveCalls(
+					array('uid' => 17),
+					array('uid' => 321),
+					array('uid' => 719),
+					array('uid' => 42)
+				)
+			);
+
+		$GLOBALS['TSFE']->sys_page->expects($this->any())->method('getMountPointInfo')->will($this->returnValue(NULL));
+		$GLOBALS['TYPO3_DB']
+			->expects($this->any())
+			->method('exec_SELECTgetRows')
+			->will(
+				$this->onConsecutiveCalls(
+					array(
+						array('uid' => 321)
+					),
+					array(
+						array('uid' => 719)
+					),
+					array(
+						array('uid' => 42)
+					)
+				)
+			);
+		// 17 = pageId, 5 = recursionLevel, 0 = begin (entry to recursion, internal), TRUE = do not check enable fields
+		// 17 is positive, we expect 17 NOT to be included in result
+		$result = $this->cObj->getTreeList(17, 5, 0, TRUE);
+		$expectedResult = '42,719,321';
+		$this->assertEquals($expectedResult, $result);
+	}
+
+	/**
+	 * @test
+	 */
+	public function getTreeListReturnsChildPageUidsAndOriginalPidForNegativeValue() {
+		$GLOBALS['TYPO3_DB']->expects($this->any())->method('exec_SELECTgetSingleRow')->with('treelist')->will($this->returnValue(NULL));
+		$GLOBALS['TSFE']->sys_page
+			->expects($this->any())
+			->method('getRawRecord')
+			->will(
+				$this->onConsecutiveCalls(
+					array('uid' => 17),
+					array('uid' => 321),
+					array('uid' => 719),
+					array('uid' => 42)
+				)
+			);
+
+		$GLOBALS['TSFE']->sys_page->expects($this->any())->method('getMountPointInfo')->will($this->returnValue(NULL));
+		$GLOBALS['TYPO3_DB']
+			->expects($this->any())
+			->method('exec_SELECTgetRows')
+			->will(
+				$this->onConsecutiveCalls(
+					array(
+						array('uid' => 321)
+					),
+					array(
+						array('uid' => 719)
+					),
+					array(
+						array('uid' => 42)
+					)
+				)
+			);
+		// 17 = pageId, 5 = recursionLevel, 0 = begin (entry to recursion, internal), TRUE = do not check enable fields
+		// 17 is negative, we expect 17 to be included in result
+		$result = $this->cObj->getTreeList(-17, 5, 0, TRUE);
+		$expectedResult = '42,719,321,17';
+		$this->assertEquals($expectedResult, $result);
+	}
+
+	/**
+	 * @test
+	 */
+	public function aTagParamsHasLeadingSpaceIfNotEmpty() {
+		$aTagParams = $this->cObj->getATagParams(array('ATagParams' => 'data-test="testdata"'));
+		$this->assertEquals(' data-test="testdata"', $aTagParams );
+	}
+
+	/**
+	 * @test
+	 */
+	public function aTagParamsHaveSpaceBetweenLocalAndGlobalParams() {
+		$GLOBALS['TSFE']->ATagParams = 'data-global="dataglobal"';
+		$aTagParams = $this->cObj->getATagParams(array('ATagParams' => 'data-test="testdata"'));
+		$this->assertEquals(' data-global="dataglobal" data-test="testdata"', $aTagParams );
+	}
+
+	/**
+	 * @test
+	 */
+	public function aTagParamsHasNoLeadingSpaceIfEmpty() {
+		// make sure global ATagParams are empty
+		$GLOBALS['TSFE']->ATagParams = '';
+		$aTagParams = $this->cObj->getATagParams(array('ATagParams' => ''));
+		$this->assertEquals('', $aTagParams);
+	}
+
+	/**
+	 * @return array
+	 */
+	public function getImageTagTemplateFallsBackToDefaultTemplateIfNoTemplateIsFoundDataProvider() {
+		return array(
+			array(NULL, NULL),
+			array('', NULL),
+			array('', array()),
+			array('fooo', array('foo' => 'bar'))
+		);
+	}
+
+	/**
+	 * Make sure that the rendering falls back to the classic <img style if nothing else is found
+	 *
+	 * @test
+	 * @dataProvider getImageTagTemplateFallsBackToDefaultTemplateIfNoTemplateIsFoundDataProvider
+	 * @param string $key
+	 * @param array $configuration
+	 */
+	public function getImageTagTemplateFallsBackToDefaultTemplateIfNoTemplateIsFound($key, $configuration) {
+		$defaultImgTagTemplate = '<img src="###SRC###" width="###WIDTH###" height="###HEIGHT###" ###PARAMS### ###ALTPARAMS### ###BORDER######SELFCLOSINGTAGSLASH###>';
+		$result = $this->cObj->getImageTagTemplate($key, $configuration);
+		$this->assertEquals($result, $defaultImgTagTemplate);
+	}
+
+	/**
+	 * @return array
+	 */
+	public function getImageTagTemplateReturnTemplateElementIdentifiedByKeyDataProvider() {
+		return array(
+			array(
+				'foo',
+				array(
+					'layout.' => array(
+						'foo.' => array(
+							'element' => '<img src="###SRC###" srcset="###SOURCES###" ###PARAMS### ###ALTPARAMS### ###FOOBAR######SELFCLOSINGTAGSLASH###>'
+						)
+					)
+				),
+				'<img src="###SRC###" srcset="###SOURCES###" ###PARAMS### ###ALTPARAMS### ###FOOBAR######SELFCLOSINGTAGSLASH###>'
+			)
+
+		);
+	}
+
+	/**
+	 * Assure if a layoutKey and layout is given the selected layout is returned
+	 *
+	 * @test
+	 * @dataProvider getImageTagTemplateReturnTemplateElementIdentifiedByKeyDataProvider
+	 * @param string $key
+	 * @param array $configuration
+	 * @param string $expectation
+	 */
+	public function getImageTagTemplateReturnTemplateElementIdentifiedByKey($key, $configuration, $expectation) {
+		$result = $this->cObj->getImageTagTemplate($key, $configuration);
+		$this->assertEquals($result, $expectation);
+	}
+
+	/**
+	 * @return array
+	 */
+	public function getImageSourceCollectionReturnsEmptyStringIfNoSourcesAreDefinedDataProvider() {
+		return array(
+			array(NULL, NULL, NULL),
+			array('foo', NULL, NULL),
+			array('foo', array('sourceCollection.' => 1), 'bar')
+		);
+	}
+
+	/**
+	 * Make sure the source collection is empty if no valid configuration or source collection is defined
+	 *
+	 * @test
+	 * @dataProvider getImageSourceCollectionReturnsEmptyStringIfNoSourcesAreDefinedDataProvider
+	 * @param string $layoutKey
+	 * @param array $configuration
+	 * @param string $file
+	 */
+	public function getImageSourceCollectionReturnsEmptyStringIfNoSourcesAreDefined($layoutKey, $configuration, $file) {
+		$result = $this->cObj->getImageSourceCollection($layoutKey, $configuration, $file);
+		$this->assertSame($result, '');
+	}
+
+	/**
+	 * Make sure the generation of subimages calls the generation of the subimages and uses the layout -> source template
+	 *
+	 * @test
+	 */
+	public function getImageSourceCollectionRendersDefinedSources() {
+		/** @var $cObj \PHPUnit_Framework_MockObject_MockObject|\TYPO3\CMS\Frontend\ContentObject\ContentObjectRenderer */
+		$cObj = $this->getMock(
+			'TYPO3\\CMS\\Frontend\\ContentObject\\ContentObjectRenderer',
+			array('stdWrap','getImgResource')
+		);
+		$cObj->start(array(), 'tt_content');
+
+		$layoutKey = 'test';
+
+		$configuration = array(
+			'layoutKey' => 'test',
+			'layout.' => array (
+				'test.' => array(
+					'element' => '<img ###SRC### ###SRCCOLLECTION### ###SELFCLOSINGTAGSLASH###>',
+					'source' => '---###SRC###---'
+				)
+			),
+			'sourceCollection.' => array(
+				'1.' => array(
+					'width' => '200'
+				)
+			)
+		);
+
+		$file = 'testImageName';
+
+		// Avoid calling of stdWrap
+		$cObj
+			->expects($this->any())
+			->method('stdWrap')
+			->will($this->returnArgument(0));
+
+		// Avoid calling of imgResource
+		$cObj
+			->expects($this->exactly(1))
+			->method('getImgResource')
+			->with($this->equalTo('testImageName'))
+			->will($this->returnValue(array(100, 100, NULL, 'bar')));
+
+		$result = $cObj->getImageSourceCollection($layoutKey, $configuration, $file);
+
+		$this->assertEquals('---bar---', $result);
+	}
+
+	/**
+	 * Data provider for the getImageSourceCollectionRendersDefinedLayoutKeyDefault test
+	 *
+	 * @return array multi-dimensional array with the second level like this:
+	 * @see getImageSourceCollectionRendersDefinedLayoutKeyDefault
+	 */
+	public function getImageSourceCollectionRendersDefinedLayoutKeyDataDefaultProvider() {
+		/**
+		 * @see css_styled_content/static/setup.txt
+		 */
+		$sourceCollectionArray = array(
+			'small.' => array(
+				'width' => '200',
+				'srcsetCandidate' => '600w',
+				'mediaQuery' => '(max-device-width: 600px)',
+				'dataKey' => 'small',
+			),
+			'smallRetina.' => array(
+				'if.directReturn' => 0,
+				'width' => '200',
+				'pixelDensity' => '2',
+				'srcsetCandidate' => '600w 2x',
+				'mediaQuery' => '(max-device-width: 600px) AND (min-resolution: 192dpi)',
+				'dataKey' => 'smallRetina',
+			)
+		);
+		return array(
+			array(
+				'default',
+				array(
+					'layoutKey' => 'default',
+					'layout.' => array (
+						'default.' => array(
+							'element' => '<img src="###SRC###" width="###WIDTH###" height="###HEIGHT###" ###PARAMS### ###ALTPARAMS### ###BORDER######SELFCLOSINGTAGSLASH###>',
+							'source' => ''
+						)
+					),
+					'sourceCollection.' => $sourceCollectionArray
+				)
+			),
+		);
+	}
+
+	/**
+	 * Make sure the generation of subimages renders the expected HTML Code for the sourceset
+	 *
+	 * @test
+	 * @dataProvider getImageSourceCollectionRendersDefinedLayoutKeyDataDefaultProvider
+	 * @param string $layoutKey
+	 * @param array $configuration
+	 */
+	public function getImageSourceCollectionRendersDefinedLayoutKeyDefault($layoutKey , $configuration) {
+		/** @var $cObj \PHPUnit_Framework_MockObject_MockObject|\TYPO3\CMS\Frontend\ContentObject\ContentObjectRenderer */
+		$cObj = $this->getMock(
+			'TYPO3\\CMS\\Frontend\\ContentObject\\ContentObjectRenderer',
+			array('stdWrap','getImgResource')
+		);
+		$cObj->start(array(), 'tt_content');
+
+		$file = 'testImageName';
+
+		// Avoid calling of stdWrap
+		$cObj
+			->expects($this->any())
+			->method('stdWrap')
+			->will($this->returnArgument(0));
+
+		$result = $cObj->getImageSourceCollection($layoutKey, $configuration, $file);
+
+		$this->assertEmpty($result);
+	}
+
+	/**
+	 * Data provider for the getImageSourceCollectionRendersDefinedLayoutKeyData test
+	 *
+	 * @return array multi-dimensional array with the second level like this:
+	 * @see getImageSourceCollectionRendersDefinedLayoutKeyData
+	 */
+	public function getImageSourceCollectionRendersDefinedLayoutKeyDataDataProvider() {
+		/**
+		 * @see css_styled_content/static/setup.txt
+		 */
+		$sourceCollectionArray = array(
+			'small.' => array(
+				'width' => '200',
+				'srcsetCandidate' => '600w',
+				'mediaQuery' => '(max-device-width: 600px)',
+				'dataKey' => 'small',
+			),
+			'smallRetina.' => array(
+				'if.directReturn' => 1,
+				'width' => '200',
+				'pixelDensity' => '2',
+				'srcsetCandidate' => '600w 2x',
+				'mediaQuery' => '(max-device-width: 600px) AND (min-resolution: 192dpi)',
+				'dataKey' => 'smallRetina',
+			)
+		);
+		return array(
+			array(
+				'srcset',
+				array(
+					'layoutKey' => 'srcset',
+					'layout.' => array (
+						'srcset.' => array(
+							'element' => '<img src="###SRC###" srcset="###SOURCECOLLECTION###" ###PARAMS### ###ALTPARAMS######SELFCLOSINGTAGSLASH###>',
+							'source' => '|*|###SRC### ###SRCSETCANDIDATE###,|*|###SRC### ###SRCSETCANDIDATE###'
+						)
+					),
+					'sourceCollection.' => $sourceCollectionArray
+				),
+				'xhtml_strict',
+				'bar-file.jpg 600w,bar-file.jpg 600w 2x',
+			),
+			array(
+				'picture',
+				array(
+					'layoutKey' => 'picture',
+					'layout.' => array (
+						'picture.' => array(
+							'element' => '<picture>###SOURCECOLLECTION###<img src="###SRC###" ###PARAMS### ###ALTPARAMS######SELFCLOSINGTAGSLASH###></picture>',
+							'source' => '<source src="###SRC###" media="###MEDIAQUERY###"###SELFCLOSINGTAGSLASH###>'
+						)
+					),
+					'sourceCollection.' => $sourceCollectionArray,
+				),
+				'xhtml_strict',
+				'<source src="bar-file.jpg" media="(max-device-width: 600px)" /><source src="bar-file.jpg" media="(max-device-width: 600px) AND (min-resolution: 192dpi)" />',
+			),
+			array(
+				'picture',
+				array(
+					'layoutKey' => 'picture',
+					'layout.' => array (
+						'picture.' => array(
+							'element' => '<picture>###SOURCECOLLECTION###<img src="###SRC###" ###PARAMS### ###ALTPARAMS######SELFCLOSINGTAGSLASH###></picture>',
+							'source' => '<source src="###SRC###" media="###MEDIAQUERY###"###SELFCLOSINGTAGSLASH###>'
+						)
+					),
+					'sourceCollection.' => $sourceCollectionArray,
+				),
+				'',
+				'<source src="bar-file.jpg" media="(max-device-width: 600px)"><source src="bar-file.jpg" media="(max-device-width: 600px) AND (min-resolution: 192dpi)">',
+			),
+			array(
+				'data',
+				array(
+					'layoutKey' => 'data',
+					'layout.' => array (
+						'data.' => array(
+							'element' => '<img src="###SRC###" ###SOURCECOLLECTION### ###PARAMS### ###ALTPARAMS######SELFCLOSINGTAGSLASH###>',
+							'source' => 'data-###DATAKEY###="###SRC###"'
+						)
+					),
+					'sourceCollection.' => $sourceCollectionArray
+				),
+				'xhtml_strict',
+				'data-small="bar-file.jpg"data-smallRetina="bar-file.jpg"',
+			),
+		);
+	}
+
+	/**
+	 * Make sure the generation of subimages renders the expected HTML Code for the sourceset
+	 *
+	 * @test
+	 * @dataProvider getImageSourceCollectionRendersDefinedLayoutKeyDataDataProvider
+	 * @param string $layoutKey
+	 * @param array $configuration
+	 * @param string $xhtmlDoctype
+	 * @param string $expectedHtml
+	 */
+	public function getImageSourceCollectionRendersDefinedLayoutKeyData($layoutKey , $configuration, $xhtmlDoctype, $expectedHtml) {
+		/** @var $cObj \PHPUnit_Framework_MockObject_MockObject|\TYPO3\CMS\Frontend\ContentObject\ContentObjectRenderer */
+		$cObj = $this->getMock(
+			'TYPO3\\CMS\\Frontend\\ContentObject\\ContentObjectRenderer',
+			array('stdWrap','getImgResource')
+		);
+		$cObj->start(array(), 'tt_content');
+
+		$file = 'testImageName';
+
+		$GLOBALS['TSFE']->xhtmlDoctype = $xhtmlDoctype;
+
+		// Avoid calling of stdWrap
+		$cObj
+			->expects($this->any())
+			->method('stdWrap')
+			->will($this->returnArgument(0));
+
+		// Avoid calling of imgResource
+		$cObj
+			->expects($this->exactly(2))
+			->method('getImgResource')
+			->with($this->equalTo('testImageName'))
+			->will($this->returnValue(array(100, 100, NULL, 'bar-file.jpg')));
+
+		$result = $cObj->getImageSourceCollection($layoutKey, $configuration, $file);
+
+		$this->assertEquals($expectedHtml, $result);
+	}
+
+	/**
+	 * Make sure the hook in get sourceCollection is called
+	 *
+	 * @test
+	 */
+	public function getImageSourceCollectionHookCalled() {
+		$this->cObj = $this->getAccessibleMock(
+			'TYPO3\\CMS\\Frontend\\ContentObject\\ContentObjectRenderer',
+			array('getResourceFactory', 'stdWrap', 'getImgResource')
+		);
+		$this->cObj->start(array(), 'tt_content');
+
+		// Avoid calling stdwrap and getImgResource
+		$this->cObj->expects($this->any())
+			->method('stdWrap')
+			->will($this->returnArgument(0));
+
+		$this->cObj->expects($this->any())
+			->method('getImgResource')
+			->will($this->returnValue(array(100, 100, NULL, 'bar-file.jpg')));
+
+		$resourceFactory = $this->getMock('TYPO3\\CMS\\Core\\Resource\\ResourceFactory', array(), array(), '', FALSE);
+		$this->cObj->expects($this->any())->method('getResourceFactory')->will($this->returnValue($resourceFactory));
+
+		$className = uniqid('tx_coretest_getImageSourceCollectionHookCalled');
+		$getImageSourceCollectionHookMock = $this->getMock('TYPO3\\CMS\\Frontend\\ContentObject\\ContentObjectOneSourceCollectionHookInterface', array('getOneSourceCollection'), array(), $className);
+		$GLOBALS['T3_VAR']['getUserObj'][$className] = $getImageSourceCollectionHookMock;
+		$GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['tslib/class.tslib_content.php']['getImageSourceCollection'][] = $className;
+
+		$getImageSourceCollectionHookMock
+			->expects($this->exactly(1))
+			->method('getOneSourceCollection')
+			->will($this->returnCallback(array($this, 'isGetOneSourceCollectionCalledCallback')));
+
+		$configuration = array(
+			'layoutKey' => 'data',
+			'layout.' => array (
+				'data.' => array(
+					'element' => '<img src="###SRC###" ###SOURCECOLLECTION### ###PARAMS### ###ALTPARAMS######SELFCLOSINGTAGSLASH###>',
+					'source' => 'data-###DATAKEY###="###SRC###"'
+				)
+			),
+			'sourceCollection.' => array(
+				'small.' => array(
+					'width' => '200',
+					'srcsetCandidate' => '600w',
+					'mediaQuery' => '(max-device-width: 600px)',
+					'dataKey' => 'small',
+				),
+			),
+		);
+
+		$result = $this->cObj->getImageSourceCollection('data', $configuration, uniqid('testImage-'));
+
+		$this->assertSame($result, 'isGetOneSourceCollectionCalledCallback');
+	}
+
+	/**
+	 * Handles the arguments that have been sent to the getImgResource hook.
+	 *
+	 * @return 	string
+	 * @see getImageSourceCollectionHookCalled
+	 */
+	public function isGetOneSourceCollectionCalledCallback() {
+		list($sourceRenderConfiguration, $sourceConfiguration, $oneSourceCollection, $parent) = func_get_args();
+		$this->assertTrue(is_array($sourceRenderConfiguration));
+		$this->assertTrue(is_array($sourceConfiguration));
+		return 'isGetOneSourceCollectionCalledCallback';
+	}
+}

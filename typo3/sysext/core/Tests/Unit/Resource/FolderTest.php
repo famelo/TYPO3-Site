@@ -1,31 +1,20 @@
 <?php
 namespace TYPO3\CMS\Core\Tests\Unit\Resource;
 
-/***************************************************************
- *  Copyright notice
+/**
+ * This file is part of the TYPO3 CMS project.
  *
- *  (c) 2011-2013 Andreas Wolf <andreas.wolf@ikt-werk.de>
- *  All rights reserved
+ * It is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License, either version 2
+ * of the License, or any later version.
  *
- *  This script is part of the TYPO3 project. The TYPO3 project is
- *  free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
+ * For the full copyright and license information, please read the
+ * LICENSE.txt file that was distributed with this source code.
  *
- *  The GNU General Public License can be found at
- *  http://www.gnu.org/copyleft/gpl.html.
- *  A copy is found in the textfile GPL.txt and important notices to the license
- *  from the author is found in LICENSE.txt distributed with these scripts.
- *
- *
- *  This script is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  This copyright notice MUST APPEAR in all copies of the script!
- ***************************************************************/
+ * The TYPO3 project - inspiring people to share!
+ */
+
+use \org\bovigo\vfs\vfsStream;
 
 /**
  * Testcase for the storage collection class of the TYPO3 FAL
@@ -39,15 +28,16 @@ class FolderTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	 */
 	protected $singletonInstances = array();
 
-	private $basedir = 'basedir';
+	protected $basedir = 'basedir';
 
 	public function setUp() {
 		$this->singletonInstances = \TYPO3\CMS\Core\Utility\GeneralUtility::getSingletonInstances();
-		\vfsStream::setup($this->basedir);
+		vfsStream::setup($this->basedir);
 	}
 
 	protected function tearDown() {
 		\TYPO3\CMS\Core\Utility\GeneralUtility::resetSingletonInstances($this->singletonInstances);
+		parent::tearDown();
 	}
 
 	protected function createFolderFixture($path, $name, $mockedStorage = NULL) {
@@ -67,7 +57,7 @@ class FolderTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 		$fixture = $this->createFolderFixture($path, $name, $mockedStorage);
 		$this->assertSame($mockedStorage, $fixture->getStorage());
 		$this->assertStringStartsWith($path, $fixture->getIdentifier());
-		$this->assertEquals($name, $fixture->getName());
+		$this->assertSame($name, $fixture->getName());
 	}
 
 	/**
@@ -76,8 +66,8 @@ class FolderTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	public function propertiesCanBeUpdated() {
 		$fixture = $this->createFolderFixture('/somePath', 'someName');
 		$fixture->updateProperties(array('identifier' => '/someOtherPath', 'name' => 'someNewName'));
-		$this->assertEquals('someNewName', $fixture->getName());
-		$this->assertEquals('/someOtherPath', $fixture->getIdentifier());
+		$this->assertSame('someNewName', $fixture->getName());
+		$this->assertSame('/someOtherPath', $fixture->getIdentifier());
 	}
 
 	/**
@@ -86,7 +76,7 @@ class FolderTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	public function propertiesAreNotUpdatedIfNotSetInInput() {
 		$fixture = $this->createFolderFixture('/somePath/someName/', 'someName');
 		$fixture->updateProperties(array('identifier' => '/someOtherPath'));
-		$this->assertEquals('someName', $fixture->getName());
+		$this->assertSame('someName', $fixture->getName());
 	}
 
 	/**
@@ -94,7 +84,7 @@ class FolderTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	 */
 	public function getFilesReturnsArrayWithFilenamesAsKeys() {
 		$mockedStorage = $this->getMock('TYPO3\\CMS\\Core\\Resource\\ResourceStorage', array(), array(), '', FALSE);
-		$mockedStorage->expects($this->once())->method('getFileList')->will($this->returnValue(array(
+		$mockedStorage->expects($this->once())->method('getFilesInFolder')->will($this->returnValue(array(
 				'somefile.png' => array(
 					'name' => 'somefile.png'
 				),
@@ -107,7 +97,7 @@ class FolderTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 
 		$fileList = $fixture->getFiles();
 
-		$this->assertEquals(array('somefile.png', 'somefile.jpg'), array_keys($fileList));
+		$this->assertSame(array('somefile.png', 'somefile.jpg'), array_keys($fileList));
 	}
 
 	/**
@@ -117,8 +107,8 @@ class FolderTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 		$mockedStorage = $this->getMock('TYPO3\\CMS\\Core\\Resource\\ResourceStorage', array(), array(), '', FALSE);
 		$mockedStorage
 			->expects($this->once())
-			->method('getFileList')
-			->with($this->anything(), $this->anything(), $this->anything(), $this->anything(), $this->anything(), FALSE)
+			->method('getFilesInFolder')
+			->with($this->anything(), $this->anything(), $this->anything(), $this->anything(), FALSE)
 			->will($this->returnValue(array()));
 
 		$fixture = $this->createFolderFixture('/somePath', 'someName', $mockedStorage);
@@ -132,8 +122,8 @@ class FolderTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 		$mockedStorage = $this->getMock('TYPO3\\CMS\\Core\\Resource\\ResourceStorage', array(), array(), '', FALSE);
 		$mockedStorage
 			->expects($this->once())
-			->method('getFileList')
-			->with($this->anything(), $this->anything(), $this->anything(), $this->anything(), $this->anything(), TRUE)
+			->method('getFilesInFolder')
+			->with($this->anything(), $this->anything(), $this->anything(), $this->anything(), TRUE)
 			->will($this->returnValue(array()));
 
 		$fixture = $this->createFolderFixture('/somePath', 'someName', $mockedStorage);
@@ -153,6 +143,20 @@ class FolderTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 		$fixture->getSubfolder('someSubfolder');
 	}
 
-}
+	/**
+	 * @test
+	 */
+	public function getParentFolderGetsParentFolderFromStorage() {
+		$parentIdentifier = '/parent/';
+		$currentIdentifier = '/parent/current/';
 
-?>
+		$parentFolderFixture = $this->createFolderFixture($parentIdentifier, 'parent');
+		$mockedStorage = $this->getMock('TYPO3\\CMS\\Core\\Resource\\ResourceStorage', array('getFolderIdentifierFromFileIdentifier', 'getFolder'), array(), '', FALSE);
+		$mockedStorage->expects($this->once())->method('getFolderIdentifierFromFileIdentifier')->with($currentIdentifier)->will($this->returnValue($parentIdentifier));
+		$mockedStorage->expects($this->once())->method('getFolder')->with($parentIdentifier)->will($this->returnValue($parentFolderFixture));
+
+		$currentFolderFixture = $this->createFolderFixture($currentIdentifier, 'current', $mockedStorage);
+
+		$this->assertSame($parentFolderFixture, $currentFolderFixture->getParentFolder());
+	}
+}

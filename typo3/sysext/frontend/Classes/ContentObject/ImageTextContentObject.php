@@ -1,32 +1,18 @@
 <?php
 namespace TYPO3\CMS\Frontend\ContentObject;
 
-/***************************************************************
- *  Copyright notice
+/**
+ * This file is part of the TYPO3 CMS project.
  *
- *  (c) 2010-2013 Xavier Perseguers <typo3@perseguers.ch>
- *  (c) 2010-2013 Steffen Kamper <steffen@typo3.org>
- *  All rights reserved
+ * It is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License, either version 2
+ * of the License, or any later version.
  *
- *  This script is part of the TYPO3 project. The TYPO3 project is
- *  free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
+ * For the full copyright and license information, please read the
+ * LICENSE.txt file that was distributed with this source code.
  *
- *  The GNU General Public License can be found at
- *  http://www.gnu.org/copyleft/gpl.html.
- *  A copy is found in the textfile GPL.txt and important notices to the license
- *  from the author is found in LICENSE.txt distributed with these scripts.
- *
- *
- *  This script is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  This copyright notice MUST APPEAR in all copies of the script!
- ***************************************************************/
+ * The TYPO3 project - inspiring people to share!
+ */
 /**
  * Contains IMAGE class object.
  *
@@ -51,9 +37,9 @@ class ImageTextContentObject extends \TYPO3\CMS\Frontend\ContentObject\AbstractC
 		$imgList = isset($conf['imgList.']) ? trim($this->cObj->stdWrap($conf['imgList'], $conf['imgList.'])) : trim($conf['imgList']);
 		if ($imgList) {
 			$imgs = \TYPO3\CMS\Core\Utility\GeneralUtility::trimExplode(',', $imgList);
-			$imgStart = isset($conf['imgStart.']) ? intval($this->cObj->stdWrap($conf['imgStart'], $conf['imgStart.'])) : intval($conf['imgStart']);
+			$imgStart = isset($conf['imgStart.']) ? (int)$this->cObj->stdWrap($conf['imgStart'], $conf['imgStart.']) : (int)$conf['imgStart'];
 			$imgCount = count($imgs) - $imgStart;
-			$imgMax = isset($conf['imgMax.']) ? intval($this->cObj->stdWrap($conf['imgMax'], $conf['imgMax.'])) : intval($conf['imgMax']);
+			$imgMax = isset($conf['imgMax.']) ? (int)$this->cObj->stdWrap($conf['imgMax'], $conf['imgMax.']) : (int)$conf['imgMax'];
 			if ($imgMax) {
 				// Reduces the number of images.
 				$imgCount = \TYPO3\CMS\Core\Utility\MathUtility::forceIntegerInRange($imgCount, 0, $imgMax);
@@ -84,22 +70,22 @@ class ImageTextContentObject extends \TYPO3\CMS\Frontend\ContentObject\AbstractC
 			$contentPosition = $position & 24;
 			$align = $this->cObj->align[$tmppos];
 			$cap = $caption ? 1 : 0;
-			$txtMarg = isset($conf['textMargin.']) ? intval($this->cObj->stdWrap($conf['textMargin'], $conf['textMargin.'])) : intval($conf['textMargin']);
+			$txtMarg = isset($conf['textMargin.']) ? (int)$this->cObj->stdWrap($conf['textMargin'], $conf['textMargin.']) : (int)$conf['textMargin'];
 			if (!$conf['textMargin_outOfText'] && $contentPosition < 16) {
 				$txtMarg = 0;
 			}
-			$cols = isset($conf['cols.']) ? intval($this->cObj->stdWrap($conf['cols'], $conf['cols.'])) : intval($conf['cols']);
-			$rows = isset($conf['rows.']) ? intval($this->cObj->stdWrap($conf['rows'], $conf['rows.'])) : intval($conf['rows']);
-			$colspacing = isset($conf['colSpace.']) ? intval($this->cObj->stdWrap($conf['colSpace'], $conf['colSpace.'])) : intval($conf['colSpace']);
-			$rowspacing = isset($conf['rowSpace.']) ? intval($this->cObj->stdWrap($conf['rowSpace'], $conf['rowSpace.'])) : intval($conf['rowSpace']);
-			$border = isset($conf['border.']) ? intval($this->cObj->stdWrap($conf['border'], $conf['border.'])) : intval($conf['border']);
+			$cols = isset($conf['cols.']) ? (int)$this->cObj->stdWrap($conf['cols'], $conf['cols.']) : (int)$conf['cols'];
+			$rows = isset($conf['rows.']) ? (int)$this->cObj->stdWrap($conf['rows'], $conf['rows.']) : (int)$conf['rows'];
+			$colspacing = isset($conf['colSpace.']) ? (int)$this->cObj->stdWrap($conf['colSpace'], $conf['colSpace.']) : (int)$conf['colSpace'];
+			$rowspacing = isset($conf['rowSpace.']) ? (int)$this->cObj->stdWrap($conf['rowSpace'], $conf['rowSpace.']) : (int)$conf['rowSpace'];
+			$border = isset($conf['border.']) ? (int)$this->cObj->stdWrap($conf['border'], $conf['border.']) : (int)$conf['border'];
 			$border = $border ? 1 : 0;
 			if ($border) {
 				$borderColor = isset($conf['borderCol.']) ? $this->cObj->stdWrap($conf['borderCol'], $conf['borderCol.']) : $conf['borderCol'];
 				if (!$borderColor) {
 					$borderColor = 'black';
 				}
-				$borderThickness = isset($conf['borderThick.']) ? intval($this->cObj->stdWrap($conf['borderThick'], $conf['borderThick.'])) : intval($conf['borderThick']);
+				$borderThickness = isset($conf['borderThick.']) ? (int)$this->cObj->stdWrap($conf['borderThick'], $conf['borderThick.']) : (int)$conf['borderThick'];
 				if (!$borderThickness) {
 					$borderThickness = 'black';
 				}
@@ -124,8 +110,8 @@ class ImageTextContentObject extends \TYPO3\CMS\Frontend\ContentObject\AbstractC
 			}
 			// Max Width
 			$colRelations = isset($conf['colRelations.']) ? trim($this->cObj->stdWrap($conf['colRelations'], $conf['colRelations.'])) : trim($conf['colRelations']);
-			$maxW = isset($conf['maxW.']) ? intval($this->cObj->stdWrap($conf['maxW'], $conf['maxW.'])) : intval($conf['maxW']);
-			$maxWInText = isset($conf['maxWInText.']) ? intval($this->cObj->stdWrap($conf['maxWInText'], $conf['maxWInText.'])) : intval($conf['maxWInText']);
+			$maxW = isset($conf['maxW.']) ? (int)$this->cObj->stdWrap($conf['maxW'], $conf['maxW.']) : (int)$conf['maxW'];
+			$maxWInText = isset($conf['maxWInText.']) ? (int)$this->cObj->stdWrap($conf['maxWInText'], $conf['maxWInText.']) : (int)$conf['maxWInText'];
 			// If maxWInText is not set, it's calculated to the 50 % of the max...
 			if (!$maxWInText) {
 				$maxWInText = round($maxW / 2);
@@ -144,7 +130,7 @@ class ImageTextContentObject extends \TYPO3\CMS\Frontend\ContentObject\AbstractC
 				$rel_parts = explode(':', $colRelations);
 				$rel_total = 0;
 				for ($a = 0; $a < $colCount; $a++) {
-					$rel_parts[$a] = intval($rel_parts[$a]);
+					$rel_parts[$a] = (int)$rel_parts[$a];
 					$rel_total += $rel_parts[$a];
 				}
 				if ($rel_total) {
@@ -157,15 +143,15 @@ class ImageTextContentObject extends \TYPO3\CMS\Frontend\ContentObject\AbstractC
 					}
 				}
 			}
-			$image_compression = isset($conf['image_compression.']) ? intval($this->cObj->stdWrap($conf['image_compression'], $conf['image_compression.'])) : intval($conf['image_compression']);
-			$image_effects = isset($conf['image_effects.']) ? intval($this->cObj->stdWrap($conf['image_effects'], $conf['image_effects.'])) : intval($conf['image_effects']);
-			$image_frames = isset($conf['image_frames.']['key.']) ? intval($this->cObj->stdWrap($conf['image_frames.']['key'], $conf['image_frames.']['key.'])) : intval($conf['image_frames.']['key']);
+			$image_compression = isset($conf['image_compression.']) ? (int)$this->cObj->stdWrap($conf['image_compression'], $conf['image_compression.']) : (int)$conf['image_compression'];
+			$image_effects = isset($conf['image_effects.']) ? (int)$this->cObj->stdWrap($conf['image_effects'], $conf['image_effects.']) : (int)$conf['image_effects'];
+			$image_frames = isset($conf['image_frames.']['key.']) ? (int)$this->cObj->stdWrap($conf['image_frames.']['key'], $conf['image_frames.']['key.']) : (int)$conf['image_frames.']['key'];
 			// Fetches pictures
 			$splitArr = array();
 			$splitArr['imgObjNum'] = $conf['imgObjNum'];
 			$splitArr = $GLOBALS['TSFE']->tmpl->splitConfArray($splitArr, $imgCount);
 			// EqualHeight
-			$equalHeight = isset($conf['equalH.']) ? intval($this->cObj->stdWrap($conf['equalH'], $conf['equalH.'])) : intval($conf['equalH']);
+			$equalHeight = isset($conf['equalH.']) ? (int)$this->cObj->stdWrap($conf['equalH'], $conf['equalH.']) : (int)$conf['equalH'];
 			// Initiate gifbuilder object in order to get dimensions AND calculate the imageWidth's
 			if ($equalHeight) {
 				$gifCreator = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Frontend\\Imaging\\GifBuilder');
@@ -197,7 +183,7 @@ class ImageTextContentObject extends \TYPO3\CMS\Frontend\ContentObject\AbstractC
 				$imgKey = $a + $imgStart;
 				$totalImagePath = $imgPath . $imgs[$imgKey];
 				$this->cObj->data[$this->cObj->currentValKey] = $totalImagePath;
-				$imgObjNum = intval($splitArr[$a]['imgObjNum']);
+				$imgObjNum = (int)$splitArr[$a]['imgObjNum'];
 				$imgConf = $conf[$imgObjNum . '.'];
 				if ($equalHeight) {
 					$scale = 1;
@@ -407,29 +393,29 @@ class ImageTextContentObject extends \TYPO3\CMS\Frontend\ContentObject\AbstractC
 			}
 			if ($c) {
 				switch ($contentPosition) {
-				case '0':
+					case '0':
 
-				case '8':
-					// below
-					switch ($align) {
-					case 'center':
-						$table_align = 'margin-left: auto; margin-right: auto';
+					case '8':
+						// below
+						switch ($align) {
+							case 'center':
+								$table_align = 'margin-left: auto; margin-right: auto';
+								break;
+							case 'right':
+								$table_align = 'margin-left: auto; margin-right: 0px';
+								break;
+							default:
+								// Most of all: left
+								$table_align = 'margin-left: 0px; margin-right: auto';
+						}
+						$table_align = 'style="' . $table_align . '"';
 						break;
-					case 'right':
-						$table_align = 'margin-left: auto; margin-right: 0px';
+					case '16':
+						// in text
+						$table_align = 'align="' . $align . '"';
 						break;
 					default:
-						// Most of all: left
-						$table_align = 'margin-left: 0px; margin-right: auto';
-					}
-					$table_align = 'style="' . $table_align . '"';
-					break;
-				case '16':
-					// in text
-					$table_align = 'align="' . $align . '"';
-					break;
-				default:
-					$table_align = '';
+						$table_align = '';
 				}
 				// Table-tag is inserted
 				$tablecode = '<table' . ($tableWidth ? ' width="' . $tableWidth . '"' : '') . ' border="0" cellspacing="0" cellpadding="0" ' . $table_align . ' class="imgtext-table">' . $tablecode;
@@ -446,32 +432,32 @@ class ImageTextContentObject extends \TYPO3\CMS\Frontend\ContentObject\AbstractC
 					$tablecode = $this->cObj->stdWrap($tablecode, $conf['tableStdWrap.']);
 				}
 			}
-			$spaceBelowAbove = isset($conf['spaceBelowAbove.']) ? intval($this->cObj->stdWrap($conf['spaceBelowAbove'], $conf['spaceBelowAbove.'])) : intval($conf['spaceBelowAbove']);
+			$spaceBelowAbove = isset($conf['spaceBelowAbove.']) ? (int)$this->cObj->stdWrap($conf['spaceBelowAbove'], $conf['spaceBelowAbove.']) : (int)$conf['spaceBelowAbove'];
 			switch ($contentPosition) {
-			case '0':
-				// above
-				$output = '<div style="text-align:' . $align . ';">' . $tablecode . '</div>' . $this->cObj->wrapSpace($content, ($spaceBelowAbove . '|0'));
-				break;
-			case '8':
-				// below
-				$output = $this->cObj->wrapSpace($content, ('0|' . $spaceBelowAbove)) . '<div style="text-align:' . $align . ';">' . $tablecode . '</div>';
-				break;
-			case '16':
-				// in text
-				$output = $tablecode . $content;
-				break;
-			case '24':
-				// in text, no wrap
-				$theResult = '';
-				$theResult .= '<table border="0" cellspacing="0" cellpadding="0" class="imgtext-nowrap"><tr>';
-				if ($align == 'right') {
-					$theResult .= '<td valign="top">' . $content . '</td><td valign="top">' . $tablecode . '</td>';
-				} else {
-					$theResult .= '<td valign="top">' . $tablecode . '</td><td valign="top">' . $content . '</td>';
-				}
-				$theResult .= '</tr></table>';
-				$output = $theResult;
-				break;
+				case '0':
+					// above
+					$output = '<div style="text-align:' . $align . ';">' . $tablecode . '</div>' . $this->cObj->wrapSpace($content, ($spaceBelowAbove . '|0'));
+					break;
+				case '8':
+					// below
+					$output = $this->cObj->wrapSpace($content, ('0|' . $spaceBelowAbove)) . '<div style="text-align:' . $align . ';">' . $tablecode . '</div>';
+					break;
+				case '16':
+					// in text
+					$output = $tablecode . $content;
+					break;
+				case '24':
+					// in text, no wrap
+					$theResult = '';
+					$theResult .= '<table border="0" cellspacing="0" cellpadding="0" class="imgtext-nowrap"><tr>';
+					if ($align == 'right') {
+						$theResult .= '<td valign="top">' . $content . '</td><td valign="top">' . $tablecode . '</td>';
+					} else {
+						$theResult .= '<td valign="top">' . $tablecode . '</td><td valign="top">' . $content . '</td>';
+					}
+					$theResult .= '</tr></table>';
+					$output = $theResult;
+					break;
 			}
 		} else {
 			$output = $content;
@@ -483,6 +469,3 @@ class ImageTextContentObject extends \TYPO3\CMS\Frontend\ContentObject\AbstractC
 	}
 
 }
-
-
-?>

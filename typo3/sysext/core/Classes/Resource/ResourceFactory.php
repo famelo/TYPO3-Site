@@ -1,46 +1,31 @@
 <?php
 namespace TYPO3\CMS\Core\Resource;
 
-/***************************************************************
- *  Copyright notice
+/**
+ * This file is part of the TYPO3 CMS project.
  *
- *  (c) 2011-2013 Andreas Wolf <andreas.wolf@typo3.org>
- *  All rights reserved
+ * It is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License, either version 2
+ * of the License, or any later version.
  *
- *  This script is part of the TYPO3 project. The TYPO3 project is
- *  free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
+ * For the full copyright and license information, please read the
+ * LICENSE.txt file that was distributed with this source code.
  *
- *  The GNU General Public License can be found at
- *  http://www.gnu.org/copyleft/gpl.html.
- *  A copy is found in the textfile GPL.txt and important notices to the license
- *  from the author is found in LICENSE.txt distributed with these scripts.
- *
- *
- *  This script is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  This copyright notice MUST APPEAR in all copies of the script!
- ***************************************************************/
+ * The TYPO3 project - inspiring people to share!
+ */
 
+use TYPO3\CMS\Core\Resource\Index\FileIndexRepository;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
+use TYPO3\CMS\Core\Utility\MathUtility;
 use TYPO3\CMS\Core\Utility\PathUtility;
 
 // TODO implement constructor-level caching
 /**
- * Factory class for FAL objects.
- *
- * NOTE: This class is part of the lowlevel FAL API and should not be used from outside the FAL package.
+ * Factory class for FAL objects
  *
  * @author Andreas Wolf <andreas.wolf@typo3.org>
  */
-class ResourceFactory implements \TYPO3\CMS\Core\SingletonInterface {
-
-	const SIGNAL_PostProcessStorage = 'postProcessStorage';
+class ResourceFactory implements ResourceFactoryInterface, \TYPO3\CMS\Core\SingletonInterface {
 
 	/**
 	 * Gets a singleton instance of this class.
@@ -48,7 +33,7 @@ class ResourceFactory implements \TYPO3\CMS\Core\SingletonInterface {
 	 * @return ResourceFactory
 	 */
 	static public function getInstance() {
-		return GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Resource\\ResourceFactory');
+		return GeneralUtility::makeInstance(__CLASS__);
 	}
 
 	/**
@@ -72,6 +57,13 @@ class ResourceFactory implements \TYPO3\CMS\Core\SingletonInterface {
 	protected $fileReferenceInstances = array();
 
 	/**
+	 * A list of the base paths of "local" driver storages. Used to make the detection of base paths easier.
+	 *
+	 * @var array
+	 */
+	protected $localDriverStorageCache = NULL;
+
+	/**
 	 * @var \TYPO3\CMS\Extbase\SignalSlot\Dispatcher
 	 */
 	protected $signalSlotDispatcher;
@@ -80,22 +72,15 @@ class ResourceFactory implements \TYPO3\CMS\Core\SingletonInterface {
 	 * Inject signal slot dispatcher
 	 */
 	public function __construct(\TYPO3\CMS\Extbase\SignalSlot\Dispatcher $signalSlotDispatcher = NULL) {
-		$this->signalSlotDispatcher = $signalSlotDispatcher ?: \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Extbase\\SignalSlot\\Dispatcher');
+		$this->signalSlotDispatcher = $signalSlotDispatcher ?: GeneralUtility::makeInstance('TYPO3\\CMS\\Extbase\\SignalSlot\\Dispatcher');
 	}
-
-	/**
-	 * A list of the base paths of "local" driver storages. Used to make the detection of base paths easier.
-	 *
-	 * @var array
-	 */
-	protected $localDriverStorageCache = NULL;
 
 	/**
 	 * Creates a driver object for a specified storage object.
 	 *
 	 * @param string $driverIdentificationString The driver class (or identifier) to use.
 	 * @param array $driverConfiguration The configuration of the storage
-	 * @return Driver\AbstractDriver
+	 * @return Driver\DriverInterface
 	 * @throws \InvalidArgumentException
 	 */
 	public function getDriverObject($driverIdentificationString, array $driverConfiguration) {
@@ -106,6 +91,29 @@ class ResourceFactory implements \TYPO3\CMS\Core\SingletonInterface {
 		return $driverObject;
 	}
 
+
+	/**
+	 * Returns the Default Storage
+	 *
+	 * The Default Storage is considered to be the replacement for the fileadmin/ construct.
+	 * It is automatically created with the setting fileadminDir from install tool.
+	 * getDefaultStorage->getDefaultFolder() will get you fileadmin/user_upload/ in a standard
+	 * TYPO3 installation.
+	 *
+	 * @return null|ResourceStorage
+	 */
+	public function getDefaultStorage() {
+		/** @var $storageRepository StorageRepository */
+		$storageRepository = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Resource\\StorageRepository');
+
+		$allStorages = $storageRepository->findAll();
+		foreach ($allStorages as $storage) {
+			if ($storage->isDefault()) {
+				return $storage;
+			}
+		}
+		return NULL;
+	}
 	/**
 	 * Creates an instance of the storage from given UID. The $recordData can
 	 * be supplied to increase performance.
@@ -121,18 +129,19 @@ class ResourceFactory implements \TYPO3\CMS\Core\SingletonInterface {
 		if (!is_numeric($uid)) {
 			throw new \InvalidArgumentException('uid of Storage has to be numeric.', 1314085991);
 		}
-		if (intval($uid) === 0 && $fileIdentifier !== NULL) {
+		$uid = (int)$uid;
+		if ($uid === 0 && $fileIdentifier !== NULL) {
 			$uid = $this->findBestMatchingStorageByLocalPath($fileIdentifier);
 		}
 		if (!$this->storageInstances[$uid]) {
 			$storageConfiguration = NULL;
 			$storageObject = NULL;
 			// If the built-in storage with UID=0 is requested:
-			if (intval($uid) === 0) {
+			if ($uid === 0) {
 				$recordData = array(
 					'uid' => 0,
 					'pid' => 0,
-					'name' => 'Default Storage',
+					'name' => 'Fallback Storage',
 					'description' => 'Internal storage, mounting the main TYPO3_site directory.',
 					'driver' => 'Local',
 					'processingfolder' => 'typo3temp/_processed_/',
@@ -141,13 +150,14 @@ class ResourceFactory implements \TYPO3\CMS\Core\SingletonInterface {
 					'is_online' => TRUE,
 					'is_browsable' => TRUE,
 					'is_public' => TRUE,
-					'is_writable' => TRUE
+					'is_writable' => TRUE,
+					'is_default' => FALSE,
 				);
 				$storageConfiguration = array(
 					'basePath' => '/',
 					'pathType' => 'relative'
 				);
-			} elseif (count($recordData) === 0 || $recordData['uid'] !== $uid) {
+			} elseif (count($recordData) === 0 || (int)$recordData['uid'] !== $uid) {
 				/** @var $storageRepository StorageRepository */
 				$storageRepository = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Resource\\StorageRepository');
 				/** @var $storage ResourceStorage */
@@ -156,10 +166,19 @@ class ResourceFactory implements \TYPO3\CMS\Core\SingletonInterface {
 			if (!$storageObject instanceof ResourceStorage) {
 				$storageObject = $this->createStorageObject($recordData, $storageConfiguration);
 			}
-			$this->signalSlotDispatcher->dispatch('TYPO3\\CMS\\Core\\Resource\\ResourceFactory', self::SIGNAL_PostProcessStorage, array($this, $storageObject));
+			$this->emitPostProcessStorageSignal($storageObject);
 			$this->storageInstances[$uid] = $storageObject;
 		}
 		return $this->storageInstances[$uid];
+	}
+
+	/**
+	 * Emits a signal after a resource storage was initialized
+	 *
+	 * @param ResourceStorage $storageObject
+	 */
+	protected function emitPostProcessStorageSignal(ResourceStorage $storageObject) {
+		$this->signalSlotDispatcher->dispatch('TYPO3\\CMS\\Core\\Resource\\ResourceFactory', self::SIGNAL_PostProcessStorage, array($this, $storageObject));
 	}
 
 	/**
@@ -184,7 +203,7 @@ class ResourceFactory implements \TYPO3\CMS\Core\SingletonInterface {
 			$basePathLength = strlen($basePath);
 
 			if ($matchLength >= $basePathLength && $matchLength > $bestMatchLength) {
-				$bestMatchStorageUid = intval($storageUid);
+				$bestMatchStorageUid = (int)$storageUid;
 				$bestMatchLength = $matchLength;
 			}
 		}
@@ -251,7 +270,7 @@ class ResourceFactory implements \TYPO3\CMS\Core\SingletonInterface {
 			// Get mount data if not already supplied as argument to this function
 			if (count($recordData) === 0 || $recordData['uid'] !== $uid) {
 				/** @var $GLOBALS['TYPO3_DB'] \TYPO3\CMS\Core\Database\DatabaseConnection */
-				$recordData = $GLOBALS['TYPO3_DB']->exec_SELECTgetSingleRow('*', 'sys_file_collection', 'uid=' . intval($uid) . ' AND deleted=0');
+				$recordData = $GLOBALS['TYPO3_DB']->exec_SELECTgetSingleRow('*', 'sys_file_collection', 'uid=' . (int)$uid . ' AND deleted=0');
 				if (!is_array($recordData)) {
 					throw new \InvalidArgumentException('No collection found for given UID.', 1314085992);
 				}
@@ -269,17 +288,11 @@ class ResourceFactory implements \TYPO3\CMS\Core\SingletonInterface {
 	 * @return Collection\AbstractFileCollection
 	 */
 	public function createCollectionObject(array $collectionData) {
-		switch ($collectionData['type']) {
-			case 'static':
-				$collection = Collection\StaticFileCollection::create($collectionData);
-				break;
-			case 'folder':
-				$collection = Collection\FolderBasedFileCollection::create($collectionData);
-				break;
-			default:
-				$collection = NULL;
-		}
-		return $collection;
+		/** @var $registry Collection\FileCollectionRegistry */
+		$registry = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Resource\\Collection\\FileCollectionRegistry');
+		$class = $registry->getFileCollectionClass($collectionData['type']);
+
+		return $class::create($collectionData);
 	}
 
 	/**
@@ -338,17 +351,12 @@ class ResourceFactory implements \TYPO3\CMS\Core\SingletonInterface {
 		if (!$this->fileInstances[$uid]) {
 			// Fetches data in case $fileData is empty
 			if (empty($fileData)) {
-				/** @var FileRepository $fileRepository */
-				$fileRepository = GeneralUtility::makeInstance('TYPO3\CMS\Core\Resource\FileRepository');
-				$fileObject = $fileRepository->findByUid($uid);
-				if (!is_object($fileObject)) {
+				$fileData = $this->getFileIndexRepository()->findOneByUid($uid);
+				if ($fileData === FALSE) {
 					throw new \TYPO3\CMS\Core\Resource\Exception\FileDoesNotExistException('No file found for given UID.', 1317178604);
-				} else {
-					$this->fileInstances[$uid] = $fileObject;
 				}
-			} else {
-				$this->fileInstances[$uid] = $this->createFileObject($fileData);
 			}
+			$this->fileInstances[$uid] = $this->createFileObject($fileData);
 		}
 		return $this->fileInstances[$uid];
 	}
@@ -358,8 +366,12 @@ class ResourceFactory implements \TYPO3\CMS\Core\SingletonInterface {
 	 *
 	 * @param string $identifier
 	 * @return File
+	 * @throws \InvalidArgumentException
 	 */
 	public function getFileObjectFromCombinedIdentifier($identifier) {
+		if (!isset($identifier) || !is_string($identifier) || $identifier === '') {
+			throw new \InvalidArgumentException('Invalid file identifier given. It must be of type string and not empty. "' . gettype($identifier) . '" given.', 1401732564);
+		}
 		$parts = GeneralUtility::trimExplode(':', $identifier);
 		if (count($parts) === 2) {
 			$storageUid = $parts[0];
@@ -369,11 +381,36 @@ class ResourceFactory implements \TYPO3\CMS\Core\SingletonInterface {
 			// use virtual Storage (uid=0)
 			$storageUid = 0;
 			$fileIdentifier = $parts[0];
-
-			// please note that getStorageObject() might modify $fileIdentifier when
-			// auto-detecting the best-matching storage to use
 		}
-		return $this->getStorageObject($storageUid, array(), $fileIdentifier)->getFile($fileIdentifier);
+
+		// please note that getStorageObject() might modify $fileIdentifier when
+		// auto-detecting the best-matching storage to use
+		return $this->getFileObjectByStorageAndIdentifier($storageUid, $fileIdentifier);
+	}
+
+	/**
+	 * Gets an file object from storage by file identifier
+	 * If the file is outside of the process folder it gets indexed and returned as file object afterwards
+	 * If the file is within processing folder the file object will be directly returned
+	 *
+	 * @param int $storageUid
+	 * @param string $fileIdentifier
+	 * @return File|ProcessedFile
+	 */
+	public function getFileObjectByStorageAndIdentifier($storageUid, &$fileIdentifier) {
+		$storage = $this->getStorageObject($storageUid, array(), $fileIdentifier);
+		if (!$storage->isWithinProcessingFolder($fileIdentifier)) {
+			$fileData = $this->getFileIndexRepository()->findOneByStorageUidAndIdentifier($storage->getUid(), $fileIdentifier);
+			if ($fileData === FALSE) {
+				$fileObject = $this->getIndexer($storage)->createIndexEntry($fileIdentifier);
+			} else {
+				$fileObject = $this->getFileObject($fileData['uid'], $fileData);
+			}
+		} else {
+			$fileObject = $this->getProcessedFileRepository()->findByStorageAndIdentifier($storage, $fileIdentifier);
+		}
+
+		return $fileObject;
 	}
 
 	/**
@@ -401,7 +438,7 @@ class ResourceFactory implements \TYPO3\CMS\Core\SingletonInterface {
 		// This is done in all considered sub functions anyway
 		$input = str_replace(PATH_site, '', $input);
 
-		if (\TYPO3\CMS\Core\Utility\GeneralUtility::isFirstPartOfStr($input, 'file:')) {
+		if (GeneralUtility::isFirstPartOfStr($input, 'file:')) {
 			$input = substr($input, 5);
 			return $this->retrieveFileOrFolderObject($input);
 		} elseif (\TYPO3\CMS\Core\Utility\MathUtility::canBeInterpretedAsInteger($input)) {
@@ -413,16 +450,25 @@ class ResourceFactory implements \TYPO3\CMS\Core\SingletonInterface {
 				return $this->getObjectFromCombinedIdentifier($input);
 			} elseif ($prefix == 'EXT') {
 				$input = GeneralUtility::getFileAbsFileName($input);
-				$input = PathUtility::getRelativePath(PATH_site, PathUtility::dirname($input)) . PathUtility::basename($input);
+				if (empty($input)) {
+					return NULL;
+				}
+				$input = PathUtility::getRelativePath(PATH_site, dirname($input)) . basename($input);
 				return $this->getFileObjectFromCombinedIdentifier($input);
+			} else {
+				return NULL;
 			}
-		// this is a backwards-compatible way to access "0-storage" files or folders
-		} elseif (@is_file(PATH_site . $input)) {
-			// only the local file
-			return $this->getFileObjectFromCombinedIdentifier($input);
 		} else {
-			// only the local path
-			return $this->getFolderObjectFromCombinedIdentifier($input);
+			// this is a backwards-compatible way to access "0-storage" files or folders
+			// eliminate double slashes, /./ and /../
+			$input = \TYPO3\CMS\Core\Utility\PathUtility::getCanonicalPath(ltrim($input, '/'));
+			if (@is_file(PATH_site . $input)) {
+				// only the local file
+				return $this->getFileObjectFromCombinedIdentifier($input);
+			} else {
+				// only the local path
+				return $this->getFolderObjectFromCombinedIdentifier($input);
+			}
 		}
 	}
 
@@ -448,7 +494,7 @@ class ResourceFactory implements \TYPO3\CMS\Core\SingletonInterface {
 			$folderIdentifier = $parts[0];
 			// make sure to not use an absolute path, and remove PATH_site if it is prepended
 			if (GeneralUtility::isFirstPartOfStr($folderIdentifier, PATH_site)) {
-				$folderIdentifier = substr($parts[0], strlen(PATH_site));
+				$folderIdentifier = \TYPO3\CMS\Core\Utility\PathUtility::stripPathSitePrefix($parts[0]);
 			}
 		}
 		return $this->getStorageObject($storageUid, array(), $folderIdentifier)->getFolder($folderIdentifier);
@@ -462,10 +508,7 @@ class ResourceFactory implements \TYPO3\CMS\Core\SingletonInterface {
 	 */
 	public function getStorageObjectFromCombinedIdentifier($identifier) {
 		$parts = GeneralUtility::trimExplode(':', $identifier);
-		if (count($parts) === 2) {
-			$storageUid = $parts[0];
-		}
-
+		$storageUid = count($parts) === 2 ? $parts[0] : NULL;
 		return $this->getStorageObject($storageUid);
 	}
 
@@ -494,15 +537,20 @@ class ResourceFactory implements \TYPO3\CMS\Core\SingletonInterface {
 	 * row to be fetched.
 	 *
 	 * @param array $fileData
+	 * @param ResourceStorage $storage
 	 * @return File
 	 */
-	public function createFileObject(array $fileData) {
+	public function createFileObject(array $fileData, ResourceStorage $storage = NULL) {
 		/** @var File $fileObject */
-		$fileObject = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Resource\\File', $fileData);
-		if (is_numeric($fileData['storage'])) {
-			$storageObject = $this->getStorageObject($fileData['storage']);
-			$fileObject->setStorage($storageObject);
+		if (array_key_exists('storage', $fileData) && MathUtility::canBeInterpretedAsInteger($fileData['storage'])) {
+			$storageObject = $this->getStorageObject((int)$fileData['storage']);
+		} elseif ($storage !== NULL) {
+			$storageObject = $storage;
+			$fileData['storage'] = $storage->getUid();
+		} else {
+			throw new \RuntimeException('A file needs to reside in a Storage', 1381570997);
 		}
+		$fileObject = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Resource\\File', $fileData, $storageObject);
 		return $fileObject;
 	}
 
@@ -530,7 +578,7 @@ class ResourceFactory implements \TYPO3\CMS\Core\SingletonInterface {
 					$fileReferenceData = $GLOBALS['TSFE']->sys_page->checkRecord('sys_file_reference', $uid);
 				} else {
 					/** @var $GLOBALS['TYPO3_DB'] \TYPO3\CMS\Core\Database\DatabaseConnection */
-					$fileReferenceData = $GLOBALS['TYPO3_DB']->exec_SELECTgetSingleRow('*', 'sys_file_reference', 'uid=' . intval($uid) . ' AND deleted=0');
+					$fileReferenceData = $GLOBALS['TYPO3_DB']->exec_SELECTgetSingleRow('*', 'sys_file_reference', 'uid=' . (int)$uid . ' AND deleted=0');
 				}
 				if (!is_array($fileReferenceData)) {
 					throw new \InvalidArgumentException('No fileusage (sys_file_reference) found for given UID.', 1317178794);
@@ -554,7 +602,32 @@ class ResourceFactory implements \TYPO3\CMS\Core\SingletonInterface {
 		$fileReferenceObject = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Resource\\FileReference', $fileReferenceData);
 		return $fileReferenceObject;
 	}
+
+	/**
+	 * Returns an instance of the FileIndexRepository
+	 *
+	 * @return FileIndexRepository
+	 */
+	protected function getFileIndexRepository() {
+		return FileIndexRepository::getInstance();
+	}
+
+	/**
+	 * Returns an instance of the ProcessedFileRepository
+	 *
+	 * @return ProcessedFileRepository
+	 */
+	protected function getProcessedFileRepository() {
+		return GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Resource\\ProcessedFileRepository');
+	}
+
+	/**
+	 * Returns an instance of the Indexer
+	 *
+	 * @return \TYPO3\CMS\Core\Resource\Index\Indexer
+	 */
+	protected function getIndexer(ResourceStorage $storage) {
+		return GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Resource\\Index\\Indexer', $storage);
+	}
+
 }
-
-
-?>

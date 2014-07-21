@@ -1,30 +1,22 @@
 <?php
 namespace TYPO3\CMS\Backend\RecordList;
 
-/***************************************************************
- *  Copyright notice
+/**
+ * This file is part of the TYPO3 CMS project.
  *
- *  (c) 1999-2013 Kasper Skårhøj (kasperYYYY@typo3.com)
- *  All rights reserved
+ * It is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License, either version 2
+ * of the License, or any later version.
  *
- *  This script is part of the TYPO3 project. The TYPO3 project is
- *  free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
+ * For the full copyright and license information, please read the
+ * LICENSE.txt file that was distributed with this source code.
  *
- *  The GNU General Public License can be found at
- *  http://www.gnu.org/copyleft/gpl.html.
- *  A copy is found in the textfile GPL.txt and important notices to the license
- *  from the author is found in LICENSE.txt distributed with these scripts.
- *
- *  This script is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  This copyright notice MUST APPEAR in all copies of the script!
- ***************************************************************/
+ * The TYPO3 project - inspiring people to share!
+ */
+
+use TYPO3\CMS\Backend\Utility\BackendUtility;
+use TYPO3\CMS\Backend\Utility\IconUtility;
+use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
  * Library with a single function addElement that returns table
@@ -99,9 +91,9 @@ abstract class AbstractRecordList {
 	public $fixedL = 30;
 
 	/**
-	 * @todo Define visibility
+	 * Script URL
 	 */
-	public $script = '';
+	public $thisScript = '';
 
 	// Set to zero, if you don't want a left-margin with addElement function
 	/**
@@ -164,6 +156,24 @@ abstract class AbstractRecordList {
 			$this->fixedL = $GLOBALS['BE_USER']->uc['titleLen'];
 		}
 		$this->getTranslateTools();
+	}
+
+	/**
+	 * Sets the script url depending on being a module or script request
+	 */
+	protected function determineScriptUrl() {
+		if ($moduleName = \TYPO3\CMS\Core\Utility\GeneralUtility::_GP('M')) {
+			$this->thisScript = \TYPO3\CMS\Backend\Utility\BackendUtility::getModuleUrl($moduleName);
+		} else {
+			$this->thisScript = \TYPO3\CMS\Core\Utility\GeneralUtility::getIndpEnv('SCRIPT_NAME');
+		}
+	}
+
+	/**
+	 * @return string
+	 */
+	protected function getThisScript() {
+		return strpos($this->thisScript, '?') === FALSE ? $this->thisScript . '?' : $this->thisScript . '&';
 	}
 
 	/**
@@ -266,18 +276,10 @@ abstract class AbstractRecordList {
 	 *
 	 * @return void
 	 * @todo Define visibility
+	 * @deprecated since 6.2, will be removed 2 versions later - Function not needed anymore
 	 */
 	public function writeBottom() {
-		$this->HTMLcode .= '
-
-		<!--
-			End of list table:
-		-->
-		<table border="0" cellpadding="0" cellspacing="0">';
-		$theIcon = '<img' . \TYPO3\CMS\Backend\Utility\IconUtility::skinImg($this->backPath, 'gfx/ol/stopper.gif', 'width="18" height="16"') . ' alt="" />';
-		$this->HTMLcode .= $this->addElement(1, '', array(), '', $this->leftMargin, $theIcon);
-		$this->HTMLcode .= '
-		</table>';
+		GeneralUtility::logDeprecatedFunction();
 	}
 
 	/**
@@ -324,14 +326,14 @@ abstract class AbstractRecordList {
 		$content = '';
 		$tParam = $table ? '&table=' . rawurlencode($table) : '';
 		switch ($type) {
-		case 'fwd':
-			$href = $this->listURL() . '&pointer=' . ($pointer - $this->iLimit) . $tParam;
-			$content = '<a href="' . htmlspecialchars($href) . '">' . \TYPO3\CMS\Backend\Utility\IconUtility::getSpriteIcon('actions-move-up') . '</a> <i>[1 - ' . $pointer . ']</i>';
-			break;
-		case 'rwd':
-			$href = $this->listURL() . '&pointer=' . $pointer . $tParam;
-			$content = '<a href="' . htmlspecialchars($href) . '">' . \TYPO3\CMS\Backend\Utility\IconUtility::getSpriteIcon('actions-move-down') . '</a> <i>[' . ($pointer + 1) . ' - ' . $this->totalItems . ']</i>';
-			break;
+			case 'fwd':
+				$href = $this->listURL() . '&pointer=' . ($pointer - $this->iLimit) . $tParam;
+				$content = '<a href="' . htmlspecialchars($href) . '">' . IconUtility::getSpriteIcon('actions-move-up') . '</a> <i>[1 - ' . $pointer . ']</i>';
+				break;
+			case 'rwd':
+				$href = $this->listURL() . '&pointer=' . $pointer . $tParam;
+				$content = '<a href="' . htmlspecialchars($href) . '">' . IconUtility::getSpriteIcon('actions-move-down') . '</a> <i>[' . ($pointer + 1) . ' - ' . $this->totalItems . ']</i>';
+				break;
 		}
 		return $content;
 	}
@@ -344,7 +346,7 @@ abstract class AbstractRecordList {
 	 * @todo Define visibility
 	 */
 	public function listURL($altId = '') {
-		return $this->script . '?id=' . (strcmp($altId, '') ? $altId : $this->id);
+		return $this->getThisScript() . 'id=' . ($altId !== '' ? $altId : $this->id);
 	}
 
 	/**
@@ -394,7 +396,7 @@ abstract class AbstractRecordList {
 	 */
 	public function initializeLanguages() {
 		// Look up page overlays:
-		$this->pageOverlays = $GLOBALS['TYPO3_DB']->exec_SELECTgetRows('*', 'pages_language_overlay', 'pid=' . intval($this->id) . \TYPO3\CMS\Backend\Utility\BackendUtility::deleteClause('pages_language_overlay') . \TYPO3\CMS\Backend\Utility\BackendUtility::versioningPlaceholderClause('pages_language_overlay'), '', '', '', 'sys_language_uid');
+		$this->pageOverlays = $GLOBALS['TYPO3_DB']->exec_SELECTgetRows('*', 'pages_language_overlay', 'pid=' . (int)$this->id . BackendUtility::deleteClause('pages_language_overlay') . BackendUtility::versioningPlaceholderClause('pages_language_overlay'), '', '', '', 'sys_language_uid');
 		$this->languageIconTitles = $this->getTranslateTools()->getSystemLanguages($this->id, $this->backPath);
 	}
 
@@ -410,7 +412,7 @@ abstract class AbstractRecordList {
 		$out = '';
 		$title = htmlspecialchars($this->languageIconTitles[$sys_language_uid]['title']);
 		if ($this->languageIconTitles[$sys_language_uid]['flagIcon']) {
-			$out .= \TYPO3\CMS\Backend\Utility\IconUtility::getSpriteIcon($this->languageIconTitles[$sys_language_uid]['flagIcon'], array('title' => $title));
+			$out .= IconUtility::getSpriteIcon($this->languageIconTitles[$sys_language_uid]['flagIcon'], array('title' => $title));
 			if (!$addAsAdditionalText) {
 				return $out;
 			}
@@ -427,7 +429,7 @@ abstract class AbstractRecordList {
 	 */
 	protected function getTranslateTools() {
 		if (!isset($this->translateTools)) {
-			$this->translateTools = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Backend\\Configuration\\TranslationConfigurationProvider');
+			$this->translateTools = GeneralUtility::makeInstance('TYPO3\\CMS\\Backend\\Configuration\\TranslationConfigurationProvider');
 		}
 		return $this->translateTools;
 	}
@@ -455,7 +457,7 @@ abstract class AbstractRecordList {
 			if ($launchViewParameter !== '') {
 				$htmlCode .= ' onclick="' . htmlspecialchars(('top.launchView(' . $launchViewParameter . '); return false;')) . '"';
 			}
-			$htmlCode .= ' title="' . htmlspecialchars(\TYPO3\CMS\Core\Utility\GeneralUtility::fixed_lgd_cs(implode(' / ', $result), 100)) . '">';
+			$htmlCode .= ' title="' . htmlspecialchars(GeneralUtility::fixed_lgd_cs(implode(' / ', $result), 100)) . '">';
 			$htmlCode .= count($references);
 			$htmlCode .= '</a>';
 		}
@@ -463,6 +465,3 @@ abstract class AbstractRecordList {
 	}
 
 }
-
-
-?>

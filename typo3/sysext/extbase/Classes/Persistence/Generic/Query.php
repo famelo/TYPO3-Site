@@ -1,38 +1,26 @@
 <?php
 namespace TYPO3\CMS\Extbase\Persistence\Generic;
 
-/***************************************************************
- *  Copyright notice
+/**
+ * This file is part of the TYPO3 CMS project.
  *
- *  (c) 2010-2013 Extbase Team (http://forge.typo3.org/projects/typo3v4-mvc)
- *  Extbase is a backport of TYPO3 Flow. All credits go to the TYPO3 Flow team.
- *  All rights reserved
+ * It is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License, either version 2
+ * of the License, or any later version.
  *
- *  This script is part of the TYPO3 project. The TYPO3 project is
- *  free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
+ * For the full copyright and license information, please read the
+ * LICENSE.txt file that was distributed with this source code.
  *
- *  The GNU General Public License can be found at
- *  http://www.gnu.org/copyleft/gpl.html.
- *  A copy is found in the textfile GPL.txt and important notices to the license
- *  from the author is found in LICENSE.txt distributed with these scripts.
- *
- *
- *  This script is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  This copyright notice MUST APPEAR in all copies of the script!
- ***************************************************************/
+ * The TYPO3 project - inspiring people to share!
+ */
+use TYPO3\CMS\Extbase\Persistence\QueryInterface;
+
 /**
  * The Query class used to run queries against the database
  *
  * @api
  */
-class Query implements \TYPO3\CMS\Extbase\Persistence\QueryInterface {
+class Query implements QueryInterface {
 
 	/**
 	 * An inner join.
@@ -61,21 +49,25 @@ class Query implements \TYPO3\CMS\Extbase\Persistence\QueryInterface {
 
 	/**
 	 * @var \TYPO3\CMS\Extbase\Object\ObjectManagerInterface
+	 * @inject
 	 */
 	protected $objectManager;
 
 	/**
 	 * @var \TYPO3\CMS\Extbase\Persistence\Generic\Mapper\DataMapper
+	 * @inject
 	 */
 	protected $dataMapper;
 
 	/**
 	 * @var \TYPO3\CMS\Extbase\Persistence\PersistenceManagerInterface
+	 * @inject
 	 */
 	protected $persistenceManager;
 
 	/**
 	 * @var \TYPO3\CMS\Extbase\Persistence\Generic\Qom\QueryObjectModelFactory
+	 * @inject
 	 */
 	protected $qomFactory;
 
@@ -112,7 +104,7 @@ class Query implements \TYPO3\CMS\Extbase\Persistence\QueryInterface {
 	/**
 	 * The query settings.
 	 *
-	 * @var \TYPO3\CMS\Extbase\Persistence\Generic\QuerySettingsInterface
+	 * @var QuerySettingsInterface
 	 */
 	protected $querySettings;
 
@@ -126,52 +118,14 @@ class Query implements \TYPO3\CMS\Extbase\Persistence\QueryInterface {
 	}
 
 	/**
-	 * @param \TYPO3\CMS\Extbase\Object\ObjectManagerInterface $objectManager
-	 * @return void
-	 */
-	public function injectObjectManager(\TYPO3\CMS\Extbase\Object\ObjectManagerInterface $objectManager) {
-		$this->objectManager = $objectManager;
-	}
-
-	/**
-	 * Injects the persistence manager, used to fetch the CR session
-	 *
-	 * @param \TYPO3\CMS\Extbase\Persistence\PersistenceManagerInterface $persistenceManager
-	 * @return void
-	 */
-	public function injectPersistenceManager(\TYPO3\CMS\Extbase\Persistence\PersistenceManagerInterface $persistenceManager) {
-		$this->persistenceManager = $persistenceManager;
-	}
-
-	/**
-	 * Injects the DataMapper to map nodes to objects
-	 *
-	 * @param \TYPO3\CMS\Extbase\Persistence\Generic\Mapper\DataMapper $dataMapper
-	 * @return void
-	 */
-	public function injectDataMapper(\TYPO3\CMS\Extbase\Persistence\Generic\Mapper\DataMapper $dataMapper) {
-		$this->dataMapper = $dataMapper;
-	}
-
-	/**
-	 * Injects the Query Object Model Factory
-	 *
-	 * @param \TYPO3\CMS\Extbase\Persistence\Generic\Qom\QueryObjectModelFactory $qomFactory
-	 * @return void
-	 */
-	public function injectQomFactory(\TYPO3\CMS\Extbase\Persistence\Generic\Qom\QueryObjectModelFactory $qomFactory) {
-		$this->qomFactory = $qomFactory;
-	}
-
-	/**
 	 * Sets the Query Settings. These Query settings must match the settings expected by
 	 * the specific Storage Backend.
 	 *
-	 * @param \TYPO3\CMS\Extbase\Persistence\Generic\QuerySettingsInterface $querySettings The Query Settings
+	 * @param QuerySettingsInterface $querySettings The Query Settings
 	 * @return void
 	 * @api This method is not part of FLOW3 API
 	 */
-	public function setQuerySettings(\TYPO3\CMS\Extbase\Persistence\Generic\QuerySettingsInterface $querySettings) {
+	public function setQuerySettings(QuerySettingsInterface $querySettings) {
 		$this->querySettings = $querySettings;
 	}
 
@@ -179,11 +133,11 @@ class Query implements \TYPO3\CMS\Extbase\Persistence\QueryInterface {
 	 * Returns the Query Settings.
 	 *
 	 * @throws Exception
-	 * @return \TYPO3\CMS\Extbase\Persistence\Generic\QuerySettingsInterface $querySettings The Query Settings
+	 * @return QuerySettingsInterface $querySettings The Query Settings
 	 * @api This method is not part of FLOW3 API
 	 */
 	public function getQuerySettings() {
-		if (!$this->querySettings instanceof \TYPO3\CMS\Extbase\Persistence\Generic\QuerySettingsInterface) {
+		if (!$this->querySettings instanceof QuerySettingsInterface) {
 			throw new \TYPO3\CMS\Extbase\Persistence\Generic\Exception('Tried to get the query settings without seting them before.', 1248689115);
 		}
 		return $this->querySettings;
@@ -215,8 +169,9 @@ class Query implements \TYPO3\CMS\Extbase\Persistence\QueryInterface {
 	 * @return string The selector name
 	 */
 	protected function getSelectorName() {
-		if ($this->getSource() instanceof \TYPO3\CMS\Extbase\Persistence\Generic\Qom\SelectorInterface) {
-			return $this->source->getSelectorName();
+		$source = $this->getSource();
+		if ($source instanceof \TYPO3\CMS\Extbase\Persistence\Generic\Qom\SelectorInterface) {
+			return $source->getSelectorName();
 		} else {
 			return '';
 		}
@@ -237,11 +192,12 @@ class Query implements \TYPO3\CMS\Extbase\Persistence\QueryInterface {
 	/**
 	 * Executes the query against the database and returns the result
 	 *
-	 * @return \TYPO3\CMS\Extbase\Persistence\QueryResultInterface|array The query result object or an array if $this->getQuerySettings()->getReturnRawQueryResult() is TRUE
+	 * @param $returnRawQueryResult boolean avoids the object mapping by the persistence
+	 * @return \TYPO3\CMS\Extbase\Persistence\QueryResultInterface|array The query result object or an array if $returnRawQueryResult is TRUE
 	 * @api
 	 */
-	public function execute() {
-		if ($this->getQuerySettings()->getReturnRawQueryResult() === TRUE) {
+	public function execute($returnRawQueryResult = FALSE) {
+		if ($returnRawQueryResult === TRUE || $this->getQuerySettings()->getReturnRawQueryResult() === TRUE) {
 			return $this->persistenceManager->getObjectDataByQuery($this);
 		} else {
 			return $this->objectManager->get('TYPO3\\CMS\\Extbase\\Persistence\\QueryResultInterface', $this);
@@ -257,7 +213,7 @@ class Query implements \TYPO3\CMS\Extbase\Persistence\QueryInterface {
 	 * where 'foo' and 'bar' are property names.
 	 *
 	 * @param array $orderings The property names to order by
-	 * @return \TYPO3\CMS\Extbase\Persistence\QueryInterface
+	 * @return QueryInterface
 	 * @api
 	 */
 	public function setOrderings(array $orderings) {
@@ -285,7 +241,7 @@ class Query implements \TYPO3\CMS\Extbase\Persistence\QueryInterface {
 	 *
 	 * @param integer $limit
 	 * @throws \InvalidArgumentException
-	 * @return \TYPO3\CMS\Extbase\Persistence\QueryInterface
+	 * @return QueryInterface
 	 * @api
 	 */
 	public function setLimit($limit) {
@@ -300,7 +256,7 @@ class Query implements \TYPO3\CMS\Extbase\Persistence\QueryInterface {
 	 * Resets a previously set maximum size of the result set. Returns $this to allow
 	 * for chaining (fluid interface)
 	 *
-	 * @return \TYPO3\CMS\Extbase\Persistence\QueryInterface
+	 * @return QueryInterface
 	 * @api
 	 */
 	public function unsetLimit() {
@@ -324,7 +280,7 @@ class Query implements \TYPO3\CMS\Extbase\Persistence\QueryInterface {
 	 *
 	 * @param integer $offset
 	 * @throws \InvalidArgumentException
-	 * @return \TYPO3\CMS\Extbase\Persistence\QueryInterface
+	 * @return QueryInterface
 	 * @api
 	 */
 	public function setOffset($offset) {
@@ -350,7 +306,7 @@ class Query implements \TYPO3\CMS\Extbase\Persistence\QueryInterface {
 	 * for chaining (fluid interface)
 	 *
 	 * @param \TYPO3\CMS\Extbase\Persistence\Generic\Qom\ConstraintInterface $constraint
-	 * @return \TYPO3\CMS\Extbase\Persistence\QueryInterface
+	 * @return QueryInterface
 	 * @api
 	 */
 	public function matching($constraint) {
@@ -359,12 +315,12 @@ class Query implements \TYPO3\CMS\Extbase\Persistence\QueryInterface {
 	}
 
 	/**
-	 * Sets the statement of this query programmatically. If you use this, you will lose the abstraction from a concrete storage
+	 * Sets the statement of this query. If you use this, you will lose the abstraction from a concrete storage
 	 * backend (database).
 	 *
-	 * @param string $statement The statement
+	 * @param string|\TYPO3\CMS\Core\Database\PreparedStatement $statement The statement
 	 * @param array $parameters An array of parameters. These will be bound to placeholders '?' in the $statement.
-	 * @return \TYPO3\CMS\Extbase\Persistence\QueryInterface
+	 * @return QueryInterface
 	 */
 	public function statement($statement, array $parameters = array()) {
 		$this->statement = $this->qomFactory->statement($statement, $parameters);
@@ -383,7 +339,7 @@ class Query implements \TYPO3\CMS\Extbase\Persistence\QueryInterface {
 	/**
 	 * Gets the constraint for this query.
 	 *
-	 * @return \TYPO3\CMS\Extbase\Persistence\Generic\Qom\Constraint the constraint, or null if none
+	 * @return \TYPO3\CMS\Extbase\Persistence\Generic\Qom\ConstraintInterface|NULL the constraint, or null if none
 	 * @api
 	 */
 	public function getConstraint() {
@@ -433,7 +389,7 @@ class Query implements \TYPO3\CMS\Extbase\Persistence\QueryInterface {
 			$resultingConstraint = array_shift($constraints);
 		}
 		if ($resultingConstraint === NULL) {
-			throw new \TYPO3\CMS\Extbase\Persistence\Generic\Exception\InvalidNumberOfConstraintsException('There must be at least one constraint or a non-empty array of constraints given.', 1268056288);
+			throw new \TYPO3\CMS\Extbase\Persistence\Generic\Exception\InvalidNumberOfConstraintsException('There must be at least one constraint or a non-empty array of constraints given.', 1268056289);
 		}
 		foreach ($constraints as $constraint) {
 			$resultingConstraint = $this->qomFactory->_or($resultingConstraint, $constraint);
@@ -444,11 +400,12 @@ class Query implements \TYPO3\CMS\Extbase\Persistence\QueryInterface {
 	/**
 	 * Performs a logical negation of the given constraint
 	 *
-	 * @param object $constraint Constraint to negate
+	 * @param \TYPO3\CMS\Extbase\Persistence\Generic\Qom\ConstraintInterface $constraint Constraint to negate
+	 * @throws \RuntimeException
 	 * @return \TYPO3\CMS\Extbase\Persistence\Generic\Qom\NotInterface
 	 * @api
 	 */
-	public function logicalNot($constraint) {
+	public function logicalNot(\TYPO3\CMS\Extbase\Persistence\Generic\Qom\ConstraintInterface $constraint) {
 		return $this->qomFactory->not($constraint);
 	}
 
@@ -463,9 +420,17 @@ class Query implements \TYPO3\CMS\Extbase\Persistence\QueryInterface {
 	 */
 	public function equals($propertyName, $operand, $caseSensitive = TRUE) {
 		if (is_object($operand) || $caseSensitive) {
-			$comparison = $this->qomFactory->comparison($this->qomFactory->propertyValue($propertyName, $this->getSelectorName()), \TYPO3\CMS\Extbase\Persistence\QueryInterface::OPERATOR_EQUAL_TO, $operand);
+			$comparison = $this->qomFactory->comparison(
+				$this->qomFactory->propertyValue($propertyName, $this->getSelectorName()),
+				QueryInterface::OPERATOR_EQUAL_TO,
+				$operand
+			);
 		} else {
-			$comparison = $this->qomFactory->comparison($this->qomFactory->lowerCase($this->qomFactory->propertyValue($propertyName, $this->getSelectorName())), \TYPO3\CMS\Extbase\Persistence\QueryInterface::OPERATOR_EQUAL_TO, \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Charset\\CharsetConverter')->conv_case(\TYPO3\CMS\Extbase\Persistence\Generic\Query::CHARSET, $operand, 'toLower'));
+			$comparison = $this->qomFactory->comparison(
+				$this->qomFactory->lowerCase($this->qomFactory->propertyValue($propertyName, $this->getSelectorName())),
+				QueryInterface::OPERATOR_EQUAL_TO,
+				\TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Charset\\CharsetConverter')->conv_case(\TYPO3\CMS\Extbase\Persistence\Generic\Query::CHARSET, $operand, 'toLower')
+			);
 		}
 		return $comparison;
 	}
@@ -480,7 +445,7 @@ class Query implements \TYPO3\CMS\Extbase\Persistence\QueryInterface {
 	 * @api
 	 */
 	public function like($propertyName, $operand, $caseSensitive = TRUE) {
-		return $this->qomFactory->comparison($this->qomFactory->propertyValue($propertyName, $this->getSelectorName()), \TYPO3\CMS\Extbase\Persistence\QueryInterface::OPERATOR_LIKE, $operand);
+		return $this->qomFactory->comparison($this->qomFactory->propertyValue($propertyName, $this->getSelectorName()), QueryInterface::OPERATOR_LIKE, $operand);
 	}
 
 	/**
@@ -493,7 +458,7 @@ class Query implements \TYPO3\CMS\Extbase\Persistence\QueryInterface {
 	 * @api
 	 */
 	public function contains($propertyName, $operand) {
-		return $this->qomFactory->comparison($this->qomFactory->propertyValue($propertyName, $this->getSelectorName()), \TYPO3\CMS\Extbase\Persistence\QueryInterface::OPERATOR_CONTAINS, $operand);
+		return $this->qomFactory->comparison($this->qomFactory->propertyValue($propertyName, $this->getSelectorName()), QueryInterface::OPERATOR_CONTAINS, $operand);
 	}
 
 	/**
@@ -508,9 +473,9 @@ class Query implements \TYPO3\CMS\Extbase\Persistence\QueryInterface {
 	 */
 	public function in($propertyName, $operand) {
 		if (!is_array($operand) && !$operand instanceof \ArrayAccess && !$operand instanceof \Traversable) {
-			throw new \TYPO3\CMS\Extbase\Persistence\Generic\Exception\UnexpectedTypeException('The "in" operator must be given a mutlivalued operand (array, ArrayAccess, Traversable).', 1264678095);
+			throw new \TYPO3\CMS\Extbase\Persistence\Generic\Exception\UnexpectedTypeException('The "in" operator must be given a multivalued operand (array, ArrayAccess, Traversable).', 1264678095);
 		}
-		return $this->qomFactory->comparison($this->qomFactory->propertyValue($propertyName, $this->getSelectorName()), \TYPO3\CMS\Extbase\Persistence\QueryInterface::OPERATOR_IN, $operand);
+		return $this->qomFactory->comparison($this->qomFactory->propertyValue($propertyName, $this->getSelectorName()), QueryInterface::OPERATOR_IN, $operand);
 	}
 
 	/**
@@ -522,7 +487,7 @@ class Query implements \TYPO3\CMS\Extbase\Persistence\QueryInterface {
 	 * @api
 	 */
 	public function lessThan($propertyName, $operand) {
-		return $this->qomFactory->comparison($this->qomFactory->propertyValue($propertyName, $this->getSelectorName()), \TYPO3\CMS\Extbase\Persistence\QueryInterface::OPERATOR_LESS_THAN, $operand);
+		return $this->qomFactory->comparison($this->qomFactory->propertyValue($propertyName, $this->getSelectorName()), QueryInterface::OPERATOR_LESS_THAN, $operand);
 	}
 
 	/**
@@ -534,7 +499,7 @@ class Query implements \TYPO3\CMS\Extbase\Persistence\QueryInterface {
 	 * @api
 	 */
 	public function lessThanOrEqual($propertyName, $operand) {
-		return $this->qomFactory->comparison($this->qomFactory->propertyValue($propertyName, $this->getSelectorName()), \TYPO3\CMS\Extbase\Persistence\QueryInterface::OPERATOR_LESS_THAN_OR_EQUAL_TO, $operand);
+		return $this->qomFactory->comparison($this->qomFactory->propertyValue($propertyName, $this->getSelectorName()), QueryInterface::OPERATOR_LESS_THAN_OR_EQUAL_TO, $operand);
 	}
 
 	/**
@@ -546,7 +511,7 @@ class Query implements \TYPO3\CMS\Extbase\Persistence\QueryInterface {
 	 * @api
 	 */
 	public function greaterThan($propertyName, $operand) {
-		return $this->qomFactory->comparison($this->qomFactory->propertyValue($propertyName, $this->getSelectorName()), \TYPO3\CMS\Extbase\Persistence\QueryInterface::OPERATOR_GREATER_THAN, $operand);
+		return $this->qomFactory->comparison($this->qomFactory->propertyValue($propertyName, $this->getSelectorName()), QueryInterface::OPERATOR_GREATER_THAN, $operand);
 	}
 
 	/**
@@ -558,7 +523,7 @@ class Query implements \TYPO3\CMS\Extbase\Persistence\QueryInterface {
 	 * @api
 	 */
 	public function greaterThanOrEqual($propertyName, $operand) {
-		return $this->qomFactory->comparison($this->qomFactory->propertyValue($propertyName, $this->getSelectorName()), \TYPO3\CMS\Extbase\Persistence\QueryInterface::OPERATOR_GREATER_THAN_OR_EQUAL_TO, $operand);
+		return $this->qomFactory->comparison($this->qomFactory->propertyValue($propertyName, $this->getSelectorName()), QueryInterface::OPERATOR_GREATER_THAN_OR_EQUAL_TO, $operand);
 	}
 
 	/**
@@ -595,11 +560,10 @@ class Query implements \TYPO3\CMS\Extbase\Persistence\QueryInterface {
 	 * @param string $propertyName The name of the multivalued property to compare against
 	 * @throws \TYPO3\CMS\Extbase\Persistence\Generic\Exception\NotImplementedException
 	 * @throws \TYPO3\CMS\Extbase\Persistence\Exception\InvalidQueryException if used on a single-valued property
+	 * @return bool
 	 * @api
 	 */
 	public function isEmpty($propertyName) {
 		throw new \TYPO3\CMS\Extbase\Persistence\Generic\Exception\NotImplementedException(__METHOD__);
 	}
 }
-
-?>

@@ -1,28 +1,18 @@
 <?php
 namespace TYPO3\CMS\Install\Updates;
 
-/***************************************************************
- *  Copyright notice
+/**
+ * This file is part of the TYPO3 CMS project.
  *
- *  (c) 2013 Francois Suter <francois@typo3.org>
- *  All rights reserved
+ * It is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License, either version 2
+ * of the License, or any later version.
  *
- *  This script is part of the TYPO3 project. The TYPO3 project is
- *  free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 3 of the License, or
- *  (at your option) any later version.
+ * For the full copyright and license information, please read the
+ * LICENSE.txt file that was distributed with this source code.
  *
- *  The GNU General Public License can be found at
- *  http://www.gnu.org/copyleft/gpl.html.
- *
- *  This script is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  This copyright notice MUST APPEAR in all copies of the script!
- ***************************************************************/
+ * The TYPO3 project - inspiring people to share!
+ */
 
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 
@@ -31,7 +21,7 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
  *
  * The content string and the reference index (sys_refindex) are updated accordingly.
  */
-class RteFileLinksUpdateWizard extends \TYPO3\CMS\Install\Updates\AbstractUpdate {
+class RteFileLinksUpdateWizard extends AbstractUpdate {
 
 	/**
 	 * Title of the update wizard
@@ -149,24 +139,15 @@ class RteFileLinksUpdateWizard extends \TYPO3\CMS\Install\Updates\AbstractUpdate
 		$dbQueries = $this->queries;
 
 		if (count($this->errors) > 0) {
-			foreach ($this->errors as $errorMessage) {
-				$message = GeneralUtility::makeInstance(
-					'TYPO3\\CMS\\Core\\Messaging\\FlashMessage',
-					$errorMessage,
-					'',
-					\TYPO3\CMS\Core\Messaging\FlashMessage::WARNING
-				);
-				/** @var \TYPO3\CMS\Core\Messaging\FlashMessage $message */
-				$customMessages .= '<br />' . $message->render();
-			}
+			$customMessages .= implode(PHP_EOL, $this->errors);
 			if ($this->convertedLinkCounter == 0) {
-					// no links converted only missing files: UPDATE was not successful
+				// no links converted only missing files: UPDATE was not successful
 				return FALSE;
 			}
 		}
 
 		if ($this->convertedLinkCounter > 0) {
-			$customMessages = $this->convertedLinkCounter . ' links converted.<br />' . $customMessages;
+			$customMessages = $this->convertedLinkCounter . ' links converted.' . PHP_EOL . $customMessages;
 		} else {
 			$customMessages .= 'No file links found';
 		}
@@ -204,11 +185,16 @@ class RteFileLinksUpdateWizard extends \TYPO3\CMS\Install\Updates\AbstractUpdate
 	 */
 	protected function convertFileLinks(array $reference, array $record) {
 		// First of all, try to get the referenced file. Continue only if found.
-		$fileObject = $this->fetchReferencedFile($reference['ref_string'], $reference);
+		try {
+			$fileObject = $this->fetchReferencedFile($reference['ref_string'], $reference);
+		} catch (\InvalidArgumentException $exception) {
+			$fileObject = NULL;
+			$this->errors[] = $reference['ref_string'] . ' could not be replaced. File does not exist.';
+		}
 		if ($fileObject instanceof \TYPO3\CMS\Core\Resource\AbstractFile) {
 			// Next, match the reference path in the content to be sure it's present inside a <link> tag
 			$content = $record[$reference['field']];
-			$regularExpression = '$<(link ' . $reference['ref_string'] . ').*>$';
+			$regularExpression = '$<((link|LINK) ' . str_replace(' ', '%20', $reference['ref_string']) . ').*>$';
 			$matches = array();
 			$result = preg_match($regularExpression, $content, $matches);
 			if ($result) {
@@ -318,5 +304,3 @@ class RteFileLinksUpdateWizard extends \TYPO3\CMS\Install\Updates\AbstractUpdate
 	}
 
 }
-
-?>

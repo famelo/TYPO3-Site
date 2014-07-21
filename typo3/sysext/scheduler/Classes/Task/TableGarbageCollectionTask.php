@@ -1,35 +1,26 @@
 <?php
 namespace TYPO3\CMS\Scheduler\Task;
 
-/***************************************************************
- *  Copyright notice
+/**
+ * This file is part of the TYPO3 CMS project.
  *
- *  (c) 2011-2013 Christian Kuhn <lolli@schwarzbu.ch>
- *  All rights reserved
+ * It is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License, either version 2
+ * of the License, or any later version.
  *
- *  This script is part of the TYPO3 project. The TYPO3 project is
- *  free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
+ * For the full copyright and license information, please read the
+ * LICENSE.txt file that was distributed with this source code.
  *
- *  The GNU General Public License can be found at
- *  http://www.gnu.org/copyleft/gpl.html.
- *
- *  This script is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  This copyright notice MUST APPEAR in all copies of the script!
- ***************************************************************/
+ * The TYPO3 project - inspiring people to share!
+ */
+
 /**
  * Remove old entries from tables.
  *
  * This task deletes rows from tables older than the given number of days.
  *
  * Available tables must be registered in
- * $GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['scheduler']['tasks']['tx_scheduler_TableGarbageCollection']['options']['tables']
+ * $GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['scheduler']['tasks']['TYPO3\\CMS\\Scheduler\\Task\\TableGarbageCollectionTask']['options']['tables']
  * See ext_localconf.php of scheduler extension for an example
  *
  * @author Christian Kuhn <lolli@schwarzbu.ch>
@@ -88,7 +79,6 @@ class TableGarbageCollectionTask extends \TYPO3\CMS\Scheduler\Task\AbstractTask 
 			// Expire field = 0 means no expiration
 			$where = $field . ' <= \'' . $dateLimit . '\' AND ' . $field . ' > \'0\'';
 		} elseif (!empty($configuration['dateField'])) {
-			$field = $configuration['dateField'];
 			if (!$this->allTables) {
 				$deleteTimestamp = strtotime('-' . $this->numberOfDays . 'days');
 			} else {
@@ -116,14 +106,11 @@ class TableGarbageCollectionTask extends \TYPO3\CMS\Scheduler\Task\AbstractTask 
 	 */
 	public function getAdditionalInformation() {
 		if ($this->allTables) {
-			$message = $GLOBALS['LANG']->sL('LLL:EXT:scheduler/mod1/locallang.xml:label.tableGarbageCollection.additionalInformationAllTables');
+			$message = $GLOBALS['LANG']->sL('LLL:EXT:scheduler/mod1/locallang.xlf:label.tableGarbageCollection.additionalInformationAllTables');
 		} else {
-			$message = sprintf($GLOBALS['LANG']->sL('LLL:EXT:scheduler/mod1/locallang.xml:label.tableGarbageCollection.additionalInformationTable'), $this->table);
+			$message = sprintf($GLOBALS['LANG']->sL('LLL:EXT:scheduler/mod1/locallang.xlf:label.tableGarbageCollection.additionalInformationTable'), $this->table);
 		}
 		return $message;
 	}
 
 }
-
-
-?>

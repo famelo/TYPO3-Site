@@ -1,31 +1,21 @@
 <?php
 namespace TYPO3\CMS\Rtehtmlarea;
 
-/***************************************************************
- *  Copyright notice
+/**
+ * This file is part of the TYPO3 CMS project.
  *
- *  (c) 2005-2013 Stanislas Rolland <typo3(arobas)sjbr.ca>
- *  All rights reserved
+ * It is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License, either version 2
+ * of the License, or any later version.
  *
- *  This script is part of the TYPO3 project. The TYPO3 project is
- *  free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
+ * For the full copyright and license information, please read the
+ * LICENSE.txt file that was distributed with this source code.
  *
- *  The GNU General Public License can be found at
- *  http://www.gnu.org/copyleft/gpl.html.
- *  A copy is found in the textfile GPL.txt and important notices to the license
- *  from the author is found in LICENSE.txt distributed with these scripts.
- *
- *
- *  This script is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  This copyright notice MUST APPEAR in all copies of the script!
- ***************************************************************/
+ * The TYPO3 project - inspiring people to share!
+ */
+
+use TYPO3\CMS\Core\Utility\GeneralUtility;
+
 /**
  * Content parsing for htmlArea RTE
  *
@@ -66,12 +56,12 @@ class ContentParser {
 	 * @todo Define visibility
 	 */
 	public function init() {
-		$this->doc = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Backend\\Template\\DocumentTemplate');
+		$this->doc = GeneralUtility::makeInstance('TYPO3\\CMS\\Backend\\Template\\DocumentTemplate');
 		$this->doc->backPath = $GLOBALS['BACK_PATH'];
 		$this->doc->JScode = '';
 		$this->modData = $GLOBALS['BE_USER']->getModuleData($GLOBALS['MCONF']['name'], 'ses');
-		if (\TYPO3\CMS\Core\Utility\GeneralUtility::_GP('OC_key')) {
-			$parts = explode('|', \TYPO3\CMS\Core\Utility\GeneralUtility::_GP('OC_key'));
+		if (GeneralUtility::_GP('OC_key')) {
+			$parts = explode('|', GeneralUtility::_GP('OC_key'));
 			$this->modData['openKeys'][$parts[1]] = $parts[0] == 'O' ? 1 : 0;
 			$GLOBALS['BE_USER']->pushModuleData($GLOBALS['MCONF']['name'], $this->modData);
 		}
@@ -107,12 +97,12 @@ class ContentParser {
 	 */
 	public function main_parse_html($openKeys) {
 		global $TYPO3_CONF_VARS;
-		$editorNo = \TYPO3\CMS\Core\Utility\GeneralUtility::_GP('editorNo');
-		$html = \TYPO3\CMS\Core\Utility\GeneralUtility::_GP('content');
-		$RTEtsConfigParts = explode(':', \TYPO3\CMS\Core\Utility\GeneralUtility::_GP('RTEtsConfigParams'));
+		$editorNo = GeneralUtility::_GP('editorNo');
+		$html = GeneralUtility::_GP('content');
+		$RTEtsConfigParts = explode(':', GeneralUtility::_GP('RTEtsConfigParams'));
 		$RTEsetup = $GLOBALS['BE_USER']->getTSConfig('RTE', \TYPO3\CMS\Backend\Utility\BackendUtility::getPagesTSconfig($RTEtsConfigParts[5]));
 		$thisConfig = \TYPO3\CMS\Backend\Utility\BackendUtility::RTEsetup($RTEsetup['properties'], $RTEtsConfigParts[0], $RTEtsConfigParts[2], $RTEtsConfigParts[4]);
-		$HTMLParser = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Html\\HtmlParser');
+		$HTMLParser = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Html\\HtmlParser');
 		if (is_array($thisConfig['enableWordClean.'])) {
 			$HTMLparserConfig = $thisConfig['enableWordClean.']['HTMLparser.'];
 			if (is_array($HTMLparserConfig)) {
@@ -125,7 +115,7 @@ class ContentParser {
 		}
 		if (is_array($TYPO3_CONF_VARS['EXTCONF'][$this->extKey][$this->prefixId]['cleanPastedContent'])) {
 			foreach ($TYPO3_CONF_VARS['EXTCONF'][$this->extKey][$this->prefixId]['cleanPastedContent'] as $classRef) {
-				$hookObj = \TYPO3\CMS\Core\Utility\GeneralUtility::getUserObj($classRef);
+				$hookObj = GeneralUtility::getUserObj($classRef);
 				if (method_exists($hookObj, 'cleanPastedContent_afterCleanWord')) {
 					$html = $hookObj->cleanPastedContent_afterCleanWord($html, $thisConfig);
 				}
@@ -144,19 +134,19 @@ class ContentParser {
 	protected function keepSpanTagsWithId(&$HTMLparserConfig) {
 		// Allow span tag
 		if (isset($HTMLparserConfig['allowTags'])) {
-			if (!\TYPO3\CMS\Core\Utility\GeneralUtility::inList($HTMLparserConfig['allowTags'], 'span')) {
+			if (!GeneralUtility::inList($HTMLparserConfig['allowTags'], 'span')) {
 				$HTMLparserConfig['allowTags'] .= ',span';
 			}
 		} else {
 			$HTMLparserConfig['allowTags'] = 'span';
 		}
 		// Allow attributes on span tags
-		if (isset($HTMLparserConfig['noAttrib']) && \TYPO3\CMS\Core\Utility\GeneralUtility::inList($HTMLparserConfig['noAttrib'], 'span')) {
-			$HTMLparserConfig['noAttrib'] = \TYPO3\CMS\Core\Utility\GeneralUtility::rmFromList('span', $HTMLparserConfig['noAttrib']);
+		if (isset($HTMLparserConfig['noAttrib']) && GeneralUtility::inList($HTMLparserConfig['noAttrib'], 'span')) {
+			$HTMLparserConfig['noAttrib'] = GeneralUtility::rmFromList('span', $HTMLparserConfig['noAttrib']);
 		}
 		// Do not remove span tags
-		if (isset($HTMLparserConfig['removeTags']) && \TYPO3\CMS\Core\Utility\GeneralUtility::inList($HTMLparserConfig['removeTags'], 'span')) {
-			$HTMLparserConfig['removeTags'] = \TYPO3\CMS\Core\Utility\GeneralUtility::rmFromList('span', $HTMLparserConfig['removeTags']);
+		if (isset($HTMLparserConfig['removeTags']) && GeneralUtility::inList($HTMLparserConfig['removeTags'], 'span')) {
+			$HTMLparserConfig['removeTags'] = GeneralUtility::rmFromList('span', $HTMLparserConfig['removeTags']);
 		}
 		// Review the tags array
 		if (is_array($HTMLparserConfig['tags.'])) {
@@ -168,7 +158,7 @@ class ContentParser {
 				if (isset($HTMLparserConfig['tags.']['span.']['allowedAttribs'])) {
 					if (!$HTMLparserConfig['tags.']['span.']['allowedAttribs']) {
 						$HTMLparserConfig['tags.']['span.']['allowedAttribs'] = 'id';
-					} elseif (!\TYPO3\CMS\Core\Utility\GeneralUtility::inList($HTMLparserConfig['tags.']['span.']['allowedAttribs'], 'id')) {
+					} elseif (!GeneralUtility::inList($HTMLparserConfig['tags.']['span.']['allowedAttribs'], 'id')) {
 						$HTMLparserConfig['tags.']['span.']['allowedAttribs'] .= ',id';
 					}
 				}
@@ -180,6 +170,3 @@ class ContentParser {
 	}
 
 }
-
-
-?>

@@ -5,9 +5,9 @@ if (!defined('TYPO3_MODE')) {
 if (TYPO3_MODE === 'BE') {
 	\TYPO3\CMS\Core\Utility\ExtensionManagementUtility::insertModuleFunction(
 		'web_func',
-		'TYPO3\\CMS\\WizardSortPages\\View\\SortPagesWizardModuleFunction',
-		\TYPO3\CMS\Core\Utility\ExtensionManagementUtility::extPath($_EXTKEY) . 'Classes/View/SortPagesWizardModuleFunction.php',
-		'LLL:EXT:wizard_sortpages/locallang.php:wiz_sort',
+		'TYPO3\\CMS\\WizardSortpages\\View\\SortPagesWizardModuleFunction',
+		NULL,
+		'LLL:EXT:wizard_sortpages/locallang.xlf:wiz_sort',
 		'wiz'
 	);
 	\TYPO3\CMS\Core\Utility\ExtensionManagementUtility::addLLrefForTCAdescr(
@@ -15,4 +15,3 @@ if (TYPO3_MODE === 'BE') {
 		'EXT:wizard_sortpages/locallang_csh.xlf'
 	);
 }
-?>

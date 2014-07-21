@@ -20,10 +20,11 @@ namespace TYPO3\CMS\Fluid\Tests\Unit\Core\Widget;
  *                                                                        *
  * The TYPO3 project - inspiring people to share!                         *
  *                                                                        */
+
 /**
- * Testcase for WidgetRequestBuilder
+ * Test case
  */
-class WidgetRequestBuilderTest extends \TYPO3\CMS\Extbase\Tests\Unit\BaseTestCase {
+class WidgetRequestBuilderTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 
 	/**
 	 * @var \TYPO3\CMS\Fluid\Core\Widget\WidgetRequestBuilder
@@ -50,43 +51,16 @@ class WidgetRequestBuilderTest extends \TYPO3\CMS\Extbase\Tests\Unit\BaseTestCas
 	 */
 	protected $mockWidgetContext;
 
-	/**
-	 * @var array
-	 */
-	protected $serverBackup;
-
-	/**
-	 * @var array
-	 */
-	protected $getBackup;
-
-	/**
-	 * @var array
-	 */
-	protected $postBackup;
-
 	public function setUp() {
-		$this->serverBackup = $_SERVER;
-		$this->getBackup = $_GET;
-		$this->postBackup = $_POST;
 		$this->widgetRequestBuilder = $this->getAccessibleMock('TYPO3\\CMS\\Fluid\\Core\\Widget\\WidgetRequestBuilder', array('setArgumentsFromRawRequestData'));
 		$this->mockWidgetRequest = $this->getMock('TYPO3\\CMS\\Fluid\\Core\\Widget\\WidgetRequest');
 		$this->mockObjectManager = $this->getMock('TYPO3\\CMS\\Extbase\\Object\\ObjectManagerInterface');
 		$this->mockObjectManager->expects($this->once())->method('get')->with('TYPO3\\CMS\\Fluid\\Core\\Widget\\WidgetRequest')->will($this->returnValue($this->mockWidgetRequest));
 		$this->widgetRequestBuilder->_set('objectManager', $this->mockObjectManager);
 		$this->mockWidgetContext = $this->getMock('TYPO3\\CMS\\Fluid\\Core\\Widget\\WidgetContext');
-		$this->mockAjaxWidgetContextHolder = $this->getMock('TYPO3\\CMS\\Fluid\\Core\\Widget\\AjaxWidgetContextHolder');
+		$this->mockAjaxWidgetContextHolder = $this->getMock('TYPO3\\CMS\\Fluid\\Core\\Widget\\AjaxWidgetContextHolder', array(), array(), '', FALSE);
 		$this->widgetRequestBuilder->injectAjaxWidgetContextHolder($this->mockAjaxWidgetContextHolder);
 		$this->mockAjaxWidgetContextHolder->expects($this->once())->method('get')->will($this->returnValue($this->mockWidgetContext));
-	}
-
-	/**
-	 * @return void
-	 */
-	public function tearDown() {
-		$_SERVER = $this->serverBackup;
-		$_GET = $this->getBackup;
-		$_POST = $this->postBackup;
 	}
 
 	/**
@@ -166,5 +140,3 @@ class WidgetRequestBuilderTest extends \TYPO3\CMS\Extbase\Tests\Unit\BaseTestCas
 		$this->assertSame($expected, $actual);
 	}
 }
-
-?>

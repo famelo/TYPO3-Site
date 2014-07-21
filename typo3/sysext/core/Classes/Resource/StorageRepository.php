@@ -1,31 +1,18 @@
 <?php
 namespace TYPO3\CMS\Core\Resource;
 
-/***************************************************************
- *  Copyright notice
+/**
+ * This file is part of the TYPO3 CMS project.
  *
- *  (c) 2011-2013 Andreas Wolf <andreas.wolf@ikt-werk.de>
- *  All rights reserved
+ * It is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License, either version 2
+ * of the License, or any later version.
  *
- *  This script is part of the TYPO3 project. The TYPO3 project is
- *  free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
+ * For the full copyright and license information, please read the
+ * LICENSE.txt file that was distributed with this source code.
  *
- *  The GNU General Public License can be found at
- *  http://www.gnu.org/copyleft/gpl.html.
- *  A copy is found in the textfile GPL.txt and important notices to the license
- *  from the author is found in LICENSE.txt distributed with these scripts.
- *
- *
- *  This script is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  This copyright notice MUST APPEAR in all copies of the script!
- ***************************************************************/
+ * The TYPO3 project - inspiring people to share!
+ */
 /**
  * Repository for accessing the file mounts
  *
@@ -33,6 +20,11 @@ namespace TYPO3\CMS\Core\Resource;
  * @author Ingmar Schlecht <ingmar@typo3.org>
  */
 class StorageRepository extends AbstractRepository {
+
+	/**
+	 * @var null|array‚
+	 */
+	protected static $storageRowCache = NULL;
 
 	/**
 	 * @var string
@@ -59,12 +51,74 @@ class StorageRepository extends AbstractRepository {
 	 */
 	protected $logger;
 
+	/**
+	 * @var \TYPO3\CMS\Core\Database\DatabaseConnection
+	 */
+	protected $db;
+
 	public function __construct() {
 		parent::__construct();
 
 		/** @var $logManager \TYPO3\CMS\Core\Log\LogManager */
-		$logManager = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\CMS\Core\Log\LogManager');
+		$logManager = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Log\\LogManager');
 		$this->logger = $logManager->getLogger(__CLASS__);
+		$this->db = $GLOBALS['TYPO3_DB'];
+	}
+
+	/**
+	 * @param integer $uid
+	 *
+	 * @return null|ResourceStorage
+	 */
+	public function findByUid($uid) {
+		$this->initializeLocalCache();
+		if (isset(self::$storageRowCache[$uid])) {
+			return  $this->factory->getStorageObject($uid, self::$storageRowCache[$uid]);
+		}
+		return NULL;
+	}
+
+
+	/**
+	 * Initializes the Storage
+	 *
+	 * @return void
+	 */
+	protected function initializeLocalCache() {
+		if (static::$storageRowCache === NULL) {
+
+			static::$storageRowCache = $this->db->exec_SELECTgetRows(
+				'*',
+				$this->table,
+				'1=1' . $this->getWhereClauseForEnabledFields(),
+				'',
+				'name',
+				'',
+				'uid'
+			);
+			// if no storage is created before or the user has not access to a storage
+			// static::$storageRowCache would have the value array()
+			// so check if there is any record. If no record is found, create the fileadmin/ storage
+			// selecting just one row is enoung
+
+			if (static::$storageRowCache === array()) {
+				$storageObjectsExists = $this->db->exec_SELECTgetSingleRow('uid', $this->table, '');
+				if ($storageObjectsExists !== NULL) {
+					if ($this->createLocalStorage(
+						'fileadmin/ (auto-created)',
+						$GLOBALS['TYPO3_CONF_VARS']['BE']['fileadminDir'],
+						'relative',
+						'This is the local fileadmin/ directory. This storage mount has been created automatically by TYPO3.',
+						TRUE
+					) > 0 ) {
+						// reset to null to force reloading of storages
+						static::$storageRowCache = NULL;
+						// call self for initialize Cache
+						$this->initializeLocalCache();
+					}
+				}
+			}
+		}
 	}
 
 	/**
@@ -74,26 +128,25 @@ class StorageRepository extends AbstractRepository {
 	 * @return ResourceStorage[]
 	 */
 	public function findByStorageType($storageType) {
+		$this->initializeLocalCache();
+
 		/** @var $driverRegistry Driver\DriverRegistry */
-		$driverRegistry = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\CMS\Core\Resource\Driver\DriverRegistry');
+		$driverRegistry = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Resource\\Driver\\DriverRegistry');
+
 		$storageObjects = array();
-		$whereClause = $this->typeField . ' = ' . $GLOBALS['TYPO3_DB']->fullQuoteStr($storageType, $this->table);
-		$res = $GLOBALS['TYPO3_DB']->exec_SELECTquery(
-			'*',
-			$this->table,
-			$whereClause . $this->getWhereClauseForEnabledFields()
-		);
-		while ($row = $GLOBALS['TYPO3_DB']->sql_fetch_assoc($res)) {
-			if ($driverRegistry->driverExists($row['driver'])) {
-				$storageObjects[] = $this->createDomainObject($row);
+		foreach (static::$storageRowCache as $storageRow) {
+			if ($storageRow['driver'] !== $storageType) {
+				continue;
+			}
+			if ($driverRegistry->driverExists($storageRow['driver'])) {
+				$storageObjects[] = $this->factory->getStorageObject($storageRow['uid'], $storageRow);
 			} else {
 				$this->logger->warning(
-					sprintf('Could not instantiate storage "%s" because of missing driver.', array($row['name'])),
-					$row
+					sprintf('Could not instantiate storage "%s" because of missing driver.', array($storageRow['name'])),
+					$storageRow
 				);
 			}
 		}
-		$GLOBALS['TYPO3_DB']->sql_free_result($res);
 		return $storageObjects;
 	}
 
@@ -104,43 +157,22 @@ class StorageRepository extends AbstractRepository {
 	 * @return ResourceStorage[]
 	 */
 	public function findAll() {
-			// check if we have never created a storage before (no records, regardless of the enableFields),
-			// only fetch one record for that (is enough). If no record is found, create the fileadmin/ storage
-		$storageObjectsCount = $GLOBALS['TYPO3_DB']->exec_SELECTcountRows('uid', $this->table, '1=1');
-		if ($storageObjectsCount === 0) {
-			$this->createLocalStorage(
-				'fileadmin/ (auto-created)',
-				$GLOBALS['TYPO3_CONF_VARS']['BE']['fileadminDir'],
-				'relative',
-				'This is the local fileadmin/ directory. This storage mount has been created automatically by TYPO3.'
-			);
-		}
-
-		$storageObjects = array();
-		$whereClause = NULL;
-		if ($this->type != '') {
-			$whereClause = $this->typeField . ' = ' . $GLOBALS['TYPO3_DB']->fullQuoteStr($this->type, $this->table);
-		}
-		$res = $GLOBALS['TYPO3_DB']->exec_SELECTquery(
-			'*',
-			$this->table,
-			($whereClause ? $whereClause : '1=1') . $this->getWhereClauseForEnabledFields()
-		);
+		$this->initializeLocalCache();
 
 		/** @var $driverRegistry Driver\DriverRegistry */
-		$driverRegistry = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\CMS\Core\Resource\Driver\DriverRegistry');
+		$driverRegistry = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Resource\\Driver\\DriverRegistry');
 
-		while ($row = $GLOBALS['TYPO3_DB']->sql_fetch_assoc($res)) {
-			if ($driverRegistry->driverExists($row['driver'])) {
-				$storageObjects[] = $this->createDomainObject($row);
+		$storageObjects = array();
+		foreach (static::$storageRowCache as $storageRow) {
+			if ($driverRegistry->driverExists($storageRow['driver'])) {
+				$storageObjects[] = $this->factory->getStorageObject($storageRow['uid'], $storageRow);
 			} else {
 				$this->logger->warning(
-					sprintf('Could not instantiate storage "%s" because of missing driver.', array($row['name'])),
-					$row
+					sprintf('Could not instantiate storage "%s" because of missing driver.', array($storageRow['name'])),
+					$storageRow
 				);
 			}
 		}
-		$GLOBALS['TYPO3_DB']->sql_free_result($res);
 		return $storageObjects;
 	}
 
@@ -151,17 +183,19 @@ class StorageRepository extends AbstractRepository {
 	 * @param string $basePath
 	 * @param string $pathType
 	 * @param string $description
+	 * @param bool $default set to default storage
 	 * @return integer uid of the inserted record
 	 */
-	public function createLocalStorage($name, $basePath, $pathType, $description = '') {
-
-			// create the FlexForm for the driver configuration
+	public function createLocalStorage($name, $basePath, $pathType, $description = '', $default = FALSE) {
+		$caseSensitive = $this->testCaseSensitivity($pathType === 'relative' ? PATH_site . $basePath : $basePath);
+		// create the FlexForm for the driver configuration
 		$flexFormData = array(
 			'data' => array(
 				'sDEF' => array(
 					'lDEF' => array(
 						'basePath' => array('vDEF' => rtrim($basePath, '/') . '/'),
-						'pathType' => array('vDEF' => $pathType)
+						'pathType' => array('vDEF' => $pathType),
+						'caseSensitive' => array('vDEF' => $caseSensitive)
 					)
 				)
 			)
@@ -183,10 +217,11 @@ class StorageRepository extends AbstractRepository {
 			'is_online' => 1,
 			'is_browsable' => 1,
 			'is_public' => 1,
-			'is_writable' => 1
+			'is_writable' => 1,
+			'is_default' => $default ? 1 : 0
 		);
-		$GLOBALS['TYPO3_DB']->exec_INSERTquery('sys_file_storage', $field_values);
-		return (int) $GLOBALS['TYPO3_DB']->sql_insert_id();
+		$this->db->exec_INSERTquery('sys_file_storage', $field_values);
+		return (int)$this->db->sql_insert_id();
 	}
 
 	/**
@@ -199,7 +234,33 @@ class StorageRepository extends AbstractRepository {
 		return $this->factory->getStorageObject($databaseRow['uid'], $databaseRow);
 	}
 
+	/**
+	 * Test if the local filesystem is case sensitive
+	 *
+	 * @param string $absolutePath
+	 * @return boolean
+	 */
+	protected function testCaseSensitivity($absolutePath) {
+		$caseSensitive = TRUE;
+		$path = rtrim($absolutePath, '/') . '/aAbB';
+		$testFileExists = @file_exists($path);
+
+		// create test file
+		if (!$testFileExists) {
+			touch($path);
+		}
+
+		// do the actual sensitivity check
+		if (@file_exists(strtoupper($path)) && @file_exists(strtolower($path))) {
+			$caseSensitive = FALSE;
+		}
+
+		// clean filesystem
+		if (!$testFileExists) {
+			unlink($path);
+		}
+
+		return $caseSensitive;
+	}
+
 }
-
-
-?>

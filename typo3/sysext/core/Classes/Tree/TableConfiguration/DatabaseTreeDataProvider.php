@@ -1,31 +1,20 @@
 <?php
 namespace TYPO3\CMS\Core\Tree\TableConfiguration;
 
-/***************************************************************
- *  Copyright notice
+/**
+ * This file is part of the TYPO3 CMS project.
  *
- *  (c) 2010-2013 Steffen Ritter <info@steffen-ritter.net>
- *  All rights reserved
+ * It is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License, either version 2
+ * of the License, or any later version.
  *
- *  This script is part of the TYPO3 project. The TYPO3 project is
- *  free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
+ * For the full copyright and license information, please read the
+ * LICENSE.txt file that was distributed with this source code.
  *
- *  The GNU General Public License can be found at
- *  http://www.gnu.org/copyleft/gpl.html.
- *  A copy is found in the textfile GPL.txt and important notices to the license
- *  from the author is found in LICENSE.txt distributed with these scripts.
- *
- *
- *  This script is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  This copyright notice MUST APPEAR in all copies of the script!
- ***************************************************************/
+ * The TYPO3 project - inspiring people to share!
+ */
+use TYPO3\CMS\Core\Utility\GeneralUtility;
+
 /**
  * TCA tree data provider
  *
@@ -33,6 +22,7 @@ namespace TYPO3\CMS\Core\Tree\TableConfiguration;
  */
 class DatabaseTreeDataProvider extends \TYPO3\CMS\Core\Tree\TableConfiguration\AbstractTableConfigurationTreeDataProvider {
 
+	const SIGNAL_PostProcessTreeData = 'PostProcessTreeData';
 	const MODE_CHILDREN = 1;
 	const MODE_PARENT = 2;
 	/**
@@ -93,6 +83,11 @@ class DatabaseTreeDataProvider extends \TYPO3\CMS\Core\Tree\TableConfiguration\A
 	 * @var array TCEforms compiled TSConfig array
 	 */
 	protected $generatedTSConfig = array();
+
+	/**
+	 * @var \TYPO3\CMS\Extbase\SignalSlot\Dispatcher
+	 */
+	protected $signalSlotDispatcher;
 
 	/**
 	 * Sets the label field
@@ -289,6 +284,8 @@ class DatabaseTreeDataProvider extends \TYPO3\CMS\Core\Tree\TableConfiguration\A
 		if ($childNodes !== NULL) {
 			$this->treeData->setChildNodes($childNodes);
 		}
+
+		$this->emitPostProcessTreeDataSignal();
 	}
 
 	/**
@@ -360,24 +357,24 @@ class DatabaseTreeDataProvider extends \TYPO3\CMS\Core\Tree\TableConfiguration\A
 	protected function getChildrenUidsFromParentRelation(array $row) {
 		$uid = $row['uid'];
 		switch ((string) $this->columnConfiguration['type']) {
-		case 'inline':
+			case 'inline':
 
-		case 'select':
-			if ($this->columnConfiguration['MM']) {
-				/** @var $dbGroup \TYPO3\CMS\Core\Database\RelationHandler */
-				$dbGroup = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Database\\RelationHandler');
-				// Dummy field for setting "look from other site"
-				$this->columnConfiguration['MM_oppositeField'] = 'children';
-				$dbGroup->start($row[$this->getLookupField()], $this->getTableName(), $this->columnConfiguration['MM'], $uid, $this->getTableName(), $this->columnConfiguration);
-				$relatedUids = $dbGroup->tableArray[$this->getTableName()];
-			} elseif ($this->columnConfiguration['foreign_field']) {
-				$relatedUids = $this->listFieldQuery($this->columnConfiguration['foreign_field'], $uid);
-			} else {
+			case 'select':
+				if ($this->columnConfiguration['MM']) {
+					/** @var $dbGroup \TYPO3\CMS\Core\Database\RelationHandler */
+					$dbGroup = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Database\\RelationHandler');
+					// Dummy field for setting "look from other site"
+					$this->columnConfiguration['MM_oppositeField'] = 'children';
+					$dbGroup->start($row[$this->getLookupField()], $this->getTableName(), $this->columnConfiguration['MM'], $uid, $this->getTableName(), $this->columnConfiguration);
+					$relatedUids = $dbGroup->tableArray[$this->getTableName()];
+				} elseif ($this->columnConfiguration['foreign_field']) {
+					$relatedUids = $this->listFieldQuery($this->columnConfiguration['foreign_field'], $uid);
+				} else {
+					$relatedUids = $this->listFieldQuery($this->getLookupField(), $uid);
+				}
+				break;
+			default:
 				$relatedUids = $this->listFieldQuery($this->getLookupField(), $uid);
-			}
-			break;
-		default:
-			$relatedUids = $this->listFieldQuery($this->getLookupField(), $uid);
 		}
 		return $relatedUids;
 	}
@@ -393,25 +390,25 @@ class DatabaseTreeDataProvider extends \TYPO3\CMS\Core\Tree\TableConfiguration\A
 		$uid = $row['uid'];
 		$value = $row[$this->getLookupField()];
 		switch ((string) $this->columnConfiguration['type']) {
-		case 'inline':
+			case 'inline':
 
-		case 'select':
-			if ($this->columnConfiguration['MM']) {
-				/** @var $dbGroup \TYPO3\CMS\Core\Database\RelationHandler */
-				$dbGroup = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Database\\RelationHandler');
-				$dbGroup->start($value, $this->getTableName(), $this->columnConfiguration['MM'], $uid, $this->getTableName(), $this->columnConfiguration);
-				$relatedUids = $dbGroup->tableArray[$this->getTableName()];
-			} elseif ($this->columnConfiguration['foreign_field']) {
-				$records = $GLOBALS['TYPO3_DB']->exec_SELECTgetRows('uid', $this->getTableName(), $this->columnConfiguration['foreign_field'] . '=' . intval($uid));
-				foreach ($records as $record) {
-					$relatedUids[] = $record['uid'];
+			case 'select':
+				if ($this->columnConfiguration['MM']) {
+					/** @var $dbGroup \TYPO3\CMS\Core\Database\RelationHandler */
+					$dbGroup = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Database\\RelationHandler');
+					$dbGroup->start($value, $this->getTableName(), $this->columnConfiguration['MM'], $uid, $this->getTableName(), $this->columnConfiguration);
+					$relatedUids = $dbGroup->tableArray[$this->getTableName()];
+				} elseif ($this->columnConfiguration['foreign_field']) {
+					$records = $GLOBALS['TYPO3_DB']->exec_SELECTgetRows('uid', $this->getTableName(), $this->columnConfiguration['foreign_field'] . '=' . (int)$uid);
+					foreach ($records as $record) {
+						$relatedUids[] = $record['uid'];
+					}
+				} else {
+					$relatedUids = \TYPO3\CMS\Core\Utility\GeneralUtility::intExplode(',', $value, TRUE);
 				}
-			} else {
+				break;
+			default:
 				$relatedUids = \TYPO3\CMS\Core\Utility\GeneralUtility::intExplode(',', $value, TRUE);
-			}
-			break;
-		default:
-			$relatedUids = \TYPO3\CMS\Core\Utility\GeneralUtility::intExplode(',', $value, TRUE);
 		}
 		return $relatedUids;
 	}
@@ -424,7 +421,7 @@ class DatabaseTreeDataProvider extends \TYPO3\CMS\Core\Tree\TableConfiguration\A
 	 * @return integer[] all uids found
 	 */
 	protected function listFieldQuery($fieldName, $queryId) {
-		$records = $GLOBALS['TYPO3_DB']->exec_SELECTgetRows('uid', $this->getTableName(), $GLOBALS['TYPO3_DB']->listQuery($fieldName, intval($queryId), $this->getTableName()) . (intval($queryId) == 0 ? ' OR ' . $fieldName . ' = \'\'' : ''));
+		$records = $GLOBALS['TYPO3_DB']->exec_SELECTgetRows('uid', $this->getTableName(), $GLOBALS['TYPO3_DB']->listQuery($fieldName, (int)$queryId, $this->getTableName()) . ((int)$queryId == 0 ? ' OR ' . $fieldName . ' = \'\'' : ''));
 		$uidArray = array();
 		foreach ($records as $record) {
 			$uidArray[] = $record['uid'];
@@ -432,7 +429,37 @@ class DatabaseTreeDataProvider extends \TYPO3\CMS\Core\Tree\TableConfiguration\A
 		return $uidArray;
 	}
 
+	/**
+	 * Emits the post processing tree data signal.
+	 *
+	 * @return void
+	 */
+	protected function emitPostProcessTreeDataSignal() {
+		$this->getSignalSlotDispatcher()->dispatch('TYPO3\\CMS\\Core\\Tree\\TableConfiguration\\TableConfiguration\\DatabaseTreeDataProvider',
+			self::SIGNAL_PostProcessTreeData,
+			array($this, $this->treeData)
+		);
+	}
+
+	/**
+	 * Get the SignalSlot dispatcher
+	 *
+	 * @return \TYPO3\CMS\Extbase\SignalSlot\Dispatcher
+	 */
+	protected function getSignalSlotDispatcher() {
+		if (!isset($this->signalSlotDispatcher)) {
+			$this->signalSlotDispatcher = $this->getObjectManager()->get('TYPO3\\CMS\\Extbase\\SignalSlot\\Dispatcher');
+		}
+		return $this->signalSlotDispatcher;
+	}
+
+	/**
+	 * Get the ObjectManager
+	 *
+	 * @return \TYPO3\CMS\Extbase\Object\ObjectManager
+	 */
+	protected function getObjectManager() {
+		return GeneralUtility::makeInstance('TYPO3\\CMS\\Extbase\\Object\\ObjectManager');
+	}
+
 }
-
-
-?>

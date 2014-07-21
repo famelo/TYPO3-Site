@@ -1,31 +1,18 @@
 <?php
 namespace TYPO3\CMS\ExtraPageCmOptions;
 
-/***************************************************************
- *  Copyright notice
+/**
+ * This file is part of the TYPO3 CMS project.
  *
- *  (c) 1999-2013 Kasper Skårhøj (kasperYYYY@typo3.com)
- *  All rights reserved
+ * It is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License, either version 2
+ * of the License, or any later version.
  *
- *  This script is part of the TYPO3 project. The TYPO3 project is
- *  free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
+ * For the full copyright and license information, please read the
+ * LICENSE.txt file that was distributed with this source code.
  *
- *  The GNU General Public License can be found at
- *  http://www.gnu.org/copyleft/gpl.html.
- *  A copy is found in the textfile GPL.txt and important notices to the license
- *  from the author is found in LICENSE.txt distributed with these scripts.
- *
- *
- *  This script is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  This copyright notice MUST APPEAR in all copies of the script!
- ***************************************************************/
+ * The TYPO3 project - inspiring people to share!
+ */
 
 /**
  * Class to add extra context menu options
@@ -62,13 +49,43 @@ class ExtraPageContextMenuOptions {
 					0,
 					1
 				);
-				if (!in_array('hide', $backRef->disabledItems) && is_array($GLOBALS['TCA'][$table]['ctrl']['enablecolumns']) && $GLOBALS['TCA'][$table]['ctrl']['enablecolumns']['disabled']) {
-					$localItems['hide'] = $backRef->DB_hideUnhide($table, $backRef->rec, $GLOBALS['TCA'][$table]['ctrl']['enablecolumns']['disabled']);
+				$menuItemHideUnhideAllowed = FALSE;
+				$hiddenField = '';
+				// Check if column for disabled is defined
+				if (isset($GLOBALS['TCA'][$table]['ctrl']['enablecolumns']) && isset($GLOBALS['TCA'][$table]['ctrl']['enablecolumns']['disabled'])) {
+					$hiddenField = $GLOBALS['TCA'][$table]['ctrl']['enablecolumns']['disabled'];
+					if (
+						$hiddenField !== '' && !empty($GLOBALS['TCA'][$table]['columns'][$hiddenField])
+						&& (!empty($GLOBALS['TCA'][$table]['columns'][$hiddenField]['exclude'])
+							&& $GLOBALS['BE_USER']->check('non_exclude_fields', $table . ':' . $hiddenField))
+					) {
+						$menuItemHideUnhideAllowed = TRUE;
+					}
 				}
-				if (!in_array('edit_access', $backRef->disabledItems) && is_array($GLOBALS['TCA'][$table]['ctrl']['enablecolumns'])) {
+				if ($menuItemHideUnhideAllowed && !in_array('hide', $backRef->disabledItems)) {
+					$localItems['hide'] = $backRef->DB_hideUnhide($table, $backRef->rec, $hiddenField);
+				}
+				$anyEnableColumnsFieldAllowed = FALSE;
+				// Check if columns are defined
+				if (isset($GLOBALS['TCA'][$table]['ctrl']['enablecolumns'])) {
+					$columnsToCheck = $GLOBALS['TCA'][$table]['ctrl']['enablecolumns'];
+					if ($table === 'pages' && !empty($columnsToCheck)) {
+						$columnsToCheck[] = 'extendToSubpages';
+					}
+					foreach ($columnsToCheck as $currentColumn) {
+						if (
+							isset($GLOBALS['TCA'][$table]['columns'][$currentColumn])
+							&& (!empty($GLOBALS['TCA'][$table]['columns'][$currentColumn]['exclude'])
+								&& $GLOBALS['BE_USER']->check('non_exclude_fields', $table . ':' . $currentColumn))
+						) {
+							$anyEnableColumnsFieldAllowed = TRUE;
+						}
+					}
+				}
+				if ($anyEnableColumnsFieldAllowed && !in_array('edit_access', $backRef->disabledItems)) {
 					$localItems['edit_access'] = $backRef->DB_editAccess($table, $uid);
 				}
-				if (!in_array('edit_pageproperties', $backRef->disabledItems) && $table === 'pages' && $backRef->editPageIconSet) {
+				if ($table === 'pages' && $backRef->editPageIconSet && !in_array('edit_pageproperties', $backRef->disabledItems)) {
 					$localItems['edit_pageproperties'] = $backRef->DB_editPageProperties($uid);
 				}
 			}
@@ -77,7 +94,7 @@ class ExtraPageContextMenuOptions {
 			$deleteFound = FALSE;
 			foreach ($menuItems as $key => $value) {
 				$c++;
-				if (!strcmp($key, 'delete')) {
+				if ($key === 'delete') {
 					$deleteFound = TRUE;
 					break;
 				}
@@ -93,13 +110,13 @@ class ExtraPageContextMenuOptions {
 		} elseif ($subname === 'moreoptions') {
 			// If the page can be edited, then show this:
 			if ($backRef->editOK) {
-				if (!in_array('move_wizard', $backRef->disabledItems) && ($table === 'pages' || $table === 'tt_content')) {
+				if (($table === 'pages' || $table === 'tt_content') && !in_array('move_wizard', $backRef->disabledItems)) {
 					$localItems['move_wizard'] = $backRef->DB_moveWizard($table, $uid, $backRef->rec);
 				}
-				if (!in_array('new_wizard', $backRef->disabledItems) && ($table === 'pages' || $table === 'tt_content')) {
+				if (($table === 'pages' || $table === 'tt_content') && !in_array('new_wizard', $backRef->disabledItems)) {
 					$localItems['new_wizard'] = $backRef->DB_newWizard($table, $uid, $backRef->rec);
 				}
-				if (!in_array('perms', $backRef->disabledItems) && $table === 'pages' && $GLOBALS['BE_USER']->check('modules', 'web_perm')) {
+				if ($table === 'pages' && !in_array('perms', $backRef->disabledItems) && $GLOBALS['BE_USER']->check('modules', 'web_perm')) {
 					$localItems['perms'] = $backRef->DB_perms($table, $uid, $backRef->rec);
 				}
 				if (!in_array('db_list', $backRef->disabledItems) && $GLOBALS['BE_USER']->check('modules', 'web_list')) {
@@ -117,5 +134,3 @@ class ExtraPageContextMenuOptions {
 	}
 
 }
-
-?>

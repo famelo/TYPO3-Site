@@ -1,40 +1,22 @@
 <?php
 namespace TYPO3\CMS\Backend\Form;
 
-/***************************************************************
- *  Copyright notice
- *
- *  (c) 1999-2013 Kasper Skårhøj (kasperYYYY@typo3.com)
- *  All rights reserved
- *
- *  This script is part of the TYPO3 project. The TYPO3 project is
- *  free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
- *
- *  The GNU General Public License can be found at
- *  http://www.gnu.org/copyleft/gpl.html.
- *  A copy is found in the textfile GPL.txt and important notices to the license
- *  from the author is found in LICENSE.txt distributed with these scripts.
- *
- *
- *  This script is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  This copyright notice MUST APPEAR in all copies of the script!
- ***************************************************************/
-
 /**
- * Contains class for getting and transforming data for display in backend forms (TCEforms)
+ * This file is part of the TYPO3 CMS project.
  *
- * Revised for TYPO3 3.6 September/2003 by Kasper Skårhøj
+ * It is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License, either version 2
+ * of the License, or any later version.
  *
- * @author Kasper Skårhøj <kasperYYYY@typo3.com>
+ * For the full copyright and license information, please read the
+ * LICENSE.txt file that was distributed with this source code.
+ *
+ * The TYPO3 project - inspiring people to share!
  */
+
 use TYPO3\CMS\Backend\Utility\BackendUtility;
+use TYPO3\CMS\Core\Utility\GeneralUtility;
+use TYPO3\CMS\Core\Utility\PathUtility;
 
 /**
  * Class for getting and transforming data for display in backend forms (TCEforms)
@@ -111,15 +93,15 @@ class DataPreprocessor {
 	 * @todo Define visibility
 	 */
 	public function fetchRecord($table, $idList, $operation) {
-		if ((string) $idList == 'prev') {
+		if ((string)$idList === 'prev') {
 			$idList = $this->prevPageID;
 		}
 		if ($GLOBALS['TCA'][$table]) {
 			// For each ID value (integer) we
-			$ids = \TYPO3\CMS\Core\Utility\GeneralUtility::trimExplode(',', $idList, 1);
+			$ids = GeneralUtility::trimExplode(',', $idList, TRUE);
 			foreach ($ids as $id) {
 				// If ID is not blank:
-				if (strcmp($id, '')) {
+				if ((string)$id !== '') {
 					// For new records to be created, find default values:
 					if ($operation == 'new') {
 						// Default values:
@@ -139,7 +121,7 @@ class DataPreprocessor {
 							$pid = $record['pid'];
 							unset($record);
 						} else {
-							$pid = intval($id);
+							$pid = (int)$id;
 						}
 						$pageTS = BackendUtility::getPagesTSconfig($pid);
 						if (isset($pageTS['TCAdefaults.'])) {
@@ -153,7 +135,7 @@ class DataPreprocessor {
 							}
 						}
 						// Default values as submitted:
-						if (is_array($this->defVals[$table])) {
+						if (!empty($this->defVals[$table]) && is_array($this->defVals[$table])) {
 							foreach ($this->defVals[$table] as $theF => $theV) {
 								if (isset($GLOBALS['TCA'][$table]['columns'][$theF])) {
 									$newRow[$theF] = $theV;
@@ -166,7 +148,7 @@ class DataPreprocessor {
 							$res = $GLOBALS['TYPO3_DB']->exec_SELECTquery('*', $table, 'uid=' . abs($id) . BackendUtility::deleteClause($table));
 							if ($row = $GLOBALS['TYPO3_DB']->sql_fetch_assoc($res)) {
 								// Gets the list of fields to copy from the previous record.
-								$fArr = \TYPO3\CMS\Core\Utility\GeneralUtility::trimExplode(',', $GLOBALS['TCA'][$table]['ctrl']['useColumnsForDefaultValues'], 1);
+								$fArr = GeneralUtility::trimExplode(',', $GLOBALS['TCA'][$table]['ctrl']['useColumnsForDefaultValues'], TRUE);
 								foreach ($fArr as $theF) {
 									if (isset($GLOBALS['TCA'][$table]['columns'][$theF]) && !isset($newRow[$theF])) {
 										$newRow[$theF] = $row[$theF];
@@ -178,9 +160,9 @@ class DataPreprocessor {
 						// Finally, call renderRecord:
 						$this->renderRecord($table, uniqid('NEW'), $id, $newRow);
 					} else {
-						$id = intval($id);
+						$id = (int)$id;
 						// Fetch database values
-						$res = $GLOBALS['TYPO3_DB']->exec_SELECTquery('*', $table, 'uid=' . intval($id) . BackendUtility::deleteClause($table));
+						$res = $GLOBALS['TYPO3_DB']->exec_SELECTquery('*', $table, 'uid=' . $id . BackendUtility::deleteClause($table));
 						if ($row = $GLOBALS['TYPO3_DB']->sql_fetch_assoc($res)) {
 							BackendUtility::fixVersioningPid($table, $row);
 							$this->renderRecord($table, $id, $row['pid'], $row);
@@ -211,7 +193,7 @@ class DataPreprocessor {
 	public function renderRecord($table, $id, $pid, $row) {
 		$dateTimeFormats = $GLOBALS['TYPO3_DB']->getDateTimeFormats($table);
 		foreach ($GLOBALS['TCA'][$table]['columns'] as $column => $config) {
-			if (isset($config['config']['dbType']) && \TYPO3\CMS\Core\Utility\GeneralUtility::inList('date,datetime', $config['config']['dbType'])) {
+			if (isset($config['config']['dbType']) && GeneralUtility::inList('date,datetime', $config['config']['dbType'])) {
 				$emptyValue = $dateTimeFormats[$config['config']['dbType']]['empty'];
 				$row[$column] = !empty($row[$column]) && $row[$column] !== $emptyValue ? strtotime($row[$column]) : 0;
 			}
@@ -265,11 +247,19 @@ class DataPreprocessor {
 		foreach ($copyOfColumns as $field => $fieldConfig) {
 			// Set $data variable for the field, either inputted value from $row - or if not found, the default value as defined in the "config" array
 			if (isset($row[$field])) {
-				$data = (string) $row[$field];
-			} elseif (array_key_exists($field, $row) && !empty($fieldConfig['config']['eval']) && \TYPO3\CMS\Core\Utility\GeneralUtility::inList($fieldConfig['config']['eval'], 'null')) {
-				$data = NULL;
+				$data = (string)$row[$field];
+			} elseif (!empty($fieldConfig['config']['eval']) && GeneralUtility::inList($fieldConfig['config']['eval'], 'null')) {
+				// Field exists but is set to NULL
+				if (array_key_exists($field, $row)) {
+					$data = NULL;
+				// Only use NULL if default value was explicitly set to be backward compatible.
+				} elseif (array_key_exists('default', $fieldConfig['config']) && $fieldConfig['config']['default'] === NULL) {
+					$data = NULL;
+				} else {
+					$data = (string)$fieldConfig['config']['default'];
+				}
 			} else {
-				$data = (string) $fieldConfig['config']['default'];
+				$data = (string)$fieldConfig['config']['default'];
 			}
 			$data = $this->renderRecord_SW($data, $fieldConfig, $TSconfig, $table, $row, $field);
 			$totalRecordContent[$field] = $data;
@@ -297,24 +287,24 @@ class DataPreprocessor {
 	 * @param array $TSconfig TSconfig	(blank for flexforms for now)
 	 * @param string $table Table name
 	 * @param array $row The row array, always of the real record (also for flexforms)
-	 * @param string $field The field (empty for flexforms!)
+	 * @param string $field The field
 	 * @return string Modified $value
 	 * @todo Define visibility
 	 */
 	public function renderRecord_SW($data, $fieldConfig, $TSconfig, $table, $row, $field) {
-		switch ((string) $fieldConfig['config']['type']) {
-		case 'group':
-			$data = $this->renderRecord_groupProc($data, $fieldConfig, $TSconfig, $table, $row, $field);
-			break;
-		case 'select':
-			$data = $this->renderRecord_selectProc($data, $fieldConfig, $TSconfig, $table, $row, $field);
-			break;
-		case 'flex':
-			$data = $this->renderRecord_flexProc($data, $fieldConfig, $TSconfig, $table, $row, $field);
-			break;
-		case 'inline':
-			$data = $this->renderRecord_inlineProc($data, $fieldConfig, $TSconfig, $table, $row, $field);
-			break;
+		switch ((string)$fieldConfig['config']['type']) {
+			case 'group':
+				$data = $this->renderRecord_groupProc($data, $fieldConfig, $TSconfig, $table, $row, $field);
+				break;
+			case 'select':
+				$data = $this->renderRecord_selectProc($data, $fieldConfig, $TSconfig, $table, $row, $field);
+				break;
+			case 'flex':
+				$data = $this->renderRecord_flexProc($data, $fieldConfig, $TSconfig, $table, $row, $field);
+				break;
+			case 'inline':
+				$data = $this->renderRecord_inlineProc($data, $fieldConfig, $TSconfig, $table, $row, $field);
+				break;
 		}
 		return $data;
 	}
@@ -335,38 +325,38 @@ class DataPreprocessor {
 	 */
 	public function renderRecord_groupProc($data, $fieldConfig, $TSconfig, $table, $row, $field) {
 		switch ($fieldConfig['config']['internal_type']) {
-		case 'file_reference':
-		case 'file':
-			// Init array used to accumulate the files:
-			$dataAcc = array();
-			// Now, load the files into the $dataAcc array, whether stored by MM or as a list of filenames:
-			if ($fieldConfig['config']['MM']) {
-				$loadDB = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Database\\RelationHandler');
-				$loadDB->start('', 'files', $fieldConfig['config']['MM'], $row['uid']);
-				// Setting dummy startup
-				foreach ($loadDB->itemArray as $value) {
-					if ($value['id']) {
-						$dataAcc[] = rawurlencode($value['id']) . '|' . rawurlencode(\TYPO3\CMS\Core\Utility\PathUtility::basename($value['id']));
+			case 'file_reference':
+			case 'file':
+				// Init array used to accumulate the files:
+				$dataAcc = array();
+				// Now, load the files into the $dataAcc array, whether stored by MM or as a list of filenames:
+				if ($fieldConfig['config']['MM']) {
+					$loadDB = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Database\\RelationHandler');
+					$loadDB->start('', 'files', $fieldConfig['config']['MM'], $row['uid']);
+					// Setting dummy startup
+					foreach ($loadDB->itemArray as $value) {
+						if ($value['id']) {
+							$dataAcc[] = rawurlencode($value['id']) . '|' . rawurlencode(PathUtility::basename($value['id']));
+						}
+					}
+				} else {
+					$fileList = GeneralUtility::trimExplode(',', $data, TRUE);
+					foreach ($fileList as $value) {
+						if ($value) {
+							$dataAcc[] = rawurlencode($value) . '|' . rawurlencode(PathUtility::basename($value));
+						}
 					}
 				}
-			} else {
-				$fileList = \TYPO3\CMS\Core\Utility\GeneralUtility::trimExplode(',', $data, TRUE);
-				foreach ($fileList as $value) {
-					if ($value) {
-						$dataAcc[] = rawurlencode($value) . '|' . rawurlencode(\TYPO3\CMS\Core\Utility\PathUtility::basename($value));
-					}
-				}
-			}
-			// Implode the accumulation array to a comma separated string:
-			$data = implode(',', $dataAcc);
-			break;
-		case 'db':
-			$loadDB = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Database\\RelationHandler');
-			/** @var $loadDB \TYPO3\CMS\Core\Database\RelationHandler */
-			$loadDB->start($data, $fieldConfig['config']['allowed'], $fieldConfig['config']['MM'], $row['uid'], $table, $fieldConfig['config']);
-			$loadDB->getFromDB();
-			$data = $loadDB->readyForInterface();
-			break;
+				// Implode the accumulation array to a comma separated string:
+				$data = implode(',', $dataAcc);
+				break;
+			case 'db':
+				$loadDB = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Database\\RelationHandler');
+				/** @var $loadDB \TYPO3\CMS\Core\Database\RelationHandler */
+				$loadDB->start($data, $fieldConfig['config']['allowed'], $fieldConfig['config']['MM'], $row['uid'], $table, $fieldConfig['config']);
+				$loadDB->getFromDB();
+				$data = $loadDB->readyForInterface();
+				break;
 		}
 		return $data;
 	}
@@ -388,11 +378,11 @@ class DataPreprocessor {
 	public function renderRecord_selectProc($data, $fieldConfig, $TSconfig, $table, $row, $field) {
 		// Initialize:
 		// Current data set.
-		$elements = \TYPO3\CMS\Core\Utility\GeneralUtility::trimExplode(',', $data, 1);
+		$elements = GeneralUtility::trimExplode(',', $data, TRUE);
 		// New data set, ready for interface (list of values, rawurlencoded)
 		$dataAcc = array();
 		// For list selectors (multi-value):
-		if (intval($fieldConfig['config']['maxitems']) > 1) {
+		if ((int)$fieldConfig['config']['maxitems'] > 1 || $fieldConfig['config']['renderMode'] === 'tree') {
 			// Add regular elements:
 			if (!is_array($fieldConfig['config']['items'])) {
 				$fieldConfig['config']['items'] = array();
@@ -400,7 +390,7 @@ class DataPreprocessor {
 			$fieldConfig['config']['items'] = $this->procesItemArray($fieldConfig['config']['items'], $fieldConfig['config'], $TSconfig[$field], $table, $row, $field);
 			foreach ($fieldConfig['config']['items'] as $pvpv) {
 				foreach ($elements as $eKey => $value) {
-					if (!strcmp($value, $pvpv[1])) {
+					if ((string)$value === (string)$pvpv[1]) {
 						$dataAcc[$eKey] = rawurlencode($pvpv[1]) . '|' . rawurlencode($this->sL($pvpv[0]));
 					}
 				}
@@ -448,19 +438,19 @@ class DataPreprocessor {
 	 */
 	public function renderRecord_flexProc($data, $fieldConfig, $TSconfig, $table, $row, $field) {
 		// Convert the XML data to PHP array:
-		$currentValueArray = \TYPO3\CMS\Core\Utility\GeneralUtility::xml2array($data);
+		$currentValueArray = GeneralUtility::xml2array($data);
 		if (is_array($currentValueArray)) {
 			// Get current value array:
 			$dataStructArray = BackendUtility::getFlexFormDS($fieldConfig['config'], $row, $table, $field);
 			// Manipulate Flexform DS via TSConfig and group access lists
 			if (is_array($dataStructArray)) {
-				$flexFormHelper = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Backend\\Form\\FlexFormsHelper');
+				$flexFormHelper = GeneralUtility::makeInstance('TYPO3\\CMS\\Backend\\Form\\FlexFormsHelper');
 				$dataStructArray = $flexFormHelper->modifyFlexFormDS($dataStructArray, $table, $field, $row, $fieldConfig);
 				unset($flexFormHelper);
 			}
 			if (is_array($dataStructArray)) {
 				$currentValueArray['data'] = $this->renderRecord_flexProc_procInData($currentValueArray['data'], $dataStructArray, array($data, $fieldConfig, $TSconfig, $table, $row, $field));
-				$flexObj = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Configuration\\FlexForm\\FlexFormTools');
+				$flexObj = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Configuration\\FlexForm\\FlexFormTools');
 				$data = $flexObj->flexArray2Xml($currentValueArray, TRUE);
 			}
 		}
@@ -487,8 +477,8 @@ class DataPreprocessor {
 			if (is_array($eFile)) {
 				if ($eFile['loadFromFileField'] && $totalRecordContent[$eFile['loadFromFileField']]) {
 					// Read the external file, and insert the content between the ###TYPO3_STATICFILE_EDIT### markers:
-					$SW_fileContent = \TYPO3\CMS\Core\Utility\GeneralUtility::getUrl($eFile['editFile']);
-					$parseHTML = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Html\\RteHtmlParser');
+					$SW_fileContent = GeneralUtility::getUrl($eFile['editFile']);
+					$parseHTML = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Html\\RteHtmlParser');
 					$parseHTML->init('', '');
 					$totalRecordContent[$vconf['field']] = $parseHTML->getSubpart($SW_fileContent, $eFile['markerField'] && trim($totalRecordContent[$eFile['markerField']]) ? trim($totalRecordContent[$eFile['markerField']]) : '###TYPO3_STATICFILE_EDIT###');
 				}
@@ -515,7 +505,7 @@ class DataPreprocessor {
 	public function renderRecord_inlineProc($data, $fieldConfig, $TSconfig, $table, $row, $field) {
 		// Initialize:
 		// Current data set.
-		$elements = \TYPO3\CMS\Core\Utility\GeneralUtility::trimExplode(',', $data);
+		$elements = GeneralUtility::trimExplode(',', $data);
 		// New data set, ready for interface (list of values, rawurlencoded)
 		$dataAcc = array();
 		// At this point all records that CAN be selected is found in $recordList
@@ -527,7 +517,7 @@ class DataPreprocessor {
 				$dataAcc[] = $theId;
 			} else {
 				foreach ($elements as $eKey => $value) {
-					if (!strcmp($theId, $value)) {
+					if ((int)$theId === (int)$value) {
 						$dataAcc[$eKey] = $theId;
 					}
 				}
@@ -555,7 +545,7 @@ class DataPreprocessor {
 	public function renderRecord_flexProc_procInData($dataPart, $dataStructArray, $pParams) {
 		if (is_array($dataPart)) {
 			foreach ($dataPart as $sKey => $sheetDef) {
-				list($dataStruct, $actualSheet) = \TYPO3\CMS\Core\Utility\GeneralUtility::resolveSheetDefInDS($dataStructArray, $sKey);
+				list($dataStruct, $actualSheet) = GeneralUtility::resolveSheetDefInDS($dataStructArray, $sKey);
 				if (is_array($dataStruct) && $actualSheet == $sKey && is_array($sheetDef)) {
 					foreach ($sheetDef as $lKey => $lData) {
 						$this->renderRecord_flexProc_procInData_travDS($dataPart[$sKey][$lKey], $dataStruct['ROOT']['el'], $pParams);
@@ -609,7 +599,7 @@ class DataPreprocessor {
 								$dataValues[$key][$vKey] = $dsConf['TCEforms']['config']['default'];
 							}
 							// Process value:
-							$dataValues[$key][$vKey] = $this->renderRecord_SW($dataValues[$key][$vKey], $dsConf['TCEforms'], $CVTSconfig, $CVtable, $CVrow, '');
+							$dataValues[$key][$vKey] = $this->renderRecord_SW($dataValues[$key][$vKey], $dsConf['TCEforms'], $CVTSconfig, $CVtable, $CVrow, $CVfield);
 						}
 					}
 				}
@@ -635,106 +625,106 @@ class DataPreprocessor {
 	 */
 	public function selectAddSpecial($dataAcc, $elements, $specialKey) {
 		// Special select types:
-		switch ((string) $specialKey) {
-		case 'tables':
-			$tNames = array_keys($GLOBALS['TCA']);
-			foreach ($tNames as $tableName) {
-				foreach ($elements as $eKey => $value) {
-					if (!strcmp($tableName, $value)) {
-						$dataAcc[$eKey] = rawurlencode($value) . '|' . rawurlencode($this->sL($GLOBALS['TCA'][$value]['ctrl']['title']));
-					}
-				}
-			}
-			break;
-		case 'pagetypes':
-			$theTypes = $GLOBALS['TCA']['pages']['columns']['doktype']['config']['items'];
-			if (is_array($theTypes)) {
-				foreach ($theTypes as $theTypesArrays) {
+		switch ((string)$specialKey) {
+			case 'tables':
+				$tNames = array_keys($GLOBALS['TCA']);
+				foreach ($tNames as $tableName) {
 					foreach ($elements as $eKey => $value) {
-						if (!strcmp($theTypesArrays[1], $value)) {
-							$dataAcc[$eKey] = rawurlencode($value) . '|' . rawurlencode($this->sL($theTypesArrays[0]));
+						if ((string)$tableName === (string)$value) {
+							$dataAcc[$eKey] = rawurlencode($value) . '|' . rawurlencode($this->sL($GLOBALS['TCA'][$value]['ctrl']['title']));
 						}
 					}
 				}
-			}
-			break;
-		case 'exclude':
-			$theExcludeFields = BackendUtility::getExcludeFields();
-			if (is_array($theExcludeFields)) {
-				foreach ($theExcludeFields as $theExcludeFieldsArrays) {
-					foreach ($elements as $eKey => $value) {
-						if (!strcmp($theExcludeFieldsArrays[1], $value)) {
-							$dataAcc[$eKey] = rawurlencode($value) . '|' . rawurlencode(rtrim($theExcludeFieldsArrays[0], ':'));
-						}
-					}
-				}
-			}
-			break;
-		case 'explicitValues':
-			$theTypes = BackendUtility::getExplicitAuthFieldValues();
-			foreach ($theTypes as $tableFieldKey => $theTypeArrays) {
-				if (is_array($theTypeArrays['items'])) {
-					foreach ($theTypeArrays['items'] as $itemValue => $itemContent) {
+				break;
+			case 'pagetypes':
+				$theTypes = $GLOBALS['TCA']['pages']['columns']['doktype']['config']['items'];
+				if (is_array($theTypes)) {
+					foreach ($theTypes as $theTypesArrays) {
 						foreach ($elements as $eKey => $value) {
-							if (!strcmp(($tableFieldKey . ':' . $itemValue . ':' . $itemContent[0]), $value)) {
-								$dataAcc[$eKey] = rawurlencode($value) . '|' . rawurlencode(('[' . $itemContent[2] . '] ' . $itemContent[1]));
+							if ((string)$theTypesArrays[1] === (string)$value) {
+								$dataAcc[$eKey] = rawurlencode($value) . '|' . rawurlencode($this->sL($theTypesArrays[0]));
 							}
 						}
 					}
 				}
-			}
-			break;
-		case 'languages':
-			$theLangs = BackendUtility::getSystemLanguages();
-			foreach ($theLangs as $lCfg) {
-				foreach ($elements as $eKey => $value) {
-					if (!strcmp($lCfg[1], $value)) {
-						$dataAcc[$eKey] = rawurlencode($value) . '|' . rawurlencode($lCfg[0]);
+				break;
+			case 'exclude':
+				$theExcludeFields = BackendUtility::getExcludeFields();
+				if (is_array($theExcludeFields)) {
+					foreach ($theExcludeFields as $theExcludeFieldsArrays) {
+						foreach ($elements as $eKey => $value) {
+							if ((string)$theExcludeFieldsArrays[1] === (string)$value) {
+								$dataAcc[$eKey] = rawurlencode($value) . '|' . rawurlencode(rtrim($theExcludeFieldsArrays[0], ':'));
+							}
+						}
 					}
 				}
-			}
-			break;
-		case 'custom':
-			$customOptions = $GLOBALS['TYPO3_CONF_VARS']['BE']['customPermOptions'];
-			if (is_array($customOptions)) {
-				foreach ($customOptions as $coKey => $coValue) {
-					if (is_array($coValue['items'])) {
-						// Traverse items:
-						foreach ($coValue['items'] as $itemKey => $itemCfg) {
+				break;
+			case 'explicitValues':
+				$theTypes = BackendUtility::getExplicitAuthFieldValues();
+				foreach ($theTypes as $tableFieldKey => $theTypeArrays) {
+					if (is_array($theTypeArrays['items'])) {
+						foreach ($theTypeArrays['items'] as $itemValue => $itemContent) {
 							foreach ($elements as $eKey => $value) {
-								if (!strcmp(($coKey . ':' . $itemKey), $value)) {
-									$dataAcc[$eKey] = rawurlencode($value) . '|' . rawurlencode($this->sL($itemCfg[0]));
+								if (($tableFieldKey . ':' . $itemValue . ':' . $itemContent[0]) === (string)$value) {
+									$dataAcc[$eKey] = rawurlencode($value) . '|' . rawurlencode(('[' . $itemContent[2] . '] ' . $itemContent[1]));
 								}
 							}
 						}
 					}
 				}
-			}
-			break;
-		case 'modListGroup':
-
-		case 'modListUser':
-			if (!$this->loadModules) {
-				$this->loadModules = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Backend\\Module\\ModuleLoader');
-				$this->loadModules->load($GLOBALS['TBE_MODULES']);
-			}
-			$modList = $specialKey == 'modListUser' ? $this->loadModules->modListUser : $this->loadModules->modListGroup;
-			foreach ($modList as $theModName) {
-				foreach ($elements as $eKey => $value) {
-					$label = '';
-					// Add label for main module:
-					$pp = explode('_', $value);
-					if (count($pp) > 1) {
-						$label .= $GLOBALS['LANG']->moduleLabels['tabs'][($pp[0] . '_tab')] . '>';
-					}
-					// Add modules own label now:
-					$label .= $GLOBALS['LANG']->moduleLabels['tabs'][$value . '_tab'];
-					if (!strcmp($theModName, $value)) {
-						$dataAcc[$eKey] = rawurlencode($value) . '|' . rawurlencode($label);
+				break;
+			case 'languages':
+				$theLangs = BackendUtility::getSystemLanguages();
+				foreach ($theLangs as $lCfg) {
+					foreach ($elements as $eKey => $value) {
+						if ((string)$lCfg[1] === (string)$value) {
+							$dataAcc[$eKey] = rawurlencode($value) . '|' . rawurlencode($lCfg[0]);
+						}
 					}
 				}
-			}
-			break;
+				break;
+			case 'custom':
+				$customOptions = $GLOBALS['TYPO3_CONF_VARS']['BE']['customPermOptions'];
+				if (is_array($customOptions)) {
+					foreach ($customOptions as $coKey => $coValue) {
+						if (is_array($coValue['items'])) {
+							// Traverse items:
+							foreach ($coValue['items'] as $itemKey => $itemCfg) {
+								foreach ($elements as $eKey => $value) {
+									if (($coKey . ':' . $itemKey) === (string)$value) {
+										$dataAcc[$eKey] = rawurlencode($value) . '|' . rawurlencode($this->sL($itemCfg[0]));
+									}
+								}
+							}
+						}
+					}
+				}
+				break;
+			case 'modListGroup':
+
+			case 'modListUser':
+				if (!$this->loadModules) {
+					$this->loadModules = GeneralUtility::makeInstance('TYPO3\\CMS\\Backend\\Module\\ModuleLoader');
+					$this->loadModules->load($GLOBALS['TBE_MODULES']);
+				}
+				$modList = $specialKey == 'modListUser' ? $this->loadModules->modListUser : $this->loadModules->modListGroup;
+				foreach ($modList as $theModName) {
+					foreach ($elements as $eKey => $value) {
+						$label = '';
+						// Add label for main module:
+						$pp = explode('_', $value);
+						if (count($pp) > 1) {
+							$label .= $GLOBALS['LANG']->moduleLabels['tabs'][($pp[0] . '_tab')] . '>';
+						}
+						// Add modules own label now:
+						$label .= $GLOBALS['LANG']->moduleLabels['tabs'][$value . '_tab'];
+						if ((string)$theModName === (string)$value) {
+							$dataAcc[$eKey] = rawurlencode($value) . '|' . rawurlencode($label);
+						}
+					}
+				}
+				break;
 		}
 		return $dataAcc;
 	}
@@ -787,11 +777,11 @@ class DataPreprocessor {
 			if (isset($recordList[$theId])) {
 				$lPrefix = $this->sL($fieldConfig['config'][($theId > 0 ? '' : 'neg_') . 'foreign_table_prefix']);
 				if ($fieldConfig['config']['MM'] || $fieldConfig['config']['foreign_field']) {
-					$dataAcc[] = rawurlencode($theId) . '|' . rawurlencode(\TYPO3\CMS\Core\Utility\GeneralUtility::fixed_lgd_cs(($lPrefix . strip_tags($recordList[$theId])), $GLOBALS['BE_USER']->uc['titleLen']));
+					$dataAcc[] = rawurlencode($theId) . '|' . rawurlencode(GeneralUtility::fixed_lgd_cs(($lPrefix . strip_tags($recordList[$theId])), $GLOBALS['BE_USER']->uc['titleLen']));
 				} else {
 					foreach ($elements as $eKey => $value) {
-						if (!strcmp($theId, $value)) {
-							$dataAcc[$eKey] = rawurlencode($theId) . '|' . rawurlencode(\TYPO3\CMS\Core\Utility\GeneralUtility::fixed_lgd_cs(($lPrefix . strip_tags($recordList[$theId])), $GLOBALS['BE_USER']->uc['titleLen']));
+						if ((int)$theId === (int)$value) {
+							$dataAcc[$eKey] = rawurlencode($theId) . '|' . rawurlencode(GeneralUtility::fixed_lgd_cs(($lPrefix . strip_tags($recordList[$theId])), $GLOBALS['BE_USER']->uc['titleLen']));
 						}
 					}
 				}
@@ -812,9 +802,15 @@ class DataPreprocessor {
 	 * @todo Define visibility
 	 */
 	public function getDataIdList($elements, $fieldConfig, $row, $table) {
-		$loadDB = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Database\\RelationHandler');
+		// Use given uid (might be the uid of a workspace record)
+		$recordId = $row['uid'];
+		// If not dealing with MM relations, then always(!) use the default live uid
+		if (empty($fieldConfig['config']['MM'])) {
+			$recordId = $this->getLiveDefaultId($table, $row['uid']);
+		}
+		$loadDB = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Database\\RelationHandler');
 		$loadDB->registerNonTableValues = $fieldConfig['config']['allowNonIdValues'] ? 1 : 0;
-		$loadDB->start(implode(',', $elements), $fieldConfig['config']['foreign_table'] . ',' . $fieldConfig['config']['neg_foreign_table'], $fieldConfig['config']['MM'], $row['uid'], $table, $fieldConfig['config']);
+		$loadDB->start(implode(',', $elements), $fieldConfig['config']['foreign_table'] . ',' . $fieldConfig['config']['neg_foreign_table'], $fieldConfig['config']['MM'], $recordId, $table, $fieldConfig['config']);
 		$idList = $loadDB->convertPosNeg($loadDB->getValueArray(), $fieldConfig['config']['foreign_table'], $fieldConfig['config']['neg_foreign_table']);
 		return $idList;
 	}
@@ -882,7 +878,7 @@ class DataPreprocessor {
 		$params['table'] = $table;
 		$params['row'] = $row;
 		$params['field'] = $field;
-		\TYPO3\CMS\Core\Utility\GeneralUtility::callUserFunction($config['itemsProcFunc'], $params, $this);
+		GeneralUtility::callUserFunction($config['itemsProcFunc'], $params, $this);
 		return $items;
 	}
 
@@ -934,7 +930,20 @@ class DataPreprocessor {
 		return $GLOBALS['LANG']->sL($in);
 	}
 
+	/**
+	 * Gets the record uid of the live default record. If already
+	 * pointing to the live record, the submitted record uid is returned.
+	 *
+	 * @param string $tableName
+	 * @param int $id
+	 * @return int
+	 */
+	protected function getLiveDefaultId($tableName, $id) {
+		$liveDefaultId = BackendUtility::getLiveVersionIdOfRecord($tableName, $id);
+		if ($liveDefaultId === NULL) {
+			$liveDefaultId = $id;
+		}
+		return $liveDefaultId;
+	}
+
 }
-
-
-?>

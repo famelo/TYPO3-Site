@@ -1,28 +1,18 @@
 <?php
 namespace TYPO3\CMS\Scheduler\Task;
 
-/***************************************************************
- *  Copyright notice
+/**
+ * This file is part of the TYPO3 CMS project.
  *
- *  (c) 2011-2013 Christian Kuhn <lolli@schwarzbu.ch>
- *  All rights reserved
+ * It is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License, either version 2
+ * of the License, or any later version.
  *
- *  This script is part of the TYPO3 project. The TYPO3 project is
- *  free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
+ * For the full copyright and license information, please read the
+ * LICENSE.txt file that was distributed with this source code.
  *
- *  The GNU General Public License can be found at
- *  http://www.gnu.org/copyleft/gpl.html.
- *
- *  This script is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  This copyright notice MUST APPEAR in all copies of the script!
- ***************************************************************/
+ * The TYPO3 project - inspiring people to share!
+ */
 /**
  * Additional BE fields for sys log table garbage collection task.
  *
@@ -84,8 +74,8 @@ class TableGarbageCollectionAdditionalFieldProvider implements \TYPO3\CMS\Schedu
 		$fieldHtml = '<input type="checkbox" ' . $checked . 'onChange="actOnChangeSchedulerTableGarbageCollectionAllTables(this)" ' . 'name="' . $fieldName . '" ' . 'id="' . $fieldId . '" />';
 		$fieldConfiguration = array(
 			'code' => $fieldHtml,
-			'label' => 'LLL:EXT:scheduler/mod1/locallang.xml:label.tableGarbageCollection.allTables',
-			'cshKey' => '_MOD_tools_txschedulerM1',
+			'label' => 'LLL:EXT:scheduler/mod1/locallang.xlf:label.tableGarbageCollection.allTables',
+			'cshKey' => '_MOD_system_txschedulerM1',
 			'cshLabel' => $fieldId
 		);
 		return $fieldConfiguration;
@@ -130,8 +120,8 @@ class TableGarbageCollectionAdditionalFieldProvider implements \TYPO3\CMS\Schedu
 		$fieldHtml[] = '// -->/*]]>*/</script>';
 		$fieldConfiguration = array(
 			'code' => implode(LF, $fieldHtml),
-			'label' => 'LLL:EXT:scheduler/mod1/locallang.xml:label.tableGarbageCollection.table',
-			'cshKey' => '_MOD_tools_txschedulerM1',
+			'label' => 'LLL:EXT:scheduler/mod1/locallang.xlf:label.tableGarbageCollection.table',
+			'cshKey' => '_MOD_system_txschedulerM1',
 			'cshLabel' => $fieldId
 		);
 		return $fieldConfiguration;
@@ -165,11 +155,11 @@ class TableGarbageCollectionAdditionalFieldProvider implements \TYPO3\CMS\Schedu
 		}
 		$fieldName = 'tx_scheduler[scheduler_tableGarbageCollection_numberOfDays]';
 		$fieldId = 'task_tableGarbageCollection_numberOfDays';
-		$fieldHtml = '<input type="text" ' . 'name="' . $fieldName . '" ' . 'id="' . $fieldId . '" ' . $disabled . 'value="' . intval($taskInfo['scheduler_tableGarbageCollection_numberOfDays']) . '" ' . 'size="4" />';
+		$fieldHtml = '<input type="text" ' . 'name="' . $fieldName . '" ' . 'id="' . $fieldId . '" ' . $disabled . 'value="' . (int)$taskInfo['scheduler_tableGarbageCollection_numberOfDays'] . '" ' . 'size="4" />';
 		$fieldConfiguration = array(
 			'code' => $fieldHtml,
-			'label' => 'LLL:EXT:scheduler/mod1/locallang.xml:label.tableGarbageCollection.numberOfDays',
-			'cshKey' => '_MOD_tools_txschedulerM1',
+			'label' => 'LLL:EXT:scheduler/mod1/locallang.xlf:label.tableGarbageCollection.numberOfDays',
+			'cshKey' => '_MOD_system_txschedulerM1',
 			'cshLabel' => $fieldId
 		);
 		return $fieldConfiguration;
@@ -235,11 +225,11 @@ class TableGarbageCollectionAdditionalFieldProvider implements \TYPO3\CMS\Schedu
 		$validData = FALSE;
 		if (!isset($submittedData['scheduler_tableGarbageCollection_numberOfDays'])) {
 			$validData = TRUE;
-		} elseif (intval($submittedData['scheduler_tableGarbageCollection_numberOfDays']) >= 0) {
+		} elseif ((int)$submittedData['scheduler_tableGarbageCollection_numberOfDays'] >= 0) {
 			$validData = TRUE;
 		} else {
 			// Issue error message
-			$parentObject->addMessage($GLOBALS['LANG']->sL('LLL:EXT:scheduler/mod1/locallang.xml:msg.invalidNumberOfDays'), \TYPO3\CMS\Core\Messaging\FlashMessage::ERROR);
+			$parentObject->addMessage($GLOBALS['LANG']->sL('LLL:EXT:scheduler/mod1/locallang.xlf:msg.invalidNumberOfDays'), \TYPO3\CMS\Core\Messaging\FlashMessage::ERROR);
 		}
 		return $validData;
 	}
@@ -254,10 +244,7 @@ class TableGarbageCollectionAdditionalFieldProvider implements \TYPO3\CMS\Schedu
 	public function saveAdditionalFields(array $submittedData, \TYPO3\CMS\Scheduler\Task\AbstractTask $task) {
 		$task->allTables = $submittedData['scheduler_tableGarbageCollection_allTables'] === 'on' ? TRUE : FALSE;
 		$task->table = $submittedData['scheduler_tableGarbageCollection_table'];
-		$task->numberOfDays = intval($submittedData['scheduler_tableGarbageCollection_numberOfDays']);
+		$task->numberOfDays = (int)$submittedData['scheduler_tableGarbageCollection_numberOfDays'];
 	}
 
 }
-
-
-?>

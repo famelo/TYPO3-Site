@@ -1,32 +1,18 @@
 <?php
 namespace TYPO3\CMS\Extbase\Mvc\Controller;
 
-/***************************************************************
- *  Copyright notice
+/**
+ * This file is part of the TYPO3 CMS project.
  *
- *  (c) 2010-2013 Extbase Team (http://forge.typo3.org/projects/typo3v4-mvc)
- *  Extbase is a backport of TYPO3 Flow. All credits go to the TYPO3 Flow team.
- *  All rights reserved
+ * It is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License, either version 2
+ * of the License, or any later version.
  *
- *  This script is part of the TYPO3 project. The TYPO3 project is
- *  free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
+ * For the full copyright and license information, please read the
+ * LICENSE.txt file that was distributed with this source code.
  *
- *  The GNU General Public License can be found at
- *  http://www.gnu.org/copyleft/gpl.html.
- *  A copy is found in the textfile GPL.txt and important notices to the license
- *  from the author is found in LICENSE.txt distributed with these scripts.
- *
- *
- *  This script is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  This copyright notice MUST APPEAR in all copies of the script!
- ***************************************************************/
+ * The TYPO3 project - inspiring people to share!
+ */
 /**
  * A controller argument
  *
@@ -36,21 +22,25 @@ class Argument {
 
 	/**
 	 * @var \TYPO3\CMS\Extbase\Object\ObjectManagerInterface
+	 * @inject
 	 */
 	protected $objectManager;
 
 	/**
 	 * @var \TYPO3\CMS\Extbase\Persistence\Generic\QueryFactory
+	 * @inject
 	 */
 	protected $queryFactory;
 
 	/**
 	 * @var \TYPO3\CMS\Extbase\Configuration\ConfigurationManagerInterface
+	 * @inject
 	 */
 	protected $configurationManager;
 
 	/**
 	 * This is the old property mapper, which has been completely rewritten for 1.4.
+	 * @inject
 	 *
 	 * @var \TYPO3\CMS\Extbase\Property\Mapper
 	 */
@@ -60,11 +50,13 @@ class Argument {
 	 * The new, completely rewritten property mapper since Extbase 1.4.
 	 *
 	 * @var \TYPO3\CMS\Extbase\Property\PropertyMapper
+	 * @inject
 	 */
 	protected $propertyMapper;
 
 	/**
 	 * @var \TYPO3\CMS\Extbase\Mvc\Controller\MvcPropertyMappingConfiguration
+	 * @inject
 	 */
 	protected $propertyMappingConfiguration;
 
@@ -164,6 +156,7 @@ class Argument {
 
 	/**
 	 * @var \TYPO3\CMS\Extbase\Persistence\PersistenceManagerInterface
+	 * @inject
 	 */
 	protected $persistenceManager;
 
@@ -187,32 +180,6 @@ class Argument {
 	}
 
 	/**
-	 * Injects the object manager
-	 *
-	 * @param \TYPO3\CMS\Extbase\Object\ObjectManagerInterface $objectManager
-	 * @return void
-	 */
-	public function injectObjectManager(\TYPO3\CMS\Extbase\Object\ObjectManagerInterface $objectManager) {
-		$this->objectManager = $objectManager;
-	}
-
-	/**
-	 * @param \TYPO3\CMS\Extbase\Property\Mapper $deprecatedPropertyMapper
-	 * @return void
-	 */
-	public function injectDeprecatedPropertyMapper(\TYPO3\CMS\Extbase\Property\Mapper $deprecatedPropertyMapper) {
-		$this->deprecatedPropertyMapper = $deprecatedPropertyMapper;
-	}
-
-	/**
-	 * @param \TYPO3\CMS\Extbase\Property\PropertyMapper $propertyMapper
-	 * @return void
-	 */
-	public function injectPropertyMapper(\TYPO3\CMS\Extbase\Property\PropertyMapper $propertyMapper) {
-		$this->propertyMapper = $propertyMapper;
-	}
-
-	/**
 	 * @param \TYPO3\CMS\Extbase\Reflection\ReflectionService $reflectionService
 	 * @return void
 	 */
@@ -223,48 +190,12 @@ class Argument {
 	}
 
 	/**
-	 * Injects the Persistence Manager
-	 *
-	 * @param \TYPO3\CMS\Extbase\Persistence\PersistenceManagerInterface $persistenceManager
-	 * @return void
-	 */
-	public function injectPersistenceManager(\TYPO3\CMS\Extbase\Persistence\PersistenceManagerInterface $persistenceManager) {
-		$this->persistenceManager = $persistenceManager;
-	}
-
-	/**
-	 * Injects a QueryFactory instance
-	 *
-	 * @param \TYPO3\CMS\Extbase\Persistence\Generic\QueryFactoryInterface $queryFactory
-	 * @return void
-	 */
-	public function injectQueryFactory(\TYPO3\CMS\Extbase\Persistence\Generic\QueryFactoryInterface $queryFactory) {
-		$this->queryFactory = $queryFactory;
-	}
-
-	/**
-	 * @param \TYPO3\CMS\Extbase\Configuration\ConfigurationManagerInterface $configurationManager
-	 * @return void
-	 */
-	public function injectConfigurationManager(\TYPO3\CMS\Extbase\Configuration\ConfigurationManagerInterface $configurationManager) {
-		$this->configurationManager = $configurationManager;
-	}
-
-	/**
 	 * @param \TYPO3\CMS\Extbase\Service\TypeHandlingService $typeHandlingService
 	 * @return void
 	 */
 	public function injectTypeHandlingService(\TYPO3\CMS\Extbase\Service\TypeHandlingService $typeHandlingService) {
 		$this->typeHandlingService = $typeHandlingService;
 		$this->dataType = $this->typeHandlingService->normalizeType($this->dataType);
-	}
-
-	/**
-	 * @param \TYPO3\CMS\Extbase\Mvc\Controller\MvcPropertyMappingConfiguration $mvcPropertyMappingConfiguration
-	 * @return void
-	 */
-	public function injectPropertyMappingConfiguration(\TYPO3\CMS\Extbase\Mvc\Controller\MvcPropertyMappingConfiguration $mvcPropertyMappingConfiguration) {
-		$this->propertyMappingConfiguration = $mvcPropertyMappingConfiguration;
 	}
 
 	/**
@@ -492,7 +423,7 @@ class Argument {
 			$transformedValue = $this->deprecatedPropertyMapper->map(array_keys($value), $value, $this->dataType);
 		}
 		if (!$transformedValue instanceof $this->dataType && ($transformedValue !== NULL || $this->isRequired())) {
-			throw new \TYPO3\CMS\Extbase\Mvc\Exception\InvalidArgumentValueException('The value must be of type "' . $this->dataType . '", but was of type "' . (is_object($transformedValue) ? get_class($transformedValue) : gettype($transformedValue)) . '".' . ($this->deprecatedPropertyMapper->getMappingResults()->hasErrors() ? '<p>' . implode('<br />', $this->deprecatedPropertyMapper->getMappingResults()->getErrors()) . '</p>' : ''), 1251730701);
+			throw new \TYPO3\CMS\Extbase\Mvc\Exception\InvalidArgumentValueException('The value must be of type "' . $this->dataType . '", but was of type "' . (is_object($transformedValue) ? get_class($transformedValue) : gettype($transformedValue)) . '".' . ($this->deprecatedPropertyMapper->getMappingResults()->hasErrors() ? '<p>' . implode('<br />', $this->deprecatedPropertyMapper->getMappingResults()->getErrors()) . '</p>' : ''), 1251730702);
 		}
 		return $transformedValue;
 	}
@@ -553,7 +484,7 @@ class Argument {
 	}
 
 	/**
-	 * @return array<\TYPO3\CMS\Extbase\Error\Result> Validation errors which have occured.
+	 * @return array<\TYPO3\CMS\Extbase\Error\Result> Validation errors which have occurred.
 	 * @api
 	 */
 	public function getValidationResults() {
@@ -570,5 +501,3 @@ class Argument {
 		return (string) $this->value;
 	}
 }
-
-?>

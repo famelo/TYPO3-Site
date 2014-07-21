@@ -1,49 +1,51 @@
 <?php
 namespace TYPO3\CMS\Extbase\Tests\Unit\Service;
 
-/***************************************************************
- *  Copyright notice
- *
- *  (c) 2011 Felix Oertel <typo3@foertel.com>
- *  All rights reserved
- *
- *  This script is part of the TYPO3 project. The TYPO3 project is
- *  free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
- *
- *  The GNU General Public License can be found at
- *  http://www.gnu.org/copyleft/gpl.html.
- *
- *  This script is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  This copyright notice MUST APPEAR in all copies of the script!
- ***************************************************************/
 /**
- * Testcase for class \TYPO3\CMS\Extbase\Service\FlexFormService
+ * This file is part of the TYPO3 CMS project.
+ *
+ * It is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License, either version 2
+ * of the License, or any later version.
+ *
+ * For the full copyright and license information, please read the
+ * LICENSE.txt file that was distributed with this source code.
+ *
+ * The TYPO3 project - inspiring people to share!
  */
-class FlexFormServiceTest extends \TYPO3\CMS\Extbase\Tests\Unit\BaseTestCase {
+
+use TYPO3\CMS\Core\Utility\GeneralUtility;
+
+/**
+ * Test case
+ */
+class FlexFormServiceTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 
 	/**
-	 * @var \TYPO3\CMS\Extbase\Service\FlexFormService
+	 * @var array Backup of singletons
 	 */
-	protected $flexFormService;
+	protected $backupSingletons = array();
 
+	/**
+	 * Set up
+	 */
 	public function setUp() {
-		$this->flexFormService = new \TYPO3\CMS\Extbase\Service\FlexFormService();
+		$this->backupSingletons = GeneralUtility::getSingletonInstances();
 	}
 
 	/**
-	 * @return array
+	 * Tear down
 	 */
-	public function convertFlexFormContentToArrayTestData() {
-		$testdata = array();
-		$testdata[0] = array(
-			'flexFormXML' => '<?xml version="1.0" encoding="iso-8859-1" standalone="yes"?>
+	public function tearDown() {
+		GeneralUtility::resetSingletonInstances($this->backupSingletons);
+		parent::tearDown();
+	}
+
+	/**
+	 * @test
+	 */
+	public function convertFlexFormContentToArrayResolvesComplexArrayStructure() {
+		$input = '<?xml version="1.0" encoding="iso-8859-1" standalone="yes"?>
 <T3FlexForms>
 	<data>
 		<sheet index="sDEF">
@@ -84,36 +86,33 @@ class FlexFormServiceTest extends \TYPO3\CMS\Extbase\Tests\Unit\BaseTestCase {
 			</language>
 		</sheet>
 	</data>
-</T3FlexForms>',
-			'expectedFlexFormArray' => array(
-				'settings' => array(
-					'foo' => 'Foo-Value',
-					'bar' => array(
-						1 => array(
-							'baz' => 'Baz1-Value',
-							'bum' => 'Bum1-Value'
-						),
-						2 => array(
-							'baz' => 'Baz2-Value',
-							'bum' => 'Bum2-Value'
-						)
+</T3FlexForms>';
+
+		$expected = array(
+			'settings' => array(
+				'foo' => 'Foo-Value',
+				'bar' => array(
+					1 => array(
+						'baz' => 'Baz1-Value',
+						'bum' => 'Bum1-Value'
+					),
+					2 => array(
+						'baz' => 'Baz2-Value',
+						'bum' => 'Bum2-Value'
 					)
 				)
 			)
 		);
-		return $testdata;
-	}
 
-	/**
-	 * @test
-	 * @dataProvider convertFlexFormContentToArrayTestData
-	 * @param string $flexFormXML
-	 * @param array $expectedFlexFormArray
-	 */
-	public function convertFlexFormContentToArrayResolvesComplexArrayStructure($flexFormXML, $expectedFlexFormArray) {
-		$convertedFlexFormArray = $this->flexFormService->convertFlexFormContentToArray($flexFormXML);
-		$this->assertSame($expectedFlexFormArray, $convertedFlexFormArray);
+		// The subject calls xml2array statically, which calls getHash and setHash statically, which uses
+		// caches, those need to be mocked.
+		$cacheManagerMock = $this->getMock('TYPO3\\CMS\\Core\\Cache\\CacheManager', array(), array(), '', FALSE);
+		$cacheMock = $this->getMock('TYPO3\\CMS\\Core\\Cache\\Frontend\\FrontendInterface', array(), array(), '', FALSE);
+		$cacheManagerMock->expects($this->any())->method('getCache')->will($this->returnValue($cacheMock));
+		GeneralUtility::setSingletonInstance('TYPO3\\CMS\\Core\\Cache\\CacheManager', $cacheManagerMock);
+
+		$flexFormService = $this->getMock('TYPO3\\CMS\\Extbase\\Service\\FlexFormService', array('dummy'), array(), '', FALSE);
+		$convertedFlexFormArray = $flexFormService->convertFlexFormContentToArray($input);
+		$this->assertSame($expected, $convertedFlexFormArray);
 	}
 }
-
-?>

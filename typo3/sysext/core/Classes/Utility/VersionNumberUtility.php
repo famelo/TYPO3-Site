@@ -1,31 +1,18 @@
 <?php
 namespace TYPO3\CMS\Core\Utility;
 
-/***************************************************************
- *  Copyright notice
+/**
+ * This file is part of the TYPO3 CMS project.
  *
- *  (c) 2011-2013 Susanne Moog <typo3@susanne-moog.de>
- *  All rights reserved
+ * It is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License, either version 2
+ * of the License, or any later version.
  *
- *  This script is part of the TYPO3 project. The TYPO3 project is
- *  free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
+ * For the full copyright and license information, please read the
+ * LICENSE.txt file that was distributed with this source code.
  *
- *  The GNU General Public License can be found at
- *  http://www.gnu.org/copyleft/gpl.html.
- *  A copy is found in the textfile GPL.txt and important notices to the license
- *  from the author is found in LICENSE.txt distributed with these scripts.
- *
- *
- *  This script is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  This copyright notice MUST APPEAR in all copies of the script!
- ***************************************************************/
+ * The TYPO3 project - inspiring people to share!
+ */
 /**
  * Class with helper functions for version number handling
  *
@@ -41,7 +28,7 @@ class VersionNumberUtility {
 	 */
 	static public function convertVersionNumberToInteger($versionNumber) {
 		$versionParts = explode('.', $versionNumber);
-		return intval(((int) $versionParts[0] . str_pad((int) $versionParts[1], 3, '0', STR_PAD_LEFT)) . str_pad((int) $versionParts[2], 3, '0', STR_PAD_LEFT));
+		return (int)(((int)$versionParts[0] . str_pad((int)$versionParts[1], 3, '0', STR_PAD_LEFT)) . str_pad((int)$versionParts[2], 3, '0', STR_PAD_LEFT));
 	}
 
 	/**
@@ -61,7 +48,7 @@ class VersionNumberUtility {
 			substr($versionString, 3, 3),
 			substr($versionString, 6, 3)
 		);
-		return intval($parts[0]) . '.' . intval($parts[1]) . '.' . intval($parts[2]);
+		return (int)$parts[0] . '.' . (int)$parts[1] . '.' . (int)$parts[2];
 	}
 
 	/**
@@ -92,18 +79,18 @@ class VersionNumberUtility {
 	}
 
 	/**
-	 * Removes -dev -alpha -beta -RC states from a version number
-	 * and replaces them by .0
+	 * Removes -dev -alpha -beta -RC states (also without '-' prefix) from a version number
+	 * and replaces them by .0 and normalizes to a three part version number
 	 *
-	 * @static
 	 * @return string
 	 */
 	static public function getNumericTypo3Version() {
 		$t3version = static::getCurrentTypo3Version();
-		if (stripos($t3version, '-dev') || stripos($t3version, '-alpha') || stripos($t3version, '-beta') || stripos($t3version, '-RC')) {
-			// find the last occurence of "-" and replace that part with a ".0"
-			$t3version = substr($t3version, 0, strrpos($t3version, '-')) . '.0';
-		}
+		$t3version = preg_replace('/-?(dev|alpha|beta|RC).*$/', '', $t3version);
+		$parts = \TYPO3\CMS\Core\Utility\GeneralUtility::intExplode('.', $t3version . '..');
+		$t3version = \TYPO3\CMS\Core\Utility\MathUtility::forceIntegerInRange($parts[0], 0, 999) . '.' .
+			\TYPO3\CMS\Core\Utility\MathUtility::forceIntegerInRange($parts[1], 0, 999) . '.' .
+			\TYPO3\CMS\Core\Utility\MathUtility::forceIntegerInRange($parts[2], 0, 999);
 		return $t3version;
 	}
 
@@ -111,10 +98,9 @@ class VersionNumberUtility {
 	 * Wrapper function for TYPO3_version constant to make functions using
 	 * the constant unit testable
 	 *
-	 * @static
 	 * @return string
 	 */
-	static protected function getCurrentTypo3Version() {
+	static public function getCurrentTypo3Version() {
 		return TYPO3_version;
 	}
 
@@ -158,7 +144,7 @@ class VersionNumberUtility {
 		$parts[2] = \TYPO3\CMS\Core\Utility\MathUtility::forceIntegerInRange($parts[2], 0, 999);
 		$result = array();
 		$result['version'] = $parts[0] . '.' . $parts[1] . '.' . $parts[2];
-		$result['version_int'] = intval($parts[0] * 1000000 + $parts[1] * 1000 + $parts[2]);
+		$result['version_int'] = (int)($parts[0] * 1000000 + $parts[1] * 1000 + $parts[2]);
 		$result['version_main'] = $parts[0];
 		$result['version_sub'] = $parts[1];
 		$result['version_dev'] = $parts[2];
@@ -182,23 +168,20 @@ class VersionNumberUtility {
 		$parts[1] = \TYPO3\CMS\Core\Utility\MathUtility::forceIntegerInRange($parts[1], 0, 999);
 		$parts[2] = \TYPO3\CMS\Core\Utility\MathUtility::forceIntegerInRange($parts[2], 0, 999);
 		switch ((string) $raise) {
-		case 'main':
-			$parts[0]++;
-			$parts[1] = 0;
-			$parts[2] = 0;
-			break;
-		case 'sub':
-			$parts[1]++;
-			$parts[2] = 0;
-			break;
-		case 'dev':
-			$parts[2]++;
-			break;
+			case 'main':
+				$parts[0]++;
+				$parts[1] = 0;
+				$parts[2] = 0;
+				break;
+			case 'sub':
+				$parts[1]++;
+				$parts[2] = 0;
+				break;
+			case 'dev':
+				$parts[2]++;
+				break;
 		}
 		return $parts[0] . '.' . $parts[1] . '.' . $parts[2];
 	}
 
 }
-
-
-?>

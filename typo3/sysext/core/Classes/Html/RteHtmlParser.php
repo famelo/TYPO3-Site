@@ -1,39 +1,23 @@
 <?php
 namespace TYPO3\CMS\Core\Html;
 
-/***************************************************************
- *  Copyright notice
- *
- *  (c) 1999-2013 Kasper Skårhøj (kasperYYYY@typo3.com)
- *  All rights reserved
- *
- *  This script is part of the TYPO3 project. The TYPO3 project is
- *  free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
- *
- *  The GNU General Public License can be found at
- *  http://www.gnu.org/copyleft/gpl.html.
- *  A copy is found in the textfile GPL.txt and important notices to the license
- *  from the author is found in LICENSE.txt distributed with these scripts.
- *
- *
- *  This script is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  This copyright notice MUST APPEAR in all copies of the script!
- ***************************************************************/
 /**
- * Functions for parsing HTML, specially for TYPO3 processing in relation to TCEmain and Rich Text Editor (RTE)
- * Revised for TYPO3 3.6 December/2003 by Kasper Skårhøj
- * XHTML compatible.
+ * This file is part of the TYPO3 CMS project.
  *
- * @author Kasper Skårhøj <kasperYYYY@typo3.com>
- * @internal
+ * It is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License, either version 2
+ * of the License, or any later version.
+ *
+ * For the full copyright and license information, please read the
+ * LICENSE.txt file that was distributed with this source code.
+ *
+ * The TYPO3 project - inspiring people to share!
  */
+
+use TYPO3\CMS\Backend\Utility\BackendUtility;
+use TYPO3\CMS\Core\Utility\GeneralUtility;
+use TYPO3\CMS\Core\Resource;
+
 /**
  * Class for parsing HTML for the Rich Text Editor. (also called transformations)
  *
@@ -165,7 +149,7 @@ class RteHtmlParser extends \TYPO3\CMS\Core\Html\HtmlParser {
 				$SW_p = $pArr['parameters'];
 				$SW_editFileField = trim($SW_p[0]);
 				$SW_editFile = $currentRecord[$SW_editFileField];
-				if ($SW_editFileField && $SW_editFile && \TYPO3\CMS\Core\Utility\GeneralUtility::validPathStr($SW_editFile)) {
+				if ($SW_editFileField && $SW_editFile && GeneralUtility::validPathStr($SW_editFile)) {
 					$SW_relpath = $GLOBALS['TYPO3_CONF_VARS']['BE']['staticFileEditPath'] . $SW_editFile;
 					$SW_editFile = PATH_site . $SW_relpath;
 					if (@is_file($SW_editFile)) {
@@ -209,18 +193,18 @@ class RteHtmlParser extends \TYPO3\CMS\Core\Html\HtmlParser {
 		// Init:
 		$this->tsConfig = $thisConfig;
 		$this->procOptions = (array) $thisConfig['proc.'];
-		$this->preserveTags = strtoupper(implode(',', \TYPO3\CMS\Core\Utility\GeneralUtility::trimExplode(',', $this->procOptions['preserveTags'])));
+		$this->preserveTags = strtoupper(implode(',', GeneralUtility::trimExplode(',', $this->procOptions['preserveTags'])));
 		// dynamic configuration of blockElementList
 		if ($this->procOptions['blockElementList']) {
 			$this->blockElementList = $this->procOptions['blockElementList'];
 		}
 		// Get parameters for rte_transformation:
-		$p = ($this->rte_p = \TYPO3\CMS\Backend\Utility\BackendUtility::getSpecConfParametersFromArray($specConf['rte_transform']['parameters']));
+		$p = ($this->rte_p = BackendUtility::getSpecConfParametersFromArray($specConf['rte_transform']['parameters']));
 		// Setting modes:
-		if (strcmp($this->procOptions['overruleMode'], '')) {
-			$modes = array_unique(\TYPO3\CMS\Core\Utility\GeneralUtility::trimExplode(',', $this->procOptions['overruleMode']));
+		if ((string)$this->procOptions['overruleMode'] !== '') {
+			$modes = array_unique(GeneralUtility::trimExplode(',', $this->procOptions['overruleMode']));
 		} else {
-			$modes = array_unique(\TYPO3\CMS\Core\Utility\GeneralUtility::trimExplode('-', $p['mode']));
+			$modes = array_unique(GeneralUtility::trimExplode('-', $p['mode']));
 		}
 		$revmodes = array_flip($modes);
 		// Find special modes and extract them:
@@ -232,7 +216,7 @@ class RteHtmlParser extends \TYPO3\CMS\Core\Html\HtmlParser {
 			$modes[$revmodes['ts_css']] = 'css_transform,ts_images,ts_links';
 		}
 		// Make list unique
-		$modes = array_unique(\TYPO3\CMS\Core\Utility\GeneralUtility::trimExplode(',', implode(',', $modes), 1));
+		$modes = array_unique(GeneralUtility::trimExplode(',', implode(',', $modes), TRUE));
 		// Reverse order if direction is "rte"
 		if ($direction == 'rte') {
 			$modes = array_reverse($modes);
@@ -254,42 +238,42 @@ class RteHtmlParser extends \TYPO3\CMS\Core\Html\HtmlParser {
 			if ($direction == 'db') {
 				// Checking for user defined transformation:
 				if ($_classRef = $GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['t3lib/class.t3lib_parsehtml_proc.php']['transformation'][$cmd]) {
-					$_procObj = \TYPO3\CMS\Core\Utility\GeneralUtility::getUserObj($_classRef);
+					$_procObj = GeneralUtility::getUserObj($_classRef);
 					$_procObj->pObj = $this;
 					$_procObj->transformationKey = $cmd;
 					$value = $_procObj->transform_db($value, $this);
 				} else {
 					// ... else use defaults:
 					switch ($cmd) {
-					case 'ts_images':
-						$value = $this->TS_images_db($value);
-						break;
-					case 'ts_reglinks':
-						$value = $this->TS_reglinks($value, 'db');
-						break;
-					case 'ts_links':
-						$value = $this->TS_links_db($value);
-						break;
-					case 'ts_preserve':
-						$value = $this->TS_preserve_db($value);
-						break;
-					case 'ts_transform':
+						case 'ts_images':
+							$value = $this->TS_images_db($value);
+							break;
+						case 'ts_reglinks':
+							$value = $this->TS_reglinks($value, 'db');
+							break;
+						case 'ts_links':
+							$value = $this->TS_links_db($value);
+							break;
+						case 'ts_preserve':
+							$value = $this->TS_preserve_db($value);
+							break;
+						case 'ts_transform':
 
-					case 'css_transform':
-						$this->allowedClasses = \TYPO3\CMS\Core\Utility\GeneralUtility::trimExplode(',', $this->procOptions['allowedClasses'], 1);
-						// CR has a very disturbing effect, so just remove all CR and rely on LF
-						$value = str_replace(CR, '', $value);
-						// Transform empty paragraphs into spacing paragraphs
-						$value = str_replace('<p></p>', '<p>&nbsp;</p>', $value);
-						// Double any trailing spacing paragraph so that it does not get removed by divideIntoLines()
-						$value = preg_replace('/<p>&nbsp;<\/p>$/', '<p>&nbsp;</p>' . '<p>&nbsp;</p>', $value);
-						$value = $this->TS_transform_db($value, $cmd == 'css_transform');
-						break;
-					case 'ts_strip':
-						$value = $this->TS_strip_db($value);
-						break;
-					default:
-						break;
+						case 'css_transform':
+							$this->allowedClasses = GeneralUtility::trimExplode(',', $this->procOptions['allowedClasses'], TRUE);
+							// CR has a very disturbing effect, so just remove all CR and rely on LF
+							$value = str_replace(CR, '', $value);
+							// Transform empty paragraphs into spacing paragraphs
+							$value = str_replace('<p></p>', '<p>&nbsp;</p>', $value);
+							// Double any trailing spacing paragraph so that it does not get removed by divideIntoLines()
+							$value = preg_replace('/<p>&nbsp;<\/p>$/', '<p>&nbsp;</p>' . '<p>&nbsp;</p>', $value);
+							$value = $this->TS_transform_db($value, $cmd == 'css_transform');
+							break;
+						case 'ts_strip':
+							$value = $this->TS_strip_db($value);
+							break;
+						default:
+							// Do nothing
 					}
 				}
 			}
@@ -297,33 +281,33 @@ class RteHtmlParser extends \TYPO3\CMS\Core\Html\HtmlParser {
 			if ($direction == 'rte') {
 				// Checking for user defined transformation:
 				if ($_classRef = $GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['t3lib/class.t3lib_parsehtml_proc.php']['transformation'][$cmd]) {
-					$_procObj = \TYPO3\CMS\Core\Utility\GeneralUtility::getUserObj($_classRef);
+					$_procObj = GeneralUtility::getUserObj($_classRef);
 					$_procObj->pObj = $this;
 					$value = $_procObj->transform_rte($value, $this);
 				} else {
 					// ... else use defaults:
 					switch ($cmd) {
-					case 'ts_images':
-						$value = $this->TS_images_rte($value);
-						break;
-					case 'ts_reglinks':
-						$value = $this->TS_reglinks($value, 'rte');
-						break;
-					case 'ts_links':
-						$value = $this->TS_links_rte($value);
-						break;
-					case 'ts_preserve':
-						$value = $this->TS_preserve_rte($value);
-						break;
-					case 'ts_transform':
+						case 'ts_images':
+							$value = $this->TS_images_rte($value);
+							break;
+						case 'ts_reglinks':
+							$value = $this->TS_reglinks($value, 'rte');
+							break;
+						case 'ts_links':
+							$value = $this->TS_links_rte($value);
+							break;
+						case 'ts_preserve':
+							$value = $this->TS_preserve_rte($value);
+							break;
+						case 'ts_transform':
 
-					case 'css_transform':
-						// Has a very disturbing effect, so just remove all '13' - depend on '10'
-						$value = str_replace(CR, '', $value);
-						$value = $this->TS_transform_rte($value, $cmd == 'css_transform');
-						break;
-					default:
-						break;
+						case 'css_transform':
+							// Has a very disturbing effect, so just remove all '13' - depend on '10'
+							$value = str_replace(CR, '', $value);
+							$value = $this->TS_transform_rte($value, $cmd == 'css_transform');
+							break;
+						default:
+							// Do nothing
 					}
 				}
 			}
@@ -363,166 +347,142 @@ class RteHtmlParser extends \TYPO3\CMS\Core\Html\HtmlParser {
 	public function TS_images_db($value) {
 		// Split content by <img> tags and traverse the resulting array for processing:
 		$imgSplit = $this->splitTags('img', $value);
-		foreach ($imgSplit as $k => $v) {
-			// image found, do processing:
-			if ($k % 2) {
-				// Init
-				$attribArray = $this->get_tag_attributes_classic($v, 1);
-				$siteUrl = $this->siteUrl();
-				$sitePath = str_replace(\TYPO3\CMS\Core\Utility\GeneralUtility::getIndpEnv('TYPO3_REQUEST_HOST'), '', $siteUrl);
-				// It's always a absolute URL coming from the RTE into the Database.
-				$absRef = trim($attribArray['src']);
-				// Make path absolute if it is relative and we have a site path wich is not '/'
-				$pI = pathinfo($absRef);
-				if ($sitePath and !$pI['scheme'] && \TYPO3\CMS\Core\Utility\GeneralUtility::isFirstPartOfStr($absRef, $sitePath)) {
-					// If site is in a subpath (eg. /~user_jim/) this path needs to be removed because it will be added with $siteUrl
-					$absRef = substr($absRef, strlen($sitePath));
-					$absRef = $siteUrl . $absRef;
-				}
-				// External image from another URL? In that case, fetch image (unless disabled feature).
-				if (!\TYPO3\CMS\Core\Utility\GeneralUtility::isFirstPartOfStr($absRef, $siteUrl) && !$this->procOptions['dontFetchExtPictures']) {
-					// Get it
-					$externalFile = $this->getUrl($absRef);
-					if ($externalFile) {
-						$pU = parse_url($absRef);
-						$pI = pathinfo($pU['path']);
-						if (\TYPO3\CMS\Core\Utility\GeneralUtility::inList('gif,png,jpeg,jpg', strtolower($pI['extension']))) {
-							$fileName = \TYPO3\CMS\Core\Utility\GeneralUtility::shortMD5($absRef) . '.' . $pI['extension'];
-							$folder = \TYPO3\CMS\Core\Resource\ResourceFactory::getInstance()->getFolderObjectFromCombinedIdentifier($this->rteImageStorageDir());
-							if ($folder instanceof \TYPO3\CMS\Core\Resource\Folder) {
+		if (count($imgSplit) > 1) {
+			$siteUrl = $this->siteUrl();
+			$sitePath = str_replace(GeneralUtility::getIndpEnv('TYPO3_REQUEST_HOST'), '', $siteUrl);
+			/** @var $resourceFactory Resource\ResourceFactory */
+			$resourceFactory = Resource\ResourceFactory::getInstance();
+			/** @var $magicImageService Resource\Service\MagicImageService */
+			$magicImageService = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Resource\\Service\\MagicImageService');
+			$magicImageService->setMagicImageMaximumDimensions($this->tsConfig);
+			foreach ($imgSplit as $k => $v) {
+				// Image found, do processing:
+				if ($k % 2) {
+					// Get attributes
+					$attribArray = $this->get_tag_attributes_classic($v, 1);
+					// It's always an absolute URL coming from the RTE into the Database.
+					$absoluteUrl = trim($attribArray['src']);
+					// Make path absolute if it is relative and we have a site path which is not '/'
+					$pI = pathinfo($absoluteUrl);
+					if ($sitePath && !$pI['scheme'] && GeneralUtility::isFirstPartOfStr($absoluteUrl, $sitePath)) {
+						// If site is in a subpath (eg. /~user_jim/) this path needs to be removed because it will be added with $siteUrl
+						$absoluteUrl = substr($absoluteUrl, strlen($sitePath));
+						$absoluteUrl = $siteUrl . $absoluteUrl;
+					}
+					// Image dimensions set in the img tag, if any
+					$imgTagDimensions = $this->getWHFromAttribs($attribArray);
+					if ($imgTagDimensions[0]) {
+						$attribArray['width'] = $imgTagDimensions[0];
+					}
+					if ($imgTagDimensions[1]) {
+						$attribArray['height'] = $imgTagDimensions[1];
+					}
+					$originalImageFile = NULL;
+					if ($attribArray['data-htmlarea-file-uid']) {
+						// An original image file uid is available
+						try {
+							/** @var $originalImageFile Resource\File */
+							$originalImageFile = $resourceFactory->getFileObject(intval($attribArray['data-htmlarea-file-uid']));
+						} catch (Resource\Exception\FileDoesNotExistException $fileDoesNotExistException) {
+							// Log the fact the file could not be retrieved.
+							$message = sprintf('Could not find file with uid "%s"', $attribArray['data-htmlarea-file-uid']);
+							$this->getLogger()->error($message);
+						}
+					}
+					if ($originalImageFile instanceof Resource\File) {
+						// Public url of local file is relative to the site url, absolute otherwise
+						if ($absoluteUrl == $originalImageFile->getPublicUrl() || $absoluteUrl == $siteUrl . $originalImageFile->getPublicUrl()) {
+							// This is a plain image, i.e. reference to the original image
+							if ($this->procOptions['plainImageMode']) {
+								// "plain image mode" is configured
+								// Find the dimensions of the original image
+								$imageInfo = array(
+									$originalImageFile->getProperty('width'),
+									$originalImageFile->getProperty('height')
+								);
+								if (!$imageInfo[0] || !$imageInfo[1]) {
+									$filePath = $originalImageFile->getForLocalProcessing(FALSE);
+									$imageInfo = @getimagesize($filePath);
+								}
+								$attribArray = $this->applyPlainImageModeSettings($imageInfo, $attribArray);
+							}
+						} else {
+							// Magic image case: get a processed file with the requested configuration
+							$imageConfiguration = array(
+								'width' => $imgTagDimensions[0],
+								'height' => $imgTagDimensions[1]
+							);
+							$magicImage = $magicImageService->createMagicImage($originalImageFile, $imageConfiguration);
+							$attribArray['width'] = $magicImage->getProperty('width');
+							$attribArray['height'] = $magicImage->getProperty('height');
+							$attribArray['src'] = $magicImage->getPublicUrl();
+						}
+					} elseif (!GeneralUtility::isFirstPartOfStr($absoluteUrl, $siteUrl) && !$this->procOptions['dontFetchExtPictures'] && TYPO3_MODE === 'BE') {
+						// External image from another URL: in that case, fetch image, unless the feature is disabled or we are not in backend mode
+						// Fetch the external image
+						$externalFile = $this->getUrl($absoluteUrl);
+						if ($externalFile) {
+							$pU = parse_url($absoluteUrl);
+							$pI = pathinfo($pU['path']);
+							if (GeneralUtility::inList('gif,png,jpeg,jpg', strtolower($pI['extension']))) {
+								$fileName = GeneralUtility::shortMD5($absoluteUrl) . '.' . $pI['extension'];
+								// We insert this image into the user default upload folder
+								$folder = $GLOBALS['BE_USER']->getDefaultUploadFolder();
 								$fileObject = $folder->createFile($fileName)->setContents($externalFile);
-								/** @var $magicImageService \TYPO3\CMS\Core\Resource\Service\MagicImageService */
-								$magicImageService = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Resource\\Service\\MagicImageService');
 								$imageConfiguration = array(
 									'width' => $attribArray['width'],
-									'height' => $attribArray['height'],
-									'maxW' => 300,
-									'maxH' => 1000
+									'height' => $attribArray['height']
 								);
-								$magicImage = $magicImageService->createMagicImage($fileObject, $imageConfiguration, $this->rteImageStorageDir());
-								if ($magicImage instanceof \TYPO3\CMS\Core\Resource\FileInterface) {
-									$filePath = $magicImage->getForLocalProcessing(FALSE);
-									$imageInfo = @getimagesize($filePath);
-									$attribArray['width'] = $imageInfo[0];
-									$attribArray['height'] = $imageInfo[1];
+								$magicImage = $magicImageService->createMagicImage($fileObject, $imageConfiguration);
+								$attribArray['width'] = $magicImage->getProperty('width');
+								$attribArray['height'] = $magicImage->getProperty('height');
+								$attribArray['data-htmlarea-file-uid'] = $fileObject->getUid();
+								$attribArray['data-htmlarea-file-table'] = 'sys_file';
+								$attribArray['src'] = $magicImage->getPublicUrl();
+							}
+						}
+					} elseif (GeneralUtility::isFirstPartOfStr($absoluteUrl, $siteUrl)) {
+						// Finally, check image as local file (siteURL equals the one of the image)
+						// Image has no data-htmlarea-file-uid attribute
+						// Relative path, rawurldecoded for special characters.
+						$path = rawurldecode(substr($absoluteUrl, strlen($siteUrl)));
+						// Absolute filepath, locked to relative path of this project
+						$filepath = GeneralUtility::getFileAbsFileName($path);
+						// Check file existence (in relative directory to this installation!)
+						if ($filepath && @is_file($filepath)) {
+							// Treat it as a plain image
+							if ($this->procOptions['plainImageMode']) {
+								// If "plain image mode" has been configured
+								// Find the original dimensions of the image
+								$imageInfo = @getimagesize($filePath);
+								$attribArray = $this->applyPlainImageModeSettings($imageInfo, $attribArray);
+							}
+							// Let's try to find a file uid for this image
+							try {
+								$fileOrFolderObject = $resourceFactory->retrieveFileOrFolderObject($path);
+								if ($fileOrFolderObject instanceof Resource\FileInterface) {
+									$fileIdentifier = $fileOrFolderObject->getIdentifier();
+									$fileObject = $fileOrFolderObject->getStorage()->getFile($fileIdentifier);
+									// TODO: if the retrieved file is a processed file, get the original file...
 									$attribArray['data-htmlarea-file-uid'] = $fileObject->getUid();
-									$absRef = $siteUrl . substr($filePath, strlen(PATH_site));
+									$attribArray['data-htmlarea-file-table'] = 'sys_file';
 								}
-								$attribArray['src'] = $absRef;
-								$params = \TYPO3\CMS\Core\Utility\GeneralUtility::implodeAttributes($attribArray, 1);
-								$imgSplit[$k] = '<img ' . $params . ' />';
+							} catch (Resource\Exception\ResourceDoesNotExistException $resourceDoesNotExistException) {
+								// Nothing to be done if file/folder not found
 							}
 						}
 					}
-				}
-				// Check image as local file (siteURL equals the one of the image)
-				if (\TYPO3\CMS\Core\Utility\GeneralUtility::isFirstPartOfStr($absRef, $siteUrl)) {
-					// Rel-path, rawurldecoded for special characters.
-					$path = rawurldecode(substr($absRef, strlen($siteUrl)));
-					// Abs filepath, locked to relative path of this project.
-					$filepath = \TYPO3\CMS\Core\Utility\GeneralUtility::getFileAbsFileName($path);
-					// Check file existence (in relative dir to this installation!)
-					if ($filepath && @is_file($filepath)) {
-						// If "magic image":
-						$magicFolder = \TYPO3\CMS\Core\Resource\ResourceFactory::getInstance()->getFolderObjectFromCombinedIdentifier(
-							$this->rteImageStorageDir()
-						);
-						if ($magicFolder instanceof \TYPO3\CMS\Core\Resource\Folder) {
-							$magicFolderPath = $magicFolder->getPublicUrl();
-							$pathPre = $magicFolderPath . 'RTEmagicC_';
-							if (\TYPO3\CMS\Core\Utility\GeneralUtility::isFirstPartOfStr($path, $pathPre)) {
-								// Find original file
-								if ($attribArray['data-htmlarea-file-uid']) {
-									$originalFileObject = \TYPO3\CMS\Core\Resource\ResourceFactory::getInstance()->getFileObject($attribArray['data-htmlarea-file-uid']);
-								} else {
-									// Backward compatibility mode
-									$pI = pathinfo(substr($path, strlen($pathPre)));
-									$filename = substr($pI['basename'], 0, -strlen(('.' . $pI['extension'])));
-									$origFilePath = PATH_site . $magicFolderPath . 'RTEmagicP_' . $filename;
-									if (@is_file($origFilePath)) {
-										$originalFileObject = $magicFolder->addFile($origFilePath, $filename, 'changeName');
-										$attribArray['data-htmlarea-file-uid'] = $originalFileObject->getUid();
-									}
-								}
-								if (!empty($originalFileObject) && $originalFileObject instanceof \TYPO3\CMS\Core\Resource\FileInterface) {
-									/** @var $magicImageService \TYPO3\CMS\Core\Resource\Service\MagicImageService */
-									$magicImageService = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Resource\\Service\\MagicImageService');
-									// Image dimensions of the current image
-									$imageDimensions = @getimagesize($filepath);
-									// Image dimensions as set on the img tag
-									$imgTagDimensions = $this->getWHFromAttribs($attribArray);
-									// If the dimensions have changed, we re-create the magic image
-									if ($imgTagDimensions[0] != $imageDimensions[0] || $imgTagDimensions[1] != $imageDimensions[1]) {
-										$imageConfiguration = array(
-											'width' => $imgTagDimensions[0],
-											'height' => $imgTagDimensions[1],
-											'maxW' => 300,
-											'maxH' => 1000
-										);
-										// TODO: Perhaps the existing magic image should be overridden?
-										$magicImage = $magicImageService->createMagicImage($originalFileObject, $imageConfiguration, $this->rteImageStorageDir());
-										if ($magicImage instanceof \TYPO3\CMS\Core\Resource\FileInterface) {
-											$filePath = $magicImage->getForLocalProcessing(FALSE);
-											$imageInfo = @getimagesize($filePath);
-											// Removing width and height from any style attribute
-											$attribArray['style'] = preg_replace('/((?:^|)\\s*(?:width|height)\\s*:[^;]*(?:$|;))/si', '', $attribArray['style']);
-											$attribArray['width'] = $imageInfo[0];
-											$attribArray['height'] = $imageInfo[1];
-											$attribArray['src'] = $this->siteURL() . substr($filePath, strlen(PATH_site));
-											$params = \TYPO3\CMS\Core\Utility\GeneralUtility::implodeAttributes($attribArray, 1);
-											$imgSplit[$k] = '<img ' . $params . ' />';
-										}
-									}
-								}
-							} elseif ($this->procOptions['plainImageMode']) {
-								// If "plain image" has been configured:
-								// Image dimensions as set in the image tag, if any
-								$curWH = $this->getWHFromAttribs($attribArray);
-								if ($curWH[0]) {
-									$attribArray['width'] = $curWH[0];
-								}
-								if ($curWH[1]) {
-									$attribArray['height'] = $curWH[1];
-								}
-								// Removing width and heigth form style attribute
-								$attribArray['style'] = preg_replace('/((?:^|)\\s*(?:width|height)\\s*:[^;]*(?:$|;))/si', '', $attribArray['style']);
-								// Finding dimensions of image file:
-								$fI = @getimagesize($filepath);
-								// Perform corrections to aspect ratio based on configuration:
-								switch ((string) $this->procOptions['plainImageMode']) {
-								case 'lockDimensions':
-									$attribArray['width'] = $fI[0];
-									$attribArray['height'] = $fI[1];
-									break;
-								case 'lockRatioWhenSmaller':
-									if ($attribArray['width'] > $fI[0]) {
-										$attribArray['width'] = $fI[0];
-									}
-								case 'lockRatio':
-									if ($fI[0] > 0) {
-										$attribArray['height'] = round($attribArray['width'] * ($fI[1] / $fI[0]));
-									}
-									break;
-								}
-								// Compile the image tag again:
-								$params = \TYPO3\CMS\Core\Utility\GeneralUtility::implodeAttributes($attribArray, 1);
-								$imgSplit[$k] = '<img ' . $params . ' />';
-							}
-						}
+					// Remove width and heigth from style attribute
+					$attribArray['style'] = preg_replace('/((?:^|)\\s*(?:width|height)\\s*:[^;]*(?:$|;))/si', '', $attribArray['style']);
+					// Must have alt attribute
+					if (!isset($attribArray['alt'])) {
+						$attribArray['alt'] = '';
 					}
-				}
-				// Convert abs to rel url
-				if ($imgSplit[$k]) {
-					$attribArray = $this->get_tag_attributes_classic($imgSplit[$k], 1);
-					$absRef = trim($attribArray['src']);
-					if (\TYPO3\CMS\Core\Utility\GeneralUtility::isFirstPartOfStr($absRef, $siteUrl)) {
-						$attribArray['src'] = $this->relBackPath . substr($absRef, strlen($siteUrl));
-						if (!isset($attribArray['alt'])) {
-							$attribArray['alt'] = '';
-						}
-						// Must have alt-attribute for XHTML compliance.
-						$imgSplit[$k] = '<img ' . \TYPO3\CMS\Core\Utility\GeneralUtility::implodeAttributes($attribArray, 1, 1) . ' />';
+					// Convert absolute to relative url
+					if (GeneralUtility::isFirstPartOfStr($attribArray['src'], $siteUrl)) {
+						$attribArray['src'] = $this->relBackPath . substr($attribArray['src'], strlen($siteUrl));
 					}
+					$imgSplit[$k] = '<img ' . GeneralUtility::implodeAttributes($attribArray, 1, 1) . ' />';
 				}
 			}
 		}
@@ -536,62 +496,31 @@ class RteHtmlParser extends \TYPO3\CMS\Core\Html\HtmlParser {
 	 *
 	 * @param string $value Content input
 	 * @return string Content output
-	 * @todo Define visibility
 	 */
 	public function TS_images_rte($value) {
-		$siteUrl = $this->siteUrl();
-		$sitePath = str_replace(\TYPO3\CMS\Core\Utility\GeneralUtility::getIndpEnv('TYPO3_REQUEST_HOST'), '', $siteUrl);
 		// Split content by <img> tags and traverse the resulting array for processing:
 		$imgSplit = $this->splitTags('img', $value);
-		foreach ($imgSplit as $k => $v) {
-			// image found:
-			if ($k % 2) {
-				// Init
-				$attribArray = $this->get_tag_attributes_classic($v, 1);
-				$absRef = trim($attribArray['src']);
-				// Unless the src attribute is already pointing to an external URL:
-				if (strtolower(substr($absRef, 0, 4)) != 'http') {
-					$isMagicImage = FALSE;
-					$fileFactory = \TYPO3\CMS\Core\Resource\ResourceFactory::getInstance();
-					$magicFolder = $fileFactory->getFolderObjectFromCombinedIdentifier(
-						$this->rteImageStorageDir()
-					);
-					if ($magicFolder instanceof \TYPO3\CMS\Core\Resource\Folder) {
-						$magicFolderPath = $magicFolder->getPublicUrl();
-						$pathPre = $magicFolderPath . 'RTEmagicC_';
-						if (\TYPO3\CMS\Core\Utility\GeneralUtility::isFirstPartOfStr($attribArray['src'], $pathPre)) {
-							$isMagicImage = TRUE;
-						}
-					}
-					if ($attribArray['data-htmlarea-file-uid'] && !$isMagicImage) {
-						$fileObject = $fileFactory->getFileObject($attribArray['data-htmlarea-file-uid']);
-						$filePath = $fileObject->getForLocalProcessing(FALSE);
-						$attribArray['src'] = $siteUrl . substr($filePath, strlen(PATH_site));
-					} else {
+		if (count($imgSplit) > 1) {
+			$siteUrl = $this->siteUrl();
+			$sitePath = str_replace(GeneralUtility::getIndpEnv('TYPO3_REQUEST_HOST'), '', $siteUrl);
+			foreach ($imgSplit as $k => $v) {
+				// Image found
+				if ($k % 2) {
+					// Get the attributes of the img tag
+					$attribArray = $this->get_tag_attributes_classic($v, 1);
+					$absoluteUrl = trim($attribArray['src']);
+					// Transform the src attribute into an absolute url, if it not already
+					if (strtolower(substr($absoluteUrl, 0, 4)) !== 'http') {
 						$attribArray['src'] = substr($attribArray['src'], strlen($this->relBackPath));
-						// if site is in a subpath (eg. /~user_jim/) this path needs to be removed because it will be added with $siteUrl
+						// If site is in a subpath (eg. /~user_jim/) this path needs to be removed because it will be added with $siteUrl
 						$attribArray['src'] = preg_replace('#^' . preg_quote($sitePath, '#') . '#', '', $attribArray['src']);
-						// If the image is not magic and does not have a file uid, try to add the uid
-						if (!$attribArray['data-htmlarea-file-uid'] && !$isMagicImage) {
-							try {
-								$fileOrFolderObject = $fileFactory->retrieveFileOrFolderObject($attribArray['src']);
-								if ($fileOrFolderObject instanceof \TYPO3\CMS\Core\Resource\FileInterface) {
-									$fileIdentifier = $fileOrFolderObject->getIdentifier();
-									$fileObject = $fileOrFolderObject->getStorage()->getFile($fileIdentifier);
-									$attribArray['data-htmlarea-file-uid'] = $fileObject->getUid();
-									$attribArray['data-htmlarea-file-table'] = 'sys_file';
-								}
-							} catch (\TYPO3\CMS\Core\Resource\Exception\FolderDoesNotExistException $notFoundException) {
-								// Nothing to be done if file/folder not found
-							}
-						}
 						$attribArray['src'] = $siteUrl . $attribArray['src'];
 					}
+					// Must have alt attribute
 					if (!isset($attribArray['alt'])) {
 						$attribArray['alt'] = '';
 					}
-					$params = \TYPO3\CMS\Core\Utility\GeneralUtility::implodeAttributes($attribArray);
-					$imgSplit[$k] = '<img ' . $params . ' />';
+					$imgSplit[$k] = '<img ' . GeneralUtility::implodeAttributes($attribArray, 1, 1) . ' />';
 				}
 			}
 		}
@@ -611,27 +540,27 @@ class RteHtmlParser extends \TYPO3\CMS\Core\Html\HtmlParser {
 	public function TS_reglinks($value, $direction) {
 		$retVal = '';
 		switch ($direction) {
-		case 'rte':
-			$retVal = $this->TS_AtagToAbs($value, 1);
-			break;
-		case 'db':
-			$siteURL = $this->siteUrl();
-			$blockSplit = $this->splitIntoBlock('A', $value);
-			foreach ($blockSplit as $k => $v) {
-				// Block
-				if ($k % 2) {
-					$attribArray = $this->get_tag_attributes_classic($this->getFirstTag($v), 1);
-					// If the url is local, remove url-prefix
-					if ($siteURL && substr($attribArray['href'], 0, strlen($siteURL)) == $siteURL) {
-						$attribArray['href'] = $this->relBackPath . substr($attribArray['href'], strlen($siteURL));
+			case 'rte':
+				$retVal = $this->TS_AtagToAbs($value, 1);
+				break;
+			case 'db':
+				$siteURL = $this->siteUrl();
+				$blockSplit = $this->splitIntoBlock('A', $value);
+				foreach ($blockSplit as $k => $v) {
+					// Block
+					if ($k % 2) {
+						$attribArray = $this->get_tag_attributes_classic($this->getFirstTag($v), 1);
+						// If the url is local, remove url-prefix
+						if ($siteURL && substr($attribArray['href'], 0, strlen($siteURL)) == $siteURL) {
+							$attribArray['href'] = $this->relBackPath . substr($attribArray['href'], strlen($siteURL));
+						}
+						$bTag = '<a ' . GeneralUtility::implodeAttributes($attribArray, 1) . '>';
+						$eTag = '</a>';
+						$blockSplit[$k] = $bTag . $this->TS_reglinks($this->removeFirstAndLastTag($blockSplit[$k]), $direction) . $eTag;
 					}
-					$bTag = '<a ' . \TYPO3\CMS\Core\Utility\GeneralUtility::implodeAttributes($attribArray, 1) . '>';
-					$eTag = '</a>';
-					$blockSplit[$k] = $bTag . $this->TS_reglinks($this->removeFirstAndLastTag($blockSplit[$k]), $direction) . $eTag;
 				}
-			}
-			$retVal = implode('', $blockSplit);
-			break;
+				$retVal = implode('', $blockSplit);
+				break;
 		}
 		return $retVal;
 	}
@@ -673,7 +602,7 @@ class RteHtmlParser extends \TYPO3\CMS\Core\Html\HtmlParser {
 						'aTagParams' => &$attribArray_copy
 					);
 					foreach ($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['t3lib/class.t3lib_parsehtml_proc.php']['removeParams_PostProc'] as $objRef) {
-						$processor = \TYPO3\CMS\Core\Utility\GeneralUtility::getUserObj($objRef);
+						$processor = GeneralUtility::getUserObj($objRef);
 						$attribArray_copy = $processor->removeParams($parameters, $this);
 					}
 				}
@@ -700,7 +629,7 @@ class RteHtmlParser extends \TYPO3\CMS\Core\Html\HtmlParser {
 							'attributes' => $attribArray
 						);
 						foreach ($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['t3lib/class.t3lib_parsehtml_proc.php']['modifyParams_LinksDb_PostProc'] as $objRef) {
-							$processor = \TYPO3\CMS\Core\Utility\GeneralUtility::getUserObj($objRef);
+							$processor = GeneralUtility::getUserObj($objRef);
 							$blockSplit[$k] = $processor->modifyParamsLinksDb($parameters, $this);
 						}
 					} else {
@@ -711,14 +640,26 @@ class RteHtmlParser extends \TYPO3\CMS\Core\Html\HtmlParser {
 					// Unsetting 'rtekeep' attribute if that had been set.
 					unset($attribArray['rtekeep']);
 					if (!$attribArray['data-htmlarea-external']) {
-						// If the url is local, remove url-prefix
 						$siteURL = $this->siteUrl();
+						// If the url is local, remove url-prefix
 						if ($siteURL && substr($attribArray['href'], 0, strlen($siteURL)) == $siteURL) {
 							$attribArray['href'] = $this->relBackPath . substr($attribArray['href'], strlen($siteURL));
 						}
+						// Check for FAL link-handler keyword
+						list($linkHandlerKeyword, $linkHandlerValue) = explode(':', $attribArray['href'], 2);
+						if ($linkHandlerKeyword === '?file') {
+							try {
+								$fileOrFolderObject = \TYPO3\CMS\Core\Resource\ResourceFactory::getInstance()->retrieveFileOrFolderObject(rawurldecode($linkHandlerValue));
+								if ($fileOrFolderObject instanceof \TYPO3\CMS\Core\Resource\FileInterface || $fileOrFolderObject instanceof \TYPO3\CMS\Core\Resource\Folder) {
+									$attribArray['href'] = $fileOrFolderObject->getPublicUrl();
+								}
+							} catch (\TYPO3\CMS\Core\Resource\Exception\ResourceDoesNotExistException $resourceDoesNotExistException) {
+								// The indentifier inserted in the RTE is already gone...
+							}
+						}
 					}
 					unset($attribArray['data-htmlarea-external']);
-					$bTag = '<a ' . \TYPO3\CMS\Core\Utility\GeneralUtility::implodeAttributes($attribArray, 1) . '>';
+					$bTag = '<a ' . GeneralUtility::implodeAttributes($attribArray, 1) . '>';
 					$eTag = '</a>';
 					$blockSplit[$k] = $bTag . $this->TS_links_db($this->removeFirstAndLastTag($blockSplit[$k])) . $eTag;
 				}
@@ -747,7 +688,7 @@ class RteHtmlParser extends \TYPO3\CMS\Core\Html\HtmlParser {
 			$external = FALSE;
 			// Block
 			if ($k % 2) {
-				$tagCode = \TYPO3\CMS\Core\Utility\GeneralUtility::unQuoteFilenames(trim(substr($this->getFirstTag($v), 0, -1)), TRUE);
+				$tagCode = GeneralUtility::unQuoteFilenames(trim(substr($this->getFirstTag($v), 0, -1)), TRUE);
 				$link_param = $tagCode[1];
 				$href = '';
 				// Parsing the typolink data. This parsing is roughly done like in tslib_content->typolink()
@@ -756,7 +697,7 @@ class RteHtmlParser extends \TYPO3\CMS\Core\Html\HtmlParser {
 				if (strstr($link_param, '@') && (!$pU['scheme'] || $pU['scheme'] == 'mailto')) {
 					// mailadr
 					$href = 'mailto:' . preg_replace('/^mailto:/i', '', $link_param);
-				} elseif (substr($link_param, 0, 1) == '#') {
+				} elseif ($link_param[0] === '#') {
 					// check if anchor
 					$href = $siteUrl . $link_param;
 				} else {
@@ -765,14 +706,20 @@ class RteHtmlParser extends \TYPO3\CMS\Core\Html\HtmlParser {
 					if ($linkHandlerKeyword === 'file') {
 						$href = $siteUrl . '?' . $linkHandlerKeyword . ':' . rawurlencode($linkHandlerValue);
 					} else {
-						$fileChar = intval(strpos($link_param, '/'));
-						$urlChar = intval(strpos($link_param, '.'));
+						$fileChar = (int)strpos($link_param, '/');
+						$urlChar = (int)strpos($link_param, '.');
 						// Detects if a file is found in site-root.
 						list($rootFileDat) = explode('?', $link_param);
 						$rFD_fI = pathinfo($rootFileDat);
-						if (trim($rootFileDat) && !strstr($link_param, '/') && (@is_file((PATH_site . $rootFileDat)) || \TYPO3\CMS\Core\Utility\GeneralUtility::inList('php,html,htm', strtolower($rFD_fI['extension'])))) {
+						if (trim($rootFileDat) && !strstr($link_param, '/') && (@is_file((PATH_site . $rootFileDat)) || GeneralUtility::inList('php,html,htm', strtolower($rFD_fI['extension'])))) {
 							$href = $siteUrl . $link_param;
-						} elseif ($pU['scheme'] || $urlChar && (!$fileChar || $urlChar < $fileChar)) {
+						} elseif (
+							(
+								$pU['scheme']
+								&& !isset($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['tslib/class.tslib_content.php']['typolinkLinkHandler'][$pU['scheme']])
+							)
+							|| $urlChar && (!$fileChar || $urlChar < $fileChar)
+						) {
 							// url (external): if has scheme or if a '.' comes before a '/'.
 							$href = $link_param;
 							if (!$pU['scheme']) {
@@ -802,21 +749,21 @@ class RteHtmlParser extends \TYPO3\CMS\Core\Html\HtmlParser {
 						} else {
 							// integer or alias (alias is without slashes or periods or commas, that is 'nospace,alphanum_x,lower,unique' according to tables.php!!)
 							// Splitting the parameter by ',' and if the array counts more than 1 element it's a id/type/parameters triplet
-							$pairParts = \TYPO3\CMS\Core\Utility\GeneralUtility::trimExplode(',', $link_param, TRUE);
+							$pairParts = GeneralUtility::trimExplode(',', $link_param, TRUE);
 							$idPart = $pairParts[0];
 							$link_params_parts = explode('#', $idPart);
 							$idPart = trim($link_params_parts[0]);
 							$sectionMark = trim($link_params_parts[1]);
-							if (!strcmp($idPart, '')) {
+							if ((string)$idPart === '') {
 								$idPart = $this->recPid;
 							}
 							// If no id or alias is given, set it to class record pid
 							// Checking if the id-parameter is an alias.
 							if (!\TYPO3\CMS\Core\Utility\MathUtility::canBeInterpretedAsInteger($idPart)) {
-								list($idPartR) = \TYPO3\CMS\Backend\Utility\BackendUtility::getRecordsByField('pages', 'alias', $idPart);
-								$idPart = intval($idPartR['uid']);
+								list($idPartR) = BackendUtility::getRecordsByField('pages', 'alias', $idPart);
+								$idPart = (int)$idPartR['uid'];
 							}
-							$page = \TYPO3\CMS\Backend\Utility\BackendUtility::getRecord('pages', $idPart);
+							$page = BackendUtility::getRecord('pages', $idPart);
 							if (is_array($page)) {
 								// Page must exist...
 								$href = $siteUrl . '?id=' . $idPart . ($pairParts[2] ? $pairParts[2] : '') . ($sectionMark ? '#' . $sectionMark : '');
@@ -843,7 +790,7 @@ class RteHtmlParser extends \TYPO3\CMS\Core\Html\HtmlParser {
 						'error' => $error
 					);
 					foreach ($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['t3lib/class.t3lib_parsehtml_proc.php']['modifyParams_LinksRte_PostProc'] as $objRef) {
-						$processor = \TYPO3\CMS\Core\Utility\GeneralUtility::getUserObj($objRef);
+						$processor = GeneralUtility::getUserObj($objRef);
 						$blockSplit[$k] = $processor->modifyParamsLinksRte($parameters, $this);
 					}
 				} else {
@@ -924,7 +871,7 @@ class RteHtmlParser extends \TYPO3\CMS\Core\Html\HtmlParser {
 		$cc = 0;
 		$aC = count($blockSplit);
 		// Avoid superfluous linebreaks by transform_db after ending headListTag
-		while ($aC && !strcmp(trim($blockSplit[($aC - 1)]), '')) {
+		while ($aC && trim($blockSplit[($aC - 1)]) === '') {
 			unset($blockSplit[$aC - 1]);
 			$aC = count($blockSplit);
 		}
@@ -939,92 +886,91 @@ class RteHtmlParser extends \TYPO3\CMS\Core\Html\HtmlParser {
 				$tagName = strtolower($this->getFirstTagName($v));
 				// Process based on the tag:
 				switch ($tagName) {
-				case 'blockquote':
+					case 'blockquote':
 
-				case 'dd':
+					case 'dd':
 
-				case 'div':
+					case 'div':
 
-				case 'header':
+					case 'header':
 
-				case 'section':
+					case 'section':
 
-				case 'footer':
+					case 'footer':
 
-				case 'nav':
+					case 'nav':
 
-				case 'article':
+					case 'article':
 
-				case 'aside':
-					$blockSplit[$k] = $tag . $this->TS_transform_db($this->removeFirstAndLastTag($blockSplit[$k]), $css) . '</' . $tagName . '>' . $lastBR;
-					break;
-				case 'ol':
+					case 'aside':
+						$blockSplit[$k] = $tag . $this->TS_transform_db($this->removeFirstAndLastTag($blockSplit[$k]), $css) . '</' . $tagName . '>' . $lastBR;
+						break;
+					case 'ol':
 
-				case 'ul':
-					// Transform lists into <typolist>-tags:
-					if (!$css) {
-						if (!isset($this->procOptions['typolist']) || $this->procOptions['typolist']) {
-							$parts = $this->getAllParts($this->splitIntoBlock('LI', $this->removeFirstAndLastTag($blockSplit[$k])), 1, 0);
-							foreach ($parts as $k2 => $value) {
-								$parts[$k2] = preg_replace('/[' . LF . CR . ']+/', '', $parts[$k2]);
-								// remove all linesbreaks!
-								$parts[$k2] = $this->defaultTStagMapping($parts[$k2], 'db');
-								$parts[$k2] = $this->cleanFontTags($parts[$k2], 0, 0, 0);
-								$parts[$k2] = $this->HTMLcleaner_db($parts[$k2], strtolower($this->procOptions['allowTagsInTypolists'] ? $this->procOptions['allowTagsInTypolists'] : 'br,font,b,i,u,a,img,span,strong,em'));
+					case 'ul':
+						// Transform lists into <typolist>-tags:
+						if (!$css) {
+							if (!isset($this->procOptions['typolist']) || $this->procOptions['typolist']) {
+								$parts = $this->getAllParts($this->splitIntoBlock('LI', $this->removeFirstAndLastTag($blockSplit[$k])), 1, 0);
+								foreach ($parts as $k2 => $value) {
+									$parts[$k2] = preg_replace('/[' . LF . CR . ']+/', '', $parts[$k2]);
+									// remove all linesbreaks!
+									$parts[$k2] = $this->defaultTStagMapping($parts[$k2], 'db');
+									$parts[$k2] = $this->cleanFontTags($parts[$k2], 0, 0, 0);
+									$parts[$k2] = $this->HTMLcleaner_db($parts[$k2], strtolower($this->procOptions['allowTagsInTypolists'] ? $this->procOptions['allowTagsInTypolists'] : 'br,font,b,i,u,a,img,span,strong,em'));
+								}
+								if ($tagName == 'ol') {
+									$params = ' type="1"';
+								} else {
+									$params = '';
+								}
+								$blockSplit[$k] = '<typolist' . $params . '>' . LF . implode(LF, $parts) . LF . '</typolist>' . $lastBR;
 							}
-							if ($tagName == 'ol') {
-								$params = ' type="1"';
-							} else {
-								$params = '';
-							}
-							$blockSplit[$k] = '<typolist' . $params . '>' . LF . implode(LF, $parts) . LF . '</typolist>' . $lastBR;
-						}
-					} else {
-						$blockSplit[$k] = preg_replace(('/[' . LF . CR . ']+/'), ' ', $this->transformStyledATags($blockSplit[$k])) . $lastBR;
-					}
-					break;
-				case 'table':
-					// Tables are NOT allowed in any form (unless preserveTables is set or CSS is the mode)
-					if (!$this->procOptions['preserveTables'] && !$css) {
-						$blockSplit[$k] = $this->TS_transform_db($this->removeTables($blockSplit[$k]));
-					} else {
-						$blockSplit[$k] = preg_replace(('/[' . LF . CR . ']+/'), ' ', $this->transformStyledATags($blockSplit[$k])) . $lastBR;
-					}
-					break;
-				case 'h1':
-
-				case 'h2':
-
-				case 'h3':
-
-				case 'h4':
-
-				case 'h5':
-
-				case 'h6':
-					if (!$css) {
-						$attribArray = $this->get_tag_attributes_classic($tag);
-						// Processing inner content here:
-						$innerContent = $this->HTMLcleaner_db($this->removeFirstAndLastTag($blockSplit[$k]));
-						if (!isset($this->procOptions['typohead']) || $this->procOptions['typohead']) {
-							$type = intval(substr($tagName, 1));
-							$blockSplit[$k] = '<typohead' . ($type != 6 ? ' type="' . $type . '"' : '') . ($attribArray['align'] ? ' align="' . $attribArray['align'] . '"' : '') . ($attribArray['class'] ? ' class="' . $attribArray['class'] . '"' : '') . '>' . $innerContent . '</typohead>' . $lastBR;
 						} else {
-							$blockSplit[$k] = '<' . $tagName . ($attribArray['align'] ? ' align="' . htmlspecialchars($attribArray['align']) . '"' : '') . ($attribArray['class'] ? ' class="' . htmlspecialchars($attribArray['class']) . '"' : '') . '>' . $innerContent . '</' . $tagName . '>' . $lastBR;
+							$blockSplit[$k] = preg_replace(('/[' . LF . CR . ']+/'), ' ', $this->transformStyledATags($blockSplit[$k])) . $lastBR;
 						}
-					} else {
-						// Eliminate true linebreaks inside Hx tags
+						break;
+					case 'table':
+						// Tables are NOT allowed in any form (unless preserveTables is set or CSS is the mode)
+						if (!$this->procOptions['preserveTables'] && !$css) {
+							$blockSplit[$k] = $this->TS_transform_db($this->removeTables($blockSplit[$k]));
+						} else {
+							$blockSplit[$k] = preg_replace(('/[' . LF . CR . ']+/'), ' ', $this->transformStyledATags($blockSplit[$k])) . $lastBR;
+						}
+						break;
+					case 'h1':
+
+					case 'h2':
+
+					case 'h3':
+
+					case 'h4':
+
+					case 'h5':
+
+					case 'h6':
+						if (!$css) {
+							$attribArray = $this->get_tag_attributes_classic($tag);
+							// Processing inner content here:
+							$innerContent = $this->HTMLcleaner_db($this->removeFirstAndLastTag($blockSplit[$k]));
+							if (!isset($this->procOptions['typohead']) || $this->procOptions['typohead']) {
+								$type = (int)substr($tagName, 1);
+								$blockSplit[$k] = '<typohead' . ($type != 6 ? ' type="' . $type . '"' : '') . ($attribArray['align'] ? ' align="' . $attribArray['align'] . '"' : '') . ($attribArray['class'] ? ' class="' . $attribArray['class'] . '"' : '') . '>' . $innerContent . '</typohead>' . $lastBR;
+							} else {
+								$blockSplit[$k] = '<' . $tagName . ($attribArray['align'] ? ' align="' . htmlspecialchars($attribArray['align']) . '"' : '') . ($attribArray['class'] ? ' class="' . htmlspecialchars($attribArray['class']) . '"' : '') . '>' . $innerContent . '</' . $tagName . '>' . $lastBR;
+							}
+						} else {
+							// Eliminate true linebreaks inside Hx tags
+							$blockSplit[$k] = preg_replace(('/[' . LF . CR . ']+/'), ' ', $this->transformStyledATags($blockSplit[$k])) . $lastBR;
+						}
+						break;
+					default:
+						// Eliminate true linebreaks inside other headlist tags
 						$blockSplit[$k] = preg_replace(('/[' . LF . CR . ']+/'), ' ', $this->transformStyledATags($blockSplit[$k])) . $lastBR;
-					}
-					break;
-				default:
-					// Eliminate true linebreaks inside other headlist tags
-					$blockSplit[$k] = preg_replace(('/[' . LF . CR . ']+/'), ' ', $this->transformStyledATags($blockSplit[$k])) . $lastBR;
-					break;
 				}
 			} else {
 				// NON-block:
-				if (strcmp(trim($blockSplit[$k]), '')) {
+				if (trim($blockSplit[$k]) !== '') {
 					$blockSplit[$k] = preg_replace('/<hr\\/>/', '<hr />', $blockSplit[$k]);
 					// Remove linebreaks preceding hr tags
 					$blockSplit[$k] = preg_replace('/[' . LF . CR . ']+<(hr)(\\s[^>\\/]*)?[[:space:]]*\\/?>/', '<$1$2/>', $blockSplit[$k]);
@@ -1060,7 +1006,7 @@ class RteHtmlParser extends \TYPO3\CMS\Core\Html\HtmlParser {
 				if ($attribArray['style'] && !$attribArray['rteerror']) {
 					$attribArray_copy['style'] = $attribArray['style'];
 					unset($attribArray['style']);
-					$bTag = '<span ' . \TYPO3\CMS\Core\Utility\GeneralUtility::implodeAttributes($attribArray_copy, 1) . '><a ' . \TYPO3\CMS\Core\Utility\GeneralUtility::implodeAttributes($attribArray, 1) . '>';
+					$bTag = '<span ' . GeneralUtility::implodeAttributes($attribArray_copy, 1) . '><a ' . GeneralUtility::implodeAttributes($attribArray, 1) . '>';
 					$eTag = '</a></span>';
 					$blockSplit[$k] = $bTag . $this->removeFirstAndLastTag($blockSplit[$k]) . $eTag;
 				}
@@ -1093,49 +1039,49 @@ class RteHtmlParser extends \TYPO3\CMS\Core\Html\HtmlParser {
 				$attribArray = $this->get_tag_attributes_classic($tag);
 				// Based on tagname, we do transformations:
 				switch ($tagName) {
-				case 'blockquote':
+					case 'blockquote':
 
-				case 'dd':
+					case 'dd':
 
-				case 'div':
+					case 'div':
 
-				case 'header':
+					case 'header':
 
-				case 'section':
+					case 'section':
 
-				case 'footer':
+					case 'footer':
 
-				case 'nav':
+					case 'nav':
 
-				case 'article':
+					case 'article':
 
-				case 'aside':
-					$blockSplit[$k] = $tag . $this->TS_transform_rte($this->removeFirstAndLastTag($blockSplit[$k]), $css) . '</' . $tagName . '>';
-					break;
-				case 'typolist':
-					// Transform typolist blocks into OL/UL lists. Type 1 is expected to be numerical block
-					if (!isset($this->procOptions['typolist']) || $this->procOptions['typolist']) {
-						$tListContent = $this->removeFirstAndLastTag($blockSplit[$k]);
-						$tListContent = preg_replace('/^[ ]*' . LF . '/', '', $tListContent);
-						$tListContent = preg_replace('/' . LF . '[ ]*$/', '', $tListContent);
-						$lines = explode(LF, $tListContent);
-						$typ = $attribArray['type'] == 1 ? 'ol' : 'ul';
-						$blockSplit[$k] = '<' . $typ . '>' . LF . '<li>' . implode(('</li>' . LF . '<li>'), $lines) . '</li>' . '</' . $typ . '>';
-					}
-					break;
-				case 'typohead':
-					// Transform typohead into Hx tags.
-					if (!isset($this->procOptions['typohead']) || $this->procOptions['typohead']) {
-						$tC = $this->removeFirstAndLastTag($blockSplit[$k]);
-						$typ = \TYPO3\CMS\Core\Utility\MathUtility::forceIntegerInRange($attribArray['type'], 0, 6);
-						if (!$typ) {
-							$typ = 6;
+					case 'aside':
+						$blockSplit[$k] = $tag . $this->TS_transform_rte($this->removeFirstAndLastTag($blockSplit[$k]), $css) . '</' . $tagName . '>';
+						break;
+					case 'typolist':
+						// Transform typolist blocks into OL/UL lists. Type 1 is expected to be numerical block
+						if (!isset($this->procOptions['typolist']) || $this->procOptions['typolist']) {
+							$tListContent = $this->removeFirstAndLastTag($blockSplit[$k]);
+							$tListContent = preg_replace('/^[ ]*' . LF . '/', '', $tListContent);
+							$tListContent = preg_replace('/' . LF . '[ ]*$/', '', $tListContent);
+							$lines = explode(LF, $tListContent);
+							$typ = $attribArray['type'] == 1 ? 'ol' : 'ul';
+							$blockSplit[$k] = '<' . $typ . '>' . LF . '<li>' . implode(('</li>' . LF . '<li>'), $lines) . '</li>' . '</' . $typ . '>';
 						}
-						$align = $attribArray['align'] ? ' align="' . $attribArray['align'] . '"' : '';
-						$class = $attribArray['class'] ? ' class="' . $attribArray['class'] . '"' : '';
-						$blockSplit[$k] = '<h' . $typ . $align . $class . '>' . $tC . '</h' . $typ . '>';
-					}
-					break;
+						break;
+					case 'typohead':
+						// Transform typohead into Hx tags.
+						if (!isset($this->procOptions['typohead']) || $this->procOptions['typohead']) {
+							$tC = $this->removeFirstAndLastTag($blockSplit[$k]);
+							$typ = \TYPO3\CMS\Core\Utility\MathUtility::forceIntegerInRange($attribArray['type'], 0, 6);
+							if (!$typ) {
+								$typ = 6;
+							}
+							$align = $attribArray['align'] ? ' align="' . $attribArray['align'] . '"' : '';
+							$class = $attribArray['class'] ? ' class="' . $attribArray['class'] . '"' : '';
+							$blockSplit[$k] = '<h' . $typ . $align . $class . '>' . $tC . '</h' . $typ . '>';
+						}
+						break;
 				}
 				$blockSplit[$k + 1] = preg_replace('/^[ ]*' . LF . '/', '', $blockSplit[$k + 1]);
 			} else {
@@ -1143,7 +1089,7 @@ class RteHtmlParser extends \TYPO3\CMS\Core\Html\HtmlParser {
 				$nextFTN = $this->getFirstTagName($blockSplit[$k + 1]);
 				$onlyLineBreaks = (preg_match('/^[ ]*' . LF . '+[ ]*$/', $blockSplit[$k]) == 1);
 				// If the line is followed by a block or is the last line:
-				if (\TYPO3\CMS\Core\Utility\GeneralUtility::inList($blockElementList, $nextFTN) || !isset($blockSplit[$k + 1])) {
+				if (GeneralUtility::inList($blockElementList, $nextFTN) || !isset($blockSplit[$k + 1])) {
 					// If the line contains more than just linebreaks, reduce the number of trailing linebreaks by 1
 					if (!$onlyLineBreaks) {
 						$blockSplit[$k] = preg_replace('/(' . LF . '*)' . LF . '[ ]*$/', '$1', $blockSplit[$k]);
@@ -1153,7 +1099,7 @@ class RteHtmlParser extends \TYPO3\CMS\Core\Html\HtmlParser {
 					}
 				}
 				// If $blockSplit[$k] is blank then unset the line, unless the line only contained linebreaks
-				if (!strcmp($blockSplit[$k], '') && !$onlyLineBreaks) {
+				if ((string)$blockSplit[$k] === '' && !$onlyLineBreaks) {
 					unset($blockSplit[$k]);
 				} else {
 					$blockSplit[$k] = $this->setDivTags($blockSplit[$k], $this->procOptions['useDIVasParagraphTagForRTE'] ? 'div' : 'p');
@@ -1190,7 +1136,7 @@ class RteHtmlParser extends \TYPO3\CMS\Core\Html\HtmlParser {
 	 * @todo Define visibility
 	 */
 	public function getUrl($url) {
-		return \TYPO3\CMS\Core\Utility\GeneralUtility::getUrl($url);
+		return GeneralUtility::getUrl($url);
 	}
 
 	/**
@@ -1236,95 +1182,95 @@ class RteHtmlParser extends \TYPO3\CMS\Core\Html\HtmlParser {
 		if (!is_array($this->getKeepTags_cache[$direction]) || $tagList) {
 			// Setting up allowed tags:
 			// If the $tagList input var is set, this will take precedence
-			if (strcmp($tagList, '')) {
-				$keepTags = array_flip(\TYPO3\CMS\Core\Utility\GeneralUtility::trimExplode(',', $tagList, 1));
+			if ((string)$tagList !== '') {
+				$keepTags = array_flip(GeneralUtility::trimExplode(',', $tagList, TRUE));
 			} else {
 				// Default is to get allowed/denied tags from internal array of processing options:
 				// Construct default list of tags to keep:
 				$typoScript_list = 'b,i,u,a,img,br,div,center,pre,font,hr,sub,sup,p,strong,em,li,ul,ol,blockquote,strike,span';
-				$keepTags = array_flip(\TYPO3\CMS\Core\Utility\GeneralUtility::trimExplode(',', $typoScript_list . ',' . strtolower($this->procOptions['allowTags']), 1));
+				$keepTags = array_flip(GeneralUtility::trimExplode(',', $typoScript_list . ',' . strtolower($this->procOptions['allowTags']), TRUE));
 				// For tags to deny, remove them from $keepTags array:
-				$denyTags = \TYPO3\CMS\Core\Utility\GeneralUtility::trimExplode(',', $this->procOptions['denyTags'], 1);
+				$denyTags = GeneralUtility::trimExplode(',', $this->procOptions['denyTags'], TRUE);
 				foreach ($denyTags as $dKe) {
 					unset($keepTags[$dKe]);
 				}
 			}
 			// Based on the direction of content, set further options:
 			switch ($direction) {
-			case 'rte':
-				if (!isset($this->procOptions['transformBoldAndItalicTags']) || $this->procOptions['transformBoldAndItalicTags']) {
-					// Transform bold/italics tags to strong/em
-					if (isset($keepTags['b'])) {
-						$keepTags['b'] = array('remap' => 'STRONG');
+				case 'rte':
+					if (!isset($this->procOptions['transformBoldAndItalicTags']) || $this->procOptions['transformBoldAndItalicTags']) {
+						// Transform bold/italics tags to strong/em
+						if (isset($keepTags['b'])) {
+							$keepTags['b'] = array('remap' => 'STRONG');
+						}
+						if (isset($keepTags['i'])) {
+							$keepTags['i'] = array('remap' => 'EM');
+						}
 					}
-					if (isset($keepTags['i'])) {
-						$keepTags['i'] = array('remap' => 'EM');
+					// Transforming keepTags array so it can be understood by the HTMLcleaner function. This basically converts the format of the array from TypoScript (having .'s) to plain multi-dimensional array.
+					list($keepTags) = $this->HTMLparserConfig($this->procOptions['HTMLparser_rte.'], $keepTags);
+					break;
+				case 'db':
+					if (!isset($this->procOptions['transformBoldAndItalicTags']) || $this->procOptions['transformBoldAndItalicTags']) {
+						// Transform strong/em back to bold/italics:
+						if (isset($keepTags['strong'])) {
+							$keepTags['strong'] = array('remap' => 'b');
+						}
+						if (isset($keepTags['em'])) {
+							$keepTags['em'] = array('remap' => 'i');
+						}
 					}
-				}
-				// Transforming keepTags array so it can be understood by the HTMLcleaner function. This basically converts the format of the array from TypoScript (having .'s) to plain multi-dimensional array.
-				list($keepTags) = $this->HTMLparserConfig($this->procOptions['HTMLparser_rte.'], $keepTags);
-				break;
-			case 'db':
-				if (!isset($this->procOptions['transformBoldAndItalicTags']) || $this->procOptions['transformBoldAndItalicTags']) {
-					// Transform strong/em back to bold/italics:
-					if (isset($keepTags['strong'])) {
-						$keepTags['strong'] = array('remap' => 'b');
-					}
-					if (isset($keepTags['em'])) {
-						$keepTags['em'] = array('remap' => 'i');
-					}
-				}
-				// Setting up span tags if they are allowed:
-				if (isset($keepTags['span'])) {
-					$classes = array_merge(array(''), $this->allowedClasses);
-					$keepTags['span'] = array(
-						'allowedAttribs' => 'id,class,style,title,lang,xml:lang,dir',
-						'fixAttrib' => array(
-							'class' => array(
-								'list' => $classes,
-								'removeIfFalse' => 1
-							)
-						),
-						'rmTagIfNoAttrib' => 1
-					);
-					if (!$this->procOptions['allowedClasses']) {
-						unset($keepTags['span']['fixAttrib']['class']['list']);
-					}
-				}
-				// Setting up font tags if they are allowed:
-				if (isset($keepTags['font'])) {
-					$colors = array_merge(array(''), \TYPO3\CMS\Core\Utility\GeneralUtility::trimExplode(',', $this->procOptions['allowedFontColors'], 1));
-					$keepTags['font'] = array(
-						'allowedAttribs' => 'face,color,size',
-						'fixAttrib' => array(
-							'face' => array(
-								'removeIfFalse' => 1
+					// Setting up span tags if they are allowed:
+					if (isset($keepTags['span'])) {
+						$classes = array_merge(array(''), $this->allowedClasses);
+						$keepTags['span'] = array(
+							'allowedAttribs' => 'id,class,style,title,lang,xml:lang,dir',
+							'fixAttrib' => array(
+								'class' => array(
+									'list' => $classes,
+									'removeIfFalse' => 1
+								)
 							),
-							'color' => array(
-								'removeIfFalse' => 1,
-								'list' => $colors
-							),
-							'size' => array(
-								'removeIfFalse' => 1
-							)
-						),
-						'rmTagIfNoAttrib' => 1
-					);
-					if (!$this->procOptions['allowedFontColors']) {
-						unset($keepTags['font']['fixAttrib']['color']['list']);
+							'rmTagIfNoAttrib' => 1
+						);
+						if (!$this->procOptions['allowedClasses']) {
+							unset($keepTags['span']['fixAttrib']['class']['list']);
+						}
 					}
-				}
-				// Setting further options, getting them from the processiong options:
-				$TSc = $this->procOptions['HTMLparser_db.'];
-				if (!$TSc['globalNesting']) {
-					$TSc['globalNesting'] = 'b,i,u,a,center,font,sub,sup,strong,em,strike,span';
-				}
-				if (!$TSc['noAttrib']) {
-					$TSc['noAttrib'] = 'b,i,u,br,center,hr,sub,sup,strong,em,li,ul,ol,blockquote,strike';
-				}
-				// Transforming the array from TypoScript to regular array:
-				list($keepTags) = $this->HTMLparserConfig($TSc, $keepTags);
-				break;
+					// Setting up font tags if they are allowed:
+					if (isset($keepTags['font'])) {
+						$colors = array_merge(array(''), GeneralUtility::trimExplode(',', $this->procOptions['allowedFontColors'], TRUE));
+						$keepTags['font'] = array(
+							'allowedAttribs' => 'face,color,size',
+							'fixAttrib' => array(
+								'face' => array(
+									'removeIfFalse' => 1
+								),
+								'color' => array(
+									'removeIfFalse' => 1,
+									'list' => $colors
+								),
+								'size' => array(
+									'removeIfFalse' => 1
+								)
+							),
+							'rmTagIfNoAttrib' => 1
+						);
+						if (!$this->procOptions['allowedFontColors']) {
+							unset($keepTags['font']['fixAttrib']['color']['list']);
+						}
+					}
+					// Setting further options, getting them from the processiong options:
+					$TSc = $this->procOptions['HTMLparser_db.'];
+					if (!$TSc['globalNesting']) {
+						$TSc['globalNesting'] = 'b,i,u,a,center,font,sub,sup,strong,em,strike,span';
+					}
+					if (!$TSc['noAttrib']) {
+						$TSc['noAttrib'] = 'b,i,u,br,center,hr,sub,sup,strong,em,li,ul,ol,blockquote,strike';
+					}
+					// Transforming the array from TypoScript to regular array:
+					list($keepTags) = $this->HTMLparserConfig($TSc, $keepTags);
+					break;
 			}
 			// Caching (internally, in object memory) the result unless tagList is set:
 			if (!$tagList) {
@@ -1356,12 +1302,12 @@ class RteHtmlParser extends \TYPO3\CMS\Core\Html\HtmlParser {
 			$value = $this->internalizeFontTags($value);
 		}
 		// Setting configuration for processing:
-		$allowTagsOutside = \TYPO3\CMS\Core\Utility\GeneralUtility::trimExplode(',', strtolower($this->procOptions['allowTagsOutside'] ? 'hr,' . $this->procOptions['allowTagsOutside'] : 'hr,img'), 1);
+		$allowTagsOutside = GeneralUtility::trimExplode(',', strtolower($this->procOptions['allowTagsOutside'] ? 'hr,' . $this->procOptions['allowTagsOutside'] : 'hr,img'), TRUE);
 		$remapParagraphTag = strtoupper($this->procOptions['remapParagraphTag']);
 		$divSplit = $this->splitIntoBlock('div,p', $value, 1);
 		// Setting the third param to 1 will eliminate false end-tags. Maybe this is a good thing to do...?
 		if ($this->procOptions['keepPDIVattribs']) {
-			$keepAttribListArr = \TYPO3\CMS\Core\Utility\GeneralUtility::trimExplode(',', strtolower($this->procOptions['keepPDIVattribs']), 1);
+			$keepAttribListArr = GeneralUtility::trimExplode(',', strtolower($this->procOptions['keepPDIVattribs']), TRUE);
 		} else {
 			$keepAttribListArr = array();
 		}
@@ -1408,17 +1354,17 @@ class RteHtmlParser extends \TYPO3\CMS\Core\Html\HtmlParser {
 							}
 						}
 						// ALIGN attribute:
-						if (!$this->procOptions['skipAlign'] && strcmp(trim($attribs[0]['align']), '') && strtolower($attribs[0]['align']) != 'left') {
+						if (!$this->procOptions['skipAlign'] && trim($attribs[0]['align']) !== '' && strtolower($attribs[0]['align']) != 'left') {
 							// Set to value, but not 'left'
 							$newAttribs['align'] = strtolower($attribs[0]['align']);
 						}
 						// CLASS attribute:
 						// Set to whatever value
-						if (!$this->procOptions['skipClass'] && strcmp(trim($attribs[0]['class']), '')) {
+						if (!$this->procOptions['skipClass'] && trim($attribs[0]['class']) !== '') {
 							if (!count($this->allowedClasses) || in_array($attribs[0]['class'], $this->allowedClasses)) {
 								$newAttribs['class'] = $attribs[0]['class'];
 							} else {
-								$classes = \TYPO3\CMS\Core\Utility\GeneralUtility::trimExplode(' ', $attribs[0]['class'], TRUE);
+								$classes = GeneralUtility::trimExplode(' ', $attribs[0]['class'], TRUE);
 								$newClasses = array();
 								foreach ($classes as $class) {
 									if (in_array($class, $this->allowedClasses)) {
@@ -1433,11 +1379,11 @@ class RteHtmlParser extends \TYPO3\CMS\Core\Html\HtmlParser {
 						// Remove any line break char (10 or 13)
 						$subLines[$sk] = preg_replace('/' . LF . '|' . CR . '/', '', $subLines[$sk]);
 						// If there are any attributes or if we are supposed to remap the tag, then do so:
-						if (count($newAttribs) && strcmp($remapParagraphTag, '1')) {
-							if ($remapParagraphTag == 'P') {
+						if (count($newAttribs) && $remapParagraphTag !== '1') {
+							if ($remapParagraphTag === 'P') {
 								$tagName = 'p';
 							}
-							if ($remapParagraphTag == 'DIV') {
+							if ($remapParagraphTag === 'DIV') {
 								$tagName = 'div';
 							}
 							$subLines[$sk] = '<' . trim(($tagName . ' ' . $this->compileTagAttribs($newAttribs))) . '>' . $subLines[$sk] . '</' . $tagName . '>';
@@ -1460,7 +1406,7 @@ class RteHtmlParser extends \TYPO3\CMS\Core\Html\HtmlParser {
 				$divSplit[$k] = preg_replace('/<(hr)(\\s[^>\\/]*)?[[:space:]]*\\/?>/i', LF . '<$1$2/>' . LF, $divSplit[$k]);
 				$divSplit[$k] = preg_replace('/' . LF . LF . '/i', LF, $divSplit[$k]);
 				$divSplit[$k] = preg_replace('/(^' . LF . ')|(' . LF . '$)/i', '', $divSplit[$k]);
-				if (!strcmp($divSplit[$k], '')) {
+				if ((string)$divSplit[$k] === '') {
 					unset($divSplit[$k]);
 				}
 			}
@@ -1492,7 +1438,7 @@ class RteHtmlParser extends \TYPO3\CMS\Core\Html\HtmlParser {
 		foreach ($parts as $k => $v) {
 			// Processing of line content:
 			// If the line is blank, set it to &nbsp;
-			if (!strcmp(trim($parts[$k]), '')) {
+			if (trim($parts[$k]) === '') {
 				$parts[$k] = '&nbsp;';
 			} else {
 				// Clean the line content:
@@ -1564,22 +1510,22 @@ class RteHtmlParser extends \TYPO3\CMS\Core\Html\HtmlParser {
 	/**
 	 * Returns SiteURL based on thisScript.
 	 *
-	 * @return string Value of \TYPO3\CMS\Core\Utility\GeneralUtility::getIndpEnv('TYPO3_SITE_URL');
+	 * @return string Value of GeneralUtility::getIndpEnv('TYPO3_SITE_URL');
 	 * @see \TYPO3\CMS\Core\Utility\GeneralUtility::getIndpEnv()
 	 * @todo Define visibility
 	 */
 	public function siteUrl() {
-		return \TYPO3\CMS\Core\Utility\GeneralUtility::getIndpEnv('TYPO3_SITE_URL');
+		return GeneralUtility::getIndpEnv('TYPO3_SITE_URL');
 	}
 
 	/**
 	 * Return the storage folder of RTE image files.
 	 * Default is $GLOBALS['TYPO3_CONF_VARS']['BE']['RTE_imageStorageDir'] unless something else is configured in the types configuration for the RTE.
-	 *
+	 * @deprecated since 6.2, will be removed in two versions
 	 * @return string
-	 * @todo Define visibility
 	 */
 	public function rteImageStorageDir() {
+		GeneralUtility::logDeprecatedFunction();
 		return $this->rte_p['imgpath'] ? $this->rte_p['imgpath'] : $GLOBALS['TYPO3_CONF_VARS']['BE']['RTE_imageStorageDir'];
 	}
 
@@ -1655,10 +1601,10 @@ class RteHtmlParser extends \TYPO3\CMS\Core\Html\HtmlParser {
 			// Width
 			$reg = array();
 			preg_match('/width' . $regex . '/i', $style, $reg);
-			$w = intval($reg[1]);
+			$w = (int)$reg[1];
 			// Height
 			preg_match('/height' . $regex . '/i', $style, $reg);
-			$h = intval($reg[1]);
+			$h = (int)$reg[1];
 		}
 		if (!$w) {
 			$w = $attribArray['width'];
@@ -1666,7 +1612,7 @@ class RteHtmlParser extends \TYPO3\CMS\Core\Html\HtmlParser {
 		if (!$h) {
 			$h = $attribArray['height'];
 		}
-		return array(intval($w), intval($h));
+		return array((int)$w, (int)$h);
 	}
 
 	/**
@@ -1704,10 +1650,10 @@ class RteHtmlParser extends \TYPO3\CMS\Core\Html\HtmlParser {
 				// If the script path seems to match or is empty (FE-EDIT)
 				// New processing order 100502
 				$uP = parse_url($info['relUrl']);
-				if (!strcmp(('#' . $siteUrl_parts['fragment']), $info['relUrl'])) {
+				if ($info['relUrl'] === '#' . $siteUrl_parts['fragment']) {
 					$info['url'] = $info['relUrl'];
 					$info['type'] = 'anchor';
-				} elseif (!trim($uP['path']) || !strcmp($uP['path'], 'index.php')) {
+				} elseif (!trim($uP['path']) || $uP['path'] === 'index.php') {
 					// URL is a page (id parameter)
 					$pp = preg_split('/^id=/', $uP['query']);
 					$pp[1] = preg_replace('/&id=[^&]*/', '', $pp[1]);
@@ -1761,7 +1707,7 @@ class RteHtmlParser extends \TYPO3\CMS\Core\Html\HtmlParser {
 				if (!$dontSetRTEKEEP) {
 					$attribArray['rtekeep'] = 1;
 				}
-				$bTag = '<a ' . \TYPO3\CMS\Core\Utility\GeneralUtility::implodeAttributes($attribArray, 1) . '>';
+				$bTag = '<a ' . GeneralUtility::implodeAttributes($attribArray, 1) . '>';
 				$eTag = '</a>';
 				$blockSplit[$k] = $bTag . $this->TS_AtagToAbs($this->removeFirstAndLastTag($blockSplit[$k])) . $eTag;
 			}
@@ -1769,7 +1715,45 @@ class RteHtmlParser extends \TYPO3\CMS\Core\Html\HtmlParser {
 		return implode('', $blockSplit);
 	}
 
+	/**
+	 * Apply plain image settings to the dimensions of the image
+	 *
+	 * @param array $imageInfo: info array of the image
+	 * @param array $attribArray: array of attributes of an image tag
+	 *
+	 * @return array a modified attributes array
+	 */
+	protected function applyPlainImageModeSettings($imageInfo, $attribArray) {
+		if ($this->procOptions['plainImageMode']) {
+			// Perform corrections to aspect ratio based on configuration
+			switch ((string) $this->procOptions['plainImageMode']) {
+				case 'lockDimensions':
+					$attribArray['width'] = $imageInfo[0];
+					$attribArray['height'] = $imageInfo[1];
+					break;
+				case 'lockRatioWhenSmaller':
+					if ($attribArray['width'] > $imageInfo[0]) {
+						$attribArray['width'] = $imageInfo[0];
+					}
+				case 'lockRatio':
+					if ($imageInfo[0] > 0) {
+						$attribArray['height'] = round($attribArray['width'] * ($imageInfo[1] / $imageInfo[0]));
+					}
+					break;
+			}
+		}
+		return $attribArray;
+	}
+
+	/**
+	* @return \TYPO3\CMS\Core\Log\Logger
+	*/
+	protected function getLogger() {
+
+		/** @var $logManager \TYPO3\CMS\Core\Log\LogManager */
+		$logManager = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Log\\LogManager');
+
+		return $logManager->getLogger(get_class($this));
+	}
+
 }
-
-
-?>

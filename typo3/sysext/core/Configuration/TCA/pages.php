@@ -148,16 +148,6 @@ return array(
 				'type' => 'text',
 				'cols' => '40',
 				'rows' => '5',
-				'wizards' => array(
-					'_PADDING' => 4,
-					'0' => array(
-						'type' => \TYPO3\CMS\Core\Utility\ExtensionManagementUtility::isLoaded('tsconfig_help') ? 'popup' : '',
-						'title' => 'TSconfig QuickReference',
-						'script' => 'wizard_tsconfig.php?mode=page',
-						'icon' => 'wizard_tsconfig.gif',
-						'JSopenParams' => 'height=500,width=780,status=0,menubar=0,scrollbars=1'
-					)
-				),
 				'softref' => 'TSconfig'
 			),
 			'defaultExtras' => 'fixed-font : enable-tab'
@@ -366,7 +356,7 @@ return array(
 				'type' => 'input',
 				'size' => '50',
 				'max' => '255',
-				'eval' => ''
+				'eval' => 'trim'
 			)
 		),
 		'target' => array(
@@ -669,7 +659,42 @@ return array(
 		'media' => array(
 			'exclude' => 1,
 			'label' => 'LLL:EXT:cms/locallang_tca.xlf:pages.media',
-			'config' => \TYPO3\CMS\Core\Utility\ExtensionManagementUtility::getFileFieldTCAConfig('media')
+			'config' => \TYPO3\CMS\Core\Utility\ExtensionManagementUtility::getFileFieldTCAConfig('media', array(
+					// Use the imageoverlayPalette instead of the basicoverlayPalette
+					'foreign_types' => array(
+						'0' => array(
+							'showitem' => '
+								--palette--;LLL:EXT:lang/locallang_tca.xlf:sys_file_reference.imageoverlayPalette;imageoverlayPalette,
+								--palette--;;filePalette'
+						),
+						\TYPO3\CMS\Core\Resource\File::FILETYPE_TEXT => array(
+							'showitem' => '
+								--palette--;LLL:EXT:lang/locallang_tca.xlf:sys_file_reference.imageoverlayPalette;imageoverlayPalette,
+								--palette--;;filePalette'
+						),
+						\TYPO3\CMS\Core\Resource\File::FILETYPE_IMAGE => array(
+							'showitem' => '
+								--palette--;LLL:EXT:lang/locallang_tca.xlf:sys_file_reference.imageoverlayPalette;imageoverlayPalette,
+								--palette--;;filePalette'
+						),
+						\TYPO3\CMS\Core\Resource\File::FILETYPE_AUDIO => array(
+							'showitem' => '
+								--palette--;LLL:EXT:lang/locallang_tca.xlf:sys_file_reference.imageoverlayPalette;imageoverlayPalette,
+								--palette--;;filePalette'
+						),
+						\TYPO3\CMS\Core\Resource\File::FILETYPE_VIDEO => array(
+							'showitem' => '
+								--palette--;LLL:EXT:lang/locallang_tca.xlf:sys_file_reference.imageoverlayPalette;imageoverlayPalette,
+								--palette--;;filePalette'
+						),
+						\TYPO3\CMS\Core\Resource\File::FILETYPE_APPLICATION => array(
+							'showitem' => '
+								--palette--;LLL:EXT:lang/locallang_tca.xlf:sys_file_reference.imageoverlayPalette;imageoverlayPalette,
+								--palette--;;filePalette'
+						)
+					)
+				)
+			)
 		),
 		'is_siteroot' => array(
 			'exclude' => 1,
@@ -769,16 +794,14 @@ return array(
 			'label' => 'LLL:EXT:cms/locallang_tca.xlf:pages.backend_layout_formlabel',
 			'config' => array(
 				'type' => 'select',
-				'foreign_table' => 'backend_layout',
-				'foreign_table_where' => 'AND ( ( ###PAGE_TSCONFIG_ID### = 0 AND ###STORAGE_PID### = 0 ) OR ( backend_layout.pid = ###PAGE_TSCONFIG_ID### OR backend_layout.pid = ###STORAGE_PID### ) OR ( ###PAGE_TSCONFIG_ID### = 0 AND backend_layout.pid = ###THIS_UID### ) ) AND backend_layout.hidden = 0 ORDER BY backend_layout.sorting',
 				'items' => array(
-					array('', 0),
+					array('', ''),
 					array('LLL:EXT:cms/locallang_tca.xlf:pages.backend_layout.none', -1)
 				),
+				'itemsProcFunc' => 'TYPO3\\CMS\\Backend\\View\\BackendLayoutView->addBackendLayoutItems',
 				'selicon_cols' => 5,
 				'size' => 1,
 				'maxitems' => 1,
-				'default' => ''
 			)
 		),
 		'backend_layout_next_level' => array(
@@ -786,16 +809,14 @@ return array(
 			'label' => 'LLL:EXT:cms/locallang_tca.xlf:pages.backend_layout_next_level_formlabel',
 			'config' => array(
 				'type' => 'select',
-				'foreign_table' => 'backend_layout',
-				'foreign_table_where' => 'AND ( ( ###PAGE_TSCONFIG_ID### = 0 AND ###STORAGE_PID### = 0 ) OR ( backend_layout.pid = ###PAGE_TSCONFIG_ID### OR backend_layout.pid = ###STORAGE_PID### ) OR ( ###PAGE_TSCONFIG_ID### = 0 AND backend_layout.pid = ###THIS_UID### ) ) AND backend_layout.hidden = 0 ORDER BY backend_layout.sorting',
 				'items' => array(
-					array('', 0),
+					array('', ''),
 					array('LLL:EXT:cms/locallang_tca.xlf:pages.backend_layout.none', -1)
 				),
+				'itemsProcFunc' => 'TYPO3\\CMS\\Backend\\View\\BackendLayoutView->addBackendLayoutItems',
 				'selicon_cols' => 5,
 				'size' => 1,
 				'maxitems' => 1,
-				'default' => ''
 			)
 		)
 	),
@@ -1062,4 +1083,3 @@ return array(
 		)
 	)
 );
-?>

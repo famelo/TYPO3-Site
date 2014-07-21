@@ -1,28 +1,18 @@
 <?php
 namespace TYPO3\CMS\Core\FormProtection;
 
-/***************************************************************
- * Copyright notice
+/**
+ * This file is part of the TYPO3 CMS project.
  *
- * (c) 2010-2013 Oliver Klee <typo3-coding@oliverklee.de>
- * All rights reserved
+ * It is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License, either version 2
+ * of the License, or any later version.
  *
- * This script is part of the TYPO3 project. The TYPO3 project is
- * free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
+ * For the full copyright and license information, please read the
+ * LICENSE.txt file that was distributed with this source code.
  *
- * The GNU General Public License can be found at
- * http://www.gnu.org/copyleft/gpl.html.
- *
- * This script is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * This copyright notice MUST APPEAR in all copies of the script!
- ***************************************************************/
+ * The TYPO3 project - inspiring people to share!
+ */
 
 /**
  * This class provides protection against cross-site request forgery (XSRF/CSRF)
@@ -44,11 +34,13 @@ abstract class AbstractFormProtection {
 	protected $sessionToken;
 
 	/**
-	 * Constructor. Makes sure the session token is read and
-	 * available for checking.
+	 * @return string
 	 */
-	public function __construct() {
-		$this->retrieveSessionToken();
+	protected function getSessionToken() {
+		if ($this->sessionToken === NULL) {
+			$this->sessionToken = $this->retrieveSessionToken();
+		}
+		return $this->sessionToken;
 	}
 
 	/**
@@ -81,12 +73,13 @@ abstract class AbstractFormProtection {
 	 * @param string $action
 	 * @param string $formInstanceName
 	 * @return string the 32-character hex ID of the generated token
+	 * @throws \InvalidArgumentException
 	 */
 	public function generateToken($formName, $action = '', $formInstanceName = '') {
 		if ($formName == '') {
 			throw new \InvalidArgumentException('$formName must not be empty.', 1294586643);
 		}
-		$tokenId = \TYPO3\CMS\Core\Utility\GeneralUtility::hmac($formName . $action . $formInstanceName . $this->sessionToken);
+		$tokenId = \TYPO3\CMS\Core\Utility\GeneralUtility::hmac($formName . $action . $formInstanceName . $this->getSessionToken());
 		return $tokenId;
 	}
 
@@ -101,7 +94,7 @@ abstract class AbstractFormProtection {
 	 * @return boolean
 	 */
 	public function validateToken($tokenId, $formName, $action = '', $formInstanceName = '') {
-		$validTokenId = \TYPO3\CMS\Core\Utility\GeneralUtility::hmac(((string) $formName . (string) $action) . (string) $formInstanceName . $this->sessionToken);
+		$validTokenId = \TYPO3\CMS\Core\Utility\GeneralUtility::hmac(((string) $formName . (string) $action) . (string) $formInstanceName . $this->getSessionToken());
 		if ((string) $tokenId === $validTokenId) {
 			$isValid = TRUE;
 		} else {
@@ -150,6 +143,3 @@ abstract class AbstractFormProtection {
 	abstract public function persistSessionToken();
 
 }
-
-
-?>

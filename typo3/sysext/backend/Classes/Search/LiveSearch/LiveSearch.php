@@ -1,32 +1,24 @@
 <?php
 namespace TYPO3\CMS\Backend\Search\LiveSearch;
 
-/***************************************************************
- *  Copyright notice
+/**
+ * This file is part of the TYPO3 CMS project.
  *
- *  (c) 2009-2013 Michael Klapper <michael.klapper@aoemedia.de>
- *  (c) 2010-2013 Jeff Segars <jeff@webempoweredchurch.org>
- *  All rights reserved
+ * It is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License, either version 2
+ * of the License, or any later version.
  *
- *  This script is part of the TYPO3 project. The TYPO3 project is
- *  free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
+ * For the full copyright and license information, please read the
+ * LICENSE.txt file that was distributed with this source code.
  *
- *  The GNU General Public License can be found at
- *  http://www.gnu.org/copyleft/gpl.html.
- *  A copy is found in the textfile GPL.txt and important notices to the license
- *  from the author is found in LICENSE.txt distributed with these scripts.
- *
- *
- *  This script is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  This copyright notice MUST APPEAR in all copies of the script!
- ***************************************************************/
+ * The TYPO3 project - inspiring people to share!
+ */
+
+use TYPO3\CMS\Backend\Utility\BackendUtility;
+use TYPO3\CMS\Backend\Utility\IconUtility;
+use TYPO3\CMS\Core\Utility\GeneralUtility;
+use TYPO3\CMS\Core\Utility\MathUtility;
+
 /**
  * Class for handling backend live search.
  *
@@ -77,13 +69,11 @@ class LiveSearch {
 	protected $queryParser = NULL;
 
 	/**
-	 * Initialize access settings.
-	 *
-	 * @return void
+	 * Initialize access settings
 	 */
 	public function __construct() {
 		$this->userPermissions = $GLOBALS['BE_USER']->getPagePermsClause(1);
-		$this->queryParser = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Backend\\Search\\LiveSearch\\QueryParser');
+		$this->queryParser = GeneralUtility::makeInstance('TYPO3\\CMS\\Backend\\Search\\LiveSearch\\QueryParser');
 	}
 
 	/**
@@ -139,7 +129,7 @@ class LiveSearch {
 	 */
 	protected function findPageById($id) {
 		$pageRecord = array();
-		$row = \TYPO3\CMS\Backend\Utility\BackendUtility::getRecord(self::PAGE_JUMP_TABLE, $id);
+		$row = BackendUtility::getRecord(self::PAGE_JUMP_TABLE, $id);
 		if (is_array($row)) {
 			$pageRecord = $row;
 		}
@@ -187,7 +177,6 @@ class LiveSearch {
 		if (count($fieldsToSearchWithin) > 0) {
 			$pageBasedPermission = $tableName == 'pages' && $this->userPermissions ? $this->userPermissions : '1=1 ';
 			$where = 'pid IN (' . $pageIdList . ') AND ' . $pageBasedPermission . $this->makeQuerySearchByTable($tableName, $fieldsToSearchWithin);
-			$orderBy = $this->makeOrderByTable($tableName);
 			$getRecordArray = $this->getRecordArray($tableName, $where, $this->makeOrderByTable($tableName), $limit);
 		}
 		return $getRecordArray;
@@ -222,8 +211,8 @@ class LiveSearch {
 				'id' => $tableName . ':' . $row['uid'],
 				'pageId' => $tableName === 'pages' ? $row['uid'] : $row['pid'],
 				'recordTitle' => $isFirst ? $this->getRecordTitlePrep($this->getTitleOfCurrentRecordType($tableName), self::GROUP_TITLE_MAX_LENGTH) : '',
-				'iconHTML' => \TYPO3\CMS\Backend\Utility\IconUtility::getSpriteIconForRecord($tableName, $row),
-				'title' => $this->getRecordTitlePrep($this->getTitleFromCurrentRow($tableName, $row), self::RECORD_TITLE_MAX_LENGTH),
+				'iconHTML' => IconUtility::getSpriteIconForRecord($tableName, $row, array('title' => 'id=' . $row['uid'] . ', pid=' . $row['pid'])),
+				'title' => $this->getRecordTitlePrep(BackendUtility::getRecordTitle($tableName, $row), self::RECORD_TITLE_MAX_LENGTH),
 				'editLink' => $this->getEditLink($tableName, $row)
 			);
 			$isFirst = FALSE;
@@ -241,11 +230,11 @@ class LiveSearch {
 	 * @see \TYPO3\CMS\Backend\Utility\BackendUtility::readPageAccess()
 	 */
 	protected function getEditLink($tableName, $row) {
-		$pageInfo = \TYPO3\CMS\Backend\Utility\BackendUtility::readPageAccess($row['pid'], $this->userPermissions);
+		$pageInfo = BackendUtility::readPageAccess($row['pid'], $this->userPermissions);
 		$calcPerms = $GLOBALS['BE_USER']->calcPerms($pageInfo);
 		$editLink = '';
 		if ($tableName == 'pages') {
-			$localCalcPerms = $GLOBALS['BE_USER']->calcPerms(\TYPO3\CMS\Backend\Utility\BackendUtility::getRecord('pages', $row['uid']));
+			$localCalcPerms = $GLOBALS['BE_USER']->calcPerms(BackendUtility::getRecord('pages', $row['uid']));
 			$permsEdit = $localCalcPerms & 2;
 		} else {
 			$permsEdit = $calcPerms & 16;
@@ -253,7 +242,8 @@ class LiveSearch {
 		// "Edit" link: ( Only if permissions to edit the page-record of the content of the parent page ($this->id)
 		// @todo Is there an existing function to generate this link?
 		if ($permsEdit) {
-			$editLink = 'alt_doc.php?' . '&edit[' . $tableName . '][' . $row['uid'] . ']=edit';
+			$returnUrl = BackendUtility::getModuleUrl('web_list', array('id' => $row['pid']));
+			$editLink = 'alt_doc.php?' . '&edit[' . $tableName . '][' . $row['uid'] . ']=edit&returnUrl=' . rawurlencode($returnUrl);
 		}
 		return $editLink;
 	}
@@ -279,23 +269,10 @@ class LiveSearch {
 	 */
 	public function getRecordTitlePrep($title, $titleLength = 0) {
 		// If $titleLength is not a valid positive integer, use BE_USER->uc['titleLen']:
-		if (!$titleLength || !\TYPO3\CMS\Core\Utility\MathUtility::canBeInterpretedAsInteger($titleLength) || $titleLength < 0) {
+		if (!$titleLength || !MathUtility::canBeInterpretedAsInteger($titleLength) || $titleLength < 0) {
 			$titleLength = $GLOBALS['BE_USER']->uc['titleLen'];
 		}
-		return htmlspecialchars(\TYPO3\CMS\Core\Utility\GeneralUtility::fixed_lgd_cs($title, $titleLength));
-	}
-
-	/**
-	 * Retrieve the column name which contains the title value
-	 *
-	 * @param string $tableName Record table name
-	 * @param array $row Current record row from database.
-	 * @return string
-	 * @todo Use the backend function to get the calculated label instead.
-	 */
-	protected function getTitleFromCurrentRow($tableName, $row) {
-		$titleColumnName = $GLOBALS['TCA'][$tableName]['ctrl']['label'];
-		return $row[$titleColumnName];
+		return htmlspecialchars(GeneralUtility::fixed_lgd_cs($title, $titleLength));
 	}
 
 	/**
@@ -309,12 +286,12 @@ class LiveSearch {
 		$queryPart = '';
 		$whereParts = array();
 		// If the search string is a simple integer, assemble an equality comparison
-		if (\TYPO3\CMS\Core\Utility\MathUtility::canBeInterpretedAsInteger($this->queryString)) {
+		if (MathUtility::canBeInterpretedAsInteger($this->queryString)) {
 			foreach ($fieldsToSearchWithin as $fieldName) {
 				if ($fieldName == 'uid' || $fieldName == 'pid' || isset($GLOBALS['TCA'][$tableName]['columns'][$fieldName])) {
 					$fieldConfig = &$GLOBALS['TCA'][$tableName]['columns'][$fieldName]['config'];
 					// Assemble the search condition only if the field is an integer, or is uid or pid
-					if ($fieldName == 'uid' || $fieldName == 'pid' || $fieldConfig['type'] == 'input' && $fieldConfig['eval'] && \TYPO3\CMS\Core\Utility\GeneralUtility::inList($fieldConfig['eval'], 'int')) {
+					if ($fieldName == 'uid' || $fieldName == 'pid' || $fieldConfig['type'] == 'input' && $fieldConfig['eval'] && GeneralUtility::inList($fieldConfig['eval'], 'int')) {
 						$whereParts[] = $fieldName . '=' . $this->queryString;
 					} elseif (
 						$fieldConfig['type'] == 'text' ||
@@ -353,8 +330,8 @@ class LiveSearch {
 		if (count($whereParts) > 0) {
 			$queryPart = ' AND (' . implode(' OR ', $whereParts) . ')';
 			// And the relevant conditions for deleted and versioned records
-			$queryPart .= \TYPO3\CMS\Backend\Utility\BackendUtility::deleteClause($tableName);
-			$queryPart .= \TYPO3\CMS\Backend\Utility\BackendUtility::versioningPlaceholderClause($tableName);
+			$queryPart .= BackendUtility::deleteClause($tableName);
+			$queryPart .= BackendUtility::versioningPlaceholderClause($tableName);
 		} else {
 			$queryPart = ' AND 0 = 1';
 		}
@@ -389,7 +366,7 @@ class LiveSearch {
 	protected function extractSearchableFieldsFromTable($tableName) {
 		// Get the list of fields to search in from the TCA, if any
 		if (isset($GLOBALS['TCA'][$tableName]['ctrl']['searchFields'])) {
-			$fieldListArray = \TYPO3\CMS\Core\Utility\GeneralUtility::trimExplode(',', $GLOBALS['TCA'][$tableName]['ctrl']['searchFields'], TRUE);
+			$fieldListArray = GeneralUtility::trimExplode(',', $GLOBALS['TCA'][$tableName]['ctrl']['searchFields'], TRUE);
 		} else {
 			$fieldListArray = array();
 		}
@@ -418,7 +395,7 @@ class LiveSearch {
 	 * @return void
 	 */
 	public function setLimitCount($limitCount) {
-		$limit = \TYPO3\CMS\Core\Utility\MathUtility::convertToPositiveInteger($limitCount);
+		$limit = MathUtility::convertToPositiveInteger($limitCount);
 		if ($limit > 0) {
 			$this->limitCount = $limit;
 		}
@@ -431,7 +408,7 @@ class LiveSearch {
 	 * @return void
 	 */
 	public function setStartCount($startCount) {
-		$this->startCount = \TYPO3\CMS\Core\Utility\MathUtility::convertToPositiveInteger($startCount);
+		$this->startCount = MathUtility::convertToPositiveInteger($startCount);
 	}
 
 	/**
@@ -442,7 +419,7 @@ class LiveSearch {
 	 * @see \TYPO3\CMS\Core\Utility\GeneralUtility::removeXSS()
 	 */
 	public function setQueryString($queryString) {
-		$this->queryString = \TYPO3\CMS\Core\Utility\GeneralUtility::removeXSS($queryString);
+		$this->queryString = GeneralUtility::removeXSS($queryString);
 	}
 
 	/**
@@ -455,7 +432,7 @@ class LiveSearch {
 	 */
 	protected function getAvailablePageIds($id, $depth) {
 		$idList = '';
-		$tree = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Backend\\Tree\\View\\PageTreeView');
+		$tree = GeneralUtility::makeInstance('TYPO3\\CMS\\Backend\\Tree\\View\\PageTreeView');
 		$tree->init('AND ' . $this->userPermissions);
 		$tree->makeHTML = 0;
 		$tree->fieldArray = array('uid', 'php_tree_stop');
@@ -468,6 +445,3 @@ class LiveSearch {
 	}
 
 }
-
-
-?>

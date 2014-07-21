@@ -1,30 +1,18 @@
 <?php
 namespace TYPO3\CMS\Saltedpasswords\Task;
 
-/***************************************************************
- *  Copyright notice
+/**
+ * This file is part of the TYPO3 CMS project.
  *
- *  (c) 2010-2013 Christian Kuhn <lolli@schwarzbu.ch>
- *		Marcus Krause <marcus#exp2010@t3sec.info>
+ * It is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License, either version 2
+ * of the License, or any later version.
  *
- *  All rights reserved
+ * For the full copyright and license information, please read the
+ * LICENSE.txt file that was distributed with this source code.
  *
- *  This script is part of the TYPO3 project. The TYPO3 project is
- *  free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
- *
- *  The GNU General Public License can be found at
- *  http://www.gnu.org/copyleft/gpl.html.
- *
- *  This script is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  This copyright notice MUST APPEAR in all copies of the script!
- ***************************************************************/
+ * The TYPO3 project - inspiring people to share!
+ */
 /**
  * Update plaintext and hashed passwords of existing users to salted passwords.
  *
@@ -79,6 +67,7 @@ class BulkUpdateTask extends \TYPO3\CMS\Scheduler\Task\AbstractTask {
 				$numberOfRows = count($usersToUpdate);
 				if ($numberOfRows > 0) {
 					$processedAllRecords = FALSE;
+					$this->activateSelf();
 					$this->incrementUserRecordPointer($mode, $numberOfRows);
 					$this->convertPasswords($mode, $usersToUpdate);
 				}
@@ -95,7 +84,7 @@ class BulkUpdateTask extends \TYPO3\CMS\Scheduler\Task\AbstractTask {
 				$this->deactivateSelf();
 			}
 		}
-		// Use save() of parent class tx_scheduler_Task to persist changed task variables
+		// Use save() of parent class \TYPO3\CMS\Scheduler\Task\AbstractTask to persist changed task variables
 		$this->save();
 		return TRUE;
 	}
@@ -106,7 +95,7 @@ class BulkUpdateTask extends \TYPO3\CMS\Scheduler\Task\AbstractTask {
 	 * @return string Additional information
 	 */
 	public function getAdditionalInformation() {
-		$information = $GLOBALS['LANG']->sL('LLL:EXT:saltedpasswords/locallang.xml:ext.saltedpasswords.tasks.bulkupdate.label.additionalinformation.deactivateself') . $this->getCanDeactivateSelf() . '; ' . $GLOBALS['LANG']->sL('LLL:EXT:saltedpasswords/locallang.xml:ext.saltedpasswords.tasks.bulkupdate.label.additionalinformation.numberofrecords') . $this->getNumberOfRecords();
+		$information = $GLOBALS['LANG']->sL('LLL:EXT:saltedpasswords/locallang.xlf:ext.saltedpasswords.tasks.bulkupdate.label.additionalinformation.deactivateself') . $this->getCanDeactivateSelf() . '; ' . $GLOBALS['LANG']->sL('LLL:EXT:saltedpasswords/locallang.xlf:ext.saltedpasswords.tasks.bulkupdate.label.additionalinformation.numberofrecords') . $this->getNumberOfRecords();
 		return $information;
 	}
 
@@ -214,8 +203,18 @@ class BulkUpdateTask extends \TYPO3\CMS\Scheduler\Task\AbstractTask {
 	}
 
 	/**
+	 * Activates this task instance.
+	 * Uses setDisabled() method of parent \TYPO3\CMS\Scheduler\Task\AbstractTask
+	 *
+	 * @return void
+	 */
+	protected function activateSelf() {
+		$this->setDisabled(FALSE);
+	}
+
+	/**
 	 * Deactivates this task instance.
-	 * Uses setDisabled() method of parent class tx_scheduler_Task.
+	 * Uses setDisabled() method of parent \TYPO3\CMS\Scheduler\Task\AbstractTask
 	 *
 	 * @return void
 	 */
@@ -262,6 +261,3 @@ class BulkUpdateTask extends \TYPO3\CMS\Scheduler\Task\AbstractTask {
 	}
 
 }
-
-
-?>

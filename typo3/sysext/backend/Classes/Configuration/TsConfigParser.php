@@ -1,32 +1,21 @@
 <?php
 namespace TYPO3\CMS\Backend\Configuration;
 
-/***************************************************************
- *  Copyright notice
+/**
+ * This file is part of the TYPO3 CMS project.
  *
- *  (c) 1999-2013 Kasper Skårhøj (kasperYYYY@typo3.com)
- *  (c) 2007-2013 Kraft Bernhard (kraftb@kraftb.at)
- *  All rights reserved
+ * It is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License, either version 2
+ * of the License, or any later version.
  *
- *  This script is part of the TYPO3 project. The TYPO3 project is
- *  free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
+ * For the full copyright and license information, please read the
+ * LICENSE.txt file that was distributed with this source code.
  *
- *  The GNU General Public License can be found at
- *  http://www.gnu.org/copyleft/gpl.html.
- *  A copy is found in the textfile GPL.txt and important notices to the license
- *  from the author is found in LICENSE.txt distributed with these scripts.
- *
- *
- *  This script is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  This copyright notice MUST APPEAR in all copies of the script!
- ***************************************************************/
+ * The TYPO3 project - inspiring people to share!
+ */
+
+use TYPO3\CMS\Backend\Utility\BackendUtility;
+
 /**
  * A TS-Config parsing class which performs condition evaluation
  *
@@ -35,7 +24,7 @@ namespace TYPO3\CMS\Backend\Configuration;
 class TsConfigParser extends \TYPO3\CMS\Core\TypoScript\Parser\TypoScriptParser {
 
 	/**
-	 * @var 	array
+	 * @var array
 	 */
 	protected $rootLine = array();
 
@@ -53,10 +42,10 @@ class TsConfigParser extends \TYPO3\CMS\Core\TypoScript\Parser\TypoScriptParser 
 		$this->id = $id;
 		$this->rootLine = $rootLine;
 		$hash = md5($type . ':' . $TStext);
-		$cachedContent = \TYPO3\CMS\Backend\Utility\BackendUtility::getHash($hash, 0);
-		if ($cachedContent) {
-			$storedData = unserialize($cachedContent);
-			$storedMD5 = substr($cachedContent, -strlen($hash));
+		$cachedContent = BackendUtility::getHash($hash);
+		if (is_array($cachedContent)) {
+			$storedData = $cachedContent[0];
+			$storedMD5 = $cachedContent[1];
 			$storedData['match'] = array();
 			$storedData = $this->matching($storedData);
 			$checkMD5 = md5(serialize($storedData));
@@ -67,17 +56,16 @@ class TsConfigParser extends \TYPO3\CMS\Core\TypoScript\Parser\TypoScriptParser 
 				);
 			} else {
 				$shash = md5($checkMD5 . $hash);
-				$cachedSpec = \TYPO3\CMS\Backend\Utility\BackendUtility::getHash($shash, 0);
-				if ($cachedSpec) {
-					$storedData = unserialize($cachedSpec);
+				$cachedSpec = BackendUtility::getHash($shash);
+				if (is_array($cachedSpec)) {
+					$storedData = $cachedSpec;
 					$res = array(
 						'TSconfig' => $storedData['TSconfig'],
 						'cached' => 1
 					);
 				} else {
 					$storeData = $this->parseWithConditions($TStext);
-					$serData = serialize($storeData);
-					\TYPO3\CMS\Backend\Utility\BackendUtility::storeHash($shash, $serData, $type . '_TSconfig');
+					BackendUtility::storeHash($shash, $storeData, $type . '_TSconfig');
 					$res = array(
 						'TSconfig' => $storeData['TSconfig'],
 						'cached' => 0
@@ -86,9 +74,8 @@ class TsConfigParser extends \TYPO3\CMS\Core\TypoScript\Parser\TypoScriptParser 
 			}
 		} else {
 			$storeData = $this->parseWithConditions($TStext);
-			$serData = serialize($storeData);
-			$md5 = md5($serData);
-			\TYPO3\CMS\Backend\Utility\BackendUtility::storeHash($hash, $serData . $md5, $type . '_TSconfig');
+			$md5 = md5(serialize($storeData));
+			BackendUtility::storeHash($hash, array($storeData, $md5), $type . '_TSconfig');
 			$res = array(
 				'TSconfig' => $storeData['TSconfig'],
 				'cached' => 0
@@ -139,6 +126,3 @@ class TsConfigParser extends \TYPO3\CMS\Core\TypoScript\Parser\TypoScriptParser 
 	}
 
 }
-
-
-?>

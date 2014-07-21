@@ -34,7 +34,7 @@ namespace TYPO3\CMS\Fluid\ViewHelpers;
  * </output>
  *
  * <code title="Translate key from custom locallang file">
- * <f:translate key="LLL:EXT:myext/Resources/Private/Language/locallang.xml:key1" />
+ * <f:translate key="LLL:EXT:myext/Resources/Private/Language/locallang.xlf:key1" />
  * </code>
  * <output>
  * value of key "key1" in the current website language
@@ -118,5 +118,3 @@ class TranslateViewHelper extends \TYPO3\CMS\Fluid\Core\ViewHelper\AbstractViewH
 		return $value;
 	}
 }
-
-?>

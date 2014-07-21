@@ -3,24 +3,33 @@
 
 	$(document).ready(function() {
 		manageExtensionListing();
-		$("#typo3-extension-configuration-forms ul").tabs("div.category");
+		$("#typo3-extension-configuration-forms").tabs();
 
 		$('.onClickMaskExtensionManager').click(function() {
 			$('.typo3-extension-manager').mask();
 		});
-
-		// IE 8 needs extra 'change' event on form
-		if ($.browser.msie) {
-			$('form.onClickMaskExtensionManager').bind("change", function () {
-				$('.typo3-extension-manager').mask();
-			});
-		}
 
 		$('.dataTables_wrapper .dataTables_filter input').clearable({
 			onClear: function() {
 				datatable.fnFilter('');
 			}
 		});
+
+		$('.expandable').expander({
+			expandEffect: 'slideDown',
+			collapseEffect: 'slideUp',
+			beforeExpand: function() {
+				$(this).parent().css('z-index', 199);
+			},
+			afterCollapse: function() {
+				$(this).parent().css('z-index', 1);
+			}
+		});
+
+		$('.t3-button-action-installdistribution').click(function(){
+			$('.typo3-extension-manager').mask();
+		});
+
 	});
 
 	function getUrlVars() {
@@ -118,20 +127,25 @@
 			$(this).attr('href', '#');
 			$(this).addClass('transformed');
 			$(this).click(function() {
-				if ($(this).hasClass('isLoadedWarning')) {
-					TYPO3.Dialog.QuestionDialog({
-						title: TYPO3.l10n.localize('extensionList.removalConfirmation.title'),
-						msg: TYPO3.l10n.localize('extensionList.removalConfirmation.message'),
-						url: $(this).data('href'),
-						fn: function(button, dummy, dialog) {
-							if (button == 'yes') {
-								confirmDeletionAndDelete(dialog.url);
-							}
+				TYPO3.Dialog.QuestionDialog({
+					title: TYPO3.l10n.localize('extensionList.removalConfirmation.title'),
+					msg: TYPO3.l10n.localize('extensionList.removalConfirmation.question'),
+					url: $(this).data('href'),
+					fn: function(button, dummy, dialog) {
+						if (button == 'yes') {
+							$('.typo3-extension-manager').mask();
+							$.ajax({
+								url: dialog.url,
+								success: function() {
+									location.reload();
+								},
+								error: function() {
+									$('.typo3-extension-manager').unmask();
+								}
+							});
 						}
-					});
-				} else {
-					confirmDeletionAndDelete($(this).data('href'));
-				}
+					}
+				});
 			});
 		});
 
@@ -148,7 +162,6 @@
 				});
 			});
 		});
-
 	}
 
 	function updateExtension(data) {
@@ -170,9 +183,34 @@
 						url: dialog.url,
 						dataType: 'json',
 						success: function(data) {
+							if (data.hasErrors) {
+								TYPO3.Flashmessage.display(
+									TYPO3.Severity.error,
+									TYPO3.l10n.localize('downloadExtension.updateExtension.error'),
+									data.errorMessage,
+									15
+								);
+							} else {
+								TYPO3.Flashmessage.display(
+									TYPO3.Severity.information,
+									TYPO3.l10n.localize('extensionList.updateFlashMessage.title'),
+									TYPO3.l10n.localize('extensionList.updateFlashMessage.message').replace(/\{0\}/g, data.extension),
+									15
+								);
+							}
 							$('.typo3-extension-manager').unmask();
-							TYPO3.Flashmessage.display(TYPO3.Severity.information, TYPO3.l10n.localize('extensionList.updateFlashMessage.title'),
-									TYPO3.l10n.localize('extensionList.updateFlashMessage.message').replace(/\{0\}/g, data.extension), 15);
+						},
+						error: function(jqXHR, textStatus, errorThrown) {
+							// Create an error message with diagnosis info.
+							var errorMessage = textStatus + '(' + errorThrown + '): ' + jqXHR.responseText;
+
+							TYPO3.Flashmessage.display(
+								TYPO3.Severity.error,
+								TYPO3.l10n.localize('downloadExtension.updateExtension.error'),
+								errorMessage,
+								15
+							);
+							$('.typo3-extension-manager').unmask();
 						}
 					});
 				} else {
@@ -180,32 +218,5 @@
 				}
 			}
 		});
-	}
-
-	function confirmDeletionAndDelete(url) {
-		TYPO3.Dialog.QuestionDialog({
-			title: TYPO3.l10n.localize('extensionList.removalConfirmation.title'),
-			msg: TYPO3.l10n.localize('extensionList.removalConfirmation.question'),
-			url: url,
-			fn: function(button, dummy, dialog) {
-				if (button == 'yes') {
-					$('.typo3-extension-manager').mask();
-					$.ajax({
-						url: dialog.url,
-						dataType: 'json',
-						success: removeExtension
-					});
-				}
-			}
-		});
-	}
-
-	function removeExtension(data) {
-		$('.typo3-extension-manager').unmask();
-		if (data.success) {
-			datatable.fnDeleteRow(datatable.fnGetPosition(document.getElementById(data.extension)));
-		} else {
-			TYPO3.Flashmessage.display(TYPO3.Severity.error, TYPO3.l10n.localize('extensionList.removalConfirmation.title'), data.message, 15);
-		}
 	}
 }(jQuery));

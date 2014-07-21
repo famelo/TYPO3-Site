@@ -1,32 +1,18 @@
 <?php
 namespace TYPO3\CMS\Saltedpasswords;
 
-/***************************************************************
- *  Copyright notice
+/**
+ * This file is part of the TYPO3 CMS project.
  *
- *  (c) Marcus Krause (marcus#exp2009@t3sec.info)
- *  (c) Steffen Ritter (info@rs-websystems.de)
- *  All rights reserved
+ * It is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License, either version 2
+ * of the License, or any later version.
  *
- *  This script is part of the TYPO3 project. The TYPO3 project is
- *  free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
+ * For the full copyright and license information, please read the
+ * LICENSE.txt file that was distributed with this source code.
  *
- *  The GNU General Public License can be found at
- *  http://www.gnu.org/copyleft/gpl.html.
- *  A copy is found in the textfile GPL.txt and important notices to the license
- *  from the author is found in LICENSE.txt distributed with these scripts.
- *
- *
- *  This script is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  This copyright notice MUST APPEAR in all copies of the script!
- ***************************************************************/
+ * The TYPO3 project - inspiring people to share!
+ */
 /**
  * Contains authentication service class for salted hashed passwords.
  */
@@ -79,7 +65,7 @@ class SaltedPasswordService extends \TYPO3\CMS\Sv\AbstractAuthenticationService 
 	 * Indicates whether the salted password authentication has failed.
 	 *
 	 * Prevents authentication bypass. See vulnerability report:
-	 * { @link http://bugs.typo3.org/view.php?id=13372 }
+	 * { @link http://forge.typo3.org/issues/22030 }
 	 *
 	 * @var boolean
 	 */
@@ -112,18 +98,13 @@ class SaltedPasswordService extends \TYPO3\CMS\Sv\AbstractAuthenticationService 
 	 *
 	 * @param array $user User data array
 	 * @param array $loginData Login data array
-	 * @param string $security_level Login security level (optional)
+	 * @param string $passwordCompareStrategy Password compare strategy
 	 * @return boolean TRUE if login data matched
 	 * @todo Define visibility
 	 */
-	public function compareUident(array $user, array $loginData, $security_level = 'normal') {
+	public function compareUident(array $user, array $loginData, $passwordCompareStrategy = '') {
 		$validPasswd = FALSE;
-		// Could be merged; still here to clarify
-		if (!strcmp(TYPO3_MODE, 'BE')) {
-			$password = $loginData['uident_text'];
-		} elseif (!strcmp(TYPO3_MODE, 'FE')) {
-			$password = $loginData['uident_text'];
-		}
+		$password = $loginData['uident_text'];
 		// Determine method used for given salted hashed password
 		$this->objInstanceSaltedPW = \TYPO3\CMS\Saltedpasswords\Salt\SaltFactory::getSaltingInstance($user['password']);
 		// Existing record is in format of Salted Hash password
@@ -140,18 +121,18 @@ class SaltedPasswordService extends \TYPO3\CMS\Sv\AbstractAuthenticationService 
 			if ($validPasswd && !(get_class($this->objInstanceSaltedPW) == $defaultHashingClassName) || is_subclass_of($this->objInstanceSaltedPW, $defaultHashingClassName)) {
 				// Instanciate default method class
 				$this->objInstanceSaltedPW = \TYPO3\CMS\Saltedpasswords\Salt\SaltFactory::getSaltingInstance(NULL);
-				$this->updatePassword(intval($user['uid']), array('password' => $this->objInstanceSaltedPW->getHashedPassword($password)));
+				$this->updatePassword((int)$user['uid'], array('password' => $this->objInstanceSaltedPW->getHashedPassword($password)));
 			}
 			if ($validPasswd && !$skip && $this->objInstanceSaltedPW->isHashUpdateNeeded($user['password'])) {
-				$this->updatePassword(intval($user['uid']), array('password' => $this->objInstanceSaltedPW->getHashedPassword($password)));
+				$this->updatePassword((int)$user['uid'], array('password' => $this->objInstanceSaltedPW->getHashedPassword($password)));
 			}
-		} elseif (!intval($this->extConf['forceSalted'])) {
+		} elseif (!(int)$this->extConf['forceSalted']) {
 			// Stored password is in deprecated salted hashing method
 			if (\TYPO3\CMS\Core\Utility\GeneralUtility::inList('C$,M$', substr($user['password'], 0, 2))) {
 				// Instanciate default method class
 				$this->objInstanceSaltedPW = \TYPO3\CMS\Saltedpasswords\Salt\SaltFactory::getSaltingInstance(substr($user['password'], 1));
 				// md5
-				if (!strcmp(substr($user['password'], 0, 1), 'M')) {
+				if ($user['password'][0] === 'M') {
 					$validPasswd = $this->objInstanceSaltedPW->checkPassword(md5($password), substr($user['password'], 1));
 				} else {
 					$validPasswd = $this->objInstanceSaltedPW->checkPassword($password, substr($user['password'], 1));
@@ -161,19 +142,19 @@ class SaltedPasswordService extends \TYPO3\CMS\Sv\AbstractAuthenticationService 
 					$this->authenticationFailed = TRUE;
 				}
 			} elseif (preg_match('/[0-9abcdef]{32,32}/', $user['password'])) {
-				$validPasswd = !strcmp(md5($password), $user['password']) ? TRUE : FALSE;
+				$validPasswd = md5($password) === (string)$user['password'];
 				// Skip further authentication methods
 				if (!$validPasswd) {
 					$this->authenticationFailed = TRUE;
 				}
 			} else {
-				$validPasswd = !strcmp($password, $user['password']) ? TRUE : FALSE;
+				$validPasswd = (string)$password === (string)$user['password'];
 			}
 			// Should we store the new format value in DB?
-			if ($validPasswd && intval($this->extConf['updatePasswd'])) {
+			if ($validPasswd && (int)$this->extConf['updatePasswd']) {
 				// Instanciate default method class
 				$this->objInstanceSaltedPW = \TYPO3\CMS\Saltedpasswords\Salt\SaltFactory::getSaltingInstance(NULL);
-				$this->updatePassword(intval($user['uid']), array('password' => $this->objInstanceSaltedPW->getHashedPassword($password)));
+				$this->updatePassword((int)$user['uid'], array('password' => $this->objInstanceSaltedPW->getHashedPassword($password)));
 			}
 		}
 		return $validPasswd;
@@ -201,8 +182,9 @@ class SaltedPasswordService extends \TYPO3\CMS\Sv\AbstractAuthenticationService 
 				// Failed login attempt (wrong password)
 				$errorMessage = 'Login-attempt from %s (%s), username \'%s\', password not accepted!';
 				// No delegation to further services
-				if (intval($this->extConf['onlyAuthService']) || $this->authenticationFailed) {
+				if ((int)$this->extConf['onlyAuthService'] || $this->authenticationFailed) {
 					$this->writeLogMessage(TYPO3_MODE . ' Authentication failed - wrong password for username \'%s\'', $this->login['uname']);
+					$OK = 0;
 				} else {
 					$this->writeLogMessage($errorMessage, $this->authInfo['REMOTE_ADDR'], $this->authInfo['REMOTE_HOST'], $this->login['uname']);
 				}
@@ -212,9 +194,6 @@ class SaltedPasswordService extends \TYPO3\CMS\Sv\AbstractAuthenticationService 
 					$this->login['uname']
 				));
 				\TYPO3\CMS\Core\Utility\GeneralUtility::sysLog(sprintf($errorMessage, $this->authInfo['REMOTE_ADDR'], $this->authInfo['REMOTE_HOST'], $this->login['uname']), 'Core', \TYPO3\CMS\Core\Utility\GeneralUtility::SYSLOG_SEVERITY_INFO);
-				if (intval($this->extConf['onlyAuthService']) || $this->authenticationFailed) {
-					$OK = 0;
-				}
 			} elseif ($validPasswd && $user['lockToDomain'] && strcasecmp($user['lockToDomain'], $this->authInfo['HTTP_HOST'])) {
 				// Lock domain didn't match, so error:
 				$errorMessage = 'Login-attempt from %s (%s), username \'%s\', locked domain \'%s\' did not match \'%s\'!';
@@ -279,6 +258,3 @@ class SaltedPasswordService extends \TYPO3\CMS\Sv\AbstractAuthenticationService 
 	}
 
 }
-
-
-?>

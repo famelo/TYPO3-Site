@@ -1,30 +1,20 @@
 <?php
 namespace TYPO3\CMS\Scheduler\Example;
 
-/***************************************************************
- *  Copyright notice
- *
- *  (c) 2009-2013 François Suter <francois@typo3.org>
- *  All rights reserved
- *
- *  This script is part of the TYPO3 project. The TYPO3 project is
- *  free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
- *
- *  The GNU General Public License can be found at
- *  http://www.gnu.org/copyleft/gpl.html.
- *
- *  This script is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  This copyright notice MUST APPEAR in all copies of the script!
- ***************************************************************/
 /**
- * Aditional fields provider class for usage with the Scheduler's test task
+ * This file is part of the TYPO3 CMS project.
+ *
+ * It is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License, either version 2
+ * of the License, or any later version.
+ *
+ * For the full copyright and license information, please read the
+ * LICENSE.txt file that was distributed with this source code.
+ *
+ * The TYPO3 project - inspiring people to share!
+ */
+/**
+ * Additional fields provider class for usage with the Scheduler's test task
  *
  * @author 		François Suter <francois@typo3.org>
  */
@@ -59,8 +49,8 @@ class TestTaskAdditionalFieldProvider implements \TYPO3\CMS\Scheduler\Additional
 		$additionalFields = array();
 		$additionalFields[$fieldID] = array(
 			'code' => $fieldCode,
-			'label' => 'LLL:EXT:scheduler/mod1/locallang.xml:label.email',
-			'cshKey' => '_MOD_tools_txschedulerM1',
+			'label' => 'LLL:EXT:scheduler/mod1/locallang.xlf:label.email',
+			'cshKey' => '_MOD_system_txschedulerM1',
 			'cshLabel' => $fieldID
 		);
 		return $additionalFields;
@@ -77,7 +67,7 @@ class TestTaskAdditionalFieldProvider implements \TYPO3\CMS\Scheduler\Additional
 	public function validateAdditionalFields(array &$submittedData, \TYPO3\CMS\Scheduler\Controller\SchedulerModuleController $parentObject) {
 		$submittedData['email'] = trim($submittedData['email']);
 		if (empty($submittedData['email'])) {
-			$parentObject->addMessage($GLOBALS['LANG']->sL('LLL:EXT:scheduler/mod1/locallang.xml:msg.noEmail'), \TYPO3\CMS\Core\Messaging\FlashMessage::ERROR);
+			$parentObject->addMessage($GLOBALS['LANG']->sL('LLL:EXT:scheduler/mod1/locallang.xlf:msg.noEmail'), \TYPO3\CMS\Core\Messaging\FlashMessage::ERROR);
 			$result = FALSE;
 		} else {
 			$result = TRUE;
@@ -98,6 +88,3 @@ class TestTaskAdditionalFieldProvider implements \TYPO3\CMS\Scheduler\Additional
 	}
 
 }
-
-
-?>

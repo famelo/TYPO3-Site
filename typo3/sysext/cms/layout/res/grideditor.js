@@ -1,4 +1,17 @@
 /**
+ * This file is part of the TYPO3 CMS project.
+ *
+ * It is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License, either version 2
+ * of the License, or any later version.
+ *
+ * For the full copyright and license information, please read the
+ * LICENSE.txt file that was distributed with this source code.
+ *
+ * The TYPO3 project - inspiring people to share!
+ */
+
+/**
  * A JavaScript object to handle, edit, draw and export a grid. The grid is basically
  * a table with some colspan and rowspan. Each cell can additionally hold a name and
  * column.
@@ -61,7 +74,7 @@ TYPO3.Backend.t3Grid = Ext.extend(Ext.Component, {
 
 	/**
 	 * Takes a cell and looks above it if there are any cells that have colspans that
-	 * spanns into the given cell. This is used when a row was removed from the grid
+	 * spans into the given cell. This is used when a row was removed from the grid
 	 * to make sure that no cell with wrong colspans exists in the grid.
 	 *
 	 * @param col integer
@@ -207,7 +220,7 @@ TYPO3.Backend.t3Grid = Ext.extend(Ext.Component, {
 				}
 				cellHtml += '</div>';
 
-				cellHtml += '<div class="cell_data">' + TYPO3.l10n.localize('name') + ': ' + (cell.name ? cell.name : TYPO3.l10n.localize('notSet'))
+				cellHtml += '<div class="cell_data">' + TYPO3.l10n.localize('name') + ': ' + (cell.name ? Ext.util.Format.htmlEncode(cell.name) : TYPO3.l10n.localize('notSet'))
 						+ '<br />' + TYPO3.l10n.localize('column') + ': '
 						+ (cell.column === undefined ? TYPO3.l10n.localize('notSet') : parseInt(cell.column, 10)) + '</div>';
 
@@ -421,7 +434,7 @@ TYPO3.Backend.t3Grid = Ext.extend(Ext.Component, {
 	},
 
 	/**
-	 * Checks wether a cell can span to the right or not. A cell can span to the right
+	 * Checks whether a cell can span to the right or not. A cell can span to the right
 	 * if it is not in the last column and if there is no cell beside it that is
 	 * already overspanned by some other cell.
 	 *
@@ -454,7 +467,7 @@ TYPO3.Backend.t3Grid = Ext.extend(Ext.Component, {
 	},
 
 	/**
-	 * Checks wether a cell can span down or not.
+	 * Checks whether a cell can span down or not.
 	 *
 	 * @param col integer
 	 * @param row integer

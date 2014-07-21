@@ -1,37 +1,23 @@
 <?php
 namespace TYPO3\CMS\Extbase\Tests\Unit\Utility;
 
-/***************************************************************
- *  Copyright notice
- *
- *  (c) Extbase Team
- *  All rights reserved
- *
- *  This class is a backport of the corresponding class of TYPO3 Flow.
- *  All credits go to the TYPO3 Flow team.
- *
- *  This script is part of the TYPO3 project. The TYPO3 project is
- *  free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
- *
- *  The GNU General Public License can be found at
- *  http://www.gnu.org/copyleft/gpl.html.
- *
- *  This script is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  This copyright notice MUST APPEAR in all copies of the script!
- ***************************************************************/
 /**
- * Testcase for the \TYPO3\CMS\Extbase\Utility\ArrayUtility class.
+ * This file is part of the TYPO3 CMS project.
  *
- * @author Tymoteusz Motylewski <t.motylewski@gmail.com>
+ * It is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License, either version 2
+ * of the License, or any later version.
+ *
+ * For the full copyright and license information, please read the
+ * LICENSE.txt file that was distributed with this source code.
+ *
+ * The TYPO3 project - inspiring people to share!
  */
-class ArrayUtilityTest extends \TYPO3\CMS\Extbase\Tests\Unit\BaseTestCase {
+
+/**
+ * Test case
+ */
+class ArrayUtilityTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 
 	/**
 	 * @test
@@ -377,11 +363,13 @@ class ArrayUtilityTest extends \TYPO3\CMS\Extbase\Tests\Unit\BaseTestCase {
 
 	/**
 	 * @test
+	 *
 	 * @param array $inputArray1
 	 * @param array $inputArray2
 	 * @param boolean $dontAddNewKeys
 	 * @param boolean $emptyValuesOverride
 	 * @param array $expected
+	 *
 	 * @dataProvider arrayMergeRecursiveOverruleData
 	 */
 	public function arrayMergeRecursiveOverruleMergesSimpleArrays(array $inputArray1, array $inputArray2, $dontAddNewKeys, $emptyValuesOverride, array $expected) {
@@ -405,6 +393,64 @@ class ArrayUtilityTest extends \TYPO3\CMS\Extbase\Tests\Unit\BaseTestCase {
 		$expected = array(1, 0, 3, 0, 5);
 		$this->assertSame($expected, \TYPO3\CMS\Extbase\Utility\ArrayUtility::integerExplode(',', $inputString));
 	}
-}
 
-?>
+	/**
+	 * dataProvider for sortArrayWithIntegerKeys
+	 *
+	 * @return array
+	 */
+	public function sortArrayWithIntegerKeysDataProvider() {
+		return array(
+			array(
+				array(
+					'20' => 'test1',
+					'11' => 'test2',
+					'16' => 'test3',
+				),
+				array(
+					'11' => 'test2',
+					'16' => 'test3',
+					'20' => 'test1',
+				)
+			),
+			array(
+				array(
+					'20' => 'test1',
+					'16.5' => 'test2',
+					'16' => 'test3',
+				),
+				array(
+					'20' => 'test1',
+					'16.5' => 'test2',
+					'16' => 'test3',
+				)
+			),
+			array(
+				array(
+					'20' => 'test20',
+					'somestring' => 'teststring',
+					'16' => 'test16',
+				),
+				array(
+					'20' => 'test20',
+					'somestring' => 'teststring',
+					'16' => 'test16',
+				)
+			),
+		);
+	}
+
+	/**
+	 * @test
+	 *
+	 * @param array $arrayToSort
+	 * @param array $expectedArray
+	 *
+	 * @dataProvider sortArrayWithIntegerKeysDataProvider
+	 */
+
+	public function sortArrayWithIntegerKeysSortsNumericArrays(array $arrayToSort, array $expectedArray) {
+		$sortedArray = \TYPO3\CMS\Extbase\Utility\ArrayUtility::sortArrayWithIntegerKeys($arrayToSort);
+		$this->assertSame($sortedArray, $expectedArray);
+	}
+}

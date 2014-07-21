@@ -191,6 +191,11 @@
 	border-color:#A2AAB8;
 }
 
+ul.x-tab-strip {
+	padding-left: 0;
+	list-style: none;
+}
+
 ul.x-tab-strip-top{
 	padding-top: 1px;
 }
@@ -674,9 +679,6 @@ ul.x-tab-strip-bottom{
 .x-tab-panel-bbar .x-toolbar, .x-tab-panel-tbar .x-toolbar {
 	border-color:#A2AAB8;
 }
-.x-form-field{
-	font:normal 10px verdana, arial, tahoma, helvetica, sans-serif;
-}
 
 .x-form-text, textarea.x-form-field{
 	background-color:#fff;
@@ -747,30 +749,13 @@ ul.x-tab-strip-bottom{
 	background-image:url(images/grid/invalid_line.gif);
 }
 
-.x-form-grow-sizer {
-	font:normal 10px verdana, arial, tahoma, helvetica, sans-serif;
-}
-
-.x-form-item {
-	font:normal 10px verdana, arial, tahoma, helvetica, sans-serif;
-}
-
 .x-form-invalid-msg {
 	color:#c0272b;
-	font:normal 10px verdana, arial, tahoma, helvetica, sans-serif;
 	background-image:url(images/shared/warning.gif);
 }
 
 .x-form-empty-field {
 	color:gray;
-}
-
-.x-small-editor .x-form-field {
-	font:normal 10px verdana, arial, tahoma, helvetica, sans-serif;
-}
-
-.ext-safari .x-small-editor .x-form-field {
-	font:normal 10px verdana, arial, tahoma, helvetica, sans-serif;
 }
 
 .x-form-invalid-icon {
@@ -782,12 +767,12 @@ ul.x-tab-strip-bottom{
 }
 
 .x-fieldset legend {
-	font:bold 10px verdana, arial, tahoma, helvetica, sans-serif;
+	font-weight: bold;
 	color:#55545E;
 }
 
 .x-btn button {
-	font-size: 11px;
+	font-size: 12px;
 }
 
 .x-btn em {
@@ -896,10 +881,6 @@ ul.x-tab-strip-bottom{
 	border-color:#A2AAB8;
 	background-color:#EFEFF4;
 	background-image:url(images/toolbar/bg.gif);
-}
-
-.x-toolbar td,.x-toolbar span,.x-toolbar input,.x-toolbar div,.x-toolbar select,.x-toolbar label{
-	font:normal 10px verdana, arial,tahoma, helvetica, sans-serif;
 }
 
 .x-toolbar .x-item-disabled {
@@ -1029,7 +1010,6 @@ ul.x-tab-strip-bottom{
 
 .x-grid3 {
 	background-color:#fff;
-	font-size: 11px;
 }
 
 .x-grid3-hd-row td {
@@ -1177,10 +1157,6 @@ td.x-grid3-hd-over, td.x-grid3-hd-menu-open {
 	background-image:url(images/grid/dirty.gif);
 }
 
-.x-grid3-topbar, .x-grid3-bottombar{
-	font:normal 10px verdana, arial, tahoma, helvetica, sans-serif;
-}
-
 .x-grid3-bottombar .x-toolbar{
 	border-top-color:#bcbcbc;
 }
@@ -1256,7 +1232,7 @@ td.x-grid3-hd-over, td.x-grid3-hd-menu-open {
 	background-image:url("images/grid/row-expand-sprite.png");
 	background-position: 4px -38px;
 	color:#606060;
-	font:bold 11px verdana, arial, tahoma, helvetica, sans-serif;
+	font-weight: bold;
 	padding: 5px 4px 4px 27px;
 }
 
@@ -1279,7 +1255,6 @@ td.x-grid3-hd-over, td.x-grid3-hd-menu-open {
 
 .x-grid-empty {
 	color:gray;
-	font:normal 10px verdana, arial, tahoma, helvetica, sans-serif;
 }
 
 .x-grid-with-col-lines .x-grid3-row td.x-grid3-cell {
@@ -1295,7 +1270,6 @@ td.x-grid3-hd-over, td.x-grid3-hd-menu-open {
 }
 .x-dd-drag-ghost{
 	color:#000;
-	font: normal 10px verdana, arial, helvetica, sans-serif;
 	border-color: #ddd #bbb #bbb #ddd;
 	background-color:#fff;
 }
@@ -1316,6 +1290,13 @@ td.x-grid3-hd-over, td.x-grid3-hd-menu-open {
 	background-color:#d8d8d8;
 	border-color:#8d8d8d;
 }
+
+.x-tree ul {
+	margin-bottom: 0;
+	list-style: none;
+	padding-left: 0;
+}
+
 .x-tree .x-panel-body{
 	background-color:#fff;
 }
@@ -1430,13 +1411,12 @@ td.x-grid3-hd-over, td.x-grid3-hd-menu-open {
 
 .x-tree-node{
 	color:#000;
-	font: normal 10px verdana, arial, tahoma, helvetica, sans-serif;
+	font-size: 12px;
 }
 
 .x-tree-node a, .x-dd-drag-ghost a {
 	color: #000;
 	vertical-align: -1px;
-	font-size: 11px;
 	display: inline-block;
 }
 
@@ -1500,7 +1480,7 @@ td.x-grid3-hd-over, td.x-grid3-hd-menu-open {
 .x-date-middle,.x-date-left,.x-date-right {
 	background-image: url(images/shared/hd-sprite.gif);
 	color:#fff;
-	font:bold 10px verdana, arial, "sans serif", tahoma, verdana, helvetica;
+	font-weight: bold;
 }
 
 .x-date-left,.x-date-right {
@@ -1527,7 +1507,6 @@ td.x-grid3-hd-over, td.x-grid3-hd-menu-open {
 	background-color:#EFEFF4;
 	background-image:url(images/shared/glass-bg.gif);
 	border-bottom-color:#A2AAB8;
-	font:normal 10px verdana, arial, helvetica,tahoma,sans-serif;
 	color:#3d3d3d;
 }
 
@@ -1536,7 +1515,6 @@ td.x-grid3-hd-over, td.x-grid3-hd-menu-open {
 }
 
 .x-date-inner a {
-	font:normal 10px verdana, arial, helvetica,tahoma,sans-serif;
 	color:#000;
 }
 
@@ -1583,7 +1561,6 @@ td.x-grid3-hd-over, td.x-grid3-hd-menu-open {
 }
 
 .x-date-mmenu .x-menu-item {
-	font-size:10px;
 	color:#000;
 }
 
@@ -1591,15 +1568,10 @@ td.x-grid3-hd-over, td.x-grid3-hd-menu-open {
 	background-color:#fff;
 }
 
-.x-date-mp td {
-	font:normal 10px verdana, arial, helvetica,tahoma,sans-serif;
-}
-
 .x-date-mp-btns button {
 	background-color:#A2AAB8;
 	color:#fff;
 	border-color: #686868 #101010 #101010 #686868;
-	font:normal 10px verdana, arial, helvetica,tahoma,sans-serif;
 }
 
 .x-date-mp-btns {
@@ -1644,7 +1616,6 @@ td.x-date-mp-sep {
 }
 
 .x-tip .x-tip-header-text {
-	font-size: 11px;
 	font-weight: bold;
 	line-height: 14px;
 	margin-bottom: 4px;
@@ -1681,6 +1652,11 @@ td.x-date-mp-sep {
 	border-color:#898989;
 	background-color: #ffffff;
 	background-image:url(images/menu/menu.gif);
+}
+
+ul.x-menu-list {
+	margin-bottom: 0;
+	margin-top: 0;
 }
 
 .x-menu-nosep {
@@ -1765,7 +1741,6 @@ a.x-menu-item {
 .x-box-mc {
 	background-color: #EFEFF4;
 	background-image: url(images/box/tb.gif);
-	font-family: verdana, "Arial", "Myriad Pro","Myriad Web","Tahoma","Helvetica",sans-serif;
 	color: #393939;
 	font-size: 10px;
 	font-weight: bold;
@@ -1817,7 +1792,6 @@ a.x-menu-item {
 }
 #x-debug-browser .x-tree .x-tree-node a span {
 	color:#333333;
-	font-size:10px;
 	font-family:"monotype","courier new",sans-serif;
 }
 
@@ -1836,7 +1810,6 @@ a.x-menu-item {
 .x-combo-list {
 	border-color:#bcbcbc;
 	background-color:#eaeaea;
-	font:normal 12px verdana, arial, tahoma, helvetica, sans-serif;
 }
 
 .x-combo-list-inner {
@@ -1844,7 +1817,6 @@ a.x-menu-item {
 }
 
 .x-combo-list-hd {
-	font:bold 10px verdana, arial, tahoma, helvetica, sans-serif;
 	color:#55545E;
 	background-image: url(images/layout/panel-title-light-bg.gif);
 	border-bottom-color:#bcbcbc;
@@ -1868,7 +1840,6 @@ a.x-menu-item {
 }
 
 .x-combo-list-small {
-	font:normal 10px verdana, arial, tahoma, helvetica, sans-serif;
 }
 .x-panel {
 	border-color: #A2AAB8;
@@ -1877,8 +1848,6 @@ a.x-menu-item {
 .x-panel-header {
 	color: #fff;
 	font-weight:bold;
-	font-size: 10px;
-	font-family: verdana, arial,tahoma,verdana,sans-serif;
 	border-color:#A2AAB8;
 	background-image: url(images/panel/white-top-bottom.gif);
 }
@@ -1893,7 +1862,6 @@ a.x-menu-item {
 
 .x-panel-tl .x-panel-header {
 	color:#55545E;
-	font:bold 10px verdana, arial,tahoma,verdana,sans-serif;
 }
 
 .x-panel-tc {
@@ -1910,7 +1878,6 @@ a.x-menu-item {
 }
 
 .x-panel-mc {
-	font: normal 10px verdana, arial,tahoma,helvetica,sans-serif;
 	background-color:#efefef;
 }
 
@@ -1940,7 +1907,6 @@ a.x-menu-item {
 }
 
 .x-panel-fbar td,.x-panel-fbar span,.x-panel-fbar input,.x-panel-fbar div,.x-panel-fbar select,.x-panel-fbar label{
-	font:normal 10px verdana, arial,tahoma, helvetica, sans-serif;
 }
 
 .x-window-proxy {
@@ -1951,7 +1917,7 @@ a.x-menu-item {
 /* Modal dialog title/header bar */
 .x-window-tl .x-window-header {
 	color:#fff;
-	font:bold 10px verdana, arial,tahoma,verdana,sans-serif;
+	font-weight: bold;
 	padding:4px 0 4px 0;
 }
 
@@ -1981,7 +1947,6 @@ a.x-menu-item {
 
 .x-window-mc {
 	border-color:#A2AAB8;
-	font: normal 10px verdana, arial,tahoma,helvetica,sans-serif;
 	background-color:#e7e7e7;
 }
 
@@ -2123,7 +2088,6 @@ body.x-body-masked .x-window-plain .x-window-mc {
 }
 
 .x-progress-text {
-	font-size:10px;
 	font-weight:bold;
 	color:#fff;
 }
@@ -2138,11 +2102,6 @@ body.x-body-masked .x-window-plain .x-window-mc {
 
 .x-list-header-inner div em {
 	border-left-color:#ddd;
-	font:normal 10px verdana, arial, tahoma, helvetica, sans-serif;
-}
-
-.x-list-body dt em {
-	font:normal 10px verdana, arial, tahoma, helvetica, sans-serif;
 }
 
 .x-list-over {
@@ -2179,7 +2138,6 @@ body.x-body-masked .x-window-plain .x-window-mc {
 }
 .x-window-dlg .ext-mb-text,
 .x-window-dlg .x-window-header-text {
-	font-size:12px;
 }
 /* defines the header text in the draggable area of a modal window */
 .x-window-dlg .x-window-header-text {
@@ -2187,7 +2145,6 @@ body.x-body-masked .x-window-plain .x-window-mc {
 }
 
 .x-window-dlg .ext-mb-textarea {
-	font:normal 12px verdana, arial,tahoma,helvetica,sans-serif;
 }
 
 .x-window-dlg .x-msg-box-wait {
@@ -2216,7 +2173,7 @@ body.x-body-masked .x-window-plain .x-window-mc {
 	border:1px solid #dedede;
 }
 .x-form fieldset legend {
-	font: bold 10px verdana, arial, verdana, tahoma, helvetica, sans-serif;
+	font-weight: bold;
 	color: #606060;
 }
 
@@ -2273,19 +2230,15 @@ body.ext-chrome #typo3-navigationContainer-xsplit {
 #typo3-navigationDummy {
 	background-color: #ebebeb;
 	-moz-box-shadow:
-		inset -2px 0 1px rgba(0, 0, 0, 0.15),
 		inset 0 27px #585858,
 		inset 0 49px #dadada;
 	-ms-box-shadow:
-		inset -2px 0 1px rgba(0, 0, 0, 0.15),
 		inset 0 27px #585858,
 		inset 0 49px #dadada;
 	-webkit-box-shadow:
-		inset -2px 0 1px rgba(0, 0, 0, 0.15),
 		inset 0 27px #585858,
 		inset 0 49px #dadada;
 	box-shadow:
-		inset -2px 0 1px rgba(0, 0, 0, 0.15),
 		inset 0 27px #585858,
 		inset 0 49px #dadada;
 	overflow: visible;

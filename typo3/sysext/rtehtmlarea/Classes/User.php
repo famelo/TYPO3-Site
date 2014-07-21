@@ -1,32 +1,21 @@
 <?php
 namespace TYPO3\CMS\Rtehtmlarea;
+/**
+ * This file is part of the TYPO3 CMS project.
+ *
+ * It is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License, either version 2
+ * of the License, or any later version.
+ *
+ * For the full copyright and license information, please read the
+ * LICENSE.txt file that was distributed with this source code.
+ *
+ * The TYPO3 project - inspiring people to share!
+ */
 
-/***************************************************************
- *  Copyright notice
- *
- *  (c) 1999-2013 Kasper Skårhøj (kasper@typo3.com)
- *  (c) 2005-2013 Stanislas Rolland <typo3(arobas)sjbr.ca>
- *  All rights reserved
- *
- *  This script is part of the TYPO3 project. The TYPO3 project is
- *  free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
- *
- *  The GNU General Public License can be found at
- *  http://www.gnu.org/copyleft/gpl.html.
- *  A copy is found in the textfile GPL.txt and important notices to the license
- *  from the author is found in LICENSE.txt distributed with these scripts.
- *
- *
- *  This script is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  This copyright notice MUST APPEAR in all copies of the script!
- ***************************************************************/
+use TYPO3\CMS\Backend\Utility\BackendUtility;
+use TYPO3\CMS\Core\Utility\GeneralUtility;
+
 /**
  * User defined content for htmlArea RTE
  *
@@ -64,6 +53,14 @@ class User {
 	public $editorNo;
 
 	/**
+	 * Initialize language files
+	 */
+	public function __construct() {
+		$GLOBALS['LANG']->includeLLFile('EXT:rtehtmlarea/mod5/locallang.xlf');
+		$GLOBALS['LANG']->includeLLFile('EXT:rtehtmlarea/htmlarea/locallang_dialogs.xlf');
+	}
+
+	/**
 	 * @return 	[type]		...
 	 * @todo Define visibility
 	 */
@@ -95,7 +92,7 @@ class User {
 				if(!editor.getSelection().isEmpty()) {
 					editor.getSelection().surroundHtml(wrap1,wrap2);
 				} else {
-					alert(' . $GLOBALS['LANG']->JScharCode($GLOBALS['LANG']->getLL('noTextSelection')) . ');
+					alert(' . GeneralUtility::quoteJSvalue($GLOBALS['LANG']->getLL('noTextSelection')) . ');
 				}
 				if(!noHide) plugin.close();
 			};
@@ -108,10 +105,14 @@ class User {
 			function jumpToUrl(URL) {
 				var RTEtsConfigParams = "&RTEtsConfigParams=' . rawurlencode(\TYPO3\CMS\Core\Utility\GeneralUtility::_GP('RTEtsConfigParams')) . '";
 				var editorNo = "&editorNo=' . rawurlencode($this->editorNo) . '";
-				theLocation = "' . \TYPO3\CMS\Core\Utility\GeneralUtility::getIndpEnv('SCRIPT_NAME') . '"+URL+RTEtsConfigParams+editorNo;
+				theLocation = URL+RTEtsConfigParams+editorNo;
 				window.location.href = theLocation;
 			}
 		';
+
+		// unset the default jumpToUrl() function
+		unset($this->doc->JScodeArray['jumpToUrl']);
+
 		$this->doc->JScode = $this->doc->wrapScriptTags($JScode);
 		$this->modData = $GLOBALS['BE_USER']->getModuleData('user.php', 'ses');
 		if (\TYPO3\CMS\Core\Utility\GeneralUtility::_GP('OC_key')) {
@@ -178,22 +179,21 @@ class User {
 	 */
 	public function main_user($openKeys) {
 		// Starting content:
-		$content = $this->doc->startPage($GLOBALS['LANG']->getLL('Insert Custom Element', 1));
+		$content = $this->doc->startPage($GLOBALS['LANG']->getLL('Insert Custom Element', TRUE));
 		$RTEtsConfigParts = explode(':', \TYPO3\CMS\Core\Utility\GeneralUtility::_GP('RTEtsConfigParams'));
 		$RTEsetup = $GLOBALS['BE_USER']->getTSConfig('RTE', \TYPO3\CMS\Backend\Utility\BackendUtility::getPagesTSconfig($RTEtsConfigParts[5]));
 		$thisConfig = \TYPO3\CMS\Backend\Utility\BackendUtility::RTEsetup($RTEsetup['properties'], $RTEtsConfigParts[0], $RTEtsConfigParts[2], $RTEtsConfigParts[4]);
 		if (is_array($thisConfig['userElements.'])) {
 			$categories = array();
 			foreach ($thisConfig['userElements.'] as $k => $value) {
-				$ki = intval($k);
+				$ki = (int)$k;
 				$v = $thisConfig['userElements.'][$ki . '.'];
 				if (substr($k, -1) == '.' && is_array($v)) {
 					$subcats = array();
 					$openK = $ki;
 					if ($openKeys[$openK]) {
 						$mArray = '';
-						switch ((string) $v['load']) {
-						case 'images_from_folder':
+						if ($v['load'] === 'images_from_folder') {
 							$mArray = array();
 							if ($v['path'] && @is_dir((PATH_site . $v['path']))) {
 								$files = \TYPO3\CMS\Core\Utility\GeneralUtility::getFilesInDir(PATH_site . $v['path'], 'gif,jpg,jpeg,png', 0, '');
@@ -213,49 +213,48 @@ class User {
 									}
 								}
 							}
-							break;
 						}
 						if (is_array($mArray)) {
 							if ($v['merge']) {
-								$v = \TYPO3\CMS\Core\Utility\GeneralUtility::array_merge_recursive_overrule($mArray, $v);
+								\TYPO3\CMS\Core\Utility\ArrayUtility::mergeRecursiveWithOverrule($mArray, $v);
+								$v = $mArray;
 							} else {
 								$v = $mArray;
 							}
 						}
 						foreach ($v as $k2 => $dummyValue) {
-							$k2i = intval($k2);
+							$k2i = (int)$k2;
 							if (substr($k2, -1) == '.' && is_array($v[$k2i . '.'])) {
 								$title = trim($v[$k2i]);
 								if (!$title) {
-									$title = '[' . $GLOBALS['LANG']->getLL('noTitle', 1) . ']';
+									$title = '[' . $GLOBALS['LANG']->getLL('noTitle', TRUE) . ']';
 								} else {
-									$title = $GLOBALS['LANG']->sL($title, 1);
+									$title = $GLOBALS['LANG']->sL($title, TRUE);
 								}
-								$description = $GLOBALS['LANG']->sL($v[($k2i . '.')]['description'], 1) . '<br />';
+								$description = $GLOBALS['LANG']->sL($v[($k2i . '.')]['description'], TRUE) . '<br />';
 								if (!$v[($k2i . '.')]['dontInsertSiteUrl']) {
 									$v[$k2i . '.']['content'] = str_replace('###_URL###', $this->siteUrl, $v[$k2i . '.']['content']);
 								}
-								$logo = $v[$k2i . '.']['_icon'] ? $v[$k2i . '.']['_icon'] : '';
+								$logo = $v[$k2i . '.']['_icon'] ?: '';
 								$onClickEvent = '';
 								switch ((string) $v[($k2i . '.')]['mode']) {
-								case 'wrap':
-									$wrap = explode('|', $v[$k2i . '.']['content']);
-									$onClickEvent = 'wrapHTML(' . $GLOBALS['LANG']->JScharCode($wrap[0]) . ',' . $GLOBALS['LANG']->JScharCode($wrap[1]) . ',false);';
-									break;
-								case 'processor':
-									$script = trim($v[$k2i . '.']['submitToScript']);
-									if (substr($script, 0, 4) != 'http') {
-										$script = $this->siteUrl . $script;
-									}
-									if ($script) {
-										$onClickEvent = 'processSelection(' . $GLOBALS['LANG']->JScharCode($script) . ');';
-									}
-									break;
-								case 'insert':
+									case 'wrap':
+										$wrap = explode('|', $v[$k2i . '.']['content']);
+										$onClickEvent = 'wrapHTML(' . GeneralUtility::quoteJSvalue($wrap[0]) . ',' . GeneralUtility::quoteJSvalue($wrap[1]) . ',false);';
+										break;
+									case 'processor':
+										$script = trim($v[$k2i . '.']['submitToScript']);
+										if (substr($script, 0, 4) != 'http') {
+											$script = $this->siteUrl . $script;
+										}
+										if ($script) {
+											$onClickEvent = 'processSelection(' . GeneralUtility::quoteJSvalue($script) . ');';
+										}
+										break;
+									case 'insert':
 
-								default:
-									$onClickEvent = 'insertHTML(' . $GLOBALS['LANG']->JScharCode($v[($k2i . '.')]['content']) . ');';
-									break;
+									default:
+										$onClickEvent = 'insertHTML(' . GeneralUtility::quoteJSvalue($v[($k2i . '.')]['content']) . ');';
 								}
 								$A = array('<a href="#" onClick="' . $onClickEvent . 'return false;">', '</a>');
 								$subcats[$k2i] = '<tr>
@@ -277,11 +276,11 @@ class User {
 				$title = trim($thisConfig['userElements.'][$k]);
 				$openK = $k;
 				if (!$title) {
-					$title = '[' . $GLOBALS['LANG']->getLL('noTitle', 1) . ']';
+					$title = '[' . $GLOBALS['LANG']->getLL('noTitle', TRUE) . ']';
 				} else {
-					$title = $GLOBALS['LANG']->sL($title, 1);
+					$title = $GLOBALS['LANG']->sL($title, TRUE);
 				}
-				$lines[] = '<tr><td colspan="3" class="bgColor5"><a href="#" title="' . $GLOBALS['LANG']->getLL('expand', 1) . '" onClick="jumpToUrl(\'?OC_key=' . ($openKeys[$openK] ? 'C|' : 'O|') . $openK . '\');return false;"><img' . \TYPO3\CMS\Backend\Utility\IconUtility::skinImg($GLOBALS['BACK_PATH'], ('gfx/ol/' . ($openKeys[$openK] ? 'minus' : 'plus') . 'bullet.gif'), 'width="18" height="16"') . ' title="' . $GLOBALS['LANG']->getLL('expand', 1) . '" /><strong>' . $title . '</strong></a></td></tr>';
+				$lines[] = '<tr><td colspan="3" class="bgColor5"><a href="#" title="' . $GLOBALS['LANG']->getLL('expand', TRUE) . '" onClick="jumpToUrl(' . GeneralUtility::quoteJSvalue(BackendUtility::getModuleUrl('rtehtmlarea_wizard_user', array('OC_key' => ($openKeys[$openK] ? 'C|' : 'O|') . $openK))) . ');return false;"><img' . \TYPO3\CMS\Backend\Utility\IconUtility::skinImg($GLOBALS['BACK_PATH'], ('gfx/ol/' . ($openKeys[$openK] ? 'minus' : 'plus') . 'bullet.gif'), 'width="18" height="16"') . ' title="' . $GLOBALS['LANG']->getLL('expand', TRUE) . '" /><strong>' . $title . '</strong></a></td></tr>';
 				$lines[] = $v;
 			}
 			$content .= '<table border="0" cellpadding="1" cellspacing="1">' . implode('', $lines) . '</table>';
@@ -291,6 +290,3 @@ class User {
 	}
 
 }
-
-
-?>

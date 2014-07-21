@@ -1,31 +1,22 @@
 <?php
 namespace TYPO3\CMS\Workspaces\ExtDirect;
 
-/***************************************************************
- *  Copyright notice
+/**
+ * This file is part of the TYPO3 CMS project.
  *
- *  (c) 2010-2013 Workspaces Team (http://forge.typo3.org/projects/show/typo3v4-workspaces)
- *  All rights reserved
+ * It is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License, either version 2
+ * of the License, or any later version.
  *
- *  This script is part of the TYPO3 project. The TYPO3 project is
- *  free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
+ * For the full copyright and license information, please read the
+ * LICENSE.txt file that was distributed with this source code.
  *
- *  The GNU General Public License can be found at
- *  http://www.gnu.org/copyleft/gpl.html.
- *  A copy is found in the textfile GPL.txt and important notices to the license
- *  from the author is found in LICENSE.txt distributed with these scripts.
- *
- *
- *  This script is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  This copyright notice MUST APPEAR in all copies of the script!
- ***************************************************************/
+ * The TYPO3 project - inspiring people to share!
+ */
+
+use TYPO3\CMS\Core\Utility\GeneralUtility;
+use TYPO3\CMS\Backend\Utility\BackendUtility;
+
 /**
  * ExtDirect action handler
  *
@@ -42,7 +33,7 @@ class ActionHandler extends \TYPO3\CMS\Workspaces\ExtDirect\AbstractHandler {
 	 * Creates this object.
 	 */
 	public function __construct() {
-		$this->stageService = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Workspaces\\Service\\StagesService');
+		$this->stageService = GeneralUtility::makeInstance('TYPO3\\CMS\\Workspaces\\Service\\StagesService');
 	}
 
 	/**
@@ -65,12 +56,17 @@ class ActionHandler extends \TYPO3\CMS\Workspaces\ExtDirect\AbstractHandler {
 	 * @todo What about reporting errors back to the ExtJS interface? /olly/
 	 */
 	public function swapSingleRecord($table, $t3ver_oid, $orig_uid) {
+		$versionRecord = BackendUtility::getRecord($table, $orig_uid);
+		$currentWorkspace = $this->setTemporaryWorkspace($versionRecord['t3ver_wsid']);
+
 		$cmd[$table][$t3ver_oid]['version'] = array(
 			'action' => 'swap',
 			'swapWith' => $orig_uid,
 			'swapIntoWS' => 1
 		);
 		$this->processTcaCmd($cmd);
+
+		$this->setTemporaryWorkspace($currentWorkspace);
 	}
 
 	/**
@@ -82,10 +78,15 @@ class ActionHandler extends \TYPO3\CMS\Workspaces\ExtDirect\AbstractHandler {
 	 * @todo What about reporting errors back to the ExtJS interface? /olly/
 	 */
 	public function deleteSingleRecord($table, $uid) {
+		$versionRecord = BackendUtility::getRecord($table, $uid);
+		$currentWorkspace = $this->setTemporaryWorkspace($versionRecord['t3ver_wsid']);
+
 		$cmd[$table][$uid]['version'] = array(
 			'action' => 'clearWSID'
 		);
 		$this->processTcaCmd($cmd);
+
+		$this->setTemporaryWorkspace($currentWorkspace);
 	}
 
 	/**
@@ -97,6 +98,68 @@ class ActionHandler extends \TYPO3\CMS\Workspaces\ExtDirect\AbstractHandler {
 	 */
 	public function viewSingleRecord($table, $uid) {
 		return \TYPO3\CMS\Workspaces\Service\WorkspaceService::viewSingleRecord($table, $uid);
+	}
+
+	/**
+	 * Executes an action (publish, discard, swap) to a selection set.
+	 *
+	 * @param \stdClass $parameter
+	 * @return array
+	 */
+	public function executeSelectionAction($parameter) {
+		$result = array();
+
+		if (empty($parameter->action) || empty($parameter->selection)) {
+			$result['error'] = 'No action or record selection given';
+			return $result;
+		}
+
+		$commands = array();
+		$swapIntoWorkspace = ($parameter->action === 'swap');
+		if ($parameter->action === 'publish' || $swapIntoWorkspace) {
+			$commands = $this->getPublishSwapCommands($parameter->selection, $swapIntoWorkspace);
+		} elseif ($parameter->action === 'discard') {
+			$commands = $this->getFlushCommands($parameter->selection);
+		}
+
+		$result = $this->processTcaCmd($commands);
+		$result['total'] = count($commands);
+		return $result;
+	}
+
+	/**
+	 * Get publish swap commands
+	 *
+	 * @param array|\stdClass[] $selection
+	 * @param boolean $swapIntoWorkspace
+	 * @return array
+	 */
+	protected function getPublishSwapCommands(array $selection, $swapIntoWorkspace) {
+		$commands = array();
+		foreach ($selection as $record) {
+			$commands[$record->table][$record->liveId]['version'] = array(
+				'action' => 'swap',
+				'swapWith' => $record->versionId,
+				'swapIntoWS' => (bool)$swapIntoWorkspace,
+			);
+		}
+		return $commands;
+	}
+
+	/**
+	 * Get flush commands
+	 *
+	 * @param array|\stdClass[] $selection
+	 * @return array
+	 */
+	protected function getFlushCommands(array $selection) {
+		$commands = array();
+		foreach ($selection as $record) {
+			$commands[$record->table][$record->versionId]['version'] = array(
+				'action' => 'clearWSID',
+			);
+		}
+		return $commands;
 	}
 
 	/**
@@ -148,7 +211,9 @@ class ActionHandler extends \TYPO3\CMS\Workspaces\ExtDirect\AbstractHandler {
 	 * @return array
 	 */
 	public function sendToNextStageWindow($uid, $table, $t3ver_oid) {
-		$elementRecord = \TYPO3\CMS\Backend\Utility\BackendUtility::getRecord($table, $uid);
+		$elementRecord = BackendUtility::getRecord($table, $uid);
+		$currentWorkspace = $this->setTemporaryWorkspace($elementRecord['t3ver_wsid']);
+
 		if (is_array($elementRecord)) {
 			$stageId = $elementRecord['t3ver_stage'];
 			if ($this->getStageService()->isValid($stageId)) {
@@ -166,6 +231,8 @@ class ActionHandler extends \TYPO3\CMS\Workspaces\ExtDirect\AbstractHandler {
 		} else {
 			$result = $this->getErrorResponse('error.sendToNextStage.noRecordFound', 1287264776);
 		}
+
+		$this->setTemporaryWorkspace($currentWorkspace);
 		return $result;
 	}
 
@@ -177,7 +244,9 @@ class ActionHandler extends \TYPO3\CMS\Workspaces\ExtDirect\AbstractHandler {
 	 * @return array
 	 */
 	public function sendToPrevStageWindow($uid, $table) {
-		$elementRecord = \TYPO3\CMS\Backend\Utility\BackendUtility::getRecord($table, $uid);
+		$elementRecord = BackendUtility::getRecord($table, $uid);
+		$currentWorkspace = $this->setTemporaryWorkspace($elementRecord['t3ver_wsid']);
+
 		if (is_array($elementRecord)) {
 			$stageId = $elementRecord['t3ver_stage'];
 			if ($this->getStageService()->isValid($stageId)) {
@@ -199,6 +268,8 @@ class ActionHandler extends \TYPO3\CMS\Workspaces\ExtDirect\AbstractHandler {
 		} else {
 			$result = $this->getErrorResponse('error.sendToNextStage.noRecordFound', 1287264765);
 		}
+
+		$this->setTemporaryWorkspace($currentWorkspace);
 		return $result;
 	}
 
@@ -227,13 +298,13 @@ class ActionHandler extends \TYPO3\CMS\Workspaces\ExtDirect\AbstractHandler {
 	public function getRecipientList(array $uidOfRecipients, $additionalRecipients, $stageId) {
 		$finalRecipients = array();
 		if (!$this->getStageService()->isValid($stageId)) {
-			throw new \InvalidArgumentException($GLOBALS['LANG']->sL('LLL:EXT:workspaces/Resources/Private/Language/locallang.xml:error.stageId.integer'));
+			throw new \InvalidArgumentException($GLOBALS['LANG']->sL('LLL:EXT:workspaces/Resources/Private/Language/locallang.xlf:error.stageId.integer'));
 		} else {
-			$stageId = (int) $stageId;
+			$stageId = (int)$stageId;
 		}
 		$recipients = array();
 		foreach ($uidOfRecipients as $userUid) {
-			$beUserRecord = \TYPO3\CMS\Backend\Utility\BackendUtility::getRecord('be_users', intval($userUid));
+			$beUserRecord = BackendUtility::getRecord('be_users', (int)$userUid);
 			if (is_array($beUserRecord) && $beUserRecord['email'] !== '') {
 				$uc = $beUserRecord['uc'] ? unserialize($beUserRecord['uc']) : array();
 				$recipients[$beUserRecord['email']] = array(
@@ -243,8 +314,8 @@ class ActionHandler extends \TYPO3\CMS\Workspaces\ExtDirect\AbstractHandler {
 			}
 		}
 		// the notification mode can be configured in the workspace stage record
-		$notification_mode = $this->getStageService()->getNotificationMode($stageId);
-		if (intval($notification_mode) === \TYPO3\CMS\Workspaces\Service\StagesService::MODE_NOTIFY_ALL || intval($notification_mode) === \TYPO3\CMS\Workspaces\Service\StagesService::MODE_NOTIFY_ALL_STRICT) {
+		$notification_mode = (int)$this->getStageService()->getNotificationMode($stageId);
+		if ($notification_mode === \TYPO3\CMS\Workspaces\Service\StagesService::MODE_NOTIFY_ALL || $notification_mode === \TYPO3\CMS\Workspaces\Service\StagesService::MODE_NOTIFY_ALL_STRICT) {
 			// get the default recipients from the stage configuration
 			// the default recipients needs to be added in some cases of the notification_mode
 			$default_recipients = $this->getStageService()->getResponsibleBeUser($stageId, TRUE);
@@ -259,7 +330,7 @@ class ActionHandler extends \TYPO3\CMS\Workspaces\ExtDirect\AbstractHandler {
 			}
 		}
 		if ($additionalRecipients !== '') {
-			$emails = \TYPO3\CMS\Core\Utility\GeneralUtility::trimExplode(LF, $additionalRecipients, TRUE);
+			$emails = GeneralUtility::trimExplode(LF, $additionalRecipients, TRUE);
 			$additionalRecipients = array();
 			foreach ($emails as $email) {
 				$additionalRecipients[$email] = array('email' => $email);
@@ -273,7 +344,7 @@ class ActionHandler extends \TYPO3\CMS\Workspaces\ExtDirect\AbstractHandler {
 		// and $recipients with the email address
 		$allRecipients = array_merge($additionalRecipients, $recipients);
 		foreach ($allRecipients as $email => $recipientInformation) {
-			if (\TYPO3\CMS\Core\Utility\GeneralUtility::validEmail($email)) {
+			if (GeneralUtility::validEmail($email)) {
 				$finalRecipients[] = $recipientInformation;
 			}
 		}
@@ -290,9 +361,9 @@ class ActionHandler extends \TYPO3\CMS\Workspaces\ExtDirect\AbstractHandler {
 	public function discardStagesFromPage($pageId) {
 		$cmdMapArray = array();
 		/** @var $workspaceService \TYPO3\CMS\Workspaces\Service\WorkspaceService */
-		$workspaceService = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Workspaces\\Service\\WorkspaceService');
+		$workspaceService = GeneralUtility::makeInstance('TYPO3\\CMS\\Workspaces\\Service\\WorkspaceService');
 		/** @var $stageService \TYPO3\CMS\Workspaces\Service\StagesService */
-		$stageService = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Workspaces\\Service\\StagesService');
+		$stageService = GeneralUtility::makeInstance('TYPO3\\CMS\\Workspaces\\Service\\StagesService');
 		$workspaceItemsArray = $workspaceService->selectVersionsInWorkspace($stageService->getWorkspaceId(), ($filter = 1), ($stage = -99), $pageId, ($recursionLevel = 0), ($selectionType = 'tables_modify'));
 		foreach ($workspaceItemsArray as $tableName => $items) {
 			foreach ($items as $item) {
@@ -333,11 +404,13 @@ class ActionHandler extends \TYPO3\CMS\Workspaces\ExtDirect\AbstractHandler {
 		$recipients = $this->getRecipientList($parameters->receipients, $parameters->additional, $stageId);
 		foreach ($parameters->affects as $tableName => $items) {
 			foreach ($items as $item) {
+				// Publishing uses live id in command map
 				if ($stageId == \TYPO3\CMS\Workspaces\Service\StagesService::STAGE_PUBLISH_EXECUTE_ID) {
 					$cmdMapArray[$tableName][$item->t3ver_oid]['version']['action'] = 'swap';
 					$cmdMapArray[$tableName][$item->t3ver_oid]['version']['swapWith'] = $item->uid;
 					$cmdMapArray[$tableName][$item->t3ver_oid]['version']['comment'] = $comment;
 					$cmdMapArray[$tableName][$item->t3ver_oid]['version']['notificationAlternativeRecipients'] = $recipients;
+				// Setting stage uses version id in command map
 				} else {
 					$cmdMapArray[$tableName][$item->uid]['version']['action'] = 'setStage';
 					$cmdMapArray[$tableName][$item->uid]['version']['stageId'] = $stageId;
@@ -358,13 +431,27 @@ class ActionHandler extends \TYPO3\CMS\Workspaces\ExtDirect\AbstractHandler {
 	 * Process TCA command map array.
 	 *
 	 * @param array $cmdMapArray
-	 * @return void
+	 * @return array
 	 * @author Michael Klapper <development@morphodo.com>
 	 */
 	protected function processTcaCmd(array $cmdMapArray) {
-		$tce = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\DataHandling\\DataHandler');
-		$tce->start(array(), $cmdMapArray);
-		$tce->process_cmdmap();
+		$result = array();
+
+		if (empty($cmdMapArray)) {
+			$result['error'] = 'No commands given to be processed';
+			return $result;
+		}
+
+		/** @var \TYPO3\CMS\Core\DataHandling\DataHandler $dataHandler */
+		$dataHandler = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\DataHandling\\DataHandler');
+		$dataHandler->start(array(), $cmdMapArray);
+		$dataHandler->process_cmdmap();
+
+		if ($dataHandler->errorLog) {
+			$result['error'] = implode('<br/>', $dataHandler->errorLog);
+		}
+
+		return $result;
 	}
 
 	/**
@@ -389,6 +476,10 @@ class ActionHandler extends \TYPO3\CMS\Workspaces\ExtDirect\AbstractHandler {
 		$table = $parameters->affects->table;
 		$uid = $parameters->affects->uid;
 		$t3ver_oid = $parameters->affects->t3ver_oid;
+
+		$elementRecord = BackendUtility::getRecord($table, $uid);
+		$currentWorkspace = $this->setTemporaryWorkspace($elementRecord['t3ver_wsid']);
+
 		$recipients = $this->getRecipientList($parameters->receipients, $parameters->additional, $setStageId);
 		if ($setStageId == \TYPO3\CMS\Workspaces\Service\StagesService::STAGE_PUBLISH_EXECUTE_ID) {
 			$cmdArray[$table][$t3ver_oid]['version']['action'] = 'swap';
@@ -405,6 +496,8 @@ class ActionHandler extends \TYPO3\CMS\Workspaces\ExtDirect\AbstractHandler {
 		$result = array(
 			'success' => TRUE
 		);
+
+		$this->setTemporaryWorkspace($currentWorkspace);
 		return $result;
 	}
 
@@ -424,11 +517,14 @@ class ActionHandler extends \TYPO3\CMS\Workspaces\ExtDirect\AbstractHandler {
 	 */
 	public function sendToPrevStageExecute(\stdClass $parameters) {
 		$cmdArray = array();
-		$recipients = array();
 		$setStageId = $parameters->affects->nextStage;
 		$comments = $parameters->comments;
 		$table = $parameters->affects->table;
 		$uid = $parameters->affects->uid;
+
+		$elementRecord = BackendUtility::getRecord($table, $uid);
+		$currentWorkspace = $this->setTemporaryWorkspace($elementRecord['t3ver_wsid']);
+
 		$recipients = $this->getRecipientList($parameters->receipients, $parameters->additional, $setStageId);
 		$cmdArray[$table][$uid]['version']['action'] = 'setStage';
 		$cmdArray[$table][$uid]['version']['stageId'] = $setStageId;
@@ -438,6 +534,8 @@ class ActionHandler extends \TYPO3\CMS\Workspaces\ExtDirect\AbstractHandler {
 		$result = array(
 			'success' => TRUE
 		);
+
+		$this->setTemporaryWorkspace($currentWorkspace);
 		return $result;
 	}
 
@@ -495,7 +593,7 @@ class ActionHandler extends \TYPO3\CMS\Workspaces\ExtDirect\AbstractHandler {
 	 * @return array
 	 */
 	protected function getSentToStageWindow($nextStageId) {
-		$workspaceRec = \TYPO3\CMS\Backend\Utility\BackendUtility::getRecord('sys_workspace', $this->getStageService()->getWorkspaceId());
+		$workspaceRec = BackendUtility::getRecord('sys_workspace', $this->getStageService()->getWorkspaceId());
 		$showNotificationFields = FALSE;
 		$stageTitle = $this->getStageService()->getStageTitle($nextStageId);
 		$result = array(
@@ -509,24 +607,23 @@ class ActionHandler extends \TYPO3\CMS\Workspaces\ExtDirect\AbstractHandler {
 			)
 		);
 		switch ($nextStageId) {
-		case \TYPO3\CMS\Workspaces\Service\StagesService::STAGE_PUBLISH_EXECUTE_ID:
+			case \TYPO3\CMS\Workspaces\Service\StagesService::STAGE_PUBLISH_EXECUTE_ID:
 
-		case \TYPO3\CMS\Workspaces\Service\StagesService::STAGE_PUBLISH_ID:
-			if (!empty($workspaceRec['publish_allow_notificaton_settings'])) {
-				$showNotificationFields = TRUE;
-			}
-			break;
-		case \TYPO3\CMS\Workspaces\Service\StagesService::STAGE_EDIT_ID:
-			if (!empty($workspaceRec['edit_allow_notificaton_settings'])) {
-				$showNotificationFields = TRUE;
-			}
-			break;
-		default:
-			$allow_notificaton_settings = $this->getStageService()->getPropertyOfCurrentWorkspaceStage($nextStageId, 'allow_notificaton_settings');
-			if (!empty($allow_notificaton_settings)) {
-				$showNotificationFields = TRUE;
-			}
-			break;
+			case \TYPO3\CMS\Workspaces\Service\StagesService::STAGE_PUBLISH_ID:
+				if (!empty($workspaceRec['publish_allow_notificaton_settings'])) {
+					$showNotificationFields = TRUE;
+				}
+				break;
+			case \TYPO3\CMS\Workspaces\Service\StagesService::STAGE_EDIT_ID:
+				if (!empty($workspaceRec['edit_allow_notificaton_settings'])) {
+					$showNotificationFields = TRUE;
+				}
+				break;
+			default:
+				$allow_notificaton_settings = $this->getStageService()->getPropertyOfCurrentWorkspaceStage($nextStageId, 'allow_notificaton_settings');
+				if (!empty($allow_notificaton_settings)) {
+					$showNotificationFields = TRUE;
+				}
 		}
 		if ($showNotificationFields == TRUE) {
 			$result['items'][] = array(
@@ -568,16 +665,16 @@ class ActionHandler extends \TYPO3\CMS\Workspaces\ExtDirect\AbstractHandler {
 		$recipients = $this->getStageService()->getResponsibleBeUser($stage);
 		$default_recipients = $this->getStageService()->getResponsibleBeUser($stage, TRUE);
 		foreach ($recipients as $id => $user) {
-			if (\TYPO3\CMS\Core\Utility\GeneralUtility::validEmail($user['email'])) {
+			if (GeneralUtility::validEmail($user['email'])) {
 				$checked = FALSE;
 				$disabled = FALSE;
 				$name = $user['realName'] ? $user['realName'] : $user['username'];
 				// the notification mode can be configured in the workspace stage record
-				$notification_mode = $this->getStageService()->getNotificationMode($stage);
-				if (intval($notification_mode) === \TYPO3\CMS\Workspaces\Service\StagesService::MODE_NOTIFY_SOMEONE) {
+				$notification_mode = (int)$this->getStageService()->getNotificationMode($stage);
+				if ($notification_mode === \TYPO3\CMS\Workspaces\Service\StagesService::MODE_NOTIFY_SOMEONE) {
 					// all responsible users are checked per default, as in versions before
 					$checked = TRUE;
-				} elseif (intval($notification_mode) === \TYPO3\CMS\Workspaces\Service\StagesService::MODE_NOTIFY_ALL) {
+				} elseif ($notification_mode === \TYPO3\CMS\Workspaces\Service\StagesService::MODE_NOTIFY_ALL) {
 					// the default users are checked only
 					if (!empty($default_recipients[$id])) {
 						$checked = TRUE;
@@ -585,7 +682,7 @@ class ActionHandler extends \TYPO3\CMS\Workspaces\ExtDirect\AbstractHandler {
 					} else {
 						$checked = FALSE;
 					}
-				} elseif (intval($notification_mode) === \TYPO3\CMS\Workspaces\Service\StagesService::MODE_NOTIFY_ALL_STRICT) {
+				} elseif ($notification_mode === \TYPO3\CMS\Workspaces\Service\StagesService::MODE_NOTIFY_ALL_STRICT) {
 					// all responsible users are checked
 					$checked = TRUE;
 					$disabled = TRUE;
@@ -619,7 +716,7 @@ class ActionHandler extends \TYPO3\CMS\Workspaces\ExtDirect\AbstractHandler {
 	 */
 	protected function getStageService() {
 		if (!isset($this->stageService)) {
-			$this->stageService = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Workspaces\\Service\\StagesService');
+			$this->stageService = GeneralUtility::makeInstance('TYPO3\\CMS\\Workspaces\\Service\\StagesService');
 		}
 		return $this->stageService;
 	}
@@ -632,7 +729,7 @@ class ActionHandler extends \TYPO3\CMS\Workspaces\ExtDirect\AbstractHandler {
 	 * @author Michael Klapper <development@morphodo.com>
 	 */
 	public function sendPageToPreviousStage($id) {
-		$workspaceService = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Workspaces\\Service\\WorkspaceService');
+		$workspaceService = GeneralUtility::makeInstance('TYPO3\\CMS\\Workspaces\\Service\\WorkspaceService');
 		$workspaceItemsArray = $workspaceService->selectVersionsInWorkspace($this->stageService->getWorkspaceId(), ($filter = 1), ($stage = -99), $id, ($recursionLevel = 0), ($selectionType = 'tables_modify'));
 		list($currentStage, $previousStage) = $this->getStageService()->getPreviousStageForElementCollection($workspaceItemsArray);
 		// get only the relevant items for processing
@@ -651,7 +748,7 @@ class ActionHandler extends \TYPO3\CMS\Workspaces\ExtDirect\AbstractHandler {
 	 * @author Michael Klapper <development@morphodo.com>
 	 */
 	public function sendPageToNextStage($id) {
-		$workspaceService = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Workspaces\\Service\\WorkspaceService');
+		$workspaceService = GeneralUtility::makeInstance('TYPO3\\CMS\\Workspaces\\Service\\WorkspaceService');
 		$workspaceItemsArray = $workspaceService->selectVersionsInWorkspace($this->stageService->getWorkspaceId(), ($filter = 1), ($stage = -99), $id, ($recursionLevel = 0), ($selectionType = 'tables_modify'));
 		list($currentStage, $nextStage) = $this->getStageService()->getNextStageForElementCollection($workspaceItemsArray);
 		// get only the relevant items for processing
@@ -672,8 +769,8 @@ class ActionHandler extends \TYPO3\CMS\Workspaces\ExtDirect\AbstractHandler {
 	 * @author Michael Klapper <development@morphodo.com>
 	 */
 	public function updateStageChangeButtons($id) {
-		$stageService = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Workspaces\\Service\\StagesService');
-		$workspaceService = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Workspaces\\Service\\WorkspaceService');
+		$stageService = GeneralUtility::makeInstance('TYPO3\\CMS\\Workspaces\\Service\\StagesService');
+		$workspaceService = GeneralUtility::makeInstance('TYPO3\\CMS\\Workspaces\\Service\\WorkspaceService');
 		// fetch the next and previous stage
 		$workspaceItemsArray = $workspaceService->selectVersionsInWorkspace($stageService->getWorkspaceId(), ($filter = 1), ($stage = -99), $id, ($recursionLevel = 0), ($selectionType = 'tables_modify'));
 		list(, $nextStage) = $stageService->getNextStageForElementCollection($workspaceItemsArray);
@@ -689,13 +786,38 @@ class ActionHandler extends \TYPO3\CMS\Workspaces\ExtDirect\AbstractHandler {
 			),
 			'feToolbarButtonDiscardStage' => array(
 				'visible' => is_array($nextStage) && count($nextStage) > 0 || is_array($previousStage) && count($previousStage) > 0,
-				'text' => $GLOBALS['LANG']->sL('LLL:EXT:workspaces/Resources/Private/Language/locallang.xml:label_doaction_discard', TRUE)
+				'text' => $GLOBALS['LANG']->sL('LLL:EXT:workspaces/Resources/Private/Language/locallang.xlf:label_doaction_discard', TRUE)
 			)
 		);
 		return $toolbarButtons;
 	}
 
+	/**
+	 * @param integer $workspaceId
+	 * @return integer Id of the original workspace
+	 * @throws \TYPO3\CMS\Core\Exception
+	 */
+	protected function setTemporaryWorkspace($workspaceId) {
+		$workspaceId = (int)$workspaceId;
+		$currentWorkspace = (int)$this->getBackendUser()->workspace;
+
+		if ($currentWorkspace !== $workspaceId) {
+			if (!$this->getBackendUser()->setTemporaryWorkspace($workspaceId)) {
+				throw new \TYPO3\CMS\Core\Exception(
+					'Cannot set temporary workspace to "' . $workspaceId . '"',
+					1371484524
+				);
+			}
+		}
+
+		return $currentWorkspace;
+	}
+
+	/**
+	 * @return \TYPO3\CMS\Core\Authentication\BackendUserAuthentication
+	 */
+	protected function getBackendUser() {
+		return $GLOBALS['BE_USER'];
+	}
+
 }
-
-
-?>

@@ -1,32 +1,22 @@
 <?php
 namespace TYPO3\CMS\Backend\Tree\Pagetree;
 
-/***************************************************************
- *  Copyright notice
- *
- *  (c) 2010-2013 TYPO3 Tree Team <http://forge.typo3.org/projects/typo3v4-extjstrees>
- *  All rights reserved
- *
- *  This script is part of the TYPO3 project. The TYPO3 project is
- *  free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
- *
- *  The GNU General Public License can be found at
- *  http://www.gnu.org/copyleft/gpl.html.
- *  A copy is found in the textfile GPL.txt and important notices to the license
- *  from the author is found in LICENSE.txt distributed with these scripts.
- *
- *
- *  This script is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  This copyright notice MUST APPEAR in all copies of the script!
- ***************************************************************/
 /**
+ * This file is part of the TYPO3 CMS project.
+ *
+ * It is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License, either version 2
+ * of the License, or any later version.
+ *
+ * For the full copyright and license information, please read the
+ * LICENSE.txt file that was distributed with this source code.
+ *
+ * The TYPO3 project - inspiring people to share!
+ */
+
+ use TYPO3\CMS\Core\Versioning\VersionState;
+
+ /**
  * Node designated for the page tree
  *
  * @author Stefan Galinski <stefan.galinski@gmail.com>
@@ -101,7 +91,7 @@ class PagetreeNode extends \TYPO3\CMS\Backend\Tree\ExtDirectNode {
 	 * @return void
 	 */
 	public function setWorkspaceId($workspaceId) {
-		$this->workspaceId = intval($workspaceId);
+		$this->workspaceId = (int)$workspaceId;
 	}
 
 	/**
@@ -120,7 +110,7 @@ class PagetreeNode extends \TYPO3\CMS\Backend\Tree\ExtDirectNode {
 	 * @return void
 	 */
 	public function setMountPoint($mountPoint) {
-		$this->mountPoint = intval($mountPoint);
+		$this->mountPoint = (int)$mountPoint;
 	}
 
 	/**
@@ -224,7 +214,11 @@ class PagetreeNode extends \TYPO3\CMS\Backend\Tree\ExtDirectNode {
 	 * @return boolean
 	 */
 	public function canBeCut() {
-		return $this->canEdit($this->record) && intval($this->record['t3ver_state']) !== 2 && $GLOBALS['BE_USER']->checkLanguageAccess(0);
+		return (
+			$this->canEdit($this->record)
+			&& !VersionState::cast($this->record['t3ver_state'])->equals(VersionState::DELETE_PLACEHOLDER)
+			&& $GLOBALS['BE_USER']->checkLanguageAccess(0)
+		);
 	}
 
 	/**
@@ -242,7 +236,11 @@ class PagetreeNode extends \TYPO3\CMS\Backend\Tree\ExtDirectNode {
 	 * @return boolean
 	 */
 	public function canBeCopied() {
-		return $this->canCreate($this->record) && intval($this->record['t3ver_state']) !== 2 && $GLOBALS['BE_USER']->checkLanguageAccess(0);
+		return (
+			$this->canCreate($this->record)
+			&& !VersionState::cast($this->record['t3ver_state'])->equals(VersionState::DELETE_PLACEHOLDER)
+			&& $GLOBALS['BE_USER']->checkLanguageAccess(0)
+		);
 	}
 
 	/**
@@ -260,7 +258,11 @@ class PagetreeNode extends \TYPO3\CMS\Backend\Tree\ExtDirectNode {
 	 * @return boolean
 	 */
 	public function canBeRemoved() {
-		return $this->canRemove($this->record) && intval($this->record['t3ver_state']) !== 2 && $GLOBALS['BE_USER']->checkLanguageAccess(0);
+		return (
+			$this->canRemove($this->record)
+			&& !VersionState::cast($this->record['t3ver_state'])->equals(VersionState::DELETE_PLACEHOLDER)
+			&& $GLOBALS['BE_USER']->checkLanguageAccess(0)
+		);
 	}
 
 	/**
@@ -269,7 +271,11 @@ class PagetreeNode extends \TYPO3\CMS\Backend\Tree\ExtDirectNode {
 	 * @return boolean
 	 */
 	public function canBePastedInto() {
-		return $this->canCreate($this->record) && intval($this->record['t3ver_state']) !== 2 && $GLOBALS['BE_USER']->checkLanguageAccess(0);
+		return (
+			$this->canCreate($this->record)
+			&& !VersionState::cast($this->record['t3ver_state'])->equals(VersionState::DELETE_PLACEHOLDER)
+			&& $GLOBALS['BE_USER']->checkLanguageAccess(0)
+		);
 	}
 
 	/**
@@ -278,7 +284,11 @@ class PagetreeNode extends \TYPO3\CMS\Backend\Tree\ExtDirectNode {
 	 * @return boolean
 	 */
 	public function canBePastedAfter() {
-		return $this->canCreate($this->record) && intval($this->record['t3ver_state']) !== 2 && $GLOBALS['BE_USER']->checkLanguageAccess(0);
+		return (
+			$this->canCreate($this->record)
+			&& !VersionState::cast($this->record['t3ver_state'])->equals(VersionState::DELETE_PLACEHOLDER)
+			&& $GLOBALS['BE_USER']->checkLanguageAccess(0)
+		);
 	}
 
 	/**
@@ -296,7 +306,7 @@ class PagetreeNode extends \TYPO3\CMS\Backend\Tree\ExtDirectNode {
 	 * @return boolean
 	 */
 	public function canBeViewed() {
-		return TRUE;
+		return !$this->isDeleted();
 	}
 
 	/**
@@ -315,6 +325,18 @@ class PagetreeNode extends \TYPO3\CMS\Backend\Tree\ExtDirectNode {
 	 */
 	public function canBeTemporaryMountPoint() {
 		return TRUE;
+	}
+
+	/**
+	 * Determines whether this node is deleted.
+	 *
+	 * @return bool
+	 */
+	public function isDeleted() {
+		return (
+			!empty($this->record['deleted'])
+			|| VersionState::cast($this->record['t3ver_state'])->equals(VersionState::DELETE_PLACEHOLDER)
+		);
 	}
 
 	/**
@@ -364,6 +386,3 @@ class PagetreeNode extends \TYPO3\CMS\Backend\Tree\ExtDirectNode {
 	}
 
 }
-
-
-?>

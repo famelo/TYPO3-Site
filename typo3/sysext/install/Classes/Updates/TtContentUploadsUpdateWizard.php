@@ -1,38 +1,29 @@
 <?php
 namespace TYPO3\CMS\Install\Updates;
 
-/***************************************************************
- *  Copyright notice
+/**
+ * This file is part of the TYPO3 CMS project.
  *
- *  (c) 2011-2013 Steffen Ritter <steffen.ritter@typo3.org>
- *  All rights reserved
+ * It is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License, either version 2
+ * of the License, or any later version.
  *
- *  This script is part of the TYPO3 project. The TYPO3 project is
- *  free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 3 of the License, or
- *  (at your option) any later version.
+ * For the full copyright and license information, please read the
+ * LICENSE.txt file that was distributed with this source code.
  *
- *  The GNU General Public License can be found at
- *  http://www.gnu.org/copyleft/gpl.html.
- *
- *  This script is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  This copyright notice MUST APPEAR in all copies of the script!
- ***************************************************************/
+ * The TYPO3 project - inspiring people to share!
+ */
+
 /**
  * Upgrade wizard which goes through all files referenced in the tt_content.media filed
  * and creates sys_file records as well as sys_file_reference records for the individual usages.
  *
  * @author Steffen Ritter <steffen.ritter@typo3.org>
- * @license http://www.gnu.org/copyleft/gpl.html
  */
-class TtContentUploadsUpdateWizard extends \TYPO3\CMS\Install\Updates\AbstractUpdate {
+class TtContentUploadsUpdateWizard extends AbstractUpdate {
 
 	const FOLDER_ContentUploads = '_migrated/content_uploads';
+
 	/**
 	 * @var string
 	 */
@@ -49,9 +40,9 @@ class TtContentUploadsUpdateWizard extends \TYPO3\CMS\Install\Updates\AbstractUp
 	protected $fileFactory;
 
 	/**
-	 * @var \TYPO3\CMS\Core\Resource\FileRepository
+	 * @var \TYPO3\CMS\Core\Resource\Index\FileIndexRepository
 	 */
-	protected $fileRepository;
+	protected $fileIndexRepository;
 
 	/**
 	 * @var \TYPO3\CMS\Core\Resource\ResourceStorage
@@ -82,22 +73,36 @@ class TtContentUploadsUpdateWizard extends \TYPO3\CMS\Install\Updates\AbstractUp
 			throw new \RuntimeException('Local default storage could not be initialized - might be due to missing sys_file* tables.');
 		}
 		$this->fileFactory = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Resource\\ResourceFactory');
-		$this->fileRepository = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Resource\\FileRepository');
+		$this->fileIndexRepository = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Resource\\Index\\FileIndexRepository');
 		$this->targetDirectory = PATH_site . $fileadminDirectory . self::FOLDER_ContentUploads . '/';
 	}
 
 	/**
 	 * Checks if an update is needed
 	 *
-	 * @param 	string		&$description: The description for the update
-	 * @return 	boolean		TRUE if an update is needed, FALSE otherwise
+	 * @param string &$description The description for the update
+	 * @return boolean TRUE if an update is needed, FALSE otherwise
 	 */
 	public function checkForUpdate(&$description) {
 		$updateNeeded = FALSE;
 		// Fetch records where the field media does not contain a plain integer value
 		// * check whether media field is not empty
 		// * then check whether media field does not contain a reference count (= not integer)
-		$notMigratedRowsCount = $GLOBALS['TYPO3_DB']->exec_SELECTcountRows('uid', 'tt_content', 'media <> \'\' AND CAST(CAST(media AS DECIMAL) AS CHAR) <> media OR (CType = \'uploads\' AND select_key != \'\')');
+		$mapping = $this->getTableColumnMapping();
+		$sql = $GLOBALS['TYPO3_DB']->SELECTquery(
+			'COUNT(' . $mapping['mapFieldNames']['uid'] . ')',
+			$mapping['mapTableName'],
+			'1=1'
+		);
+		$whereClause = $this->getDbalCompliantUpdateWhereClause();
+		$sql = str_replace('WHERE 1=1', $whereClause, $sql);
+		$resultSet = $GLOBALS['TYPO3_DB']->sql_query($sql);
+		$notMigratedRowsCount = 0;
+		if ($resultSet !== FALSE) {
+			list($notMigratedRowsCount) = $GLOBALS['TYPO3_DB']->sql_fetch_row($resultSet);
+			$notMigratedRowsCount = (int)$notMigratedRowsCount;
+			$GLOBALS['TYPO3_DB']->sql_free_result($resultSet);
+		}
 		if ($notMigratedRowsCount > 0) {
 			$description = 'There are Content Elements of type "upload" which are referencing files that are not using ' . ' the File Abstraction Layer. This wizard will move the files to fileadmin/' . self::FOLDER_ContentUploads . ' and index them.';
 			$updateNeeded = TRUE;
@@ -108,9 +113,9 @@ class TtContentUploadsUpdateWizard extends \TYPO3\CMS\Install\Updates\AbstractUp
 	/**
 	 * Performs the database update.
 	 *
-	 * @param 	array		&$dbQueries: queries done in this update
-	 * @param 	mixed		&$customMessages: custom messages
-	 * @return 	boolean		TRUE on success, FALSE on error
+	 * @param array &$dbQueries Queries done in this update
+	 * @param mixed &$customMessages Custom messages
+	 * @return boolean TRUE on success, FALSE on error
 	 */
 	public function performUpdate(array &$dbQueries, &$customMessages) {
 		$this->init();
@@ -160,7 +165,7 @@ class TtContentUploadsUpdateWizard extends \TYPO3\CMS\Install\Updates\AbstractUp
 			if (file_exists(PATH_site . 'uploads/media/' . $file)) {
 				\TYPO3\CMS\Core\Utility\GeneralUtility::upload_copy_move(PATH_site . 'uploads/media/' . $file, $this->targetDirectory . $file);
 				$fileObject = $this->storage->getFile(self::FOLDER_ContentUploads . '/' . $file);
-				$this->fileRepository->addToIndex($fileObject);
+				$this->fileIndexRepository->add($fileObject);
 				$dataArray = array(
 					'uid_local' => $fileObject->getUid(),
 					'tablenames' => 'tt_content',
@@ -210,12 +215,105 @@ class TtContentUploadsUpdateWizard extends \TYPO3\CMS\Install\Updates\AbstractUp
 	 * @return array
 	 */
 	protected function getRecordsFromTable() {
-		$fields = implode(',', array('uid', 'pid', 'select_key', 'media', 'imagecaption', 'titleText'));
-		$records = $GLOBALS['TYPO3_DB']->exec_SELECTgetRows($fields, 'tt_content', 'media <> \'\' AND CAST(CAST(media AS DECIMAL) AS CHAR) <> media OR (CType = \'uploads\' AND select_key != \'\')');
+		$mapping = $this->getTableColumnMapping();
+		$reverseFieldMapping = array_flip($mapping['mapFieldNames']);
+
+		$fields = array();
+		foreach (array('uid', 'pid', 'select_key', 'media', 'imagecaption', 'titleText') as $columnName) {
+			$fields[] = $mapping['mapFieldNames'][$columnName];
+		}
+		$fields = implode(',', $fields);
+
+		$sql = $GLOBALS['TYPO3_DB']->SELECTquery(
+			$fields,
+			$mapping['mapTableName'],
+			'1=1'
+		);
+		$whereClause = $this->getDbalCompliantUpdateWhereClause();
+		$sql = str_replace('WHERE 1=1', $whereClause, $sql);
+		$resultSet = $GLOBALS['TYPO3_DB']->sql_query($sql);
+		$records = array();
+		if (!$GLOBALS['TYPO3_DB']->sql_error()) {
+			while (($row = $GLOBALS['TYPO3_DB']->sql_fetch_assoc($resultSet)) !== FALSE) {
+				// Mapping back column names to native TYPO3 names
+				$record = array();
+				foreach ($reverseFieldMapping as $columnName => $finalColumnName) {
+					$record[$finalColumnName] = $row[$columnName];
+				}
+				$records[] = $record;
+			}
+			$GLOBALS['TYPO3_DB']->sql_free_result($resultSet);
+		}
 		return $records;
 	}
 
+	/**
+	 * Returns a DBAL-compliant where clause to be used for the update where clause.
+	 * We have DBAL-related code here because the SQL parser is not able to properly
+	 * parse this complex condition but we know that it is compatible with the DBMS
+	 * we support in TYPO3 Core.
+	 *
+	 * @return string
+	 */
+	protected function getDbalCompliantUpdateWhereClause() {
+		$mapping = $this->getTableColumnMapping();
+		$this->quoteIdentifiers($mapping);
+
+		$where = sprintf(
+			'WHERE %s <> \'\' AND CAST(CAST(%s AS DECIMAL) AS CHAR) <> %s OR (%s = \'uploads\' AND %s != \'\')',
+			$mapping['mapFieldNames']['media'],
+			$mapping['mapFieldNames']['media'],
+			$mapping['mapFieldNames']['media'],
+			$mapping['mapFieldNames']['CType'],
+			$mapping['mapFieldNames']['select_key']
+		);
+
+		return $where;
+	}
+
+	/**
+	 * Returns the table and column mapping.
+	 *
+	 * @return array
+	 */
+	protected function getTableColumnMapping() {
+		$mapping = array(
+			'mapTableName' => 'tt_content',
+			'mapFieldNames' => array(
+				'uid'          => 'uid',
+				'pid'          => 'pid',
+				'media'        => 'media',
+				'imagecaption' => 'imagecaption',
+				'titleText'    => 'titleText',
+				'CType'        => 'CType',
+				'select_key'   => 'select_key',
+			)
+		);
+
+		if ($GLOBALS['TYPO3_DB'] instanceof \TYPO3\CMS\Dbal\Database\DatabaseConnection) {
+			if (!empty($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['dbal']['mapping']['tt_content'])) {
+				$mapping = array_merge_recursive($mapping, $GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['dbal']['mapping']['tt_content']);
+			}
+		}
+
+		return $mapping;
+	}
+
+	/**
+	 * Quotes identifiers for DBAL-compliant query.
+	 *
+	 * @param array &$mapping
+	 * @return void
+	 */
+	protected function quoteIdentifiers(array &$mapping) {
+		if ($GLOBALS['TYPO3_DB'] instanceof \TYPO3\CMS\Dbal\Database\DatabaseConnection) {
+			if (!$GLOBALS['TYPO3_DB']->runningNative() && !$GLOBALS['TYPO3_DB']->runningADOdbDriver('mysql')) {
+				$mapping['mapTableName'] = '"' . $mapping['mapTableName'] . '"';
+				foreach ($mapping['mapFieldNames'] as $key => &$value) {
+					$value = '"' . $value . '"';
+				}
+			}
+		}
+	}
+
 }
-
-
-?>

@@ -1,31 +1,18 @@
 <?php
 namespace TYPO3\CMS\Core\Utility;
 
-/***************************************************************
- * Copyright notice
+/**
+ * This file is part of the TYPO3 CMS project.
  *
- * (c) 2011-2013 Susanne Moog <typo3@susanne-moog.de>
- * All rights reserved
+ * It is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License, either version 2
+ * of the License, or any later version.
  *
- * This script is part of the TYPO3 project. The TYPO3 project is
- * free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
+ * For the full copyright and license information, please read the
+ * LICENSE.txt file that was distributed with this source code.
  *
- * The GNU General Public License can be found at
- * http://www.gnu.org/copyleft/gpl.html.
- * A copy is found in the textfile GPL.txt and important notices to the license
- * from the author is found in LICENSE.txt distributed with these scripts.
- *
- *
- * This script is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * This copyright notice MUST APPEAR in all copies of the script!
- ***************************************************************/
+ * The TYPO3 project - inspiring people to share!
+ */
 /**
  * Class with helper functions for array handling
  *
@@ -201,7 +188,7 @@ class ArrayUtility {
 		foreach ($path as $segment) {
 			// Fail if the part is empty
 			if (empty($segment)) {
-				throw new \RuntimeException('Invalid path specified: ' . $path, 1341406846);
+				throw new \RuntimeException('Invalid path segment specified', 1341406846);
 			}
 			// Create cell if it doesn't exist
 			if (!array_key_exists($segment, $pointer)) {
@@ -212,6 +199,46 @@ class ArrayUtility {
 		}
 		// Set value of target cell
 		$pointer = $value;
+		return $array;
+	}
+
+	/**
+	 * Remove a sub part from an array specified by path
+	 *
+	 * @param array $array Input array to manipulate
+	 * @param string $path Path to remove from array
+	 * @param string $delimiter Path delimiter
+	 * @return array Modified array
+	 * @throws \RuntimeException
+	 */
+	static public function removeByPath(array $array, $path, $delimiter = '/') {
+		if (empty($path)) {
+			throw new \RuntimeException('Path must not be empty', 1371757718);
+		}
+		if (!is_string($path)) {
+			throw new \RuntimeException('Path must be a string', 1371757719);
+		}
+		// Extract parts of the path
+		$path = str_getcsv($path, $delimiter);
+		$pathDepth = count($path);
+		$currentDepth = 0;
+		$pointer = &$array;
+		// Find path in given array
+		foreach ($path as $segment) {
+			$currentDepth++;
+			// Fail if the part is empty
+			if (empty($segment)) {
+				throw new \RuntimeException('Invalid path segment specified', 1371757720);
+			}
+			if (!array_key_exists($segment, $pointer)) {
+				throw new \RuntimeException('Path segment ' . $segment . ' does not exist in array', 1371758436);
+			}
+			if ($currentDepth === $pathDepth) {
+				unset($pointer[$segment]);
+			} else {
+				$pointer = &$pointer[$segment];
+			}
+		}
 		return $array;
 	}
 
@@ -229,6 +256,36 @@ class ArrayUtility {
 			}
 		}
 		return $array;
+	}
+
+	/**
+	 * Sort an array of arrays by a given key using uasort
+	 *
+	 * @param array $arrays Array of arrays to sort
+	 * @param string $key Key to sort after
+	 * @param bool $ascending Set to TRUE for ascending order, FALSE for descending order
+	 * @return array Array of sorted arrays
+	 * @throws \RuntimeException
+	 */
+	static public function sortArraysByKey(array $arrays, $key, $ascending = TRUE) {
+		if (empty($arrays)) {
+			return $arrays;
+		}
+		// @ operator used: Some PHP versions like 5.4.4-14+deb7u8 (debian wheezy) are
+		// affected by PHP bug https://bugs.php.net/bug.php?id=50688 and trigger a warning.
+		// The code itself is ok and covered by unit tests, so the @ operator is used to
+		// suppress output of the PHP bug. This can be removed if the core does not
+		// support PHP version affected by this issue anymore.
+		$sortResult = @uasort($arrays, function (array $a, array $b) use ($key, $ascending) {
+			if (!isset($a[$key]) || !isset($b[$key])) {
+				throw new \RuntimeException('The specified sorting key "' . $key . '" is not available in the given array.', 1373727309);
+			}
+			return ($ascending) ? strcasecmp($a[$key], $b[$key]) : strcasecmp($b[$key], $a[$key]);
+		});
+		if (!$sortResult) {
+			throw new \RuntimeException('The function uasort() failed for unknown reasons.', 1373727329);
+		}
+		return $arrays;
 	}
 
 	/**
@@ -283,7 +340,7 @@ class ArrayUtility {
 				$stringContent = str_replace('\'', '\\\'', $stringContent);
 				$lines .= '\'' . $stringContent . '\'' . ',' . LF;
 			} else {
-				throw new \RuntimeException('Objects are not supported', 1342294986);
+				throw new \RuntimeException('Objects are not supported', 1342294987);
 			}
 		}
 		$lines .= str_repeat(TAB, ($level - 1)) . ')' . ($level - 1 == 0 ? '' : ',' . LF);
@@ -392,7 +449,7 @@ class ArrayUtility {
 	}
 
 	/**
-	 * Renumber the keys of an array to avoid leaps is keys are all numeric.
+	 * Renumber the keys of an array to avoid leaps if keys are all numeric.
 	 *
 	 * Is called recursively for nested arrays.
 	 *
@@ -437,5 +494,45 @@ class ArrayUtility {
 		return $renumberedArray;
 	}
 
+
+	/**
+	 * Merges two arrays recursively and "binary safe" (integer keys are
+	 * overridden as well), overruling similar values in the original array
+	 * with the values of the overrule array.
+	 * In case of identical keys, ie. keeping the values of the overrule array.
+	 *
+	 * This method takes the original array by reference for speed optimization with large arrays
+	 *
+	 * The differences to the existing PHP function array_merge_recursive() are:
+	 *  * Keys of the original array can be unset via the overrule array. ($enableUnsetFeature)
+	 *  * Much more control over what is actually merged. ($addKeys, $includeEmptyValues)
+	 *  * Elements or the original array get overwritten if the same key is present in the overrule array.
+	 *
+	 * @param array $original Original array. It will be *modified* by this method and contains the result afterwards!
+	 * @param array $overrule Overrule array, overruling the original array
+	 * @param boolean $addKeys If set to FALSE, keys that are NOT found in $original will not be set. Thus only existing value can/will be overruled from overrule array.
+	 * @param boolean $includeEmptyValues If set, values from $overrule will overrule if they are empty or zero.
+	 * @param boolean $enableUnsetFeature If set, special values "__UNSET" can be used in the overrule array in order to unset array keys in the original array.
+	 * @return void
+	 */
+	static public function mergeRecursiveWithOverrule(array &$original, array $overrule, $addKeys = TRUE, $includeEmptyValues = TRUE, $enableUnsetFeature = TRUE) {
+		foreach (array_keys($overrule) as $key) {
+			if ($enableUnsetFeature && $overrule[$key] === '__UNSET') {
+				unset($original[$key]);
+				continue;
+			}
+			if (isset($original[$key]) && is_array($original[$key])) {
+				if (is_array($overrule[$key])) {
+					self::mergeRecursiveWithOverrule($original[$key], $overrule[$key], $addKeys, $includeEmptyValues, $enableUnsetFeature);
+				}
+			} elseif (
+				($addKeys || isset($original[$key])) &&
+				($includeEmptyValues || $overrule[$key])
+			) {
+				$original[$key] = $overrule[$key];
+			}
+		}
+		// This line is kept for backward compatibility reasons.
+		reset($original);
+	}
 }
-?>

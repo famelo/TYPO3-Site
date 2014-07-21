@@ -1,35 +1,21 @@
-/***************************************************************
-*  Copyright notice
-*
-*  (c) 2008-2010 Benjamin Mack <mack@xnos.org>
-*  All rights reserved
-*
-*  This script is part of the TYPO3 project. The TYPO3 project is
-*  free software; you can redistribute it and/or modify
-*  it under the terms of the GNU General Public License as published by
-*  the Free Software Foundation; either version 2 of the License, or
-*  (at your option) any later version.
-*
-*  The GNU General Public License can be found at
-*  http://www.gnu.org/copyleft/gpl.html.
-*  A copy is found in the textfile GPL.txt and important notices to the license
-*  from the author is found in LICENSE.txt distributed with these scripts.
-*
-*
-*  This script is distributed in the hope that it will be useful,
-*  but WITHOUT ANY WARRANTY; without even the implied warranty of
-*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-*  GNU General Public License for more details.
-*
-*  This copyright notice MUST APPEAR in all copies of the script!
-***************************************************************/
+/**
+ * This file is part of the TYPO3 CMS project.
+ *
+ * It is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License, either version 2
+ * of the License, or any later version.
+ *
+ * For the full copyright and license information, please read the
+ * LICENSE.txt file that was distributed with this source code.
+ *
+ * The TYPO3 project - inspiring people to share!
+ */
 
 /**
  * class to handle the open documents menu, loads the open documents dynamically
  *
  */
 var OpenDocs = Class.create({
-	ajaxScript: 'ajax.php',
 	menu: null,
 	toolbarItemIcon: null,
 
@@ -45,7 +31,6 @@ var OpenDocs = Class.create({
 			);
 			TYPO3BackendToolbarManager.positionMenu('tx-opendocs-menu');
 			this.toolbarItemIcon = $$('#tx-opendocs-menu .toolbar-item span.t3-icon')[0];
-			this.ajaxScript      = top.TS.PATH_typo3 + this.ajaxScript; // can't be initialized earlier
 
 			Event.observe($$('#tx-opendocs-menu .toolbar-item')[0], 'click', this.toggleMenu);
 			this.menu = $$('#tx-opendocs-menu .toolbar-item-menu')[0];
@@ -83,10 +68,7 @@ var OpenDocs = Class.create({
 
 		new Ajax.Updater(
 			this.menu,
-			this.ajaxScript, {
-				parameters: {
-					ajaxID: 'OpendocsController::renderMenu'
-				},
+			top.TS.PATH_typo3 + TYPO3.settings.ajaxUrls['OpendocsController::renderMenu'], {
 				onComplete: function(xhr) {
 					this.toolbarItemIcon.src = origToolbarItemIcon;
 				}.bind(this)
@@ -121,9 +103,8 @@ var OpenDocs = Class.create({
 	closeDocument: function(md5sum) {
 		new Ajax.Updater(
 			this.menu,
-			this.ajaxScript, {
+			top.TS.PATH_typo3 + TYPO3.settings.ajaxUrls['OpendocsController::closeDocument'], {
 				parameters: {
-					ajaxID: 'OpendocsController::closeDocument',
 					md5sum: md5sum
 				},
 				onComplete: function() {

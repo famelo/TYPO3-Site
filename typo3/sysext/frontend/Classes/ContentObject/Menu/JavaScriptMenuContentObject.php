@@ -1,31 +1,18 @@
 <?php
 namespace TYPO3\CMS\Frontend\ContentObject\Menu;
 
-/***************************************************************
- *  Copyright notice
+/**
+ * This file is part of the TYPO3 CMS project.
  *
- *  (c) 1999-2013 Kasper Skårhøj (kasperYYYY@typo3.com)
- *  All rights reserved
+ * It is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License, either version 2
+ * of the License, or any later version.
  *
- *  This script is part of the TYPO3 project. The TYPO3 project is
- *  free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
+ * For the full copyright and license information, please read the
+ * LICENSE.txt file that was distributed with this source code.
  *
- *  The GNU General Public License can be found at
- *  http://www.gnu.org/copyleft/gpl.html.
- *  A copy is found in the textfile GPL.txt and important notices to the license
- *  from the author is found in LICENSE.txt distributed with these scripts.
- *
- *
- *  This script is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  This copyright notice MUST APPEAR in all copies of the script!
- ***************************************************************/
+ * The TYPO3 project - inspiring people to share!
+ */
 
 /**
  * JavaScript/Selectorbox based menus
@@ -57,7 +44,7 @@ class JavaScriptMenuContentObject extends \TYPO3\CMS\Frontend\ContentObject\Menu
 			$this->levels = $levels;
 			$uniqueParam = \TYPO3\CMS\Core\Utility\GeneralUtility::shortMD5(microtime(), 5);
 			$this->JSVarName = 'eid' . $uniqueParam;
-			$this->JSMenuName = $this->mconf['menuName'] ? $this->mconf['menuName'] : 'JSmenu' . $uniqueParam;
+			$this->JSMenuName = $this->mconf['menuName'] ?: 'JSmenu' . $uniqueParam;
 			$JScode = '
  var ' . $this->JSMenuName . ' = new JSmenu(' . $levels . ', \'' . $this->JSMenuName . 'Form\');';
 			for ($a = 1; $a <= $levels; $a++) {
@@ -65,24 +52,24 @@ class JavaScriptMenuContentObject extends \TYPO3\CMS\Frontend\ContentObject\Menu
  var ' . $this->JSVarName . $a . '=0;';
 			}
 			$JScode .= $this->generate_level($levels, 1, $this->id, $this->menuArr, $this->MP_array) . LF;
-			$GLOBALS['TSFE']->additionalHeaderData['JSMenuCode'] = '<script type="text/javascript" src="' . $GLOBALS['TSFE']->absRefPrefix . 't3lib/jsfunc.menu.js"></script>';
+			$GLOBALS['TSFE']->additionalHeaderData['JSMenuCode'] = '<script type="text/javascript" src="' . $GLOBALS['TSFE']->absRefPrefix . 'typo3/sysext/frontend/Resources/Public/JavaScript/jsfunc.menu.js"></script>';
 			$GLOBALS['TSFE']->additionalJavaScript['JSCode'] .= $JScode;
 			// Printing:
 			$allFormCode = '';
 			for ($a = 1; $a <= $this->levels; $a++) {
 				$formCode = '';
 				$levelConf = $this->mconf[$a . '.'];
-				$length = $levelConf['width'] ? $levelConf['width'] : 14;
-				$lenghtStr = '';
+				$length = $levelConf['width'] ?: 14;
+				$lengthStr = '';
 				for ($b = 0; $b < $length; $b++) {
-					$lenghtStr .= '_';
+					$lengthStr .= '_';
 				}
-				$height = $levelConf['elements'] ? $levelConf['elements'] : 5;
+				$height = $levelConf['elements'] ?: 5;
 				$formCode .= '<select name="selector' . $a . '" onchange="' . $this->JSMenuName . '.act(' . $a . ');"' . ($levelConf['additionalParams'] ? ' ' . $levelConf['additionalParams'] : '') . '>';
 				for ($b = 0; $b < $height; $b++) {
 					$formCode .= '<option value="0">';
 					if ($b == 0) {
-						$formCode .= $lenghtStr;
+						$formCode .= $lengthStr;
 					}
 					$formCode .= '</option>';
 				}
@@ -188,6 +175,3 @@ class JavaScriptMenuContentObject extends \TYPO3\CMS\Frontend\ContentObject\Menu
 	}
 
 }
-
-
-?>

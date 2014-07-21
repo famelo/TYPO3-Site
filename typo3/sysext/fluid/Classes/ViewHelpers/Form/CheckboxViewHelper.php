@@ -75,7 +75,7 @@ class CheckboxViewHelper extends \TYPO3\CMS\Fluid\ViewHelpers\Form\AbstractFormF
 		$nameAttribute = $this->getName();
 		$valueAttribute = $this->getValue();
 		if ($this->isObjectAccessorMode()) {
-			if ($this->hasMappingErrorOccured()) {
+			if ($this->hasMappingErrorOccurred()) {
 				$propertyValue = $this->getLastSubmittedFormData();
 			} else {
 				$propertyValue = $this->getPropertyValue();
@@ -107,5 +107,3 @@ class CheckboxViewHelper extends \TYPO3\CMS\Fluid\ViewHelpers\Form\AbstractFormF
 		return $hiddenField . $this->tag->render();
 	}
 }
-
-?>

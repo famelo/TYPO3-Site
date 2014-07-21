@@ -79,10 +79,11 @@ class CObjectViewHelper extends \TYPO3\CMS\Fluid\Core\ViewHelper\AbstractViewHel
 	 * @param string $typoscriptObjectPath the TypoScript setup path of the TypoScript object to render
 	 * @param mixed $data the data to be used for rendering the cObject. Can be an object, array or string. If this argument is not set, child nodes will be used
 	 * @param string $currentValueKey
+	 * @param string $table
 	 * @throws \TYPO3\CMS\Fluid\Core\ViewHelper\Exception
 	 * @return string the content of the rendered TypoScript object
 	 */
-	public function render($typoscriptObjectPath, $data = NULL, $currentValueKey = NULL) {
+	public function render($typoscriptObjectPath, $data = NULL, $currentValueKey = NULL, $table = '') {
 		if (TYPO3_MODE === 'BE') {
 			$this->simulateFrontendEnvironment();
 		}
@@ -96,8 +97,9 @@ class CObjectViewHelper extends \TYPO3\CMS\Fluid\Core\ViewHelper\AbstractViewHel
 			$currentValue = (string) $data;
 			$data = array($data);
 		}
+		/** @var \TYPO3\CMS\Frontend\ContentObject\ContentObjectRenderer $contentObject */
 		$contentObject = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Frontend\\ContentObject\\ContentObjectRenderer');
-		$contentObject->start($data);
+		$contentObject->start($data, $table);
 		if ($currentValue !== NULL) {
 			$contentObject->setCurrentVal($currentValue);
 		} elseif ($currentValueKey !== NULL && isset($data[$currentValueKey])) {
@@ -121,7 +123,7 @@ class CObjectViewHelper extends \TYPO3\CMS\Fluid\Core\ViewHelper\AbstractViewHel
 
 	/**
 	 * Sets the $TSFE->cObjectDepthCounter in Backend mode
-	 * This somewhat hacky work around is currently needed because the cObjGetSingle() function of tslib_cObj relies on this setting
+	 * This somewhat hacky work around is currently needed because the cObjGetSingle() function of \TYPO3\CMS\Frontend\ContentObject\ContentObjectRenderer relies on this setting
 	 *
 	 * @return void
 	 */
@@ -141,5 +143,3 @@ class CObjectViewHelper extends \TYPO3\CMS\Fluid\Core\ViewHelper\AbstractViewHel
 		$GLOBALS['TSFE'] = $this->tsfeBackup;
 	}
 }
-
-?>

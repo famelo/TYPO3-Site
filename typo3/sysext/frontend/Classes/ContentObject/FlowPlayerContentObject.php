@@ -1,31 +1,18 @@
 <?php
 namespace TYPO3\CMS\Frontend\ContentObject;
 
-/***************************************************************
- *  Copyright notice
+/**
+ * This file is part of the TYPO3 CMS project.
  *
- *  (c) 2011-2013 Stanislas Rolland <>
- *  All rights reserved
+ * It is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License, either version 2
+ * of the License, or any later version.
  *
- *  This script is part of the TYPO3 project. The TYPO3 project is
- *  free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
+ * For the full copyright and license information, please read the
+ * LICENSE.txt file that was distributed with this source code.
  *
- *  The GNU General Public License can be found at
- *  http://www.gnu.org/copyleft/gpl.html.
- *  A copy is found in the textfile GPL.txt and important notices to the license
- *  from the author is found in LICENSE.txt distributed with these scripts.
- *
- *
- *  This script is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  This copyright notice MUST APPEAR in all copies of the script!
- ***************************************************************/
+ * The TYPO3 project - inspiring people to share!
+ */
 /**
  * Contains FlowPlayer class object.
  *
@@ -131,7 +118,7 @@ class FlowPlayerContentObject extends \TYPO3\CMS\Frontend\ContentObject\Abstract
 	);
 
 	/**
-	 * htlm5 tag attributes
+	 * html5 tag attributes
 	 */
 	public $html5TagAttributes = array(
 		'autoPlay',
@@ -205,6 +192,8 @@ class FlowPlayerContentObject extends \TYPO3\CMS\Frontend\ContentObject\Abstract
 	 * @return string Output
 	 */
 	public function render($conf = array()) {
+		/** @var $pageRenderer \TYPO3\CMS\Core\Page\PageRenderer */
+		$pageRenderer = $GLOBALS['TSFE']->getPageRenderer();
 		$prefix = '';
 		if ($GLOBALS['TSFE']->baseUrl) {
 			$prefix = $GLOBALS['TSFE']->baseUrl;
@@ -220,18 +209,18 @@ class FlowPlayerContentObject extends \TYPO3\CMS\Frontend\ContentObject\Abstract
 		$type = isset($conf['type.']) ? $this->cObj->stdWrap($conf['type'], $conf['type.']) : $conf['type'];
 		$typeConf = $conf[$type . '.'];
 		// Add Flowplayer js-file
-		$GLOBALS['TSFE']->getPageRenderer()->addJsFile(TYPO3_mainDir . 'contrib/flowplayer/flowplayer-3.2.12.min.js');
+		$pageRenderer->addJsFile(TYPO3_mainDir . 'contrib/flowplayer/flowplayer-3.2.12.min.js');
 		// Add Flowpayer css for exprss install
-		$GLOBALS['TSFE']->getPageRenderer()->addCssFile(TYPO3_mainDir . '../t3lib/js/flowplayer/express-install.css');
+		$pageRenderer->addCssFile(TYPO3_mainDir . 'contrib/flowplayer/express-install/express-install.css');
 		// Add videoJS js-file
-		$GLOBALS['TSFE']->getPageRenderer()->addJsFile(TYPO3_mainDir . 'contrib/videojs/video-js/video.js');
+		$pageRenderer->addJsFile(TYPO3_mainDir . 'contrib/videojs/video-js/video.js');
 		// Add videoJS js-file
-		$GLOBALS['TSFE']->getPageRenderer()->addJsFile(TYPO3_mainDir . 'contrib/videojs/video-js/video.js');
+		$pageRenderer->addJsFile(TYPO3_mainDir . 'contrib/videojs/video-js/video.js');
 		// Add videoJS css-file
-		$GLOBALS['TSFE']->getPageRenderer()->addCssFile(TYPO3_mainDir . 'contrib/videojs/video-js/video-js.css');
+		$pageRenderer->addCssFile(TYPO3_mainDir . 'contrib/videojs/video-js/video-js.css');
 		// Add extended videoJS control bar
-		$GLOBALS['TSFE']->getPageRenderer()->addJsFile(TYPO3_mainDir . '../t3lib/js/videojs/control-bar.js');
-		$GLOBALS['TSFE']->getPageRenderer()->addCssFile(TYPO3_mainDir . '../t3lib/js/videojs/control-bar.css');
+		$pageRenderer->addJsFile(TYPO3_mainDir . 'contrib/videojs/video-js/controls/control-bar.js');
+		$pageRenderer->addCssFile(TYPO3_mainDir . 'contrib/videojs/video-js/controls/control-bar.css');
 		// Build Flash configuration
 		$player = isset($typeConf['player.']) ? $this->cObj->stdWrap($typeConf['player'], $typeConf['player.']) : $typeConf['player'];
 		if (!$player) {
@@ -297,7 +286,7 @@ class FlowPlayerContentObject extends \TYPO3\CMS\Frontend\ContentObject\Abstract
 			$conf['caption'] = $prefix . $conf['caption'];
 		}
 		// Write calculated values in conf for the hook
-		$conf['player'] = $player ? $player : $filename;
+		$conf['player'] = $player ?: $filename;
 		$conf['installUrl'] = $installUrl;
 		$conf['filename'] = $conf['flashvars.']['url'];
 		$conf['prefix'] = $prefix;
@@ -346,7 +335,7 @@ class FlowPlayerContentObject extends \TYPO3\CMS\Frontend\ContentObject\Abstract
 			// Assemble captions track tag
 			$videoCaptions = '<track id="' . $replaceElementIdString . '_captions_track" kind="captions" src="' . $conf['caption'] . '"></track>' . LF;
 			// Add videoJS extension for captions
-			$GLOBALS['TSFE']->getPageRenderer()->addJsFile(TYPO3_mainDir . '../t3lib/js/videojs/captions.js');
+			$pageRenderer->addJsFile(TYPO3_mainDir . 'contrib/videojs/video-js/controls/captions.js');
 			// Flowplayer captions
 			$conf['videoflashvars']['captionUrl'] = $conf['caption'];
 			// Flowplayer captions plugin configuration
@@ -360,7 +349,7 @@ class FlowPlayerContentObject extends \TYPO3\CMS\Frontend\ContentObject\Abstract
 		if ($conf['type'] == 'video') {
 			if (is_array($conf['audioSources']) && count($conf['audioSources'])) {
 				// Add videoJS audio description toggle
-				$GLOBALS['TSFE']->getPageRenderer()->addJsFile(TYPO3_mainDir . '../t3lib/js/videojs/audio-description.js');
+				$pageRenderer->addJsFile(TYPO3_mainDir . 'contrib/videojs/video-js/controls/audio-description.js');
 			}
 			if (isset($conf['audioFallback'])) {
 				// Audio description flowplayer config (remove controls)
@@ -707,7 +696,7 @@ class FlowPlayerContentObject extends \TYPO3\CMS\Frontend\ContentObject\Abstract
 		if ($jsInlineCode) {
 			$jsInlineCode = 'VideoJS.DOMReady(function(){' . $jsInlineCode . LF . '});';
 		}
-		$GLOBALS['TSFE']->getPageRenderer()->addJsInlineCode($replaceElementIdString, $jsInlineCode);
+		$pageRenderer->addJsInlineCode($replaceElementIdString, $jsInlineCode);
 		if (isset($conf['stdWrap.'])) {
 			$content = $this->cObj->stdWrap($content, $conf['stdWrap.']);
 		}
@@ -715,6 +704,3 @@ class FlowPlayerContentObject extends \TYPO3\CMS\Frontend\ContentObject\Abstract
 	}
 
 }
-
-
-?>

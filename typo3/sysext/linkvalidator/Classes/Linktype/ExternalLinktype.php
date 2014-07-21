@@ -1,29 +1,18 @@
 <?php
 namespace TYPO3\CMS\Linkvalidator\Linktype;
 
-/***************************************************************
- *  Copyright notice
+/**
+ * This file is part of the TYPO3 CMS project.
  *
- *  (c) 2010 - 2013 Jochen Rieger (j.rieger@connecta.ag)
- *  (c) 2010 - 2013 Michael Miousse (michael.miousse@infoglobe.ca)
- *  All rights reserved
+ * It is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License, either version 2
+ * of the License, or any later version.
  *
- *  This script is part of the TYPO3 project. The TYPO3 project is
- *  free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
+ * For the full copyright and license information, please read the
+ * LICENSE.txt file that was distributed with this source code.
  *
- *  The GNU General Public License can be found at
- *  http://www.gnu.org/copyleft/gpl.html.
- *
- *  This script is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  This copyright notice MUST APPEAR in all copies of the script!
- ***************************************************************/
+ * The TYPO3 project - inspiring people to share!
+ */
 
 /**
  * This class provides Check External Links plugin implementation
@@ -60,7 +49,7 @@ class ExternalLinktype extends \TYPO3\CMS\Linkvalidator\Linktype\AbstractLinktyp
 	 *
 	 * @param string $url The URL to check
 	 * @param array $softRefEntry The soft reference entry which builds the context of that URL
-	 * @param \TYPO3\CMS\Linkvalidator\LinkAnalyzer $reference Parent instance of tx_linkvalidator_Processor
+	 * @param \TYPO3\CMS\Linkvalidator\LinkAnalyzer $reference Parent instance
 	 * @return boolean TRUE on success or FALSE on error
 	 */
 	public function checkLink($url, $softRefEntry, $reference) {
@@ -86,7 +75,8 @@ class ExternalLinktype extends \TYPO3\CMS\Linkvalidator\Linktype\AbstractLinktyp
 			/** @var $response \HTTP_Request2_Response */
 			$response = $request->send();
 			// HEAD was not allowed, now trying GET
-			if (isset($response) && $response->getStatus() === 405) {
+			$status = isset($response) ? $response->getStatus() : 0;
+			if ($status === 405 || $status === 403) {
 				$request->setMethod('GET');
 				$request->setHeader('Range', 'bytes = 0 - 4048');
 				/** @var $response \HTTP_Request2_Response */
@@ -108,9 +98,10 @@ class ExternalLinktype extends \TYPO3\CMS\Linkvalidator\Linktype\AbstractLinktyp
 			}
 			$errorParams['message'] = $e->getMessage();
 		}
-		if (isset($response) && $response->getStatus() >= 300) {
+		$status = isset($response) ? $response->getStatus() : 0;
+		if ($status >= 300) {
 			$isValidUrl = FALSE;
-			$errorParams['errorType'] = $response->getStatus();
+			$errorParams['errorType'] = $status;
 			$errorParams['message'] = $response->getReasonPhrase();
 		}
 		if (!$isValidUrl) {
@@ -171,4 +162,3 @@ class ExternalLinktype extends \TYPO3\CMS\Linkvalidator\Linktype\AbstractLinktyp
 	}
 
 }
-?>

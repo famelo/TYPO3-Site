@@ -1,28 +1,18 @@
 <?php
 namespace TYPO3\CMS\Rtehtmlarea\Extension;
 
-/***************************************************************
- *  Copyright notice
+/**
+ * This file is part of the TYPO3 CMS project.
  *
- *  (c) 2012/2013 Stanislas Rolland <typo3(arobas)sjbr.ca>
- *  All rights reserved
+ * It is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License, either version 2
+ * of the License, or any later version.
  *
- *  This script is part of the Typo3 project. The Typo3 project is
- *  free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
+ * For the full copyright and license information, please read the
+ * LICENSE.txt file that was distributed with this source code.
  *
- *  The GNU General Public License can be found at
- *  http://www.gnu.org/copyleft/gpl.html.
- *
- *  This script is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  This copyright notice MUST APPEAR in all copies of the script!
- ***************************************************************/
+ * The TYPO3 project - inspiring people to share!
+ */
 /**
  * Microdata Schema extension for htmlArea RTE
  *
@@ -173,44 +163,46 @@ class MicroDataSchema extends \TYPO3\CMS\Rtehtmlarea\RteHtmlAreaApi {
 						}
 					}
 					switch ($type) {
-					case 'http://www.w3.org/2000/01/rdf-schema#Class':
-						$subClassOfs = $item->getElementsByTagName('subClassOf');
-						if ($subClassOfs->length) {
-							foreach ($subClassOfs as $subClassOf) {
-								$resource['subClassOf'] = $subClassOf->getAttribute('rdf:resource');
+						case 'http://www.w3.org/2000/01/rdf-schema#Class':
+							$subClassOfs = $item->getElementsByTagName('subClassOf');
+							if ($subClassOfs->length) {
+								foreach ($subClassOfs as $subClassOf) {
+									$resource['subClassOf'] = $subClassOf->getAttribute('rdf:resource');
+								}
 							}
-						}
-						// schema.rdfs.org/all.rdf may contain duplicates!!
-						if (!in_array($resource['name'], $types)) {
-							$schema['types'][] = $resource;
-							$types[] = $resource['name'];
-						}
-						break;
-					case 'http://www.w3.org/1999/02/22-rdf-syntax-ns#Property':
-						// Keep only the last level of the name
-						// This is the value we want in the itemprop attribute
-						$pos = strrpos($resource['name'], '/');
-						if ($pos) {
-							$resource['name'] = substr($resource['name'], $pos + 1);
-						}
-						$domains = $item->getElementsByTagName('domain');
-						if ($domains->length) {
-							foreach ($domains as $domain) {
-								$resource['domain'] = $domain->getAttribute('rdf:resource');
+							// schema.rdfs.org/all.rdf may contain duplicates!!
+							if (!in_array($resource['name'], $types)) {
+								$schema['types'][] = $resource;
+								$types[] = $resource['name'];
 							}
-						}
-						$ranges = $item->getElementsByTagName('range');
-						if ($ranges->length) {
-							foreach ($ranges as $range) {
-								$resource['range'] = $range->getAttribute('rdf:resource');
+							break;
+						case 'http://www.w3.org/1999/02/22-rdf-syntax-ns#Property':
+							// Keep only the last level of the name
+							// This is the value we want in the itemprop attribute
+							$pos = strrpos($resource['name'], '/');
+							if ($pos) {
+								$resource['name'] = substr($resource['name'], $pos + 1);
 							}
-						}
-						// schema.rdfs.org/all.rdf may contain duplicates!!
-						if (!in_array($resource['name'], $properties)) {
-							$schema['properties'][] = $resource;
-							$properties[] = $resource['name'];
-						}
-						$break;
+							$domains = $item->getElementsByTagName('domain');
+							if ($domains->length) {
+								foreach ($domains as $domain) {
+									$resource['domain'] = $domain->getAttribute('rdf:resource');
+								}
+							}
+							$ranges = $item->getElementsByTagName('range');
+							if ($ranges->length) {
+								foreach ($ranges as $range) {
+									$resource['range'] = $range->getAttribute('rdf:resource');
+								}
+							}
+							// schema.rdfs.org/all.rdf may contain duplicates!!
+							if (!in_array($resource['name'], $properties)) {
+								$schema['properties'][] = $resource;
+								$properties[] = $resource['name'];
+							}
+							break;
+						default:
+							// Do nothing
 					}
 				}
 			}
@@ -218,6 +210,3 @@ class MicroDataSchema extends \TYPO3\CMS\Rtehtmlarea\RteHtmlAreaApi {
 	}
 
 }
-
-
-?>

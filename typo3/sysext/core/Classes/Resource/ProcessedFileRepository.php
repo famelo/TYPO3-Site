@@ -2,31 +2,18 @@
 namespace TYPO3\CMS\Core\Resource;
 use \TYPO3\CMS\Core\Utility;
 
-/***************************************************************
- *  Copyright notice
+/**
+ * This file is part of the TYPO3 CMS project.
  *
- *  (c) 2012-2013 Benjamin Mack <benni@typo3.org>
- *  All rights reserved
+ * It is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License, either version 2
+ * of the License, or any later version.
  *
- *  This script is part of the TYPO3 project. The TYPO3 project is
- *  free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
+ * For the full copyright and license information, please read the
+ * LICENSE.txt file that was distributed with this source code.
  *
- *  The GNU General Public License can be found at
- *  http://www.gnu.org/copyleft/gpl.html.
- *  A copy is found in the textfile GPL.txt and important notices to the license
- *  from the author is found in LICENSE.txt distributed with these scripts.
- *
- *
- *  This script is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  This copyright notice MUST APPEAR in all copies of the script!
- ***************************************************************/
+ * The TYPO3 project - inspiring people to share!
+ */
 /**
  * Repository for accessing files
  * it also serves as the public API for the indexing part of files in general
@@ -93,7 +80,7 @@ class ProcessedFileRepository extends AbstractRepository {
 	 * @return ProcessedFile
 	 */
 	protected function createDomainObject(array $databaseRow) {
-		$originalFile = $this->resourceFactory->getFileObject(intval($databaseRow['original']));
+		$originalFile = $this->resourceFactory->getFileObject((int)$databaseRow['original']);
 		$originalFile->setStorage($this->resourceFactory->getStorageObject($originalFile->getProperty('storage')));
 		$taskType = $databaseRow['task_type'];
 		$configuration = unserialize($databaseRow['configuration']);
@@ -107,6 +94,27 @@ class ProcessedFileRepository extends AbstractRepository {
 		);
 	}
 
+	/**
+	 * @param ResourceStorage $storage
+	 * @param string $identifier
+	 *
+	 * @return null|ProcessedFile
+	 */
+	public function findByStorageAndIdentifier(ResourceStorage $storage, $identifier) {
+		$processedFileObject = NULL;
+		if ($storage->hasFile($identifier)) {
+			$databaseRow = $this->databaseConnection->exec_SELECTgetSingleRow(
+				'*',
+				$this->table,
+				'storage = ' . (int)$storage->getUid() .
+				' AND identifier = ' . $this->databaseConnection->fullQuoteStr($identifier, $this->table)
+			);
+			if ($databaseRow) {
+				$processedFileObject = $this->createDomainObject($databaseRow);
+			}
+		}
+		return $processedFileObject;
+	}
 	/**
 	 * Adds a processedfile object in the database
 	 *
@@ -134,10 +142,10 @@ class ProcessedFileRepository extends AbstractRepository {
 	 */
 	public function update($processedFile) {
 		if ($processedFile->isPersisted()) {
-			$uid = intval($processedFile->getUid());
+			$uid = (int)$processedFile->getUid();
 			$updateFields = $this->cleanUnavailableColumns($processedFile->toArray());
 			$updateFields['tstamp'] = time();
-			$this->databaseConnection->exec_UPDATEquery($this->table, 'uid=' . intval($uid), $updateFields);
+			$this->databaseConnection->exec_UPDATEquery($this->table, 'uid=' . (int)$uid, $updateFields);
 		}
 	}
 
@@ -152,9 +160,9 @@ class ProcessedFileRepository extends AbstractRepository {
 		$databaseRow = $this->databaseConnection->exec_SELECTgetSingleRow(
 			'*',
 			$this->table,
-			'original=' . intval($file->getUid()) .
+			'original=' . (int)$file->getUid() .
 				' AND task_type=' . $this->databaseConnection->fullQuoteStr($taskType, $this->table) .
-				' AND configuration=' . $this->databaseConnection->fullQuoteStr(serialize($configuration), $this->table)
+				' AND configurationsha1=' . $this->databaseConnection->fullQuoteStr(sha1(serialize($configuration)), $this->table)
 		);
 
 		if (is_array($databaseRow)) {
@@ -164,6 +172,29 @@ class ProcessedFileRepository extends AbstractRepository {
 		}
 		return $processedFile;
 	}
+
+	/**
+	 * @param FileInterface $file
+	 * @return ProcessedFile[]
+	 * @throws \InvalidArgumentException
+	 */
+	public function findAllByOriginalFile(FileInterface $file) {
+		if (!$file instanceof File) {
+			throw new \InvalidArgumentException('Parameter is no File object but got type "'
+				. (is_object($file) ? get_class($file) : gettype($file)) . '"', 1382006142);
+		}
+		$whereClause = 'original=' . (int)$file->getUid();
+		$rows = $this->databaseConnection->exec_SELECTgetRows('*', $this->table, $whereClause);
+
+		$itemList = array();
+		if ($rows !== NULL) {
+			foreach ($rows as $row) {
+				$itemList[] = $this->createDomainObject($row);
+			}
+		}
+		return $itemList;
+	}
+
 
 	/**
 	 * Removes all array keys which cannot be persisted
@@ -176,6 +207,3 @@ class ProcessedFileRepository extends AbstractRepository {
 		return array_intersect_key($data, $this->databaseConnection->admin_get_fields($this->table));
 	}
 }
-
-
-?>
