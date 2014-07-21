@@ -22,7 +22,7 @@
 *
 *  This copyright notice MUST APPEAR in all copies of the script!
 *
-*  $Id: class.tx_devlog.php 75578 2013-05-28 13:07:32Z francois $
+*  $Id$
 ***************************************************************/
 
 
@@ -96,9 +96,9 @@ class tx_devlog {
 		$insertFields = array();
 			// Try to get a pid that makes sense
 		$pid = 0;
-			// In the FE context, this is obviously the current page
-		if (isset($GLOBALS['TSFE'])) {
-			$pid = $GLOBALS['TSFE']->id;
+			// In the FE context, this is obviously the current page, but it may not yet be defined
+		if (TYPO3_MODE == 'FE') {
+			$pid = empty($GLOBALS['TSFE']->id) ? 0 : $GLOBALS['TSFE']->id;
 
 			// In other contexts, a global variable may be set with a relevant pid
 		} elseif (isset($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['GLOBAL']['debugData']['pid'])) {
@@ -107,7 +107,7 @@ class tx_devlog {
 		$insertFields['pid'] = $pid;
 		$insertFields['crdate'] = $GLOBALS['TYPO3_CONF_VARS']['EXTCONF'][$this->extKey]['tstamp'];
 		$insertFields['crmsec'] = $GLOBALS['TYPO3_CONF_VARS']['EXTCONF'][$this->extKey]['mstamp'];
-		$insertFields['cruser_id'] = $GLOBALS['BE_USER']->user['uid'];
+		$insertFields['cruser_id'] = empty($GLOBALS['BE_USER']->user['uid']) ? 0 : $GLOBALS['BE_USER']->user['uid'];
 			// Clean up the message before insertion into the database
 			// If possible use RemoveXSS (TYPO3 4.2+), otherwise strip all tags
 		$message = '';

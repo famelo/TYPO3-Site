@@ -1,15 +1,3 @@
-[submodule "typo3conf/ext/flux"]
-	path = typo3conf/ext/flux
-	url = git://github.com/FluidTYPO3/flux.git
-[submodule "typo3conf/ext/fluidpages"]
-	path = typo3conf/ext/fluidpages
-	url = git://github.com/FluidTYPO3/fluidpages.git
-[submodule "typo3conf/ext/fluidcontent"]
-	path = typo3conf/ext/fluidcontent
-	url = git://github.com/FluidTYPO3/fluidcontent.git
-[submodule "typo3conf/ext/vhs"]
-	path = typo3conf/ext/vhs
-	url = git://github.com/FluidTYPO3/vhs.git
 [submodule "typo3conf/ext/autoswitchtolistview"]
 	path = typo3conf/ext/autoswitchtolistview
 	url = git://github.com/georgringer/autoswitchtolistview.git

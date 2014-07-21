@@ -64,9 +64,6 @@
  *
  */
 
-require_once(PATH_t3lib.'class.t3lib_pagetree.php');
-require_once(PATH_t3lib.'class.t3lib_extobjbase.php');
-
 $GLOBALS['LANG']->includeLLfile('EXT:realurl/modfunc1/locallang.xml');
 require_once(t3lib_extMgm::extPath('realurl', 'modfunc1/class.tx_realurl_pagebrowser.php'));
 
@@ -89,7 +86,7 @@ class tx_realurl_modfunc1 extends t3lib_extobjbase {
 	 * @return	array
 	 */
 	function modMenu()	{
-		return array (
+		$modMenu = array (
 			'depth' => array(
 				0 => $GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.php:labels.depth_0'),
 				1 => $GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.php:labels.depth_1'),
@@ -107,6 +104,10 @@ class tx_realurl_modfunc1 extends t3lib_extobjbase {
 				'log' => 'Error Log'
 			)
 		);
+
+		$modMenu['type'] = t3lib_BEfunc::unsetMenuItems($this->pObj->modTSconfig['properties'], $modMenu['type'], 'menu.realurl_type');
+
+		return $modMenu;
 	}
 
 	/**
@@ -1169,9 +1170,9 @@ class tx_realurl_modfunc1 extends t3lib_extobjbase {
 							'</td>';
 
 
-
+				$keyForDuplicates = $aliasRecord['value_alias'] . ':::' . $aliasRecord['lang'];
 				$tCells[]='<td>'.
-						(isset($duplicates[$aliasRecord['value_alias']]) ? $this->pObj->doc->icons(2).'Already used by ID '.$duplicates[$aliasRecord['value_alias']] :'&nbsp;').
+						(isset($duplicates[$keyForDuplicates]) ? $this->pObj->doc->icons(2).'Already used by ID '.$duplicates[$aliasRecord['value_alias']] :'&nbsp;').
 						'</td>';
 
 				$field_id = $aliasRecord['field_id'];
@@ -1185,7 +1186,7 @@ class tx_realurl_modfunc1 extends t3lib_extobjbase {
 					</tr>';
 				$cc++;
 
-				$duplicates[$aliasRecord['value_alias']] = $aliasRecord['value_id'];
+				$duplicates[$keyForDuplicates] = $aliasRecord['value_id'];
 			}
 
 				// Create header:
@@ -1322,9 +1323,6 @@ class tx_realurl_modfunc1 extends t3lib_extobjbase {
 	 */
 	function configView()	{
 		global $TYPO3_CONF_VARS;
-
-			// Include array browser:
-		require_once(PATH_t3lib . 'class.t3lib_arraybrowser.php');
 
 			// Initialize array browser:
 		$arrayBrowser = t3lib_div::makeInstance('t3lib_arrayBrowser');
@@ -1550,7 +1548,7 @@ class tx_realurl_modfunc1 extends t3lib_extobjbase {
 		$output = '';
 		while (false !== ($rec = $GLOBALS['TYPO3_DB']->sql_fetch_assoc($res))) {
 			$output .= '<tr class="bgColor'.($itemCounter%2 ? '-20':'-10').'">' .
-				$this->generateSingleRedirectContent($rec);
+				$this->generateSingleRedirectContent($rec, $page);
 			$itemCounter++;
 		}
 		$GLOBALS['TYPO3_DB']->sql_free_result($res);
@@ -1588,14 +1586,15 @@ class tx_realurl_modfunc1 extends t3lib_extobjbase {
 	 * Creates an HTML table row for a single redirect record.
 	 *
 	 * @param array $rec
+	 * @param int $page
 	 * @return string
 	 */
-	protected function generateSingleRedirectContent(array $rec) {
+	protected function generateSingleRedirectContent(array $rec, $page) {
 		$output = '<td>'.
-					'<a href="'.$this->linkSelf('&cmd=edit&uid=' . rawurlencode($rec['uid'])) .'">'.
+					'<a href="'.$this->linkSelf('&cmd=edit&uid=' . rawurlencode($rec['uid'])) . '&page='.$page.'">'.
 					'<img'.t3lib_iconWorks::skinImg($this->pObj->doc->backPath,'gfx/edit2.gif','width="11" height="12"').' title="Edit entry" alt="" />'.
 					'</a>'.
-					'<a href="'.$this->linkSelf('&cmd=delete&uid=' . rawurlencode($rec['uid'])) . '">'.
+					'<a href="'.$this->linkSelf('&cmd=delete&uid=' . rawurlencode($rec['uid'])) . '&page='.$page.'">'.
 					'<img'.t3lib_iconWorks::skinImg($this->pObj->doc->backPath,'gfx/garbage.gif','width="11" height="12"').' title="Delete entry" alt="" />'.
 					'</a>'.
 				'</td>';
@@ -1799,6 +1798,7 @@ class tx_realurl_modfunc1 extends t3lib_extobjbase {
 			'url,url_hash,destination,has_moved,domain_limit', 'tx_realurl_redirects',
 			'uid=' . intval($uid));
 		if (is_array($row)) {
+			$page = max(1, intval(t3lib_div::_GP('page')));
 			$content = '<table border="0" cellspacing="2" cellpadding="1" style="margin-bottom:1em">' .
 				'<tr><td>Redirect from:</td>' .
 				'<td width="1">/</td><td><input type="text" name="data[0][source]" value="' . htmlspecialchars($row['url']) . '" size="40" /></td></tr>' .
@@ -1811,7 +1811,8 @@ class tx_realurl_modfunc1 extends t3lib_extobjbase {
 				'<tr><td colspan="2"></td><td>' . $this->saveCancelButtons() . '</td></tr>' .
 				'</table>' .
 				'<input type="hidden" name="data[0][uid]" value="' . intval($uid) . '" />' .
-				'<input type="hidden" name="data[0][url_hash]" value="' . $row['url_hash'] . '" />'
+				'<input type="hidden" name="data[0][url_hash]" value="' . $row['url_hash'] . '" />' .
+				'<input type="hidden" name="page" value="' . intval($page) . '" />'
 				;
 		}
 		return $content;

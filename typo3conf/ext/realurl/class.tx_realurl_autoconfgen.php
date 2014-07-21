@@ -80,6 +80,7 @@ class tx_realurl_autoconfgen {
 				$this->doGenerateConfiguration($fd);
 			}
 			fclose($fd);
+			t3lib_div::fixPermissions($fileName);
 		}
 		$lockObject->release();
 	}
@@ -109,6 +110,7 @@ class tx_realurl_autoconfgen {
 
 		$this->hasStaticInfoTables = t3lib_extMgm::isLoaded('static_info_tables');
 
+		$conf = array();
 		$template = $this->getTemplate();
 
 		// Find all domains
@@ -129,7 +131,10 @@ class tx_realurl_autoconfgen {
 					$parts = parse_url($domain['redirectTo']);
 					if (isset($domains[$parts['host']]) && ($domains['path'] == '/' || $domains['path'] == '')) {
 						// Make a shortcut
-						$conf[$domain['domainName']] = $parts['host'];
+						if ($conf[$parts['host']] != $domain['domainName']) {
+							// Here if there were no redirect from this domain to source domain
+							$conf[$domain['domainName']] = $parts['host'];
+						}
 						continue;
 					}
 				}
@@ -139,15 +144,25 @@ class tx_realurl_autoconfgen {
 			}
 		}
 
+		// Post process generated configuration
+		if (is_array($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['ext/realurl/class.tx_realurl_autoconfgen.php']['postProcessConfiguration'])) {
+			foreach ($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['ext/realurl/class.tx_realurl_autoconfgen.php']['postProcessConfiguration'] as $userFunc) {
+				$parameters = array(
+					'config' => &$conf,
+				);
+				t3lib_div::callUserFunction($userFunc, $parameters, $this);
+			}
+		}
+
 		$_realurl_conf = @unserialize($GLOBALS['TYPO3_CONF_VARS']['EXT']['extConf']['realurl']);
 		if ($_realurl_conf['autoConfFormat'] == 0) {
 			fwrite($fd, '<' . '?php' . chr(10) . '$GLOBALS[\'TYPO3_CONF_VARS\'][\'EXTCONF\'][\'realurl\']=' .
-				'unserialize(\'' . str_replace('\'', '\\\'', serialize($conf)) . '\');' . chr(10) . '?' . '>'
+				'unserialize(\'' . str_replace('\'', '\\\'', serialize($conf)) . '\');' . chr(10)
 			);
 		}
 		else {
 			fwrite($fd, '<' . '?php' . chr(10) . '$GLOBALS[\'TYPO3_CONF_VARS\'][\'EXTCONF\'][\'realurl\']=' .
-				var_export($conf, true) . ';' . chr(10) . '?' . '>'
+				var_export($conf, true) . ';' . chr(10)
 			);
 		}
 	}

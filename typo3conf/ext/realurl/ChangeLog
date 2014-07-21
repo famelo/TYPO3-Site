@@ -1,3 +1,48 @@
+2014-02-17  Dmitry Dulepov  <dmitry.dulepov@gmail.com>
+
+	* Released version 1.12.8
+
+2014-02-11  Dmitry Dulepov  <dmitry.dulepov@gmail.com>
+
+	* Fixed bug #55436: findRootPageId: Infinite Loop in case of circular redirect
+	* Fixed bug #52651: Autoconf won't be created when hook is used
+	* Increase TYPO3 compatibility version to 6.2
+
+2013-10-09  Dmitry Dulepov  <dmitry.dulepov@gmail.com>
+
+	* Fixed bug #45879: Unset menu items for ReaulURL management (thanks to  Leon Dietsch)
+	* Fixed bug #52515: Add hook to post process auto-generated configuration
+
+2013-10-08  Dmitry Dulepov  <dmitry.dulepov@gmail.com>
+
+	* Fixed bug #51801: typolink.linkAccessRestrictedPages has no effect if RealURL is enabled
+	* Fixed bug #51287: add cHash on decoding only if there are relevant parameters
+	* Fixed bug #49019: Page caching does not work if cHash cache is disabled
+	* Fixed bug #48944: Check if the duplicate unique alias is a translation
+
+2013-10-07  Dmitry Dulepov  <dmitry.dulepov@gmail.com>
+
+	* Fixed bug #51471: fatal error in info module in TYPO3 6.2 (rev a52257a56b0cdb17fd3fbda91ab4c75bd3cad33c)
+
+2013-09-25  TYPO3 Security team <security@typo3.org>
+
+	* Security fix for TYPO3-EXT-SA-2013-015
+	* Released version 1.12.7
+
+	WARNING! Version 1.12.7 has only changes made prior/on 2013-05-07 plus security fixes. It does not include fixes from later days. Those fixes appear in 1.12.8 release.
+
+2013-07-24  Dmitry Dulepov  <dmitry.dulepov@gmail.com>
+
+	* Use a distinct status string when redirecting from the RealURL
+	* Fixed bug #45398: getLanguageVar() returns 0 instead of sys_language_uid (thanks to Andreas Beutel)
+	* Fixed bug #41515: Wrong value applied for GET var when using value default (thanks to Helmut Hummel)
+	* Fixed bug #48514: 404 if path segment is empty
+
+2013-05-20  Dmitry Dulepov  <dmitry.dulepov@gmail.com>
+
+	* Remove inclusion of old TYPO3 files. Rely on autoloader and compatibility layer now.
+	* Fix 'not deleted' in the manual (wrong SQL syntax in examples)
+
 2013-05-07  Dmitry Dulepov  <dmitry.dulepov@gmail.com>
 
 	* Fix mixed case extension key

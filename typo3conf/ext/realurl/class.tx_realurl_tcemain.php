@@ -85,8 +85,10 @@ class tx_realurl_tcemain {
 	 * @return void
 	 */
 	protected function clearOtherCaches($pageId) {
+		/** @noinspection PhpUndefinedMethodInspection */
 		$GLOBALS['TYPO3_DB']->exec_DELETEquery('tx_realurl_urldecodecache',
 			'page_id=' . intval($pageId));
+		/** @noinspection PhpUndefinedMethodInspection */
 		$GLOBALS['TYPO3_DB']->exec_DELETEquery('tx_realurl_urlencodecache',
 			'page_id=' . intval($pageId));
 	}
@@ -98,6 +100,7 @@ class tx_realurl_tcemain {
 	 * @return void
 	 */
 	protected function clearPathCache($pageId) {
+		/** @noinspection PhpUndefinedMethodInspection */
 		$GLOBALS['TYPO3_DB']->exec_DELETEquery('tx_realurl_pathcache',
 			'page_id=' . intval($pageId));
 	}
@@ -112,6 +115,7 @@ class tx_realurl_tcemain {
 	 */
 	protected function clearUniqueAlias($command, $tableName, $recordId) {
 		if ($command == 'delete') {
+			/** @noinspection PhpUndefinedMethodInspection */
 			$GLOBALS['TYPO3_DB']->exec_DELETEquery('tx_realurl_uniqalias',
 				'tablename=' . $GLOBALS['TYPO3_DB']->fullQuoteStr($tableName, 'tx_realurl_uniqalias') .
 				' AND value_id=' . intval($recordId));
@@ -130,6 +134,7 @@ class tx_realurl_tcemain {
 		$pageIds = $this->getChildPages($pageId);
 		$pageIds[] = intval($pageId);
 
+		/** @noinspection PhpUndefinedMethodInspection */
 		$GLOBALS['TYPO3_DB']->exec_UPDATEquery('tx_realurl_pathcache',
 			'page_id IN (' . implode(',', $pageIds) . ') AND language_id=' . intval($languageId) . ' AND expire=0',
 			array(
@@ -148,6 +153,7 @@ class tx_realurl_tcemain {
 		$pageIds = $this->getChildPages($pageId);
 		$pageIds[] = intval($pageId);
 
+		/** @noinspection PhpUndefinedMethodInspection */
 		$GLOBALS['TYPO3_DB']->exec_UPDATEquery('tx_realurl_pathcache',
 			'page_id IN (' . implode(',', $pageIds) . ') AND expire=0',
 			array(
@@ -185,7 +191,7 @@ class tx_realurl_tcemain {
 	 * Returns the IDs of all child pages of a given $pageID.
 	 *
 	 * @param $pageId integer Page ID to start searching
-	 * @return array child pages
+	 * @return int[] Child pages
 	 */
 	protected function getChildPages($pageId) {
 		$children  = array();
@@ -260,6 +266,7 @@ class tx_realurl_tcemain {
 	 * @return	array		Array with two members: real page uid and sys_language_uid
 	 */
 	protected static function getInfoFromOverlayPid($pid) {
+		/** @noinspection PhpUndefinedMethodInspection */
 		list($rec) = $GLOBALS['TYPO3_DB']->exec_SELECTgetRows('pid,sys_language_uid',
 			'pages_language_overlay', 'uid=' . intval($pid));
 		return array($rec['pid'], $rec['sys_language_uid']);
@@ -280,9 +287,8 @@ class tx_realurl_tcemain {
 	 * language overlay.
 	 *
 	 * @param string $command
-	 * @param string $table
-	 * @param int $id
-	 * @param mixed $value
+	 * @param string $tableName
+	 * @param mixed $recordId
 	 * @return void
 	 */
 	public function processCmdmap_postProcess($command, $tableName, $recordId) {
