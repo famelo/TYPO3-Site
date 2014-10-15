@@ -39,6 +39,11 @@ class InlineViewHelperTest extends AbstractFieldViewHelperTestCase {
 		'enabledControls' => array(
 			'new' => TRUE,
 			'hide' => TRUE
+		),
+		'foreignTypes' => array(
+			0 => array(
+				'showitem' => 'a,b,c'
+			)
 		)
 	);
 

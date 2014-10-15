@@ -25,6 +25,7 @@ namespace FluidTYPO3\Flux\Controller;
  ***************************************************************/
 
 use FluidTYPO3\Flux\Service\FluxService;
+use FluidTYPO3\Flux\Service\WorkspacesAwareRecordService;
 use FluidTYPO3\Flux\Utility\RecursiveArrayUtility;
 use FluidTYPO3\Flux\Utility\ResolveUtility;
 use FluidTYPO3\Flux\Utility\ExtensionNamingUtility;
@@ -89,6 +90,11 @@ abstract class AbstractFluxController extends ActionController {
 	protected $data = array();
 
 	/**
+	 * @var WorkspacesAwareRecordService
+	 */
+	protected $workspacesAwareRecordService;
+
+	/**
 	 * @param FluxService $configurationService
 	 * @return void
 	 */
@@ -97,8 +103,16 @@ abstract class AbstractFluxController extends ActionController {
 	}
 
 	/**
+	 * @param WorkspacesAwareRecordService $workspacesAwareRecordService
 	 * @return void
-	 * @throws RuntimeException
+	 */
+	public function injectWorkspacesAwareRecordService(WorkspacesAwareRecordService $workspacesAwareRecordService) {
+		$this->workspacesAwareRecordService = $workspacesAwareRecordService;
+	}
+
+	/**
+	 * @return void
+	 * @throws \RuntimeException
 	 */
 	protected function initializeSettings() {
 		$row = $this->getRecord();
@@ -169,10 +183,15 @@ abstract class AbstractFluxController extends ActionController {
 		$extensionName = ExtensionNamingUtility::getExtensionName($extensionKey);
 		$controller = $this->request->getControllerName();
 		$this->view = $this->configurationService->getPreparedExposedTemplateView($extensionKey, $controller, $this->setup, $this->data);
+		$controllerActionName = $this->provider->getControllerActionFromRecord($row);
 		$this->request->setControllerExtensionName($extensionName);
+		$this->request->setControllerActionName($controllerActionName);
 		$this->view->setControllerContext($this->controllerContext);
 		if (FALSE === empty($templatePathAndFilename)) {
 			$this->view->setTemplatePathAndFilename($templatePathAndFilename);
+		} elseif (TRUE === method_exists($this->view, 'setTemplateSource')) {
+			$templateSource = $this->provider->getTemplateSource($row);
+			$this->view->setTemplateSource($templateSource);
 		}
 	}
 

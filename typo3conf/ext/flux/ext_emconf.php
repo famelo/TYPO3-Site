@@ -3,7 +3,7 @@
 /***************************************************************
  * Extension Manager/Repository config file for ext "flux".
  *
- * Auto generated 21-07-2014 10:11
+ * Auto generated 15-10-2014 00:25
  *
  * Manual updates:
  * Only the data in the array - everything else is removed by next
@@ -12,13 +12,13 @@
 
 $EM_CONF[$_EXTKEY] = array (
 	'title' => 'Flux: Fluid FlexForms',
-	'description' => 'Uses Fluid to render FlexForms, making them highly dynamic. Has built-in content preview in BE page module for any content using Flux. Offspring of the FED extension.',
+	'description' => 'Backend form and frontend content rendering assistance API with focus on productivity.',
 	'category' => 'misc',
-	'version' => '7.0.0',
+	'version' => '7.1.0',
 	'state' => 'stable',
-	'uploadfolder' => 0,
+	'uploadfolder' => true,
 	'createDirs' => '',
-	'clearcacheonload' => 0,
+	'clearcacheonload' => true,
 	'author' => 'FluidTYPO3 Team',
 	'author_email' => 'claus@namelesscoder.net',
 	'author_company' => '',

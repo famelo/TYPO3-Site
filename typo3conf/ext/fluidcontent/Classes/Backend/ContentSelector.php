@@ -23,10 +23,8 @@ namespace FluidTYPO3\Fluidcontent\Backend;
  *  This copyright notice MUST APPEAR in all copies of the script!
  ***************************************************************/
 
-use TYPO3\CMS\Core\TypoScript\Parser\TypoScriptParser;
+use FluidTYPO3\Fluidcontent\Service\ConfigurationService;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
-use TYPO3\CMS\Extbase\Utility\LocalizationUtility;
-use TYPO3\CMS\Backend\Configuration\TypoScript\ConditionMatching\ConditionMatcher;
 
 /**
  * Class that renders a selection field for Fluid FCE template selection
@@ -44,35 +42,19 @@ class ContentSelector {
 	 * @return string
 	 */
 	public function renderField(array &$parameters, &$parentObject) {
-		/** @var \TYPO3\CMS\Core\Cache\CacheManager $cacheManager */
-		$cacheManager = GeneralUtility::makeInstance('TYPO3\CMS\Extbase\Object\ObjectManager')->get('TYPO3\CMS\Core\Cache\CacheManager');
-		/** @var StringFrontend $cache */
-		$cache = $cacheManager->getCache('fluidcontent');
-		$pageTypoScript = TRUE === $cache->has('pageTsConfig') ? $cache->get('pageTsConfig') : array();
-		$tsParser = new TypoScriptParser();
-		$conditions = new ConditionMatcher();
-		$pageUid = GeneralUtility::_GET('id');
-		$pageUid = intval($pageUid);
-		if (0 === $pageUid) {
-		    $pageUid = intval($parameters['row']['pid']);
-		}
-		$conditions->setPageId($pageUid);
-		$tsParser->parse($pageTypoScript, $conditions);
-		$setup = $tsParser->setup['mod.']['wizards.']['newContentElement.']['wizardItems.'];
-		if (FALSE === is_array($setup)) {
-			return LocalizationUtility::translate('pages.no_content_types', 'Fluidcontent');
-		}
-		$setup = GeneralUtility::removeDotsFromTS($setup);
+		/** @var ConfigurationService $contentService */
+		$contentService = GeneralUtility::makeInstance('TYPO3\CMS\Extbase\Object\ObjectManager')->get('FluidTYPO3\Fluidcontent\Service\ConfigurationService');
+		$setup = $contentService->getContentElementFormInstances();
 		$name = $parameters['itemFormElName'];
 		$value = $parameters['itemFormElValue'];
 		$select = '<div><select name="' . htmlspecialchars($name) . '"  class="formField select" onchange="if (confirm(TBE_EDITOR.labels.onChangeAlert) && TBE_EDITOR.checkSubmit(-1)){ TBE_EDITOR.submitForm() };">' . LF;
 		$select .= '<option value="">' . $GLOBALS['LANG']->sL('LLL:EXT:fluidcontent/Resources/Private/Language/locallang.xml:tt_content.tx_fed_fcefile', TRUE) . '</option>' . LF;
 		foreach ($setup as $groupLabel => $configuration) {
 			$select .= '<optgroup label="' . htmlspecialchars($groupLabel) . '">' . LF;
-			foreach ($configuration['elements'] as $elementConfiguration) {
-				$optionValue = $elementConfiguration['tt_content_defValues']['tx_fed_fcefile'];
+			foreach ($configuration as $form) {
+				$optionValue = $form->getOption('contentElementId');
 				$selected = ($optionValue === $value ? ' selected="selected"' : '');
-				$label = $elementConfiguration['title'];
+				$label = $form->getLabel();
 				$label = $GLOBALS['LANG']->sL($label);
 				$select .= '<option value="' . htmlspecialchars($optionValue) . '"' . $selected . '>' . htmlspecialchars($label) . '</option>' . LF;
 			}

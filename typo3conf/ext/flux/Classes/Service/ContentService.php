@@ -27,6 +27,8 @@ namespace FluidTYPO3\Flux\Service;
 use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Core\DataHandling\DataHandler;
 use TYPO3\CMS\Core\SingletonInterface;
+use TYPO3\CMS\Core\Utility\ExtensionManagementUtility;
+use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
  * Flux FlexForm integration Service
@@ -41,35 +43,45 @@ class ContentService implements SingletonInterface {
 	const COLPOS_FLUXCONTENT = 18181;
 
 	/**
+	 * @var RecordService
+	 */
+	protected $recordService;
+
+	/**
+	 * @var WorkspacesAwareRecordService
+	 */
+	protected $workspacesAwareRecordService;
+
+	/**
+	 * @param RecordService $recordService
+	 * @return void
+	 */
+	public function injectRecordService(RecordService $recordService) {
+		$this->recordService = $recordService;
+	}
+
+	/**
+	 * @param WorkspacesAwareRecordService $workspacesAwareRecordService
+	 * @return void
+	 */
+	public function injectWorkspacesAwareRecordService(WorkspacesAwareRecordService $workspacesAwareRecordService) {
+		$this->workspacesAwareRecordService = $workspacesAwareRecordService;
+	}
+
+	/**
+	 * @param String $id
 	 * @param array $row
 	 * @param array $parameters
 	 * @param DataHandler $tceMain
-	 * @return boolean
+	 * @return void
 	 */
-	public function affectRecordByRequestParameters(array &$row, $parameters, DataHandler $tceMain) {
-		$url = TRUE === isset($parameters['returnUrl']) ? $parameters['returnUrl'] : NULL;
-		$urlHashCutoffPoint = strrpos($url, '#');
-		$area = NULL;
-		if ($urlHashCutoffPoint > 0) {
-			$area = substr($url, 1 - (strlen($url) - $urlHashCutoffPoint));
-			if (FALSE === strpos($area, ':')) {
-				return FALSE;
+	public function affectRecordByRequestParameters($id, array &$row, $parameters, DataHandler $tceMain) {
+		if (FALSE === empty($parameters['overrideVals']['tt_content']['tx_flux_parent'])) {
+			$row['tx_flux_parent'] = (integer) $parameters['overrideVals']['tt_content']['tx_flux_parent'];
+			if (0 < $row['tx_flux_parent']) {
+				$row['colPos'] = self::COLPOS_FLUXCONTENT;
 			}
 		}
-		list ($contentAreaFromUrl, $parentUidFromUrl, $afterElementUid) = explode(':', $area);
-		if ($contentAreaFromUrl) {
-			$row['tx_flux_column'] = $contentAreaFromUrl;
-		}
-		if ($parentUidFromUrl > 0) {
-			$row['tx_flux_parent'] = $parentUidFromUrl;
-		}
-		if ($row['tx_flux_parent'] > 0) {
-			$row['colPos'] = self::COLPOS_FLUXCONTENT;
-			if (0 > $afterElementUid) {
-				$row['sorting'] = $tceMain->resorting('tt_content', $row['pid'], 'sorting', abs($afterElementUid));
-			}
-		}
-		return TRUE;
 	}
 
 	/**
@@ -79,52 +91,81 @@ class ContentService implements SingletonInterface {
 	 * @param array $row The record to be pasted, by reference. Changes original $row
 	 * @param array $parameters List of parameters defining the paste operation target
 	 * @param DataHandler $tceMain
-	 * @return boolean
+	 * @return void
 	 */
 	public function pasteAfter($command, array &$row, $parameters, DataHandler $tceMain) {
 		$id = $row['uid'];
+		$tablename = 'tt_content';
 		if (1 < substr_count($parameters[1], '-')) {
+			// Parameters were passed in a hyphen-glued string, created by Flux and passed into command.
 			list ($pid, $subCommand, $relativeUid, $parentUid, $possibleArea, $possibleColPos) = explode('-', $parameters[1]);
-			$relativeUid = 0 - $relativeUid;
-		} else {
-			list ($tablename, $pid, $relativeUid) = $parameters;
-		}
-		if ($command !== 'copy') {
-			$record = $row;
-		} else {
-			$copiedUid = $tceMain->copyMappingArray['tt_content'][$id];
-			$record = $this->loadRecordFromDatabase($copiedUid);
-			if ('reference' === $subCommand) {
-				$record['CType'] = 'shortcut';
-				$record['records'] = $id;
+			$parentUid = (integer) $parentUid;
+			$relativeUid = 0 - (integer) $relativeUid;
+			if (FALSE === empty($possibleArea)) {
+				// Flux content area detected, override colPos to virtual Flux column number.
+				// The $possibleColPos variable may or may not already be set but must be
+				// overridden regardless.
+				$possibleColPos = self::COLPOS_FLUXCONTENT;
 			}
-			$id = $copiedUid;
+		} else {
+			// Parameters are directly from TYPO3 and it almost certainly is a paste to page column.
+			list ($tablename, $pid, $relativeUid) = $parameters;
+			if (0 >= (integer) $pid) {
+				// Third parameter is not passed by every context. If not set and $pid is negative,
+				// we must assume that the positive value of $pid is our relative target UID.
+				$relativeUid = (integer) $pid;
+			}
 		}
-		if (FALSE === empty($possibleArea)) {
-			$record['tx_flux_parent'] = $parentUid;
-			$record['tx_flux_column'] = $possibleArea;
-			$record['colPos'] = self::COLPOS_FLUXCONTENT;
-		} elseif (0 > $relativeUid) {
+
+		// Creating the copy mapping array. Initial processing of all records being pasted,
+		// either simply assigning them (copy action) or adjusting the copies to become
+		// "insert records" elements which then render the original record (paste reference).
+		$mappingArray = array();
+		if ('copy' !== $command) {
+			$mappingArray[$id] = $row;
+		} else {
+			// Only override values from content elements in cmdmap to prevent that child elements "inherits"
+			// tx_flux_parent and tx_flux_column which would position them outside their tx_flux_parent.
+			foreach ($tceMain->cmdmap['tt_content'] as $copyFromUid => $cmdMapValues) {
+				$copyToUid = $tceMain->copyMappingArray['tt_content'][$copyFromUid];
+				$record = $this->loadRecordFromDatabase($copyToUid);
+				if ('reference' === $subCommand) {
+					$record['CType'] = 'shortcut';
+					$record['records'] = $id;
+				}
+
+				$mappingArray[$copyFromUid] = $record;
+			}
+		}
+
+		// If copying is performed relative to another element we must assume the values of
+		// that element and use them as target relation values regardless of earlier parameters.
+		if (0 > $relativeUid) {
 			$relativeRecord = $this->loadRecordFromDatabase(abs($relativeUid));
-			$record['sorting'] = $tceMain->resorting('tt_content', $row['pid'], 'sorting', abs($relativeUid));
-			$record['pid'] = $relativeRecord['pid'];
-			$record['colPos'] = $relativeRecord['colPos'];
-			$record['tx_flux_column'] = $relativeRecord['tx_flux_column'];
-			$record['tx_flux_parent'] = $relativeRecord['tx_flux_parent'];
-		} elseif (0 < $relativeUid) {
-			$record['sorting'] = 0;
-			$record['pid'] = $relativeUid;
-			$record['tx_flux_column'] = '';
-			$record['tx_flux_parent'] = '';
+			$possibleColPos = (integer) $relativeRecord['colPos'];
+			$possibleArea = $relativeRecord['tx_flux_column'];
+			$parentUid = (integer) $relativeRecord['tx_flux_parent'];
 		}
-		if (FALSE === empty($possibleColPos) || 0 === $possibleColPos || '0' === $possibleColPos) {
-			$record['colPos'] = $possibleColPos;
+		foreach ($mappingArray as $record) {
+			if (0 < $pid) {
+				$record['pid'] = $pid;
+			}
+			if ((FALSE === empty($possibleColPos) || 0 === $possibleColPos || '0' === $possibleColPos)) {
+				$record['colPos'] = $possibleColPos;
+			}
+			if (self::COLPOS_FLUXCONTENT === (integer) $possibleColPos) {
+				$record['tx_flux_column'] = $possibleArea;
+				$record['tx_flux_parent'] = (integer) $parentUid;
+			} else {
+				$record['tx_flux_parent'] = 0;
+				$record['tx_flux_column'] = '';
+			}
+			if (0 > $relativeUid) {
+				$record['sorting'] = $tceMain->resorting($tablename, $relativeRecord['pid'], 'sorting', abs($relativeUid));
+			}
+			$this->updateRecordInDatabase($record, NULL, $tceMain);
+			$tceMain->registerDBList[$tablename][$record['uid']];
 		}
-		if (TRUE === isset($pid) && FALSE === isset($relativeRecord['pid'])) {
-			$record['pid'] = $pid;
-		}
-		$this->updateRecordInDatabase($record, $id);
-		$row = $record;
 	}
 
 	/**
@@ -132,164 +173,131 @@ class ContentService implements SingletonInterface {
 	 *
 	 * @param array $row The row which may, may not, trigger moving.
 	 * @param string $relativeTo If not-zero moves record to after this UID (negative) or top of this colPos (positive)
-	 * @return boolean
+	 * @param array $parameters List of parameters defining the move operation target
+	 * @param DataHandler $tceMain
+	 * @return void
 	 */
-	public function moveRecord(array &$row, &$relativeTo) {
-		if (FALSE !== strpos($relativeTo, 'FLUX')) {
-			// Triggers when CE is dropped on a nested content area's header dropzone (EXT:gridelements)
-			list ($areaName, $parentElementUid, $pid) = explode('-', trim($relativeTo, '-'));
-			$row['tx_flux_column'] = $areaName;
-			$row['tx_flux_parent'] = $parentElementUid;
-			$row['pid'] = $pid;
-			$row['sorting'] = -1;
-			$relativeTo = $pid;
-		} elseif (FALSE !== strpos($relativeTo, 'x')) {
-			// Triggers when CE is dropped on a root (not CE) column header's dropzone (EXT:gridelements)
-			// set colPos and remove FCE relation
-			list ($relativeTo, $colPos) = explode('x', $relativeTo);
+	public function moveRecord(array &$row, &$relativeTo, $parameters, DataHandler $tceMain) {
+		if (FALSE !== strpos($relativeTo, 'x') && TRUE === ExtensionManagementUtility::isLoaded('gridelements')) {
+			// EXT:gridelements support: when dropping elements on a gridelements container drop zone, the
+			// current relationships to a Flux parent element, if one is defined, must be cleared.
+			// Note: this support may very well be temporary, depending on the level to which gridelements
+			// adopts Flux usage.
 			$row['tx_flux_column'] = $row['tx_flux_parent'] = NULL;
-			$row['colPos'] = $colPos;
-			$row['sorting'] = -1;
-		} elseif (0 <= intval($relativeTo)) {
-			// dropping an element in a column header dropzone in 6.0 only sends the "colPos"
-			// and this colPos may contain nothing but positive integers. Bring the severe hacking.
-			$backtrace = debug_backtrace();
-			$this->affectRecordByBacktrace($row, $backtrace);
-		} elseif (0 > intval($relativeTo) || 0 > $row['pid']) {
+		} elseif (0 <= (integer) $relativeTo) {
+			if (FALSE === empty($parameters[1])) {
+				$row['tx_flux_column'] = $row['tx_flux_parent'] = NULL;
+				list($prefix, $column, $prefix2, $page, $areaUniqid, $relativePosition, $relativeUid, $area) = GeneralUtility::trimExplode('-', $parameters[1]);
+				$relativeUid = (integer) $relativeUid;
+				if ('colpos' === $prefix && 'page' === $prefix2) {
+					$row['colPos'] = $column;
+					if ('top' === $relativePosition && 0 < $relativeUid) {
+						$row['tx_flux_parent'] = $relativeUid;
+						$row['tx_flux_column'] = $area;
+					}
+				}
+			}
+		} elseif (0 > (integer) $relativeTo) {
 			// inserting a new element after another element. Check column position of that element.
 			$relativeToRecord = $this->loadRecordFromDatabase(abs($relativeTo));
 			$row['tx_flux_parent'] = $relativeToRecord['tx_flux_parent'];
 			$row['tx_flux_column'] = $relativeToRecord['tx_flux_column'];
 			$row['colPos'] = $relativeToRecord['colPos'];
+			$row['sorting'] = $tceMain->resorting('tt_content', $relativeToRecord['pid'], 'sorting', abs($relativeTo));
 		}
 		if (0 < $row['tx_flux_parent']) {
 			$row['colPos'] = self::COLPOS_FLUXCONTENT;
 		}
-		return TRUE;
+		$this->updateRecordInDatabase($row, NULL, $tceMain);
+		$movePlaceholder = BackendUtility::getMovePlaceholder('tt_content', $row['uid']);
+		if (FALSE !== $movePlaceholder) {
+			$movePlaceholder['tx_flux_parent'] = $row['tx_flux_parent'];
+			$movePlaceholder['tx_flux_column'] = $row['tx_flux_column'];
+			$movePlaceholder['colPos'] = $row['colPos'];
+			$this->updateRecordInDatabase($movePlaceholder, NULL, $tceMain);
+		}
 	}
 
 	/**
+	 * @param String $id
 	 * @param array $row
 	 * @param DataHandler $tceMain
-	 * @return NULL
-	 */
-	public function initializeRecord(array $row, DataHandler $tceMain) {
-		$id = $row['uid'];
-		$newUid = $tceMain->substNEWwithIDs[$id];
-		$oldUid = $row['t3_origuid'];
-		$languageFieldName = $GLOBALS['TCA']['tt_content']['ctrl']['languageField'];
-		$newLanguageUid = NULL;
-		if ($oldUid) {
-			$oldRecord = $this->loadRecordFromDatabase($oldUid);
-			if (FALSE === empty($row[$languageFieldName])) {
-				$newLanguageUid = $row[$languageFieldName];
-			} elseif (FALSE === empty($oldRecord[$languageFieldName])) {
-				$newLanguageUid = $oldRecord[$languageFieldName];
-			} else {
-				$newLanguageUid = 1; // TODO: resolve config.sys_language_uid but WITHOUT using Extbase TS resolution, consider pid of new record
-			}
-			$clause = "(tx_flux_column LIKE '%:" . $oldUid . "' || tx_flux_parent = '" . $oldUid . "') AND deleted = 0 AND hidden = 0";
-			$children = $this->loadRecordsFromDatabase($clause);
-			if (1 > count($children)) {
-				return NULL;
-			}
-			// Perform localization on all children, since this is not handled by the TCA field which otherwise cascades changes
-			foreach ($children as $child) {
-				$area = $child['tx_flux_column'];
-				$overrideValues = array(
-					'tx_flux_column' => $area,
-					'tx_flux_parent' => $newUid,
-					$languageFieldName => $newLanguageUid
-				);
-				if ($oldRecord[$languageFieldName] !== $newLanguageUid && $oldRecord['pid'] === $row['pid']) {
-					$childUid = $tceMain->localize('tt_content', $child['uid'], $newLanguageUid);
-					$this->updateRecordInDatabase($overrideValues, $childUid);
-				}
-			}
-		}
-		return NULL;
-	}
-
-	/**
-	 * @param array $row
-	 * @param array $backtrace
-	 * @return boolean
-	 */
-	public function affectRecordByBacktrace(array &$row, array $backtrace) {
-		$retrievedArgument = NULL;
-		$targetClass = 'TYPO3\\CMS\\Backend\\View\\PageLayout\\ExtDirect\\ExtdirectPageCommands';
-		$targetFunction = 'moveContentElement';
-		foreach (array_reverse($backtrace) as $stackItem) {
-			if ($stackItem['class'] === $targetClass && $stackItem['function'] === $targetFunction) {
-				$retrievedArgument = $stackItem['args'][1];
-				$segments = explode('-', $retrievedArgument);
-				$slice = array_slice($segments, count($segments) - 3);
-				if ($slice[0] === 'top') {
-					$row['tx_flux_parent'] = $slice[1];
-					$row['tx_flux_column'] = $slice[2];
-					$row['colPos'] = self::COLPOS_FLUXCONTENT;
-				} elseif ($slice[0] === 'after') {
-					$row['pid'] = 0 - $slice[1];
-					$row['tx_flux_column'] = $slice[2];
-				} else {
-					$row['tx_flux_parent'] = $row['tx_flux_column'] = '';
-				}
-				break;
-			}
-		}
-		return TRUE;
-	}
-
-	/**
-	 * @param integer $uid
-	 * @return string
-	 */
-	public function detectParentElementAreaFromRecord($uid) {
-		$uid = abs($uid);
-		$record = $this->loadRecordFromDatabase($uid);
-		return $record['tx_flux_column'];
-	}
-
-	/**
-	 * @param integer $uid
-	 * @return integer
-	 */
-	public function detectParentUidFromRecord($uid) {
-		$uid = abs($uid);
-		$record = $this->loadRecordFromDatabase($uid);
-		return intval($record['tx_flux_parent']);
-	}
-
-	/**
-	 * @param mixed $uidOrClause
-	 * @return array|FALSE
-	 */
-	protected function loadRecordFromDatabase($uidOrClause) {
-		if (0 < intval($uidOrClause) && TRUE === is_integer($uidOrClause)) {
-			return BackendUtility::getRecord('tt_content', $uidOrClause);
-		} else {
-			return $GLOBALS['TYPO3_DB']->exec_SELECTgetSingleRow('*', 'tt_content', $uidOrClause);
-		}
-	}
-
-	/**
-	 * @param string $clause
-	 * @return array|FALSE
-	 */
-	protected function loadRecordsFromDatabase($clause) {
-		return $GLOBALS['TYPO3_DB']->exec_SELECTgetRows('*', 'tt_content', $clause);
-	}
-
-	/**
-	 * @param array $row
-	 * @param integer $uid
 	 * @return void
 	 */
-	protected function updateRecordInDatabase($row, $uid = NULL) {
+	public function initializeRecord($id, array &$row, DataHandler $tceMain) {
+		$origUidFieldName = $GLOBALS['TCA']['tt_content']['ctrl']['origUid'];
+		$languageFieldName = $GLOBALS['TCA']['tt_content']['ctrl']['languageField'];
+
+		$newUid = (integer) $tceMain->substNEWwithIDs[$id];
+		$oldUid = (integer) $row[$origUidFieldName];
+		$newLanguageUid = (integer) $row[$languageFieldName];
+
+		if (0 < $newUid && 0 < $oldUid && 0 < $newLanguageUid) {
+			$oldRecord = $this->loadRecordFromDatabase($oldUid);
+			if ($oldRecord[$languageFieldName] === $newLanguageUid || $oldRecord['pid'] !== $row['pid']) {
+				return;
+			}
+
+			$sortbyFieldName = $GLOBALS['TCA']['tt_content']['ctrl']['sortby'];
+			$overrideValues = array(
+				$sortbyFieldName => $tceMain->resorting('tt_content', $row['pid'], $sortbyFieldName, $oldUid)
+			);
+			$this->updateRecordInDatabase($overrideValues, $newUid, $tceMain);
+		}
+	}
+
+	/**
+	 * @param integer $uid
+	 * @param integer $languageUid
+	 * @return array|NULL
+	 */
+	protected function loadRecordFromDatabase($uid, $languageUid = 0) {
+		$uid = (integer) $uid;
+		$languageUid = (integer) $languageUid;
+		if (0 === $languageUid) {
+			$record = BackendUtility::getRecord('tt_content', $uid);
+		} else {
+			$record = BackendUtility::getRecordLocalization('tt_content', $uid, $languageUid);
+		}
+		$record = $this->workspacesAwareRecordService->getSingle('tt_content', '*', $record['uid']);
+		return $record;
+	}
+
+	/**
+	 * @param integer $parentUid
+	 * @return array|NULL
+	 */
+	protected function loadRecordsFromDatabase($parentUid) {
+		$parentUid = (integer) $parentUid;
+		return $this->workspacesAwareRecordService->get('tt_content', '*', "tx_flux_parent = '" . $parentUid . "'");
+	}
+
+	/**
+	 * @param array $row
+	 * @param integer $uid
+	 * @param DataHandler $tceMain
+	 * @return void
+	 */
+	protected function updateRecordInDatabase(array $row, $uid = NULL, DataHandler $tceMain) {
 		if (NULL === $uid) {
 			$uid = $row['uid'];
 		}
-		$GLOBALS['TYPO3_DB']->exec_UPDATEquery('tt_content', "uid = '" . $uid . "'", $row);
+		$uid = (integer) $uid;
+		if (FALSE === empty($uid)) {
+			$row['uid'] = $uid;
+			$this->workspacesAwareRecordService->update('tt_content', $row);
+			// reload our record for the next bits to have access to all fields
+			$row = $this->recordService->getSingle('tt_content', '*', $uid);
+		}
+		$versionedRecordUid = (integer) (TRUE === isset($row['t3ver_oid']) && 0 < (integer) $row['t3ver_oid'] ? $row['t3ver_oid'] : 0);
+		if (0 < $versionedRecordUid) {
+			// temporary record; duplicate key values of original record into temporary one.
+			// Note: will continue to call this method until all temporary records in chain have been processed.
+			$placeholder = $this->recordService->getSingle('tt_content', '*', $row['t3ver_oid']);
+			$placeholder['tx_flux_parent'] = (integer) $row['tx_flux_parent'];
+			$placeholder['tx_flux_column'] = $row['tx_flux_column'];
+			$this->updateRecordInDatabase($placeholder, $row['t3ver_oid'], $tceMain);
+		}
 	}
 
 }

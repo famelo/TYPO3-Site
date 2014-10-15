@@ -24,7 +24,6 @@ namespace FluidTYPO3\Flux\Utility;
  *  This copyright notice MUST APPEAR in all copies of the script!
  ***************************************************************/
 
-use FluidTYPO3\Flux\Utility\ExtensionNamingUtility;
 use FluidTYPO3\Flux\Tests\Unit\AbstractTestCase;
 
 /**
@@ -32,7 +31,7 @@ use FluidTYPO3\Flux\Tests\Unit\AbstractTestCase;
  * @package Flux
  * @subpackage Utility
  */
-class ExtensionTest extends AbstractTestCase {
+class ExtensionNamingUtilityTest extends AbstractTestCase {
 
 	/**
 	 * @test

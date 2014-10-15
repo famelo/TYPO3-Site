@@ -29,6 +29,7 @@ use FluidTYPO3\Flux\Provider\ProviderInterface;
 use FluidTYPO3\Flux\Provider\ContentProvider as FluxContentProvider;
 use FluidTYPO3\Flux\Utility\PathUtility;
 use FluidTYPO3\Flux\Utility\ExtensionNamingUtility;
+use FluidTYPO3\Flux\Utility\ResolveUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Extbase\Configuration\ConfigurationManagerInterface;
 
@@ -114,29 +115,9 @@ class ContentProvider extends FluxContentProvider implements ProviderInterface {
 			}
 		}
 		list (, $filename) = explode(':', $templatePathAndFilename);
+		list ($controllerAction, $format) = explode('.', $filename);
 		$paths = $this->getTemplatePaths($row);
-		$templateRootPath = $paths['templateRootPath'];
-		if ('/' === substr($templateRootPath, -1)) {
-			$templateRootPath = substr($templateRootPath, 0, -1);
-		}
-		if (TRUE === file_exists($templateRootPath . '/' . $this->controllerName)) {
-			$templateRootPath = $templateRootPath . '/' . $this->controllerName;
-		}
-		$templatePathAndFilename = $templateRootPath . '/' . $filename;
-		if (TRUE === isset($paths['overlays']) && TRUE === is_array($paths['overlays'])) {
-			foreach ($paths['overlays'] as $possibleOverlayPaths) {
-				if (TRUE === isset($possibleOverlayPaths['templateRootPath'])) {
-					$overlayTemplateRootPath = $possibleOverlayPaths['templateRootPath'];
-					$overlayTemplateRootPath = rtrim($overlayTemplateRootPath, '/');
-					$possibleOverlayFile = GeneralUtility::getFileAbsFileName($overlayTemplateRootPath . '/' . $this->controllerName . '/' . $filename);
-					if (TRUE === file_exists($possibleOverlayFile)) {
-						$templatePathAndFilename = $possibleOverlayFile;
-						break;
-					}
-				}
-			}
-		}
-		$templatePathAndFilename = GeneralUtility::getFileAbsFileName($templatePathAndFilename);
+		$templatePathAndFilename = ResolveUtility::resolveTemplatePathAndFilenameByPathAndControllerNameAndActionAndFormat($paths, 'Content', $controllerAction, $format);
 		return $templatePathAndFilename;
 	}
 
@@ -188,6 +169,11 @@ class ContentProvider extends FluxContentProvider implements ProviderInterface {
 	 */
 	public function getControllerActionFromRecord(array $row) {
 		$fileReference = $this->getControllerActionReferenceFromRecord($row);
+		if (TRUE === empty($fileReference)) {
+			$table = $this->getTableName($row);
+			$this->configurationService->message('No content template found in "' . $table . ':' . $row['uid'] . '"', 1404736585);
+			return 'default';
+		}
 		$identifier = explode(':', $fileReference);
 		$actionName = array_pop($identifier);
 		$actionName = basename($actionName, '.html');

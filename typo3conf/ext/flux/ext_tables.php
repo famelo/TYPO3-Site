@@ -26,10 +26,12 @@ $TCA['tt_content']['columns']['colPos']['config']['items'][] = array(
 		'tx_flux_parent' => array (
 			'exclude' => 0,
 			'label' => 'LLL:EXT:flux/Resources/Private/Language/locallang.xlf:tt_content.tx_flux_parent',
+			'displayCond' => 'FIELD:tx_flux_parent:>:0',
 			'config' => array (
-				'type' => 'select',
+				'type' => 'input',
+				'readOnly' => TRUE,
 				'foreign_table' => 'tt_content',
-				'foreign_table_where' => "tt_content.pid = '###CURRENT_PID###'",
+				'foreign_table_where' => "AND tt_content.pid = '###CURRENT_PID###'",
 				'default' => 0,
 				'size' => 1,
 				'maxitems' => 1,
@@ -44,16 +46,25 @@ $TCA['tt_content']['columns']['colPos']['config']['items'][] = array(
 				'foreign_sortby' => 'sorting',
 				'appearance' => array(
 					'collapseAll' => TRUE,
+					'showPossibleLocalizationRecords' => TRUE,
+					'showAllLocalizationLink' => TRUE,
+					'showSynchronizationLink' => TRUE,
 					'enabledControls' => array(
 						'new' => FALSE,
+						'localize' => TRUE,
+						'sort' => FALSE,
 						'hide' => TRUE
 					)
-				)
+				),
+				'behaviour' => array(
+					'localizationMode' => 'select',
+					'localizeChildrenAtParentLocalization' => TRUE,
+				),
 			)
 		),
 	)
 );
-\TYPO3\CMS\Core\Utility\ExtensionManagementUtility::addToAllTCAtypes('tt_content', ',--div--;LLL:EXT:flux/Resources/Private/Language/locallang.xlf:tt_content.tabs.relation,tx_flux_column,tx_flux_children;LLL:EXT:flux/Resources/Private/Language/locallang.xlf:tt_content.tx_flux_children,,,');
+\TYPO3\CMS\Core\Utility\ExtensionManagementUtility::addToAllTCAtypes('tt_content', ',--div--;LLL:EXT:flux/Resources/Private/Language/locallang.xlf:tt_content.tabs.relation,tx_flux_parent,tx_flux_column,tx_flux_children;LLL:EXT:flux/Resources/Private/Language/locallang.xlf:tt_content.tx_flux_children,,,');
 
 
 \FluidTYPO3\Flux\Core::registerConfigurationProvider('FluidTYPO3\Flux\Provider\ContentProvider');

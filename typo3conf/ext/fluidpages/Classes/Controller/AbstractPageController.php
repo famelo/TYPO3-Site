@@ -49,24 +49,24 @@ abstract class AbstractPageController extends AbstractFluxController implements 
 	protected $fluxTableName = 'pages';
 
 	/**
-	 * @var \FluidTYPO3\Fluidpages\Service\PageService
+	 * @var PageService
 	 */
 	protected $pageService;
 
 	/**
-	 * @var \FluidTYPO3\Fluidpages\Service\ConfigurationService
+	 * @var ConfigurationService
 	 */
 	protected $configurationService;
 
 	/**
-	 * @param \FluidTYPO3\Fluidpages\Service\PageService $pageService
+	 * @param PageService $pageService
 	 */
 	public function injectPageService(PageService $pageService) {
 		$this->pageService = $pageService;
 	}
 
 	/**
-	 * @param \FluidTYPO3\Fluidpages\Service\ConfigurationService $configurationService
+	 * @param ConfigurationService $configurationService
 	 * @return void
 	 */
 	public function injectConfigurationService(ConfigurationService $configurationService) {
@@ -74,19 +74,34 @@ abstract class AbstractPageController extends AbstractFluxController implements 
 	}
 
 	/**
-	 * @param \TYPO3\CMS\Extbase\Mvc\View\ViewInterface $view
+	 * @param ViewInterface $view
 	 * @return void
 	 */
 	public function initializeView(ViewInterface $view) {
-		$this->configurationManager->getContentObject()->data = $GLOBALS['TSFE']->page;
+		$this->configurationManager->getContentObject()->data = $this->getRecord();
 		parent::initializeView($view);
+	}
+
+	/**
+	 * @return string
+	 */
+	public function rawAction() {
+		$record = $this->getRecord();
+		$templateFileReference = $record['tx_fluidpages_templatefile'];
+		$templatePathAndFilename = $this->configurationService->convertFileReferenceToTemplatePathAndFilename($templateFileReference);
+		$paths = $this->configurationService->getViewConfigurationByFileReference($templateFileReference);
+		$this->provider->setTemplatePathAndFilename($templatePathAndFilename);
+		$this->view->setTemplatePathAndFilename($templatePathAndFilename);
+		$this->view->setTemplateRootPath($paths['templateRootPath']);
+		$this->view->setPartialRootPath($paths['partialRootPath']);
+		$this->view->setLayoutRootPath($paths['layoutRootPath']);
 	}
 
 	/**
 	 * @return array
 	 */
 	public function getRecord() {
-		return $GLOBALS['TSFE']->page;
+		return $this->workspacesAwareRecordService->getSingle($this->fluxTableName, '*', $GLOBALS['TSFE']->id);
 	}
 
 }

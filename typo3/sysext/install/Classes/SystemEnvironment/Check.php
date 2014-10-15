@@ -92,7 +92,10 @@ class Check {
 		$statusArray[] = $this->checkOpenSslInstalled();
 		$statusArray[] = $this->checkSuhosinLoaded();
 		$statusArray[] = $this->checkSuhosinRequestMaxVars();
+		$statusArray[] = $this->checkSuhosinRequestMaxVarnameLength();
+		$statusArray[] = $this->checkSuhosinPostMaxNameLength();
 		$statusArray[] = $this->checkSuhosinPostMaxVars();
+		$statusArray[] = $this->checkSuhosinGetMaxNameLength();
 		$statusArray[] = $this->checkSuhosinGetMaxValueLength();
 		$statusArray[] = $this->checkSuhosinExecutorIncludeWhitelistContainsPhar();
 		$statusArray[] = $this->checkSuhosinExecutorIncludeWhitelistContainsVfs();
@@ -175,13 +178,13 @@ class Check {
 	 */
 	protected function checkMaximumFileUploadSize() {
 		$maximumUploadFilesize = $this->getBytesFromSizeMeasurement(ini_get('upload_max_filesize'));
-		$configuredMaximumUploadFilesize = 1024 * $GLOBALS['TYPO3_CONF_VARS']['BE']['maxFileSize'];
+		$configuredMaximumUploadFilesize = 1024 * (int)$GLOBALS['TYPO3_CONF_VARS']['BE']['maxFileSize'];
 		if ($maximumUploadFilesize < $configuredMaximumUploadFilesize) {
 			$status = new Status\ErrorStatus();
 			$status->setTitle('PHP Maximum upload filesize too small');
 			$status->setMessage(
-				'PHP upload_max_filesize = ' . (int)ini_get('upload_max_filesize') . ' MB' . LF .
-				'TYPO3_CONF_VARS[BE][maxFileSize] = ' . (int)($configuredMaximumUploadFilesize / 1024 / 1024) . ' MB' . LF . LF .
+				'PHP upload_max_filesize = ' . (int)($maximumUploadFilesize / 1024) . ' KB' . LF .
+				'TYPO3_CONF_VARS[BE][maxFileSize] = ' . (int)($configuredMaximumUploadFilesize / 1024) . ' KB' . LF . LF .
 				'Currently PHP determines the limits for uploaded file\'s sizes and not TYPO3.' .
 				' It is recommended that the value of upload_max_filesize is at least equal to the value' .
 				' of TYPO3_CONF_VARS[BE][maxFileSize].'
@@ -502,17 +505,29 @@ class Check {
 	protected function checkXdebugMaxNestingLevel() {
 		if (extension_loaded('xdebug')) {
 			$recommendedMaxNestingLevel = 400;
+			$errorThreshold = 250;
 			$currentMaxNestingLevel = ini_get('xdebug.max_nesting_level');
-			if ($currentMaxNestingLevel < $recommendedMaxNestingLevel) {
+			if ($currentMaxNestingLevel < $errorThreshold) {
 				$status = new Status\ErrorStatus();
-				$status->setTitle('PHP xdebug.max_nesting_level too low');
+				$status->setTitle('PHP xdebug.max_nesting_level is critically low');
 				$status->setMessage(
 					'xdebug.max_nesting_level=' . $currentMaxNestingLevel . LF .
 					'This setting controls the maximum number of nested function calls to protect against' .
 					' infinite recursion. The current value is too low for TYPO3 CMS and must' .
-					' be either raised or xdebug unloaded. A value of ' . $recommendedMaxNestingLevel .
+					' be either raised or xdebug has to be unloaded. A value of ' . $recommendedMaxNestingLevel .
 					' is recommended. Warning: Expect fatal PHP errors in central parts of the CMS' .
 					' if the value is not raised significantly to:' . LF .
+					'xdebug.max_nesting_level=' . $recommendedMaxNestingLevel
+				);
+			} elseif ($currentMaxNestingLevel < $recommendedMaxNestingLevel) {
+				$status = new Status\WarningStatus();
+				$status->setTitle('PHP xdebug.max_nesting_level is low');
+				$status->setMessage(
+					'xdebug.max_nesting_level=' . $currentMaxNestingLevel . LF .
+					'This setting controls the maximum number of nested function calls to protect against' .
+					' infinite recursion. The current value is high enough for the TYPO3 CMS core to work' .
+					' fine, but still some extensions could raise fatal PHP errors if the setting is not' .
+					' raised further. A value of ' . $recommendedMaxNestingLevel . ' is recommended.' . LF .
 					'xdebug.max_nesting_level=' . $recommendedMaxNestingLevel
 				);
 			} else {
@@ -617,6 +632,76 @@ class Check {
 	}
 
 	/**
+	 * Check suhosin.request.max_varname_length
+	 *
+	 * @return Status\StatusInterface
+	 */
+	protected function checkSuhosinRequestMaxVarnameLength() {
+		$recommendedRequestMaxVarnameLength = 200;
+		if ($this->isSuhosinLoaded()) {
+			$currentRequestMaxVarnameLength = ini_get('suhosin.request.max_varname_length');
+			if ($currentRequestMaxVarnameLength < $recommendedRequestMaxVarnameLength) {
+				$status = new Status\ErrorStatus();
+				$status->setTitle('PHP suhosin.request.max_varname_length too low');
+				$status->setMessage(
+					'suhosin.request.max_varname_length=' . $currentRequestMaxVarnameLength . LF .
+					'This setting can lead to lost information if submitting forms with lots of data in TYPO3 CMS' .
+					' (as the install tool does). It is highly recommended to raise this' .
+					' to at least ' . $recommendedRequestMaxVarnameLength . ':' . LF .
+					'suhosin.request.max_varname_length=' . $recommendedRequestMaxVarnameLength
+				);
+			} else {
+				$status = new Status\OkStatus();
+				$status->setTitle('PHP suhosin.request.max_varname_length ok');
+			}
+		} else {
+			$status = new Status\InfoStatus();
+			$status->setTitle('Suhosin not loaded');
+			$status->setMessage(
+				'If enabling suhosin, suhosin.request.max_varname_length' .
+				' should be set to at least ' . $recommendedRequestMaxVarnameLength . ':' . LF .
+				'suhosin.request.max_varname_length=' . $recommendedRequestMaxVarnameLength
+			);
+		}
+		return $status;
+	}
+
+	/**
+	 * Check suhosin.post.max_name_length
+	 *
+	 * @return Status\StatusInterface
+	 */
+	protected function checkSuhosinPostMaxNameLength() {
+		$recommendedPostMaxNameLength = 200;
+		if ($this->isSuhosinLoaded()) {
+			$currentPostMaxNameLength = ini_get('suhosin.post.max_name_length');
+			if ($currentPostMaxNameLength < $recommendedPostMaxNameLength) {
+				$status = new Status\ErrorStatus();
+				$status->setTitle('PHP suhosin.post.max_name_length too low');
+				$status->setMessage(
+					'suhosin.post.max_name_length=' . $currentPostMaxNameLength . LF .
+					'This setting can lead to lost information if submitting forms with lots of data in TYPO3 CMS' .
+					' (as the install tool does). It is highly recommended to raise this' .
+					' to at least ' . $recommendedPostMaxNameLength . ':' . LF .
+					'suhosin.post.max_name_length=' . $recommendedPostMaxNameLength
+				);
+			} else {
+				$status = new Status\OkStatus();
+				$status->setTitle('PHP suhosin.post.max_name_length ok');
+			}
+		} else {
+			$status = new Status\InfoStatus();
+			$status->setTitle('Suhosin not loaded');
+			$status->setMessage(
+				'If enabling suhosin, suhosin.post.max_name_length' .
+				' should be set to at least ' . $recommendedPostMaxNameLength . ':' . LF .
+				'suhosin.post.max_name_length=' . $recommendedPostMaxNameLength
+			);
+		}
+		return $status;
+	}
+
+	/**
 	 * Check suhosin.post.max_vars
 	 *
 	 * @return Status\StatusInterface
@@ -687,21 +772,56 @@ class Check {
 	}
 
 	/**
+	 * Check suhosin.get.max_name_length
+	 *
+	 * @return Status\StatusInterface
+	 */
+	protected function checkSuhosinGetMaxNameLength() {
+		$recommendedGetMaxNameLength = 200;
+		if ($this->isSuhosinLoaded()) {
+			$currentGetMaxNameLength = ini_get('suhosin.get.max_name_length');
+			if ($currentGetMaxNameLength < $recommendedGetMaxNameLength) {
+				$status = new Status\ErrorStatus();
+				$status->setTitle('PHP suhosin.get.max_name_length too low');
+				$status->setMessage(
+					'suhosin.get.max_name_length=' . $currentGetMaxNameLength . LF .
+					'This setting can lead to lost information if submitting forms with lots of data in TYPO3 CMS' .
+					' (as the install tool does). It is highly recommended to raise this' .
+					' to at least ' . $recommendedGetMaxNameLength . ':' . LF .
+					'suhosin.get.max_name_length=' . $recommendedGetMaxNameLength
+				);
+			} else {
+				$status = new Status\OkStatus();
+				$status->setTitle('PHP suhosin.get.max_name_length ok');
+			}
+		} else {
+			$status = new Status\InfoStatus();
+			$status->setTitle('Suhosin not loaded');
+			$status->setMessage(
+				'If enabling suhosin, suhosin.get.max_name_length' .
+				' should be set to at least ' . $recommendedGetMaxNameLength . ':' . LF .
+				'suhosin.get.max_name_length=' . $recommendedGetMaxNameLength
+			);
+		}
+		return $status;
+	}
+
+	/**
 	 * Check suhosin.executor.include.whitelist contains phar
 	 *
 	 * @return Status\StatusInterface
 	 */
 	protected function checkSuhosinExecutorIncludeWhiteListContainsPhar() {
 		if ($this->isSuhosinLoaded()) {
-			$currentWhiteListArray = $this->trimExplode(' ', ini_get('suhosin.executor.include.whitelist'));
-			if (!in_array('phar', $currentWhiteListArray)) {
+			$whitelist = (string)ini_get('suhosin.executor.include.whitelist');
+			if (strpos($whitelist, 'phar') === FALSE) {
 				$status = new Status\NoticeStatus();
 				$status->setTitle('PHP suhosin.executor.include.whitelist does not contain phar');
 				$status->setMessage(
-					'suhosin.executor.include.whitelist= ' . implode(' ', $currentWhiteListArray) . LF .
+					'suhosin.executor.include.whitelist= ' . $whitelist . LF .
 					'"phar" is currently not a hard requirement of TYPO3 CMS but is nice to have and a possible' .
 					' requirement in future versions. A useful setting is:' . LF .
-					'suhosin.executor.include.whitelist=phar vfs'
+					'suhosin.executor.include.whitelist=phar,vfs'
 				);
 			} else {
 				$status = new Status\OkStatus();
@@ -712,7 +832,7 @@ class Check {
 			$status->setTitle('Suhosin not loaded');
 			$status->setMessage(
 				'If enabling suhosin, a useful setting is:' . LF .
-				'suhosin.executor.include.whitelist=phar vfs'
+				'suhosin.executor.include.whitelist=phar,vfs'
 			);
 		}
 		return $status;
@@ -725,16 +845,16 @@ class Check {
 	 */
 	protected function checkSuhosinExecutorIncludeWhiteListContainsVfs() {
 		if ($this->isSuhosinLoaded()) {
-			$currentWhiteListArray = $this->trimExplode(' ', ini_get('suhosin.executor.include.whitelist'));
-			if (!in_array('vfs', $currentWhiteListArray)) {
+			$whitelist = (string)ini_get('suhosin.executor.include.whitelist');
+			if (strpos($whitelist, 'vfs') === FALSE) {
 				$status = new Status\WarningStatus();
 				$status->setTitle('PHP suhosin.executor.include.whitelist does not contain vfs');
 				$status->setMessage(
-					'suhosin.executor.include.whitelist= ' . implode(' ', $currentWhiteListArray) . LF .
+					'suhosin.executor.include.whitelist= ' . $whitelist . LF .
 					'"vfs" is currently not a hard requirement of TYPO3 CMS but tons of unit tests rely on it.' .
 					' Furthermore, vfs will likely be a base for an additional compatibility layer in the future.' .
 					' A useful setting is:' . LF .
-					'suhosin.executor.include.whitelist=phar vfs'
+					'suhosin.executor.include.whitelist=phar,vfs'
 				);
 			} else {
 				$status = new Status\OkStatus();
@@ -745,7 +865,7 @@ class Check {
 			$status->setTitle('Suhosin not loaded');
 			$status->setMessage(
 				'If enabling suhosin, a useful setting is:' . LF .
-				'suhosin.executor.include.whitelist=phar vfs'
+				'suhosin.executor.include.whitelist=phar,vfs'
 			);
 		}
 		return $status;
@@ -1331,6 +1451,6 @@ class Check {
 		} elseif (stripos($measurement, 'K')) {
 			$bytes *= 1024;
 		}
-		return $bytes;
+		return (int)$bytes;
 	}
 }

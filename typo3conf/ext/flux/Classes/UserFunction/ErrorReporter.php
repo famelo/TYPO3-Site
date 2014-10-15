@@ -38,7 +38,7 @@ class ErrorReporter {
 	 */
 	public function renderField(&$parameters, &$pObj) {
 		unset($pObj);
-		$exception = $parameters['fieldConf']['config']['parameters'][0]['exception'];
+		$exception = reset($parameters['fieldConf']['config']['arguments']);
 		if ($exception instanceof \Exception) {
 			$code = $exception->getCode();
 			$message = $exception->getMessage();

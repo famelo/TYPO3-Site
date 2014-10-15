@@ -24,7 +24,6 @@ namespace FluidTYPO3\Flux\Service;
  *  This copyright notice MUST APPEAR in all copies of the script!
  * ************************************************************* */
 
-use FluidTYPO3\Flux\Service\ContentService;
 use FluidTYPO3\Flux\Tests\Fixtures\Data\Records;
 use FluidTYPO3\Flux\Tests\Unit\AbstractTestCase;
 use TYPO3\CMS\Core\DataHandling\DataHandler;
@@ -34,30 +33,6 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
  * @package Flux
  */
 class ContentServiceTest extends AbstractTestCase {
-
-	/**
-	 * @var array
-	 */
-	private static $BACKTRACE_FIXTURE = array(
-		array(
-			'class' => 'TYPO3\\CMS\\Backend\\View\\PageLayout\\ExtDirect\\ExtdirectPageCommands',
-			'function' => 'moveContentElement',
-			'args' => array()
-		),
-		array(
-			'class' => 'TYPO3\\CMS\\Backend\\View\\PageLayout\\ExtDirect\\ExtdirectPageCommands',
-			'function' => 'unrecognised',
-			'args' => array()
-		),
-		array(
-			'class' => 'Unrecognised',
-			'function' => 'void',
-			'args' => array(
-				'foo',
-				'bar'
-			)
-		)
-	);
 
 	/**
 	 * @return ContentService
@@ -71,133 +46,15 @@ class ContentServiceTest extends AbstractTestCase {
 	/**
 	 * @test
 	 */
-	public function canDetectParentElementAreaFromRecord() {
-		$result = $this->createInstance()->detectParentElementAreaFromRecord(0);
-		$this->assertNull($result);
-	}
-
-	/**
-	 * @test
-	 */
-	public function canDetectParentUidFromRecord() {
-		$result = $this->createInstance()->detectParentUidFromRecord(0);
-		$this->assertIsInteger($result);
-	}
-
-	/**
-	 * @test
-	 */
-	public function affectByRequestParametersReturnsEarlyWithUnrecognisedUrl() {
-		$parameters = array(
-			'returnUrl' => 'some.php?arg=1#hascutoffpointbutnovalues'
-		);
+	public function affectByRequestParametersAppliesParent() {
+		$parameters['overrideVals']['tt_content']['tx_flux_parent'] = 999999;
 		$record = Records::$contentRecordIsParentAndHasChildren;
+		$this->assertSame(0, $record['tx_flux_parent']);
+		$this->assertSame(0, $record['colPos']);
 		$tceMain = GeneralUtility::makeInstance('TYPO3\CMS\Core\DataHandling\DataHandler');
-		$result = $this->createInstance()->affectRecordByRequestParameters($record, $parameters, $tceMain);
-		$this->assertFalse($result);
-	}
-
-	/**
-	 * @test
-	 */
-	public function affectByRequestParametersAppliesContentAreaAndParentWithRecognisedUrl() {
-		$parameters = array(
-			'returnUrl' => 'some.php?arg=1#areaname:999999'
-		);
-		$record = Records::$contentRecordIsParentAndHasChildren;
-		$tceMain = GeneralUtility::makeInstance('TYPO3\CMS\Core\DataHandling\DataHandler');
-		$result = $this->createInstance()->affectRecordByRequestParameters($record, $parameters, $tceMain);
-		$this->assertTrue($result);
-		$this->assertSame('areaname', $record['tx_flux_column']);
-		$this->assertSame('999999', $record['tx_flux_parent']);
-	}
-
-	/**
-	 * @test
-	 */
-	public function affectByRequestParametersAppliesContentAreaAndParentWithRecognisedUrlRelativeToElement() {
-		$parameters = array(
-			'returnUrl' => 'some.php?arg=1#areaname:999999:-999998'
-		);
-		$record = Records::$contentRecordIsParentAndHasChildren;
-		$oldSorting = $record['sorting'];
-		$tceMain = GeneralUtility::makeInstance('TYPO3\CMS\Core\DataHandling\DataHandler');
-		$result = $this->createInstance()->affectRecordByRequestParameters($record, $parameters, $tceMain);
-		$this->assertTrue($result);
-		$this->assertSame('areaname', $record['tx_flux_column']);
-		$this->assertSame('999999', $record['tx_flux_parent']);
-		$this->assertNotSame($oldSorting, $record['sorting']);
-	}
-
-	/**
-	 * @test
-	 */
-	public function affectsRecordByBacktraceWithDropTargetTop() {
-		$expectedParent = 123;
-		$expectedColumn = 'myarea';
-		$backtrace = self::$BACKTRACE_FIXTURE;
-		$backtrace[0]['args'] = array(
-			0 => 'unused',
-			1 => 'void-void-void-void-top-' . $expectedParent . '-' . $expectedColumn
-		);
-		$row = $this->fireBacktraceDetection($backtrace);
-		$this->assertEquals($expectedColumn, $row['tx_flux_column']);
-		$this->assertEquals($expectedParent, $row['tx_flux_parent']);
-		$this->assertEquals(ContentService::COLPOS_FLUXCONTENT, $row['colPos']);
-	}
-
-	/**
-	 * @test
-	 */
-	public function affectsRecordByBacktraceWithDropTargetAfter() {
-		$expectedParent = 123;
-		$expectedColumn = '';
-		$backtrace = self::$BACKTRACE_FIXTURE;
-		$backtrace[0]['args'] = array(
-			0 => 'unused',
-			1 => 'void-void-void-void-after-' . $expectedParent . '-' . $expectedColumn
-		);
-		$row = $this->fireBacktraceDetection($backtrace);
-		$this->assertEquals($expectedColumn, $row['tx_flux_column']);
-		$this->assertEquals(0 - $expectedParent, $row['pid']);
-	}
-
-	/**
-	 * @test
-	 */
-	public function affectsRecordByBacktraceWithDropTargetNone() {
-		$backtrace = self::$BACKTRACE_FIXTURE;
-		$row = $this->fireBacktraceDetection($backtrace);
-		$this->assertEmpty($row['tx_flux_column']);
-		$this->assertEmpty($row['tx_flux_parent']);
-	}
-
-	/**
-	 * @test
-	 */
-	public function canLoadRecordsFromDatabase() {
-		$instance = $this->createInstance();
-		$result = $this->callInaccessibleMethod($instance, 'loadRecordsFromDatabase', 'uid IN(0)');
-		$this->assertIsArray($result);
-		$this->assertEmpty($result);
-	}
-
-	/**
-	 * @test
-	 */
-	public function canLoadRecordFromDatabaseByUid() {
-		$instance = $this->createInstance();
-		$result = $this->callInaccessibleMethod($instance, 'loadRecordFromDatabase', 9999999999999);
-		$this->assertNull($result);
-	}
-
-	/**
-	 * @test
-	 */
-	public function canUpdateRecordInDatabase() {
-		$instance = $this->createInstance();
-		$row = array('uid' => 0);
-		$this->callInaccessibleMethod($instance, 'updateRecordInDatabase', $row);
+		$this->createInstance()->affectRecordByRequestParameters('NEW12345', $record, $parameters, $tceMain);
+		$this->assertSame(999999, $record['tx_flux_parent']);
+		$this->assertSame(ContentService::COLPOS_FLUXCONTENT, $record['colPos']);
 	}
 
 	/**
@@ -208,90 +65,15 @@ class ContentServiceTest extends AbstractTestCase {
 		$mock = $this->createMock($methods);
 		$row = array('uid' => -1);
 		$tceMain = $this->getMock('TYPO3\CMS\Core\DataHandling\DataHandler');
-		$tceMain->substNEWwithIDs = array();
-		$mock->initializeRecord($row, $tceMain);
-	}
-
-	/**
-	 * @test
-	 */
-	public function canInitializeBlankRecordWithLanguage() {
-		$methods = array('loadRecordsFromDatabase', 'loadRecordFromDatabase', 'updateRecordInDatabase');
-		$mock = $this->createMock($methods);
-		$oldRecord = array(
-			'sys_language_uid' => 1
-		);
-		$mock->expects($this->once())->method('loadRecordFromDatabase')->with(999999999999)->will($this->returnValue($oldRecord));
-		$row = array('uid' => -1, 't3_origuid' => 999999999999, 'sys_language_uid' => 1);
-		$tceMain = $this->getMock('TYPO3\CMS\Core\DataHandling\DataHandler');
-		$tceMain->substNEWwithIDs = array();
-		$mock->initializeRecord($row, $tceMain);
-	}
-
-	/**
-	 * @test
-	 */
-	public function canInitializeBlankRecordWithLanguageInOldRecord() {
-		$methods = array('loadRecordsFromDatabase', 'loadRecordFromDatabase', 'updateRecordInDatabase');
-		$mock = $this->createMock($methods);
-		$oldRecord = array(
-			'sys_language_uid' => 1
-		);
-		$mock->expects($this->once())->method('loadRecordFromDatabase')->with(999999999999)->will($this->returnValue($oldRecord));
-		$row = array('uid' => -1, 't3_origuid' => 999999999999);
-		$tceMain = $this->getMock('TYPO3\CMS\Core\DataHandling\DataHandler');
-		$tceMain->substNEWwithIDs = array();
-		$mock->initializeRecord($row, $tceMain);
-	}
-
-	/**
-	 * @test
-	 */
-	public function canInitializeCopiedRecordWithoutChildren() {
-		$methods = array('loadRecordsFromDatabase', 'loadRecordFromDatabase', 'updateRecordInDatabase');
-		$row = array('uid' => -1, 't3_origuid' => 99999999999999);
-		$mock = $this->createMock($methods);
-		$mock->expects($this->atLeastOnce())->method('loadRecordsFromDatabase');
-		$tceMain = $this->getMock('TYPO3\CMS\Core\DataHandling\DataHandler');
-		$tceMain->substNEWwithIDs = array();
-		$mock->initializeRecord($row, $tceMain);
-	}
-
-	/**
-	 * @test
-	 */
-	public function canInitializeCopiedRecordWithChildren() {
-		$methods = array('loadRecordsFromDatabase', 'loadRecordFromDatabase', 'updateRecordInDatabase');
-		$children = array(
-			array('uid' => -1),
-			array('uid' => -2)
-		);
-		$mock = $this->createMock($methods);
-		$mock->expects($this->atLeastOnce())->method('loadRecordsFromDatabase')->will($this->returnValue($children));
-		$mock->expects($this->exactly(2))->method('updateRecordInDatabase');
-		$row = array('uid' => -1, 't3_origuid' => 99999999999999);
-		$tceMain = $this->getMock('TYPO3\CMS\Core\DataHandling\DataHandler', array('localize'));
-		$tceMain->substNEWwithIDs = array();
-		$mock->initializeRecord($row, $tceMain);
-	}
-
-	/**
-	 * @test
-	 */
-	public function moveRecordWithPositiveColumnPositionDetectsParentLocationFromBacktrace() {
-		$methods = array('affectRecordByBacktrace');
-		$row = array();
-		$mock = $this->createMock($methods);
-		$mock->expects($this->once())->method('affectRecordByBacktrace')->with($row);
-		$relativeTo = 1;
-		$mock->moveRecord($row, $relativeTo);
+		$tceMain->substNEWwithIDs = array('NEW12345' => -1);
+		$mock->initializeRecord('NEW12345', $row, $tceMain);
 	}
 
 	/**
 	 * @test
 	 */
 	public function moveRecordWithNegativeRelativeToValueLoadsRelativeRecordFromDatabaseAndCopiesValuesToRecordAndSetsColumnPositionAndUpdatesRelativeToValue() {
-		$methods = array('loadRecordFromDatabase');
+		$methods = array('loadRecordFromDatabase', 'updateRecordInDatabase');
 		$mock = $this->createMock($methods);
 		$row = array(
 			'pid' => 1
@@ -302,53 +84,16 @@ class ContentServiceTest extends AbstractTestCase {
 			'colPos' => ContentService::COLPOS_FLUXCONTENT
 		);
 		$relativeTo = -1;
+		$tceMain = GeneralUtility::makeInstance('TYPO3\CMS\Core\DataHandling\DataHandler');
 		$mock->expects($this->once())->method('loadRecordFromDatabase')->with(1)->will($this->returnValue($relativeRecord));
-		$mock->moveRecord($row, $relativeTo);
+		$mock->expects($this->once())->method('updateRecordInDatabase');
+		$mock->moveRecord($row, $relativeTo, array(), $tceMain);
 		$this->assertEquals($relativeRecord['tx_flux_column'], $row['tx_flux_column']);
 		$this->assertEquals($relativeRecord['tx_flux_parent'], $row['tx_flux_parent']);
 		$this->assertEquals($relativeRecord['colPos'], $row['colPos']);
 		$this->assertEquals(-1, $relativeTo);
 	}
 
-	/**
-	 * @test
-	 */
-	public function moveRecordWithCombinedFluxRelativeToValueSetsExpectedRecordPropertiesAndUpdatesRelativeToValue() {
-		$methods = array('affectRecordByBacktrace');
-		$mock = $this->createMock($methods);
-		$row = array(
-			'pid' => 1
-		);
-		$relativeTo = 'area-1-2-FLUX';
-		$mock->moveRecord($row, $relativeTo);
-		$this->assertEquals('area', $row['tx_flux_column']);
-		$this->assertEquals('1', $row['tx_flux_parent']);
-		$this->assertEquals('2', $row['pid']);
-		$this->assertEquals(-1, $row['sorting']);
-		$this->assertEquals(2, $relativeTo);
-	}
-
-	/**
-	 * @test
-	 */
-	public function moveRecordWithCombinedGridelementsRelativeToValueSetsExpectedRecordPropertiesAndUpdatesRelativeToValue() {
-		$methods = array('affectRecordByBacktrace');
-		$mock = $this->createMock($methods);
-		$row = array(
-			'pid' => 1
-		);
-		$relativeTo = '1x2';
-		$mock->moveRecord($row, $relativeTo);
-		$this->assertEquals(NULL, $row['tx_flux_column']);
-		$this->assertEquals(NULL, $row['tx_flux_parent']);
-		$this->assertEquals('2', $row['colPos']);
-		$this->assertEquals(-1, $row['sorting']);
-		$this->assertEquals(1, $relativeTo);
-	}
-
-	/**
-	 * @test
-	 */
 	public function pasteAfterAsCopyRelativeToRecord() {
 		$methods = array('loadRecordFromDatabase', 'updateRecordInDatabase');
 		$mock = $this->createMock($methods);
@@ -379,6 +124,7 @@ class ContentServiceTest extends AbstractTestCase {
 	public function pasteAfterAsReferenceRelativeToRecord() {
 		$methods = array('loadRecordFromDatabase', 'updateRecordInDatabase');
 		$mock = $this->createMock($methods);
+
 		$command = 'copy';
 		$row = array(
 			'uid' => 1
@@ -394,8 +140,15 @@ class ContentServiceTest extends AbstractTestCase {
 			1,
 			'1-reference-2-2-0'
 		);
+		$cmdMap = array(
+			'tt_content' => array(
+				$copiedRow['uid'] => array(
+					$row['uid'] => 'copy'),
+			),
+		);
 		$tceMain = new DataHandler();
 		$tceMain->copyMappingArray['tt_content'][1] = $copiedRow['uid'];
+		$tceMain->cmdmap = $cmdMap;
 		$mock->expects($this->any())->method('loadRecordFromDatabase')->will($this->returnValue($copiedRow));
 		$mock->pasteAfter($command, $row, $parameters, $tceMain);
 	}
@@ -436,16 +189,6 @@ class ContentServiceTest extends AbstractTestCase {
 		$tceMain = new DataHandler();
 		$mock->expects($this->any())->method('loadRecordFromDatabase')->will($this->returnValue($row));
 		$mock->pasteAfter($command, $row, $parameters, $tceMain);
-	}
-
-	/**
-	 * @param array $backtrace
-	 * @return array
-	 */
-	protected function fireBacktraceDetection($backtrace) {
-		$row = array();
-		$this->createInstance()->affectRecordByBacktrace($row, $backtrace);
-		return $row;
 	}
 
 	/**

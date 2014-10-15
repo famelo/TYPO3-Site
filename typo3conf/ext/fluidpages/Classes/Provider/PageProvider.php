@@ -24,6 +24,7 @@ namespace FluidTYPO3\Fluidpages\Provider;
  *  This copyright notice MUST APPEAR in all copies of the script!
  *****************************************************************/
 
+use FluidTYPO3\Fluidpages\Controller\PageControllerInterface;
 use FluidTYPO3\Fluidpages\Service\ConfigurationService;
 use FluidTYPO3\Fluidpages\Service\PageService;
 use FluidTYPO3\Flux\Form;
@@ -31,6 +32,7 @@ use FluidTYPO3\Flux\Provider\AbstractProvider;
 use FluidTYPO3\Flux\Provider\ProviderInterface;
 use FluidTYPO3\Flux\Utility\PathUtility;
 use FluidTYPO3\Flux\Utility\ExtensionNamingUtility;
+use FluidTYPO3\Flux\Utility\ResolveUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
@@ -165,27 +167,8 @@ class PageProvider extends AbstractProvider implements ProviderInterface {
 		$action = $this->getControllerActionReferenceFromRecord($row);
 		$paths = $this->getTemplatePaths($row);
 		if (FALSE === empty($action)) {
-			list ($extensionName, $action) = explode('->', $action);
-			if (is_array($paths)) {
-				$templateRootPath = $paths['templateRootPath'];
-				if ('/' === substr($templateRootPath, -1)) {
-					$templateRootPath = substr($templateRootPath, 0, -1);
-				}
-				$templatePathAndFilename = $templateRootPath . '/Page/' . $action . '.html';
-				if (TRUE === isset($paths['overlays']) && TRUE === is_array($paths['overlays'])) {
-					foreach ($paths['overlays'] as $possibleOverlayPaths) {
-						if (TRUE === isset($possibleOverlayPaths['templateRootPath'])) {
-							$overlayTemplateRootPath = $possibleOverlayPaths['templateRootPath'];
-							$overlayTemplateRootPath = rtrim($overlayTemplateRootPath, '/');
-							$possibleOverlayFile = GeneralUtility::getFileAbsFileName($overlayTemplateRootPath . '/Page/' . $action . '.html');
-							if (TRUE === file_exists($possibleOverlayFile)) {
-								$templatePathAndFilename = $possibleOverlayFile;
-								break;
-							}
-						}
-					}
-				}
-			}
+			list (, $action) = explode('->', $action);
+			$templatePathAndFilename = ResolveUtility::resolveTemplatePathAndFilenameByPathAndControllerNameAndActionAndFormat($paths, 'Page', $action);
 		}
 		$templatePathAndFilename = GeneralUtility::getFileAbsFileName($templatePathAndFilename);
 		return $templatePathAndFilename;
@@ -216,26 +199,6 @@ class PageProvider extends AbstractProvider implements ProviderInterface {
 	}
 
 	/**
-	 * Post-process the TCEforms DataStructure for a record associated
-	 * with this ConfigurationProvider
-	 *
-	 * @param array $row
-	 * @param mixed $dataStructure
-	 * @param array $conf
-	 * @return NULL
-	 */
-	public function postProcessDataStructure(array &$row, &$dataStructure, array $conf) {
-		$action = $this->getControllerActionReferenceFromRecord($row);
-		if (TRUE === empty($action)) {
-			if (FALSE === $this->isUsingSubFieldName()) {
-				$this->configurationService->message('No controller action was found for this page.', GeneralUtility::SYSLOG_SEVERITY_WARNING);
-			}
-			return NULL;
-		}
-		parent::postProcessDataStructure($row, $dataStructure, $conf);
-	}
-
-	/**
 	 * @param array $row
 	 * @return string
 	 */
@@ -250,10 +213,18 @@ class PageProvider extends AbstractProvider implements ProviderInterface {
 
 	/**
 	 * @param array $row
+	 * @throws \RuntimeException
 	 * @return string
 	 */
 	public function getControllerActionFromRecord(array $row) {
+		if (PageControllerInterface::DOKTYPE_RAW === intval($row['doktype'])) {
+			return 'raw';
+		}
 		$action = $this->getControllerActionReferenceFromRecord($row);
+		if (TRUE === empty($action)) {
+			$this->configurationService->message('No page template selected and no template was inherited from parent page(s)');
+			return 'default';
+		}
 		$controllerActionName = array_pop(explode('->', $action));
 		$controllerActionName{0} = strtolower($controllerActionName{0});
 		return $controllerActionName;
@@ -295,22 +266,6 @@ class PageProvider extends AbstractProvider implements ProviderInterface {
 	}
 
 	/**
-	 * @param array $row
-	 * @return \FluidTYPO3\Flux\Form|NULL
-	 */
-	public function getForm(array $row) {
-		if (TRUE === $this->isUsingSubFieldName()) {
-			$configuration = $this->pageService->getPageTemplateConfiguration($row['uid']);
-			if ($configuration[$this->mainAction] === $configuration[$this->subAction]) {
-				$form = Form::create();
-				$form->createField('UserFunction', '')->setFunction('FluidTYPO3\\Fluidpages\\UserFunction\\NoSubPageConfiguration->renderField');
-				return $form;
-			}
-		}
-		return parent::getForm($row);
-	}
-
-	/**
 	 * @return boolean
 	 */
 	public function isUsingSubFieldName() {
@@ -331,10 +286,11 @@ class PageProvider extends AbstractProvider implements ProviderInterface {
 
 		if (FALSE === $this->isUsingSubFieldName()) {
 			$branch = reset($tree);
-			if (FALSE === empty($branch[$this->mainAction]) && FALSE === empty($branch[$this->subAction]) &&
-				$branch[$this->mainAction] !== $branch[$this->subAction] &&
-				FALSE === empty($branch[$this->subFieldName])) {
-
+			$hasMainAction = FALSE === empty($branch[$this->mainAction]);
+			$hasSubAction = FALSE === empty($branch[$this->subAction]);
+			$hasSubActionValue = FALSE === empty($branch[$this->subFieldName]);
+			$mainAndSubActionsDiffer = $branch[$this->mainAction] !== $branch[$this->subAction];
+			if (TRUE === $hasMainAction && TRUE === $hasSubAction && TRUE === $mainAndSubActionsDiffer && TRUE === $hasSubActionValue) {
 				$branch = array_shift($tree);
 				$this->currentFieldName = $this->subFieldName;
 				parent::getMergedConfiguration(array($branch), $cacheKey);

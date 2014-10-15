@@ -24,11 +24,6 @@ namespace FluidTYPO3\Flux\Form;
  *  This copyright notice MUST APPEAR in all copies of the script!
  *****************************************************************/
 
-use FluidTYPO3\Flux\Form\ContainerInterface;
-use FluidTYPO3\Flux\Form\FieldInterface;
-use FluidTYPO3\Flux\Form\FormInterface;
-use FluidTYPO3\Flux\Form\WizardInterface;
-
 /**
  * @package Flux
  * @subpackage Form
@@ -44,6 +39,16 @@ abstract class AbstractFormContainer extends AbstractFormComponent implements Co
 	 * @var string
 	 */
 	protected $transform;
+
+	/**
+	 * @var boolean
+	 */
+	protected $inherit = TRUE;
+
+	/**
+	 * @var boolean
+	 */
+	protected $inheritEmpty = FALSE;
 
 	/**
 	 * CONSTRUCTOR
@@ -101,7 +106,7 @@ abstract class AbstractFormContainer extends AbstractFormComponent implements Co
 	}
 
 	/**
-	 * @param array|Traversable $children
+	 * @param array|\Traversable $children
 	 * @return FormInterface
 	 */
 	public function addAll($children) {
@@ -206,6 +211,38 @@ abstract class AbstractFormContainer extends AbstractFormComponent implements Co
 	 */
 	public function getTransform() {
 		return $this->transform;
+	}
+
+	/**
+	 * @param boolean $inherit
+	 * @return ContainerInterface
+	 */
+	public function setInherit($inherit) {
+		$this->inherit = (boolean) $inherit;
+		return $this;
+	}
+
+	/**
+	 * @return boolean
+	 */
+	public function getInherit() {
+		return (boolean) $this->inherit;
+	}
+
+	/**
+	 * @param boolean $inheritEmpty
+	 * @return ContainerInterface
+	 */
+	public function setInheritEmpty($inheritEmpty) {
+		$this->inheritEmpty = (boolean) $inheritEmpty;
+		return $this;
+	}
+
+	/**
+	 * @return boolean
+	 */
+	public function getInheritEmpty() {
+		return (boolean) $this->inheritEmpty;
 	}
 
 }

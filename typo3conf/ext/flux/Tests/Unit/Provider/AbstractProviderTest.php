@@ -26,15 +26,14 @@ namespace FluidTYPO3\Flux\Provider;
 
 use FluidTYPO3\Flux\Form;
 use FluidTYPO3\Flux\Form\Container\Grid;
-use FluidTYPO3\Flux\Provider\ProviderInterface;
 use FluidTYPO3\Flux\Tests\Fixtures\Data\Records;
 use FluidTYPO3\Flux\Tests\Fixtures\Data\Xml;
 use FluidTYPO3\Flux\Tests\Unit\AbstractTestCase;
 use FluidTYPO3\Flux\Utility\PathUtility;
 use TYPO3\CMS\Core\DataHandling\DataHandler;
-use TYPO3\CMS\Core\Utility\ExtensionManagementUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Extbase\Reflection\ObjectAccess;
+
 
 /**
  * @package Flux
@@ -45,29 +44,6 @@ abstract class AbstractProviderTest extends AbstractTestCase {
 	 * @var string
 	 */
 	protected $configurationProviderClassName = 'FluidTYPO3\Flux\Provider\ContentProvider';
-
-	/**
-	 * @test
-	 */
-	public function prunesEmptyFieldNodesOnRecordSave() {
-		$row = Records::$contentRecordWithoutParentAndWithoutChildren;
-		$row['pi_flexform'] = Xml::EXPECTING_FLUX_PRUNING;
-		$provider = $this->getConfigurationProviderInstance();
-		$provider->setFieldName('pi_flexform');
-		$provider->setTableName('tt_content');
-		$tceMain = GeneralUtility::makeInstance('TYPO3\CMS\Core\DataHandling\DataHandler');
-		$tceMain->datamap['tt_content'][$row['uid']]['pi_flexform']['data'] = array();
-		$provider->postProcessRecord('update', $row['uid'], $row, $tceMain);
-		$this->assertNotContains('<field index=""></field>', $row['pi_flexform']);
-	}
-
-	/**
-	 * @test
-	 */
-	public function canCallResetMethod() {
-		$provider = $this->createInstance();
-		$provider->reset();
-	}
 
 	/**
 	 * @return ProviderInterface
@@ -95,6 +71,29 @@ abstract class AbstractProviderTest extends AbstractTestCase {
 	/**
 	 * @test
 	 */
+	public function prunesEmptyFieldNodesOnRecordSave() {
+		$row = Records::$contentRecordWithoutParentAndWithoutChildren;
+		$row['pi_flexform'] = Xml::EXPECTING_FLUX_PRUNING;
+		$provider = $this->getConfigurationProviderInstance();
+		$provider->setFieldName('pi_flexform');
+		$provider->setTableName('tt_content');
+		$tceMain = GeneralUtility::makeInstance('TYPO3\CMS\Core\DataHandling\DataHandler');
+		$tceMain->datamap['tt_content'][$row['uid']]['pi_flexform']['data'] = array();
+		$provider->postProcessRecord('update', $row['uid'], $row, $tceMain);
+		$this->assertNotContains('<field index=""></field>', $row['pi_flexform']);
+	}
+
+	/**
+	 * @test
+	 */
+	public function canCallResetMethod() {
+		$provider = $this->createInstance();
+		$provider->reset();
+	}
+
+	/**
+	 * @test
+	 */
 	public function canExecuteClearCacheCommand() {
 		$provider = $this->getConfigurationProviderInstance();
 		$return = $provider->clearCacheCommand(array('all'));
@@ -111,15 +110,6 @@ abstract class AbstractProviderTest extends AbstractTestCase {
 		$returned = $instance->getInheritanceTree(array('uid' => rand(999999, 99999999)));
 		$this->assertIsArray($returned);
 		$this->assertEmpty($returned);
-	}
-
-	/**
-	 * @test
-	 */
-	public function clearCacheCommandReturnsEarlyWhenGivenUid() {
-		$provider = $this->getConfigurationProviderInstance();
-		$return = $provider->clearCacheCommand(array('uid' => 1));
-		$this->assertEmpty($return);
 	}
 
 	/**
@@ -176,6 +166,7 @@ abstract class AbstractProviderTest extends AbstractTestCase {
 		$templatePathAndFilename = $this->getAbsoluteFixtureTemplatePathAndFilename(self::FIXTURE_TEMPLATE_BASICGRID);
 		$provider = $this->getConfigurationProviderInstance();
 		ObjectAccess::setProperty($provider, 'templatePathAndFilename', $templatePathAndFilename, TRUE);
+		ObjectAccess::setProperty($provider, 'templatePaths', array(), TRUE);
 		$record = $this->getBasicRecord();
 		$form = $provider->getGrid($record);
 		$this->assertInstanceOf('FluidTYPO3\Flux\Form\Container\Grid', $form);
@@ -186,6 +177,7 @@ abstract class AbstractProviderTest extends AbstractTestCase {
 	 */
 	public function canGetTemplatePaths() {
 		$provider = $this->getConfigurationProviderInstance();
+		ObjectAccess::setProperty($provider, 'templatePaths', array(), TRUE);
 		$record = $this->getBasicRecord();
 		$paths = $provider->getTemplatePaths($record);
 		$this->assertIsArray($paths);
@@ -265,6 +257,7 @@ abstract class AbstractProviderTest extends AbstractTestCase {
 	 */
 	public function canGetTemplateVariables() {
 		$provider = $this->getConfigurationProviderInstance();
+		ObjectAccess::setProperty($provider, 'templatePaths', array(), TRUE);
 		$provider->setTemplatePathAndFilename($this->getAbsoluteFixtureTemplatePathAndFilename(self::FIXTURE_TEMPLATE_ABSOLUTELYMINIMAL));
 		$record = $this->getBasicRecord();
 		$values = $provider->getTemplateVariables($record);
@@ -628,13 +621,14 @@ abstract class AbstractProviderTest extends AbstractTestCase {
 	 * @test
 	 */
 	public function canLoadRecordFromDatabase() {
-		$provider = $this->getConfigurationProviderInstance();
+		$backup = $GLOBALS['TYPO3_DB'];
 		$row = Records::$contentRecordWithoutParentAndWithoutChildren;
-		$table = $provider->getTableName($row);
-		if (FALSE === empty($table)) {
-			$result = $this->callInaccessibleMethod($provider, 'loadRecordFromDatabase', $row['uid']);
-			$this->assertNotNull($result);
-		}
+		$GLOBALS['TYPO3_DB'] = $this->getMock('TYPO3\CMS\Core\Database\DatabaseConnection', array('exec_SELECTgetSingleRow'));
+		$GLOBALS['TYPO3_DB']->expects($this->atLeastOnce())->method('exec_SELECTgetSingleRow')->will($this->returnValue($row));
+		$provider = $this->getConfigurationProviderInstance();
+		$result = $this->callInaccessibleMethod($provider, 'loadRecordFromDatabase', $row['uid']);
+		$this->assertNotNull($result);
+		$GLOBALS['TYPO3_DB'] = $backup;
 	}
 
 	/**

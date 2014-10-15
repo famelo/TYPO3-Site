@@ -1,4 +1,6 @@
 <?php
+namespace FluidTYPO3\Vhs\ViewHelpers\Iterator;
+
 /***************************************************************
  *  Copyright notice
  *
@@ -22,6 +24,8 @@
  *
  *  This copyright notice MUST APPEAR in all copies of the script!
  ***************************************************************/
+use TYPO3\CMS\Extbase\Reflection\ObjectAccess;
+use TYPO3\CMS\Fluid\Core\ViewHelper\AbstractViewHelper;
 
 /**
  * ### Iterator: Filter ViewHelper
@@ -37,7 +41,7 @@
  * @package Vhs
  * @subpackage ViewHelpers\Iterator
  */
-class Tx_Vhs_ViewHelpers_Iterator_FilterViewHelper extends \TYPO3\CMS\Fluid\Core\ViewHelper\AbstractViewHelper {
+class FilterViewHelper extends AbstractViewHelper {
 
 	/**
 	 * Render method
@@ -46,24 +50,28 @@ class Tx_Vhs_ViewHelpers_Iterator_FilterViewHelper extends \TYPO3\CMS\Fluid\Core
 	 * @param mixed $filter The comparison value
 	 * @param string $propertyName Optional property name to extract and use for comparison instead of the object; use on ObjectStorage etc. Note: supports dot-path expressions.
 	 * @param boolean $preserveKeys If TRUE, keys in the array are preserved - even if they are numeric
+	 * @param boolean $invert Invert the behavior of the view helper
+	 *
 	 * @return mixed
 	 */
-	public function render($subject = NULL, $filter = NULL, $propertyName = NULL, $preserveKeys = FALSE) {
+	public function render($subject = NULL, $filter = NULL, $propertyName = NULL, $preserveKeys = FALSE, $invert = FALSE) {
 		if (NULL === $subject) {
 			$subject = $this->renderChildren();
 		}
-		if (NULL === $subject || (FALSE === is_array($subject) && FALSE === $subject instanceof Traversable)) {
+		if (NULL === $subject || (FALSE === is_array($subject) && FALSE === $subject instanceof \Traversable)) {
 			return array();
 		}
 		if (TRUE === is_null($filter) || '' === $filter) {
 			return $subject;
 		}
-		if (TRUE === $subject instanceof Traversable) {
+		if (TRUE === $subject instanceof \Traversable) {
 			$subject = iterator_to_array($subject);
 		}
 		$items = array();
+		$invert = (boolean) $invert;
+		$invertFlag = TRUE === $invert ? FALSE : TRUE;
 		foreach ($subject as $key => $item) {
-			if (TRUE === $this->filter($item, $filter, $propertyName)) {
+			if ($invertFlag === $this->filter($item, $filter, $propertyName)) {
 				$items[$key] = $item;
 			}
 		}
@@ -82,7 +90,7 @@ class Tx_Vhs_ViewHelpers_Iterator_FilterViewHelper extends \TYPO3\CMS\Fluid\Core
 	 */
 	protected function filter($item, $filter, $propertyName) {
 		if (FALSE === empty($propertyName) && (TRUE === is_object($item) || TRUE === is_array($item))) {
-			$value = \TYPO3\CMS\Extbase\Reflection\ObjectAccess::getPropertyPath($item, $propertyName);
+			$value = ObjectAccess::getPropertyPath($item, $propertyName);
 		} else {
 			$value = $item;
 		}

@@ -29,7 +29,7 @@ use FluidTYPO3\Flux\Tests\Unit\AbstractTestCase;
 /**
  * @package Flux
  */
-class VersionTest extends AbstractTestCase {
+class VersionUtilityTest extends AbstractTestCase {
 
 	/**
 	 * @test
@@ -37,22 +37,6 @@ class VersionTest extends AbstractTestCase {
 	public function canGetExtensionVersionNumbers() {
 		$version = VersionUtility::assertExtensionVersionIsAtLeastVersion('flux', 6, 0, 0);
 		$this->assertIsBoolean($version);
-	}
-
-	/**
-	 * @test
-	 */
-	public function canAssertIfCoreIsLegacyVersion() {
-		$isLegacy = VersionUtility::assertCoreVersionIsBelowSixPointZero();
-		$this->assertIsBoolean($isLegacy);
-	}
-
-	/**
-	 * @test
-	 */
-	public function canAssertIfCoreIsRecentVersion() {
-		$isLegacy = VersionUtility::assertCoreVersionIsAtLeastSixPointZero();
-		$this->assertIsBoolean($isLegacy);
 	}
 
 	/**

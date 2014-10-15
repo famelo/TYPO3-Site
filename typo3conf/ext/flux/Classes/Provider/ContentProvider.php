@@ -33,7 +33,7 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
  * This Configuration Provider has the lowest possible priority
  * and is only used to execute a set of hook-style methods for
  * processing records. This processing ensures that relationships
- * between content elements get stored correctly -
+ * between content elements get stored correctly.
  *
  * @package Flux
  * @subpackage Provider
@@ -61,6 +61,39 @@ class ContentProvider extends AbstractProvider implements ProviderInterface {
 	protected $fieldName = 'pi_flexform';
 
 	/**
+	 * Note: This Provider will -always- trigger on tt_content list_type records (plugin)
+	 * but has the lowest possible (0) priority, ensuring that any
+	 * Provider which wants to take over, can do so.
+	 *
+	 * @param array $row
+	 * @return integer
+	 */
+	public function getPriority(array $row) {
+		if (FALSE === empty($row['list_type'])) {
+			return 0;
+		}
+		return $this->priority;
+	}
+
+	/**
+	 * Note: This Provider will -always- trigger on tt_content list_type records (plugin)
+	 * but has the lowest possible (0) priority, ensuring that any
+	 * Provider which wants to take over, can do so.
+	 *
+	 * @param array $row
+	 * @param string $table
+	 * @param string $field
+	 * @param string $extensionKey
+	 * @return boolean
+	 */
+	public function trigger(array $row, $table, $field, $extensionKey = NULL) {
+		if ($table === $this->tableName && FALSE === empty($row['list_type'])) {
+			return TRUE;
+		}
+		return parent::trigger($row, $table, $field, $extensionKey);
+	}
+
+	/*
 	 * @param string $operation
 	 * @param integer $id
 	 * @param array $row
@@ -68,9 +101,15 @@ class ContentProvider extends AbstractProvider implements ProviderInterface {
 	 * @return void
 	 */
 	public function postProcessRecord($operation, $id, array &$row, DataHandler $reference) {
+		if (FALSE === self::shouldCallWithClassName(__CLASS__, __FUNCTION__, $id)) {
+			return;
+		}
+
 		parent::postProcessRecord($operation, $id, $row, $reference);
 		$parameters = GeneralUtility::_GET();
-		$this->contentService->affectRecordByRequestParameters($row, $parameters, $reference);
+		$this->contentService->affectRecordByRequestParameters($id, $row, $parameters, $reference);
+
+		self::trackMethodCallWithClassName(__CLASS__, __FUNCTION__, $id);
 	}
 
 	/**
@@ -81,10 +120,16 @@ class ContentProvider extends AbstractProvider implements ProviderInterface {
 	 * @return void
 	 */
 	public function postProcessDatabaseOperation($status, $id, &$row, DataHandler $reference) {
+		if (FALSE === self::shouldCallWithClassName(__CLASS__, __FUNCTION__, $id)) {
+			return;
+		}
+
 		parent::postProcessDatabaseOperation($status, $id, $row, $reference);
 		if ($status === 'new') {
-			$this->contentService->initializeRecord($row, $reference);
+			$this->contentService->initializeRecord($id, $row, $reference);
 		}
+
+		self::trackMethodCallWithClassName(__CLASS__, __FUNCTION__, $id);
 	}
 
 	/**
@@ -99,6 +144,10 @@ class ContentProvider extends AbstractProvider implements ProviderInterface {
 	 * @return void
 	 */
 	public function postProcessCommand($command, $id, array &$row, &$relativeTo, DataHandler $reference) {
+		if (FALSE === self::shouldCallWithClassName(__CLASS__, __FUNCTION__, $id)) {
+			return;
+		}
+
 		parent::postProcessCommand($command, $id, $row, $relativeTo, $reference);
 		$pasteCommands = array('copy', 'move');
 		if (TRUE === in_array($command, $pasteCommands)) {
@@ -108,12 +157,12 @@ class ContentProvider extends AbstractProvider implements ProviderInterface {
 				$parameters = explode('|', $pasteCommand);
 				$this->contentService->pasteAfter($command, $row, $parameters, $reference);
 			} else {
-				$this->contentService->moveRecord($row, $relativeTo, $reference);
-			}
-			if (0 < count($row)) {
-				$this->updateRecord($row, $id);
+				$moveData = $this->getMoveData();
+				$this->contentService->moveRecord($row, $relativeTo, $moveData, $reference);
 			}
 		}
+
+		self::trackMethodCallWithClassName(__CLASS__, __FUNCTION__, $id);
 	}
 
 	/**
@@ -125,12 +174,17 @@ class ContentProvider extends AbstractProvider implements ProviderInterface {
 	}
 
 	/**
-	 * @param array $record
-	 * @param integer $uid
 	 * @return array
 	 */
-	protected function updateRecord($record, $uid) {
-		$GLOBALS['TYPO3_DB']->exec_UPDATEquery('tt_content', "uid = '" . $uid . "'", $record);
+	protected function getMoveData() {
+		$rawPostData = file_get_contents('php://input');
+		if (FALSE === empty($rawPostData)) {
+			$request = json_decode($rawPostData, TRUE);
+			if (TRUE === isset($request['method']) && TRUE === isset($request['data']) && 'moveContentElement' === $request['method']) {
+				return $request['data'];
+			}
+		}
+		return NULL;
 	}
 
 }

@@ -93,7 +93,7 @@ class Core {
 	 * @return void
 	 */
 	public static function addStaticTypoScript($locationOrLocations) {
-		if (TRUE === is_array($locationOrLocations) || TRUE === $locationOrLocations instanceof Traversable) {
+		if (TRUE === is_array($locationOrLocations) || TRUE === $locationOrLocations instanceof \Traversable) {
 			foreach ($locationOrLocations as $location) {
 				self::addStaticTypoScript($location);
 			}
@@ -219,7 +219,7 @@ class Core {
 		/** @var ObjectManagerInterface $objectManager */
 		$objectManager = GeneralUtility::makeInstance('TYPO3\CMS\Extbase\Object\ObjectManager');
 		/** @var $provider ProviderInterface */
-		$provider = $objectManager->get('FluidTYPO3\Flux\Provider\ContentProvider');
+		$provider = $objectManager->get('FluidTYPO3\Flux\Provider\Provider');
 		$provider->setTableName('tt_content');
 		$provider->setFieldName($fieldName);
 		$provider->setExtensionKey($extensionKey);

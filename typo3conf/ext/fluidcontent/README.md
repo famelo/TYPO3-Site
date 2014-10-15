@@ -52,25 +52,55 @@ a static file makes it easy to include the content elements.
 Use the following TypoScript:
 
 ```
-plugin.tx_fed.fce.myextension {
-	templateRootPath = EXT:myextension/Resources/Private/Elements/
+plugin.tx_<myextensionkey>.view {
+	templateRootPath = EXT:myextension/Resources/Private/Templates/
 	partialRootPath = EXT:myextension/Resources/Private/Partials/
 	layoutRootPath = EXT:myextension/Resources/Private/Layouts/
 }
 ```
 
-_Note: the `tx_fed` namespace is legacy from FED, it is still currently in use but will be replaced (but with backwards
-compatibility preserved)_
+And this line in ext_tables.php and ext_localconf.php (double registration _is_ necessary):
 
-**Fluid Content** emulates a `Content` object and an associated `ContentController` - but has a slightly modified behavior than
-a traditional Extbase controller in that it __does not suffix the template path with the object name when looking for template
-files__. This means that templates should be located in `EXT:myextension/Resources/Private/Elements/` if the
-`plugin.tx_fed.fce.myextension.templateRootPath` setting is set to `EXT:myextension/Resources/Private/Elements/`. This differs
-from traditional controllers which would be looking for files in `EXT:myextension/Resources/Private/Elements/Content/` given
-that the object's name is `Content`.
+```
+Tx_Flux_Core::registerProviderExtensionKey('myextensionkey', 'Content');
+```
 
-Other than this, the templates all follow the usual Fluid rules regarding Layouts and Partials. When rendering your content
-element the paths are used which are set in the collection to which the content element belongs.
+Or if your extension uses namespaces **and contain a vendor name**:
+
+```
+Tx_Flux_Core::registerProviderExtensionKey('VendorName.ExtensionName', 'Content');
+```
+
+Fluid Content transparently recognises the difference between a lowercase_underscored extension key and a Vendor.ExtensioName syntax.
+
+> Note: the extension key you use when registering templates will also be used as extension name for the controller context used in rendering the Fluid template (in other words: things like `<v:translate>` and `{f:uri.resource()}` will use your extension's scope - and thus will create links to your extension's resources, LLL labels etc).
+
+## The ContentController
+
+Fluid Content emulates a `Content` object and an associated `ContentController` - therefore, Fluid Content will look for template files in the location `templateRootPath` . `/Content/` which becomes `EXT:myextension/Resources/Private/Templates/Content/`, just as if you had created a Content domain object and used a ContentController to render an action, the action corresponding to the selected content element template.
+
+When included the content element templates are made available to select in the content element wizard in locations where you make the TypoScript available. _Because an Extbase context is used you should include the TypoScript in root templates always, never in extended templates unless you also include those in a root template_. The reason for this is a slightly off behavior that Extbase exhibits when there is no page UID available - which happens in some actions of the page backend module.
+
+## Using an Extbase controller native to your extension
+
+When you use an extension to provide your templates you will implicitly get the option to create a custom controller which will be used to render your individual content element templates. In addition to using your extension's scope this also allows you to use a proper controller context - including arguments. To create such a controller you only need to add the class and extend the right parent.
+
+Each "action" method on the controller then corresponds to one template file - just like a normal Extbase controller:
+
+```
+class Tx_Myextension_Controller_ContentController extends \FluidTYPO3\Fluidcontent\Controller\AbstractContentController {
+
+    public function defaultAction() {
+        // this action renders the template EXT:myextension/Resources/Private/Templates/Content/Default.html
+        // - optionally placed in another path if you override the view configuration using TypoScript.
+    }
+
+}
+```
+
+Actions which do not exist do not get called. If a template file exists but has no corresponding controller action, the default Fluid Content ContentController does the job instead.
+
+In every way this controller is a regular controller with just a few added internal properties. However, some parts of the view does get overridden and may not act the way you expect. One such concern: do not attempt to override the `viewObjectName` - this object name has already been overridden by Flux (serving as base of Fluid Content) and overriding it again may cause ill effects, unless of course you also use a subclass of the Flux view class. There are other circumstances like this one so be prepared for some additional workarounds if you attempt overrides.
 
 ## How to create content element templates
 

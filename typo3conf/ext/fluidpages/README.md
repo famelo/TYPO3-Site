@@ -129,8 +129,8 @@ a page template: a `Configuration` section in the template file (for example
 EXT:myextension/Resources/Private/Templates/Page/FrontPage.html):
 
 ```xml
-{namespace v=Tx_Vhs_ViewHelpers}
-{namespace flux=Tx_Flux_ViewHelpers}
+{namespace v=FluidTYPO3\Vhs\ViewHelpers}
+{namespace flux=FluidTYPO3\Flux\ViewHelpers}
 <f:layout name="Page" />
 <div xmlns="http://www.w3.org/1999/xhtml" lang="en"
      xmlns:v="http://fedext.net/ns/vhs/ViewHelpers"
@@ -142,7 +142,7 @@ EXT:myextension/Resources/Private/Templates/Page/FrontPage.html):
 		<flux:field.input name="settings.entryLevel"
 			label="Main menu entry level override for this page only"
 			eval="int,trim" minimum="0" maximum="6"
-			default="{v:var.typoscript(path: 'lib.menu.main.entryLevel')}">
+			default="{v:variable.typoscript(path: 'lib.menu.main.entryLevel')}">
 			<flux:wizard.slider hideParent="TRUE" step="1" width="100" />
 		</flux:field.input>
 	</flux:form>
@@ -160,7 +160,7 @@ EXT:myextension/Resources/Private/Templates/Page/FrontPage.html):
 </f:section>
 
 <f:section name="Content">
-	<v:page.content.render column="0" />
+	<v:content.render column="0" />
 </f:section>
 
 <f:section name="AnotherSection">

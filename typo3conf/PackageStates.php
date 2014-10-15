@@ -497,10 +497,12 @@ return array (
       array (
       ),
     ),
-    'gridelements' => 
+    'vhs' => 
     array (
+      'manifestPath' => '',
+      'composerName' => 'fluidtypo3/vhs',
       'state' => 'active',
-      'packagePath' => 'typo3conf/ext/gridelements/',
+      'packagePath' => 'typo3conf/ext/vhs/',
       'classesPath' => 'Classes/',
       'suggestions' => 
       array (
@@ -508,45 +510,40 @@ return array (
     ),
     'flux' => 
     array (
+      'manifestPath' => '',
+      'composerName' => 'fluidtypo3/flux',
       'state' => 'active',
       'packagePath' => 'typo3conf/ext/flux/',
       'classesPath' => 'Classes/',
       'suggestions' => 
       array (
+        0 => 'fluidcontent',
+        1 => 'fluidpages',
+        2 => 'vhs',
       ),
-      'manifestPath' => '',
-      'composerName' => 'fluidtypo3/flux',
     ),
     'fluidpages' => 
     array (
+      'manifestPath' => '',
+      'composerName' => 'fluidtypo3/fluidpages',
       'state' => 'active',
       'packagePath' => 'typo3conf/ext/fluidpages/',
       'classesPath' => 'Classes/',
       'suggestions' => 
       array (
+        0 => 'fluidcontent',
       ),
-      'manifestPath' => '',
-      'composerName' => 'fluidtypo3/fluidpages',
     ),
     'fluidcontent' => 
     array (
+      'manifestPath' => '',
+      'composerName' => 'fluidtypo3/fluidcontent',
       'state' => 'active',
       'packagePath' => 'typo3conf/ext/fluidcontent/',
       'classesPath' => 'Classes/',
       'suggestions' => 
       array (
         0 => 'fluidpages',
-      ),
-      'manifestPath' => '',
-      'composerName' => 'fluidtypo3/fluidcontent',
-    ),
-    'ws_less' => 
-    array (
-      'state' => 'active',
-      'packagePath' => 'typo3conf/ext/ws_less/',
-      'classesPath' => 'Classes/',
-      'suggestions' => 
-      array (
       ),
     ),
     'realurl' => 
@@ -558,12 +555,10 @@ return array (
       array (
       ),
     ),
-    'vhs' => 
+    'ws_less' => 
     array (
-      'manifestPath' => '',
-      'composerName' => 'fluidtypo3/vhs',
       'state' => 'active',
-      'packagePath' => 'typo3conf/ext/vhs/',
+      'packagePath' => 'typo3conf/ext/ws_less/',
       'classesPath' => 'Classes/',
       'suggestions' => 
       array (
@@ -582,6 +577,15 @@ return array (
     array (
       'state' => 'active',
       'packagePath' => 'typo3conf/ext/devlog/',
+      'classesPath' => 'Classes/',
+      'suggestions' => 
+      array (
+      ),
+    ),
+    'gridelements' => 
+    array (
+      'state' => 'inactive',
+      'packagePath' => 'typo3conf/ext/gridelements/',
       'classesPath' => 'Classes/',
       'suggestions' => 
       array (

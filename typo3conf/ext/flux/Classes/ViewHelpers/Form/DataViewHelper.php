@@ -25,6 +25,7 @@ namespace FluidTYPO3\Flux\ViewHelpers\Form;
  *****************************************************************/
 
 use FluidTYPO3\Flux\Service\FluxService;
+use FluidTYPO3\Flux\Service\WorkspacesAwareRecordService;
 use FluidTYPO3\Flux\Utility\RecursiveArrayUtility;
 use TYPO3\CMS\Fluid\Core\ViewHelper\AbstractViewHelper;
 use TYPO3\CMS\Fluid\Core\ViewHelper\Exception;
@@ -38,15 +39,14 @@ use TYPO3\CMS\Fluid\Core\ViewHelper\Exception;
 class DataViewHelper extends AbstractViewHelper {
 
 	/**
-	 * @var array
-	 */
-	private static $dataCache = array();
-
-	/**
 	 * @var FluxService
 	 */
 	protected $configurationService;
 
+	/**
+	 * @var WorkspacesAwareRecordService
+	 */
+	protected $recordService;
 
 	/**
 	 * Inject Flux service
@@ -55,6 +55,14 @@ class DataViewHelper extends AbstractViewHelper {
 	 */
 	public function injectConfigurationService(FluxService $configurationService) {
 		$this->configurationService = $configurationService;
+	}
+
+	/**
+	 * @param WorkspacesAwareRecordService $recordService
+	 * @return void
+	 */
+	public function injectRecordService(WorkspacesAwareRecordService $recordService) {
+		$this->recordService = $recordService;
 	}
 
 	/**
@@ -68,18 +76,19 @@ class DataViewHelper extends AbstractViewHelper {
 	 * @throws Exception
 	 */
 	public function render($table, $field, $uid = NULL, $record = NULL, $as = NULL) {
+		if (NULL === $record && NULL === $as) {
+			$record = $this->renderChildren();
+		}
 		if (NULL === $uid && NULL !== $record && TRUE === isset($record['uid'])) {
 			$uid = $record['uid'];
 		}
-		if (TRUE === isset(self::$dataCache[$uid.$table.$field])) {
-		    $dataArray = self::$dataCache[$uid.$table.$field];
-		} elseif (TRUE === isset($GLOBALS['TCA'][$table]) && TRUE === isset($GLOBALS['TCA'][$table]['columns'][$field])) {
+		if (TRUE === isset($GLOBALS['TCA'][$table]) && TRUE === isset($GLOBALS['TCA'][$table]['columns'][$field])) {
 			if (NULL === $record) {
-				$record = $GLOBALS['TYPO3_DB']->exec_SELECTgetSingleRow('uid,' . $field, $table, sprintf('uid=%d', $uid));
+				$record = $this->recordService->getSingle($table, 'uid,' . $field, $uid);
 			}
-			if (FALSE === $record) {
+			if (NULL === $record) {
 				throw new Exception(sprintf('Either table "%s", field "%s" or record with uid %d do not exist and you did not manually ' .
-					'provide the "row" attribute.', $table, $field, $uid), 1358679983);
+					'provide the "record" attribute.', $table, $field, $uid), 1358679983);
 			}
 			$providers = $this->configurationService->resolveConfigurationProviders($table, $field, $record);
 			if (0 === count($providers)) {
@@ -91,7 +100,6 @@ class DataViewHelper extends AbstractViewHelper {
 					$dataArray = RecursiveArrayUtility::merge($dataArray, $data);
 				}
 			}
-			self::$dataCache[$uid.$table.$field] = $dataArray;
 		} else {
 			throw new Exception('Invalid table:field "' . $table . ':' . $field . '" - does not exist in TYPO3 TCA.', 1387049117);
 		}

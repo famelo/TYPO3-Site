@@ -26,13 +26,13 @@ namespace FluidTYPO3\Flux\Form;
 
 use FluidTYPO3\Flux\Form\Container\Column;
 use FluidTYPO3\Flux\Form\Container\Container;
-use FluidTYPO3\Flux\Form\Container\Content;
 use FluidTYPO3\Flux\Form\Container\Grid;
 use FluidTYPO3\Flux\Form\Container\Object;
 use FluidTYPO3\Flux\Form\Container\Section;
 use FluidTYPO3\Flux\Form\Container\Sheet;
 use FluidTYPO3\Flux\Form;
 use FluidTYPO3\Flux\Service\FluxService;
+use FluidTYPO3\Flux\Utility\ExtensionNamingUtility;
 use TYPO3\CMS\Core\Utility\ExtensionManagementUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Extbase\Configuration\ConfigurationManagerInterface;
@@ -272,8 +272,6 @@ abstract class AbstractFormComponent implements FormInterface {
 			$prefix = 'columns';
 		} elseif (TRUE === $this instanceof Object) {
 			$prefix = 'objects';
-		} elseif (TRUE === $this instanceof Content) {
-			$prefix = 'areas';
 		} elseif (TRUE === $this instanceof Container) {
 			$prefix = 'containers';
 		} elseif (TRUE === $this instanceof FieldInterface) {
@@ -290,7 +288,15 @@ abstract class AbstractFormComponent implements FormInterface {
 	 * @return string
 	 */
 	public function getLabel() {
-		$label = $this->label;
+		return $this->resolveLocalLanguageValueOfLabel($this->label);
+	}
+
+	/**
+	 * @param string $label
+	 * @param string $path
+	 * @return NULL|string
+	 */
+	protected function resolveLocalLanguageValueOfLabel($label, $path = NULL) {
 		if (TRUE === $this->getDisableLocalLanguageLabels()) {
 			return $label;
 		}
@@ -303,10 +309,11 @@ abstract class AbstractFormComponent implements FormInterface {
 			$id = $root->getName();
 			$extensionName = $root->getExtensionName();
 		}
-		$extensionKey = FALSE === strpos($extensionName, '.') ? $extensionName : substr($extensionName, strpos($extensionName, '.') + 1);
-		$extensionKey = GeneralUtility::camelCaseToLowerCaseUnderscored($extensionKey);
+		$extensionKey = ExtensionNamingUtility::getExtensionKey( $extensionName );
 		if (FALSE === empty($label)) {
-			if (0 === strpos($label, 'LLL:') && 0 !== strpos($label, 'LLL:EXT:')) {
+			if (0 === strpos($label, 'LLL:EXT:')) {
+				return LocalizationUtility::translate($label, NULL);
+			} else if (0 === strpos($label, 'LLL:') ) {
 				return LocalizationUtility::translate(substr($label, 4), $extensionKey);
 			} else {
 				return $label;
@@ -315,10 +322,12 @@ abstract class AbstractFormComponent implements FormInterface {
 		if ((TRUE === empty($extensionKey) || FALSE === ExtensionManagementUtility::isLoaded($extensionKey))) {
 			return $name;
 		}
-		if (FALSE === $this instanceof Form) {
-			$path = $this->getPath();
-		} else {
-			$path = '';
+		if (TRUE === empty($path)) {
+			if (FALSE === $this instanceof Form) {
+				$path = $this->getPath();
+			} else {
+				$path = '';
+			}
 		}
 		$relativeFilePath = $this->getLocalLanguageFileRelativePath();
 		$relativeFilePath = ltrim($relativeFilePath, '/');
@@ -408,7 +417,7 @@ abstract class AbstractFormComponent implements FormInterface {
 	 * @return mixed
 	 */
 	public function getVariable($name) {
-		return TRUE === isset($this->variables[$name]) ? $this->variables[$name] : NULL;
+		return ObjectAccess::getPropertyPath($this->variables, $name);
 	}
 
 	/**

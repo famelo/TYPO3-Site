@@ -27,6 +27,7 @@ namespace FluidTYPO3\Flux\View;
 use FluidTYPO3\Flux\Form;
 use FluidTYPO3\Flux\Form\Container\Grid;
 use FluidTYPO3\Flux\Service\FluxService;
+use FluidTYPO3\Flux\Utility\ResolveUtility;
 use FluidTYPO3\Flux\ViewHelpers\AbstractFormViewHelper;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Extbase\Mvc\Controller\ControllerContext;
@@ -48,6 +49,11 @@ class ExposedTemplateView extends TemplateView implements ViewInterface {
 	 * @var FluxService
 	 */
 	protected $configurationService;
+
+	/**
+	 * @var string
+	 */
+	protected $templateSource = NULL;
 
 	/**
 	 * @param FluxService $configurationService
@@ -110,8 +116,9 @@ class ExposedTemplateView extends TemplateView implements ViewInterface {
 			return NULL;
 		}
 		$stored = $this->baseRenderingContext->getViewHelperVariableContainer()->get($viewHelperClassName, $name);
-		$this->configurationService->message('Flux View ' . get_class($this) . ' is able to read stored configuration from file ' .
-			$this->getTemplatePathAndFilename(), GeneralUtility::SYSLOG_SEVERITY_INFO);
+		$templateIdentityForLog = NULL !== $this->templateSource ? 'source code with hash value ' . sha1($this->templateSource) : $this->getTemplatePathAndFilename();
+		$this->configurationService->message('Flux View ' . get_class($this) . ' is able to read stored configuration from ' .
+			$templateIdentityForLog, GeneralUtility::SYSLOG_SEVERITY_INFO);
 		return $stored;
 	}
 
@@ -151,13 +158,15 @@ class ExposedTemplateView extends TemplateView implements ViewInterface {
 	/**
 	 * @param string $actionName
 	 * @return string
-	 * @throws Exception
 	 */
 	public function getTemplatePathAndFilename($actionName = NULL) {
+		if (NULL !== $this->templatePathAndFilename) {
+			return $this->templatePathAndFilename;
+		}
 		if (TRUE === empty($actionName)) {
 			$actionName = $this->controllerContext->getRequest()->getControllerActionName();
 		}
-		$actionName = ucfirst($actionName);
+		$actionName = ResolveUtility::convertAllPathSegmentsToUpperCamelCase($actionName);
 		$paths = $this->expandGenericPathPattern($this->templatePathAndFilenamePattern, FALSE, FALSE);
 		foreach ($paths as &$templatePathAndFilename) {
 			$templatePathAndFilename = str_replace('@action', $actionName, $templatePathAndFilename);
@@ -166,6 +175,25 @@ class ExposedTemplateView extends TemplateView implements ViewInterface {
 			}
 		}
 		return parent::getTemplatePathAndFilename($actionName);
+	}
+
+	/**
+	 * @param string $templateSource
+	 * @return void
+	 */
+	public function setTemplateSource($templateSource) {
+		$this->templateSource = $templateSource;
+	}
+
+	/**
+	 * @param string $actionName
+	 * @return string
+	 */
+	protected function getTemplateSource($actionName = NULL) {
+		if (NULL !== $this->templateSource) {
+			return $this->templateSource;
+		}
+		return parent::getTemplateSource($actionName);
 	}
 
 	/**
@@ -262,7 +290,10 @@ class ExposedTemplateView extends TemplateView implements ViewInterface {
 	 * @return string
 	 */
 	protected function getTemplateIdentifier($actionName = NULL) {
-		return TRUE === method_exists(get_parent_class($this), __FUNCTION__) ? parent::getTemplateIdentifier($actionName) : 'viewhelpertest_' . sha1($this->templateSource);
+		$hasMethodOnParent = TRUE === method_exists(get_parent_class($this), __FUNCTION__);
+		$templateFileExists = TRUE === file_exists($this->templatePathAndFilename);
+
+		return TRUE === $hasMethodOnParent && TRUE === $templateFileExists ? parent::getTemplateIdentifier($actionName) : 'viewhelpertest_' . sha1($this->templateSource);
 	}
 
 }

@@ -26,6 +26,15 @@ class ExtensionRepository extends \TYPO3\CMS\Extbase\Persistence\Repository {
 	const TABLE_NAME = 'tx_extensionmanager_domain_model_extension';
 
 	/**
+	 * Oracle has a limit of 1000 values in an IN clause. Set the size of a chunk
+	 * being updated to 500 to make sure it does not collide with a limit in any
+	 * other DBMS.
+	 *
+	 * @var integer
+	 */
+	const CHUNK_SIZE = 500;
+
+	/**
 	 * @var \TYPO3\CMS\Core\Database\DatabaseConnection
 	 */
 	protected $databaseConnection;
@@ -139,29 +148,25 @@ class ExtensionRepository extends \TYPO3\CMS\Extbase\Persistence\Repository {
 		$quotedSearchString = $this->databaseConnection->escapeStrForLike($this->databaseConnection->quoteStr($searchString, 'tx_extensionmanager_domain_model_extension'), 'tx_extensionmanager_domain_model_extension');
 		$quotedSearchStringForLike = '\'%' . $quotedSearchString . '%\'';
 		$quotedSearchString = '\'' . $quotedSearchString . '\'';
-		$select = 'tx_extensionmanager_domain_model_extension.*,
-			(
-				(extension_key like ' . $quotedSearchString . ') * 8 +
-				(extension_key like ' . $quotedSearchStringForLike . ') * 4 +
-				(title like ' . $quotedSearchStringForLike . ') * 2 +
-				(author_name like ' . $quotedSearchStringForLike . ')
-			) as position';
-		$from = 'tx_extensionmanager_domain_model_extension';
+		$select =
+			self::TABLE_NAME . '.*, ' .
+			'CASE ' .
+				'WHEN extension_key = ' . $quotedSearchString . ' THEN 16 ' .
+				'WHEN extension_key LIKE ' . $quotedSearchStringForLike . ' THEN 8 ' .
+				'WHEN title LIKE ' . $quotedSearchStringForLike . ' THEN 4 ' .
+				'WHEN description LIKE ' . $quotedSearchStringForLike . ' THEN 2 ' .
+				'WHEN author_name LIKE ' . $quotedSearchStringForLike . ' THEN 1 ' .
+			'END AS position';
 		$where = '(
-					extension_key = ' . $quotedSearchString . '
-					OR
-					extension_key LIKE ' . $quotedSearchStringForLike . '
-					OR
-					title LIKE ' . $quotedSearchStringForLike . '
-					OR
-					description LIKE ' . $quotedSearchStringForLike . '
-					OR
+					extension_key = ' . $quotedSearchString . ' OR
+					extension_key LIKE ' . $quotedSearchStringForLike . ' OR
+					title LIKE ' . $quotedSearchStringForLike . ' OR
+					description LIKE ' . $quotedSearchStringForLike . ' OR
 					author_name LIKE ' . $quotedSearchStringForLike . '
 				)
-				AND current_version=1 AND review_state >= 0
-				HAVING position > 0';
-		$order = 'position desc';
-		$result = $this->databaseConnection->exec_SELECTgetRows($select, $from, $where, '', $order);
+				AND current_version = 1 AND review_state >= 0';
+		$order = 'position DESC';
+		$result = $this->databaseConnection->exec_SELECTgetRows($select, self::TABLE_NAME, $where, '', $order);
 		return $this->dataMapper->map('TYPO3\\CMS\\Extensionmanager\\Domain\\Model\\Extension', $result);
 	}
 
@@ -288,37 +293,43 @@ class ExtensionRepository extends \TYPO3\CMS\Extbase\Persistence\Repository {
 	protected function markExtensionWithMaximumVersionAsCurrent($repositoryUid) {
 		$uidsOfCurrentVersion = $this->fetchMaximalVersionsForAllExtensions($repositoryUid);
 
-		$this->databaseConnection->exec_UPDATEquery(
-			self::TABLE_NAME,
-			'uid IN (' . implode(',', $uidsOfCurrentVersion) . ')',
-			array(
-				'current_version' => 1,
-			)
-		);
+		// some DBMS limit the amount of expressions, apply the update in chunks
+		$chunks = array_chunk($uidsOfCurrentVersion, self::CHUNK_SIZE);
+		$chunkCount = count($chunks);
+		for ($i = 0; $i < $chunkCount; ++$i) {
+			$this->databaseConnection->exec_UPDATEquery(
+				self::TABLE_NAME,
+				'uid IN (' . implode(',', $chunks[$i]) . ')',
+				array(
+					'current_version' => 1,
+				)
+			);
+		}
 	}
 
 	/**
 	 * Fetches the UIDs of all maximal versions for all extensions.
-	 * This is done by doing a subselect in the WHERE clause to get all
-	 * max versions and then the UID of that record in the outer select.
+	 * This is done by doing a LEFT JOIN to itself ("a" and "b") and comparing
+	 * both integer_version fields.
 	 *
 	 * @param int $repositoryUid
 	 * @return array
 	 */
 	protected function fetchMaximalVersionsForAllExtensions($repositoryUid) {
-		$extensionUids = $this->databaseConnection->exec_SELECTgetRows(
-			'a.uid AS uid',
-			self::TABLE_NAME . ' a',
-			'integer_version=(' .
-				$this->databaseConnection->SELECTquery(
-					'MAX(integer_version)',
-					self::TABLE_NAME . ' b',
-					'b.repository=' . (int)$repositoryUid . ' AND a.extension_key=b.extension_key'
-				) .
-			') AND repository=' . (int)$repositoryUid,
-			'', '', '', 'uid'
+		$queryResult = $this->databaseConnection->sql_query(
+			'SELECT a.uid AS uid ' .
+			'FROM ' . self::TABLE_NAME . ' a ' .
+			'LEFT JOIN ' . self::TABLE_NAME . ' b ON a.repository = b.repository AND a.extension_key = b.extension_key AND a.integer_version < b.integer_version ' .
+			'WHERE a.repository = ' . (int)$repositoryUid . ' AND b.extension_key IS NULL ' .
+			'ORDER BY a.uid'
 		);
-		return array_keys($extensionUids);
+
+		$extensionUids = array();
+		while ($row = $this->databaseConnection->sql_fetch_assoc($queryResult)) {
+			$extensionUids[] = $row['uid'];
+		}
+		$this->databaseConnection->sql_free_result($queryResult);
+		return $extensionUids;
 	}
 
 	/**

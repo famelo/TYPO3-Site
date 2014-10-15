@@ -26,11 +26,8 @@ namespace FluidTYPO3\Flux\Service;
 
 use FluidTYPO3\Flux\Core;
 use FluidTYPO3\Flux\Form;
-use FluidTYPO3\Flux\Tests\Fixtures\Data\Records;
 use FluidTYPO3\Flux\Tests\Unit\AbstractTestCase;
-use TYPO3\CMS\Core\Utility\ExtensionManagementUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
-use TYPO3\CMS\Extbase\Reflection\ObjectAccess;
 
 /**
  * @package Flux
@@ -45,6 +42,18 @@ class FluxServiceTest extends AbstractTestCase {
 		if (TRUE === in_array('FluidTYPO3\Flux\Service\FluxService', $providers)) {
 			Core::unregisterConfigurationProvider('FluidTYPO3\Flux\Service\FluxService');
 		}
+	}
+
+
+	/**
+	 * @test
+	 */
+	public function dispatchesMessageOnInvalidPathsReturned() {
+		$className = substr(get_class($this), 0, -4);
+		$instance = $this->getMock($className, array('getDefaultViewConfigurationForExtensionKey', 'getTypoScriptSubConfiguration'));
+		$instance->expects($this->once())->method('getTypoScriptSubConfiguration')->will($this->returnValue(NULL));
+		$instance->expects($this->once())->method('getDefaultViewConfigurationForExtensionKey')->will($this->returnValue(NULL));
+		$instance->getViewConfigurationForExtensionName('Flux');
 	}
 
 	/**
@@ -241,142 +250,6 @@ class FluxServiceTest extends AbstractTestCase {
 		$service = $this->createFluxServiceInstance();
 		$config = $service->getViewConfigurationForExtensionName('void');
 		$this->assertSame($expected, $config);
-	}
-
-	/**
-	 * @test
-	 */
-	public function canSendDebugMessages() {
-		$backup = $GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['flux']['setup']['debugMode'];
-		$GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['flux']['setup']['debugMode'] = 1;
-		$service = $this->createFluxServiceInstance();
-		$message = uniqid('message_');
-		$service->message($message);
-		$service->message($message);
-		$GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['flux']['setup']['debugMode'] = $backup;
-	}
-
-	/**
-	 * @test
-	 */
-	public function canSendDebugMessagesInProductionContext() {
-		$backup = $GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['flux']['setup']['debugMode'];
-		$GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['flux']['setup']['debugMode'] = 2;
-		$service = $this->createFluxServiceInstance();
-		$message = uniqid('message_');
-		$service->message($message);
-		$service->message($message);
-		$GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['flux']['setup']['debugMode'] = $backup;
-	}
-
-	/**
-	 * @test
-	 */
-	public function canDebugProvider() {
-		$backup = $GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['flux']['setup']['debugMode'];
-		$GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['flux']['setup']['debugMode'] = 1;
-		$service = $this->createFluxServiceInstance();
-		$record = Records::$contentRecordWithoutParentAndWithoutChildren;
-		$provider = $service->resolvePrimaryConfigurationProvider('tt_content', NULL, $record, 'flux');
-		$service->debugProvider($provider, TRUE);
-		$service->debugProvider($provider, TRUE);
-		$service->debug($provider, TRUE);
-		$service->debug($provider, TRUE);
-		$GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['flux']['setup']['debugMode'] = $backup;
-	}
-
-	/**
-	 * @test
-	 */
-	public function canDebugView() {
-		$backup = $GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['flux']['setup']['debugMode'];
-		$GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['flux']['setup']['debugMode'] = 1;
-		$service = $this->createFluxServiceInstance();
-		$view = $service->getPreparedExposedTemplateView('flux', 'Content');
-		$service->debugView($view, TRUE);
-		$service->debugView($view, TRUE);
-		$service->debug($view, TRUE);
-		$service->debug($view, TRUE);
-		$GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['flux']['setup']['debugMode'] = $backup;
-	}
-
-	/**
-	 * @test
-	 */
-	public function canDebugRandomObject() {
-		$backup = $GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['flux']['setup']['debugMode'];
-		$GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['flux']['setup']['debugMode'] = 1;
-		$service = $this->createFluxServiceInstance();
-		$object = Form::create(array('name' => 'test'));
-		$service->debug($object, TRUE);
-		$service->debug($object, TRUE);
-		$GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['flux']['setup']['debugMode'] = $backup;
-	}
-
-	/**
-	 * @test
-	 */
-	public function canDebugException() {
-		$backup = $GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['flux']['setup']['debugMode'];
-		$GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['flux']['setup']['debugMode'] = 1;
-		$service = $this->createFluxServiceInstance();
-		$exception = new \RuntimeException('Hello world', 1);
-		$service->debug($exception, TRUE);
-		$service->debug($exception, TRUE);
-		$GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['flux']['setup']['debugMode'] = $backup;
-	}
-
-	/**
-	 * @test
-	 */
-	public function canDebugRandomString() {
-		$backup = $GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['flux']['setup']['debugMode'];
-		$GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['flux']['setup']['debugMode'] = 1;
-		$service = $this->createFluxServiceInstance();
-		$string = 'Hello world';
-		$service->debug($string, TRUE);
-		$service->debug($string, TRUE);
-		$GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['flux']['setup']['debugMode'] = $backup;
-	}
-
-	/**
-	 * @test
-	 */
-	public function loadTypoScriptProvidersReturnsEmptyArrayEarlyIfSetupNotFound() {
-		$instance = $this->createFluxServiceInstance();
-		$configurationManager = $this->getMock('Tx_Extbase_Configuration_ConfigurationManager', array('getConfiguration'));
-		$configurationManager->expects($this->once())->method('getConfiguration')->will($this->returnValue(array()));
-		ObjectAccess::setProperty($instance, 'configurationManager', $configurationManager, TRUE);
-		$instance->flushCache();
-		$providers = $this->callInaccessibleMethod($instance, 'loadTypoScriptConfigurationProviderInstances');
-		$this->assertIsArray($providers);
-		$this->assertEmpty($providers);
-	}
-
-	/**
-	 * @test
-	 */
-	public function loadTypoScriptProvidersSupportsCustomClassName() {
-		$instance = $this->createFluxServiceInstance();
-		$configurationManager = $this->getMock('Tx_Extbase_Configuration_ConfigurationManager', array('getConfiguration'));
-		$mockedTypoScript = array(
-			'plugin.' => array(
-				'tx_flux.' => array(
-					'providers.' => array(
-						'dummy.' => array(
-							'className' => 'FluidTYPO3\Flux\Tests\Fixtures\Classes\DummyConfigurationProvider'
-						)
-					)
-				)
-			)
-		);
-		$configurationManager->expects($this->once())->method('getConfiguration')->will($this->returnValue($mockedTypoScript));
-		ObjectAccess::setProperty($instance, 'configurationManager', $configurationManager, TRUE);
-		$instance->flushCache();
-		$providers = $this->callInaccessibleMethod($instance, 'loadTypoScriptConfigurationProviderInstances');
-		$this->assertIsArray($providers);
-		$this->assertNotEmpty($providers);
-		$this->assertInstanceOf('FluidTYPO3\Flux\Tests\Fixtures\Classes\DummyConfigurationProvider', reset($providers));
 	}
 
 	/**

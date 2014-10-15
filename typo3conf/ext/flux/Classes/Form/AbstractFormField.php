@@ -26,8 +26,6 @@ namespace FluidTYPO3\Flux\Form;
 use FluidTYPO3\Flux\Form\Container\Section;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Extbase\Object\ObjectManagerInterface;
-use TYPO3\CMS\Extbase\Reflection\ObjectAccess;
-use TYPO3\CMS\Extbase\Utility\TypeHandlingUtility;
 
 /**
  * @package Flux
@@ -61,19 +59,14 @@ abstract class AbstractFormField extends AbstractFormComponent implements FieldI
 	protected $requestUpdate = FALSE;
 
 	/**
-	 * @var integer
+	 * @var boolean
 	 */
-	protected $inherit = 0;
+	protected $inherit = TRUE;
 
 	/**
 	 * @var boolean
 	 */
 	protected $inheritEmpty = FALSE;
-
-	/**
-	 * @var boolean
-	 */
-	protected $stopInheritance = FALSE;
 
 	/**
 	 * @var boolean
@@ -91,7 +84,7 @@ abstract class AbstractFormField extends AbstractFormComponent implements FieldI
 	protected $enable = TRUE;
 
 	/**
-	 * @var SplObjectStorage
+	 * @var \SplObjectStorage
 	 */
 	protected $wizards;
 
@@ -344,11 +337,11 @@ abstract class AbstractFormField extends AbstractFormComponent implements FieldI
 	}
 
 	/**
-	 * @param integer $inherit
+	 * @param boolean $inherit
 	 * @return FieldInterface
 	 */
 	public function setInherit($inherit) {
-		$this->inherit = $inherit;
+		$this->inherit = (boolean) $inherit;
 		return $this;
 	}
 
@@ -356,7 +349,7 @@ abstract class AbstractFormField extends AbstractFormComponent implements FieldI
 	 * @return integer
 	 */
 	public function getInherit() {
-		return $this->inherit;
+		return (boolean) $this->inherit;
 	}
 
 	/**
@@ -373,22 +366,6 @@ abstract class AbstractFormField extends AbstractFormComponent implements FieldI
 	 */
 	public function getInheritEmpty() {
 		return (boolean) $this->inheritEmpty;
-	}
-
-	/**
-	 * @param boolean $stopInheritance
-	 * @return FieldInterface
-	 */
-	public function setStopInheritance($stopInheritance) {
-		$this->stopInheritance = (boolean) $stopInheritance;
-		return $this;
-	}
-
-	/**
-	 * @return boolean
-	 */
-	public function getStopInheritance() {
-		return (boolean) $this->stopInheritance;
 	}
 
 	/**

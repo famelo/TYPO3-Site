@@ -2085,7 +2085,8 @@ class ImportExport {
 	 ***************************/
 
 	/**
-	 * At the end of the import process all file and DB relations should be set properly (that is relations to imported records are all re-created so imported records are correctly related again)
+	 * At the end of the import process all file and DB relations should be set properly (that is relations
+	 * to imported records are all re-created so imported records are correctly related again)
 	 * Relations in flexform fields are processed in setFlexFormRelations() after this function
 	 *
 	 * @return void
@@ -2143,7 +2144,8 @@ class ImportExport {
 											try {
 												// check, if there is alreay the same file in the folder
 												if ($this->legacyImportFolder->hasFile($fileName)) {
-													$file = $this->legacyImportFolder->getFile($fileName);
+													$fileStorage = $this->legacyImportFolder->getStorage();
+													$file = $fileStorage->getFile($this->legacyImportFolder->getIdentifier() . $fileName);
 													if ($file->getSha1() === sha1_file($tempFile)) {
 														$fileObject = $file;
 													}
@@ -2799,7 +2801,8 @@ class ImportExport {
 		try {
 			// check, if there is alreay the same file in the folder
 			if ($importFolder->hasFile($fileName)) {
-				$file = $importFolder->getFile($fileName);
+				$fileStorage = $importFolder->getStorage();
+				$file = $fileStorage->getFile($importFolder->getIdentifier() . $fileName);
 				if ($file->getSha1() === sha1_file($temporaryFile)) {
 					$fileObject = $file;
 				}
@@ -3027,7 +3030,7 @@ class ImportExport {
 	 * @param pointer $fd File pointer
 	 * @param boolean $unserialize If set, the returned content is unserialized into an array, otherwise you get the raw string
 	 * @param string $name For error messages this indicates the section of the problem.
-	 * @return string Data string
+	 * @return string|NULL Data string or NULL in case of an error
 	 * @access private
 	 * @see loadFile()
 	 * @todo Define visibility
@@ -3036,6 +3039,10 @@ class ImportExport {
 		$initStrLen = 32 + 1 + 1 + 1 + 10 + 1;
 		// Getting header data
 		$initStr = fread($fd, $initStrLen);
+		if (empty($initStr)) {
+			$this->error('File does not contain data for "' . $name . '"');
+			return NULL;
+		}
 		$initStrDat = explode(':', $initStr);
 		if (strstr($initStrDat[0], 'Warning') == FALSE) {
 			if ((string)$initStrDat[3] === '') {

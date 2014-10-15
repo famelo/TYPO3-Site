@@ -24,13 +24,8 @@ namespace FluidTYPO3\Flux\Form;
  *  This copyright notice MUST APPEAR in all copies of the script!
  * ************************************************************* */
 
-use FluidTYPO3\Flux\Form\ContainerInterface;
-use FluidTYPO3\Flux\Form\FieldContainerInterface;
-use FluidTYPO3\Flux\Form\FieldInterface;
 use FluidTYPO3\Flux\Form;
-use FluidTYPO3\Flux\Form\WizardInterface;
 use FluidTYPO3\Flux\Tests\Unit\AbstractTestCase;
-use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Extbase\Reflection\ObjectAccess;
 use TYPO3\CMS\Extbase\Utility\LocalizationUtility;
 
@@ -68,6 +63,16 @@ abstract class AbstractFormTest extends AbstractTestCase {
 	public function canGetAndSetVariables() {
 		$variables = array('test' => 'foobar');
 		$this->assertGetterAndSetterWorks('variables', $variables, $variables, TRUE);
+	}
+
+	/**
+	 * @test
+	 */
+	public function canGetAndSetSingleVariable() {
+		$test = 'foobar';
+		$instance = $this->createInstance();
+		$instance->setVariable('test', $test);
+		$this->assertEquals($test, $instance->getVariable('test'));
 	}
 
 	/**

@@ -86,6 +86,26 @@ interface ProviderInterface {
 	public function getTemplatePathAndFilename(array $row);
 
 	/**
+	 * Get the source of the template to be rendered. Allows implementers
+	 * to return a template source rather than a template filename - and
+	 * to return Form and Grid instances from, for example, PHP objects
+	 * instead of from a template file.
+	 *
+	 * If implemented, getForm() and getGrid() should both be implemented
+	 * in ways which either uses a default template file or somehow else
+	 * returns instances of Form and Grid instead of reading from template.
+	 *
+	 * The returned template source may, but is not required to, contain
+	 * a `flux:form` definition and `Configuration` section but if none
+	 * is contained, you *must* override getForm() and getGrid() if you
+	 * require any other value than NULL returned from either method.
+	 *
+	 * @param array $row
+	 * @return string|NULL
+	 */
+	public function getTemplateSource(array $row);
+
+	/**
 	 * Get an array of variables that should be used when rendering the
 	 * FlexForm configuration
 	 *
@@ -293,19 +313,28 @@ interface ProviderInterface {
 	public function getFlexFormValues(array $row);
 
 	/**
-	 * Gets an inheritance tree (ordered parent -> ... -> this record)
-	 * of record arrays containing raw values.
+	 * Implement to return a controller action name associated with $row.
+	 * Default strategy: return base name of Provider class minus the "Provider" suffix.
 	 *
 	 * @param array $row
-	 * @return array
+	 * @return string
 	 */
-	public function getInheritanceTree(array $row);
+	public function getControllerNameFromRecord(array $row);
 
 	/**
 	 * @param array $row
 	 * @return string
 	 */
 	public function getControllerExtensionKeyFromRecord(array $row);
+
+	/**
+	 * Implement this and return a fully qualified VendorName.PackageName
+	 * value based on $row.
+	 *
+	 * @param array $row
+	 * @return string
+	 */
+	public function getControllerPackageNameFromRecord(array $row);
 
 	/**
 	 * @param array $row
@@ -318,6 +347,15 @@ interface ProviderInterface {
 	 * @return string
 	 */
 	public function getControllerActionReferenceFromRecord(array $row);
+
+	/**
+	 * Gets an inheritance tree (ordered parent -> ... -> this record)
+	 * of record arrays containing raw values.
+	 *
+	 * @param array $row
+	 * @return array
+	 */
+	public function getInheritanceTree(array $row);
 
 	/**
 	 * @param Form $form

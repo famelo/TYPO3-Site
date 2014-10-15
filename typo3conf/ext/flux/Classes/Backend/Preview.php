@@ -26,7 +26,7 @@ namespace FluidTYPO3\Flux\Backend;
 
 use FluidTYPO3\Flux\Provider\ProviderInterface;
 use FluidTYPO3\Flux\Service\FluxService;
-use TYPO3\CMS\Backend\Template\DocumentTemplate;
+use FluidTYPO3\Flux\Service\RecordService;
 use TYPO3\CMS\Backend\View\PageLayoutView;
 use TYPO3\CMS\Backend\View\PageLayoutViewDrawItemHookInterface;
 use TYPO3\CMS\Core\Utility\ExtensionManagementUtility;
@@ -45,7 +45,7 @@ class Preview implements PageLayoutViewDrawItemHookInterface {
 	/**
 	 * @var boolean
 	 */
-	protected static $stylesIncluded = FALSE;
+	protected static $assetsIncluded = FALSE;
 
 	/**
 	 * @var ObjectManagerInterface
@@ -58,11 +58,17 @@ class Preview implements PageLayoutViewDrawItemHookInterface {
 	protected $configurationService;
 
 	/**
+	 * @var RecordService
+	 */
+	protected $recordService;
+
+	/**
 	 * CONSTRUCTOR
 	 */
 	public function __construct() {
 		$this->objectManager = GeneralUtility::makeInstance('TYPO3\CMS\Extbase\Object\ObjectManager');
 		$this->configurationService = $this->objectManager->get('FluidTYPO3\Flux\Service\FluxService');
+		$this->recordService = $this->objectManager->get('FluidTYPO3\Flux\Service\RecordService');
 	}
 
 	/**
@@ -87,18 +93,7 @@ class Preview implements PageLayoutViewDrawItemHookInterface {
 	 * @return NULL
 	 */
 	public function renderPreview(&$headerContent, &$itemContent, array &$row, &$drawItem) {
-		$children = $GLOBALS['TYPO3_DB']->exec_SELECTgetRows('uid,tx_flux_column', 'tt_content', "tx_flux_parent = '" . $row['uid'] . "'");
-		$checksum = sha1(json_encode($row)) . '-' . sha1(json_encode($children));
-		$cacheFilePathAndfilenameHeader = GeneralUtility::getFileAbsFileName('typo3temp/flux-preview-' . $checksum . '-header.tmp');
-		$cacheFilePathAndfilenameContent = GeneralUtility::getFileAbsFileName('typo3temp/flux-preview-' . $checksum . '-content.tmp');
 		$drawItem = TRUE;
-		if (TRUE === file_exists($cacheFilePathAndfilenameHeader) && TRUE === file_exists($cacheFilePathAndfilenameContent)) {
-			$itemContent = file_get_contents($cacheFilePathAndfilenameContent);
-			$headerContent = file_get_contents($cacheFilePathAndfilenameHeader);
-			$drawItem = FALSE;
-			$this->attachStyle();
-			return NULL;
-		}
 		$fieldName = NULL; // every provider for tt_content will be asked to get a preview
 		if ('shortcut' === $row['CType'] && FALSE === strpos($row['records'], ',')) {
 			$itemContent = $this->createShortcutIcon($row) . $itemContent;
@@ -112,18 +107,16 @@ class Preview implements PageLayoutViewDrawItemHookInterface {
 			if (FALSE === empty($previewHeader)) {
 				$headerContent = $previewHeader . (FALSE === empty($headerContent) ? ': ' . $headerContent : '');
 				$drawItem = FALSE;
-				GeneralUtility::writeFile($cacheFilePathAndfilenameHeader, $headerContent);
 			}
 			if (FALSE === empty($previewContent)) {
 				$itemContent .= $previewContent;
 				$drawItem = FALSE;
-				GeneralUtility::writeFile($cacheFilePathAndfilenameContent, $itemContent);
 			}
 			if (FALSE === $continueDrawing) {
 				break;
 			}
 		}
-		$this->attachStyle();
+		$this->attachAssets();
 		return NULL;
 	}
 
@@ -147,17 +140,20 @@ class Preview implements PageLayoutViewDrawItemHookInterface {
 	 * @return array
 	 */
 	protected function getPageTitleAndPidFromContentUid($contentUid) {
-		return reset($GLOBALS['TYPO3_DB']->exec_SELECTgetRows('p.title, t.pid', 'tt_content t, pages p', "t.uid = '" . $contentUid . "' AND p.uid = t.pid"));
+		return reset($this->recordService->get('tt_content t, pages p', 'p.title, t.pid', "t.uid = '" . $contentUid . "' AND p.uid = t.pid"));
 	}
 
 	/**
 	 * @return void
 	 */
-	protected function attachStyle() {
-		if (FALSE === self::$stylesIncluded) {
-			$doc = new DocumentTemplate();
-			$doc->getPageRenderer()->addCssFile(ExtensionManagementUtility::extRelPath('flux') . 'Resources/Public/css/grid.css');
-			self::$stylesIncluded = TRUE;
+	protected function attachAssets() {
+		if (FALSE === self::$assetsIncluded) {
+			$doc = GeneralUtility::makeInstance('TYPO3\\CMS\\Backend\\Template\\DocumentTemplate');
+			$doc->backPath = $GLOBALS['BACK_PATH'];
+
+			$doc->getPageRenderer()->addCssFile($doc->backPath . ExtensionManagementUtility::extRelPath('flux') . 'Resources/Public/css/grid.css');
+			$doc->getPageRenderer()->addJsFile($doc->backPath . ExtensionManagementUtility::extRelPath('flux') . 'Resources/Public/js/fluxCollapse.js');
+			self::$assetsIncluded = TRUE;
 		}
 	}
 

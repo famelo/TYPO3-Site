@@ -43,15 +43,17 @@ class FormViewHelper extends AbstractFormViewHelper {
 		$this->registerArgument('label', 'string', 'Label for the FlexForm, can be LLL: value. Optional - if not specified, Flux ' .
 			'tries to detect an LLL label named "flux.fluxFormId", in scope of extension rendering the Flux form.', FALSE, NULL);
 		$this->registerArgument('description', 'string', 'Short description of this content element', FALSE, NULL);
-		$this->registerArgument('icon', 'string', 'Optional icon file to use when displaying this content element in the new content element wizard', FALSE, '../typo3conf/ext/flux/Resources/Public/Icons/Plugin.png');
+		$this->registerArgument('icon', 'string', 'DEPRECATED: Use `options="{icon: \'iconreference\'}"`. Optional icon file to use when displaying this content element in the new content element wizard', FALSE, '../typo3conf/ext/flux/Resources/Public/Icons/Plugin.png');
 		$this->registerArgument('mergeValues', 'boolean', 'DEPRECATED AND IGNORED. To cause value merging, simly prefix your field names with the table name, e.g. ' .
 			'"tt_content.header" will overwrite the "header" column in the record with the FlexForm field value when saving the record.', FALSE, FALSE);
 		$this->registerArgument('enabled', 'boolean', 'If FALSE, makes the FCE inactive', FALSE, TRUE);
-		$this->registerArgument('wizardTab', 'string', 'Optional tab name (usually extension key) in which to place the content element in the new content element wizard', FALSE, 'FCE');
+		$this->registerArgument('wizardTab', 'string', 'DEPRECATED: Use `options="{group: \'GroupName\'}". Optional tab name (usually extension key) in which to place the content element in the new content element wizard', FALSE, 'FCE');
 		$this->registerArgument('compact', 'boolean', 'If TRUE, disables sheet usage in the form. WARNING! AVOID DYNAMIC VALUES ' .
 			'AT ALL COSTS! Toggling this option is DESTRUCTIVE to variables currently saved in the database!', FALSE, FALSE);
 		$this->registerArgument('variables', 'array', 'Freestyle variables which become assigned to the resulting Component - ' .
 			'can then be read from that Component outside this Fluid template and in other templates using the Form object from this template', FALSE, array());
+		$this->registerArgument('options', 'array', 'Custom options to be assigned to Form object - valid values depends on the context. See docs of extension in which you use this feature.');
+		$this->registerArgument('localLanguageFileRelativePath', 'string', 'Relative (from extension) path to locallang file containing labels for the LLL values used in this form.', FALSE, NULL);
 	}
 
 	/**
@@ -66,18 +68,26 @@ class FormViewHelper extends AbstractFormViewHelper {
 		$form->setName($this->arguments['id']);
 		$form->setLabel($this->arguments['label']);
 		$form->setDescription($this->arguments['description']);
-		$form->setIcon($this->arguments['icon']);
 		$form->setEnabled($this->arguments['enabled']);
 		$form->setCompact($this->arguments['compact']);
-		$form->setGroup($this->arguments['wizardTab']);
 		$form->setExtensionName($this->controllerContext->getRequest()->getControllerExtensionName());
+		$form->setOption(Form::OPTION_ICON, $this->arguments['icon']);
+		$form->setOption(Form::OPTION_GROUP, $this->arguments['wizardTab']);
+		if (FALSE === empty($this->arguments['localLanguageFileRelativePath'])) {
+			$form->setLocalLanguageFileRelativePath($this->arguments['localLanguageFileRelativePath']);
+		}
 		$this->viewHelperVariableContainer->addOrUpdate(self::SCOPE, 'form', $form);
 		$this->templateVariableContainer->add('form', $form);
 		$this->setContainer($container);
 		$this->renderChildren();
 		$this->viewHelperVariableContainer->remove(self::SCOPE, 'container');
 		$this->templateVariableContainer->remove('container');
-		$form->setVariables($this->arguments['variables']);
+		if (TRUE === is_array($this->arguments['variables'])) {
+			$form->setVariables($this->arguments['variables']);
+		}
+		if (TRUE === is_array($this->arguments['options'])) {
+			$form->setOptions($this->arguments['options']);
+		}
 	}
 
 }

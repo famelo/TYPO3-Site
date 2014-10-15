@@ -3,7 +3,7 @@ namespace FluidTYPO3\Flux\Backend;
 /***************************************************************
  *  Copyright notice
  *
- *  (c) 2012 Claus Due <claus@wildside.dk>, Wildside A/S
+ *  (c) 2012 Claus Due <claus@namelesscoder.net>
  *  All rights reserved
  *
  *  This script is part of the TYPO3 project. The TYPO3 project is
@@ -25,9 +25,9 @@ namespace FluidTYPO3\Flux\Backend;
 
 use FluidTYPO3\Flux\Provider\ProviderInterface;
 use FluidTYPO3\Flux\Service\FluxService;
+use FluidTYPO3\Flux\Service\RecordService;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Extbase\Object\ObjectManagerInterface;
-use TYPO3\CMS\Extbase\Utility\DebuggerUtility;
 
 /**
  * Returns options for a "content area" selector box
@@ -48,11 +48,17 @@ class AreaListItemsProcessor {
 	protected $fluxService;
 
 	/**
+	 * @var RecordService
+	 */
+	protected $recordService;
+
+	/**
 	 * CONSTRUCTOR
 	 */
 	public function __construct() {
 		$this->objectManager = GeneralUtility::makeInstance('TYPO3\CMS\Extbase\Object\ObjectManager');
 		$this->fluxService = $this->objectManager->get('FluidTYPO3\Flux\Service\FluxService');
+		$this->recordService = $this->objectManager->get('FluidTYPO3\Flux\Service\RecordService');
 	}
 
 	/**
@@ -77,7 +83,7 @@ class AreaListItemsProcessor {
 		array_unshift($items, array('', '')); // adds an empty option in the beginning of the item list
 		if ($urlRequestedArea) {
 			foreach ($items as $index => $set) {
-				if ($set[0] !== $urlRequestedArea) {
+				if ($set[1] !== $urlRequestedArea) {
 					unset($items[$index]);
 				}
 			}
@@ -91,7 +97,7 @@ class AreaListItemsProcessor {
 	 */
 	public function getContentAreasDefinedInContentElement($uid) {
 		$uid = (integer) $uid;
-		$record = $GLOBALS['TYPO3_DB']->exec_SELECTgetSingleRow('*', 'tt_content', "uid = '" . $uid . "'");
+		$record = $this->recordService->getSingle('tt_content', '*', $uid);
 		/** @var $providers ProviderInterface[] */
 		$providers = $this->fluxService->resolveConfigurationProviders('tt_content', NULL, $record);
 		$columns = array();
@@ -103,14 +109,11 @@ class AreaListItemsProcessor {
 			$gridConfiguration = $grid->build();
 			foreach ($gridConfiguration['rows'] as $row) {
 				foreach ($row['columns'] as $column) {
-					foreach ($column['areas'] as $area) {
-						array_push($columns, array($area['label'] . ' (' . $area['name'] . ')', $area['name']));
-
-					}
+					array_push($columns, array($column['label'] . ' (' . $column['name'] . ')', $column['name']));
 				}
 			}
 		}
-		return array_unique($columns);
+		return array_unique($columns, SORT_REGULAR);
 	}
 
 }
