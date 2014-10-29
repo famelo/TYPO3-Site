@@ -34,7 +34,6 @@ use TYPO3\CMS\Core\DataHandling\DataHandler;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Extbase\Reflection\ObjectAccess;
 
-
 /**
  * @package Flux
  */
@@ -742,6 +741,50 @@ abstract class AbstractProviderTest extends AbstractTestCase {
 		);
 		$expected = 'merged_' . md5(json_encode($tree));
 		$this->assertEquals($expected, $this->callInaccessibleMethod($instance, 'getCacheKeyForMergedConfiguration', $tree));
+	}
+
+	/**
+	 * @test
+	 * @dataProvider getRemoveInheritedTestValues
+	 * @param mixed $testValue
+	 * @param boolean $inherit
+	 * @param boolean $inheritEmpty
+	 * @param boolean $expectsOverride
+	 */
+	public function removesInheritedValuesFromFields($testValue, $inherit, $inheritEmpty, $expectsOverride) {
+		$instance = $this->createInstance();
+		$field = Form\Field\Input::create(array('type' => 'Input'));
+		$field->setName('test');
+		$field->setInherit($inherit);
+		$field->setInheritEmpty($inheritEmpty);
+		$values = array('foo' => 'bar', 'test' => $testValue);
+		$result = $this->callInaccessibleMethod($instance, 'unsetInheritedValues', $field, $values);
+		if (TRUE === $expectsOverride) {
+			$this->assertEquals($values, $result);
+		} else {
+			$this->assertEquals(array('foo' => 'bar'), $result);
+		}
+	}
+
+	/**
+	 * @return array
+	 */
+	public function getRemoveInheritedTestValues() {
+		return array(
+			array('test', TRUE, TRUE, TRUE),
+			array('', TRUE, FALSE, TRUE),
+			array('', TRUE, TRUE, FALSE),
+		);
+	}
+
+	/**
+	 * @test
+	 */
+	public function getFormReturnsEarlyFormInstanceIfClassDefinedAndExists() {
+		$mock = $this->getMock($this->createInstanceClassName(), array('resolveFormClassName', 'getTemplateSource'));
+		$mock->expects($this->never())->method('getTemplateSource');
+		$mock->expects($this->once())->method('resolveFormClassName')->will($this->returnValue('FluidTYPO3\\Flux\\Form'));
+		$mock->getForm(array());
 	}
 
 }

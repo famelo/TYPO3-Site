@@ -66,10 +66,7 @@ class AnnotationUtility {
 			$annotations = self::getPropertyAnnotations($reflection, $propertyName, $annotationName);
 		}
 		$annotations = self::parseAnnotation($annotations);
-		if (NULL !== $propertyName && TRUE === isset($annotations[$propertyName])) {
-			return $annotations[$propertyName];
-		}
-		return $annotations;
+		return (NULL !== $propertyName && TRUE === isset($annotations[$propertyName])) ? $annotations[$propertyName] : $annotations;
 	}
 
 	/**
@@ -123,7 +120,7 @@ class AnnotationUtility {
 			} elseif (TRUE === isset($annotation[0]) && 1 === count($annotation)) {
 				return self::parseAnnotation(array_pop($annotation));
 			}
-			return array_map(array(self, 'parseAnnotation'), $annotation);
+			return array_map(array('FluidTYPO3\\Flux\\Utility\\AnnotationUtility', 'parseAnnotation'), $annotation);
 		}
 		$pattern = TemplateParser::$SPLIT_PATTERN_SHORTHANDSYNTAX_VIEWHELPER;
 		$annotation = trim($annotation);

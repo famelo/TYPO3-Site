@@ -24,10 +24,10 @@ namespace FluidTYPO3\Flux\Transformation;
  *  This copyright notice MUST APPEAR in all copies of the script!
  ***************************************************************/
 
-use TYPO3\CMS\Core\Utility\GeneralUtility;
-use FluidTYPO3\Flux\Form\FieldInterface;
-use FluidTYPO3\Flux\Form\ContainerInterface;
 use FluidTYPO3\Flux\Form;
+use FluidTYPO3\Flux\Form\ContainerInterface;
+use FluidTYPO3\Flux\Form\FieldInterface;
+use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Extbase\Object\ObjectManagerInterface;
 use TYPO3\CMS\Extbase\Persistence\RepositoryInterface;
 
@@ -104,7 +104,7 @@ class FormDataTransformer {
 	 * @param string $uids
 	 * @return mixed
 	 */
-	private function getObjectOfType($dataType, $uids) {
+	protected function getObjectOfType($dataType, $uids) {
 		$identifiers = TRUE === is_array($uids) ? $uids : GeneralUtility::trimExplode(',', trim($uids, ','), TRUE);
 		$identifiers = array_map('intval', $identifiers);
 		$isModel = (FALSE !== strpos($dataType, '_Domain_Model_') || FALSE !== strpos($dataType, '\\Domain\\Model\\'));
@@ -115,7 +115,7 @@ class FormDataTransformer {
 			if (TRUE === class_exists($repositoryClassName)) {
 				$repository = $this->objectManager->get($repositoryClassName);
 				$uid = array_pop($identifiers);
-				return $repository->findOneByUid($uid);
+				return $repository->findByUid($uid);
 			}
 		} elseif (TRUE === class_exists($dataType)) {
 			// using constructor value to support objects like DateTime
@@ -140,14 +140,8 @@ class FormDataTransformer {
 	 * @param array $identifiers
 	 * @return mixed
 	 */
-	private function loadObjectsFromRepository(RepositoryInterface $repository, $identifiers) {
-		if (TRUE === method_exists($repository, 'findByIdentifiers')) {
-			return $repository->findByIdentifiers($identifiers);
-		} else {
-			$query = $repository->createQuery();
-			$query->matching($query->in('uid', $identifiers));
-			return $query->execute();
-		}
+	protected function loadObjectsFromRepository(RepositoryInterface $repository, array $identifiers) {
+		return array_map(array($repository, 'findByUid'), $identifiers);
 	}
 
 }

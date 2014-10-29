@@ -1,6 +1,5 @@
 <?php
 namespace FluidTYPO3\Vhs\ViewHelpers\Iterator;
-
 /***************************************************************
  *  Copyright notice
  *
@@ -24,9 +23,11 @@ namespace FluidTYPO3\Vhs\ViewHelpers\Iterator;
  *
  *  This copyright notice MUST APPEAR in all copies of the script!
  ***************************************************************/
+
 use FluidTYPO3\Vhs\Utility\ViewHelperUtility;
 use TYPO3\CMS\Extbase\Persistence\QueryResultInterface;
 use TYPO3\CMS\Fluid\Core\ViewHelper\AbstractViewHelper;
+use TYPO3\CMS\Fluid\Core\ViewHelper\Exception;
 
 /**
  * ### Iterator Reversal ViewHelper
@@ -73,18 +74,18 @@ class ReverseViewHelper extends AbstractViewHelper {
 		if (TRUE === is_array($subject)) {
 			$array = $subject;
 		} else {
-			if (TRUE === $subject instanceof \Iterator) {
-				/** @var Iterator $subject */
-				$array = iterator_to_array($subject, TRUE);
-			} elseif (TRUE === $subject instanceof QueryResultInterface) {
+			if (TRUE === $subject instanceof QueryResultInterface) {
 				/** @var QueryResultInterface $subject */
 				$array = $subject->toArray();
+			} elseif (TRUE === $subject instanceof \Traversable) {
+				/** @var Iterator $subject */
+				$array = iterator_to_array($subject, TRUE);
 			} elseif (NULL !== $subject) {
 				// a NULL value is respected and ignored, but any
 				// unrecognized value other than this is considered a
 				// fatal error.
-				throw new \Exception('Invalid variable type passed to Iterator/ReverseViewHelper. Expected any of Array, QueryResult, ' .
-					' ObjectStorage or Iterator implementation but got ' . gettype($subject), 1351958941);
+				throw new Exception('Invalid variable type passed to Iterator/ReverseViewHelper. Expected any of Array, QueryResult, ' .
+					'ObjectStorage or Iterator implementation but got ' . gettype($subject), 1351958941);
 			}
 		}
 		$array = array_reverse($array, TRUE);

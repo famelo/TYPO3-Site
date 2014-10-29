@@ -24,11 +24,11 @@ namespace FluidTYPO3\Flux;
  *  This copyright notice MUST APPEAR in all copies of the script!
  *****************************************************************/
 
+use FluidTYPO3\Flux\Outlet\OutletInterface;
 use FluidTYPO3\Flux\Utility\ExtensionNamingUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Extbase\Reflection\ObjectAccess;
 use TYPO3\CMS\Extbase\Utility\LocalizationUtility;
-use FluidTYPO3\Flux\Outlet\OutletInterface;
 
 /**
  * @package Flux
@@ -54,6 +54,7 @@ class Form extends Form\AbstractFormContainer implements Form\FieldContainerInte
 	const CONTROL_HIDE = 'hide';
 	const CONTROL_DELETE = 'delete';
 	const CONTROL_LOCALISE = 'localize';
+	const DEFAULT_LANGUAGEFILE = '/Resources/Private/Language/locallang.xlf';
 
 	/**
 	 * if FALSE, disables this form.
@@ -135,7 +136,9 @@ class Form extends Form\AbstractFormContainer implements Form\FieldContainerInte
 	 */
 	public function add(Form\FormInterface $child) {
 		if (FALSE === $child instanceof Form\Container\Sheet) {
-			$this->last()->add($child);
+			/** @var Form\Container\Sheet $last */
+			$last = $this->last();
+			$last->add($child);
 		} else {
 			$children = $this->children;
 			foreach ($children as $existingChild) {

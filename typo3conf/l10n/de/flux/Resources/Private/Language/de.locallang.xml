@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<T3locallangExt>
+  <data type="array">
+    <languageKey index="de" type="array">
+			<label index="tt_content.tx_flux_container">Inhalts-Container</label>
+			<label index="tt_content.tx_flux_parent">Eltern-Element</label>
+			<label index="tt_content.tx_flux_column">Inhaltsbereich des Eltern-Elements</label>
+			<label index="tt_content.tx_flux_children"/>
+			<label index="tt_content.tabs.relation"/>
+			<label index="tt_content.tx_flux_options">Option(en)</label>
+			<label index="flux.clearValue">Wert leeren</label>
+			<label index="pipes.standard.label"/>
+			<label index="pipes.controller.label"/>
+			<label index="pipes.email.label"/>
+			<label index="pipes.flashMessage.label"/>
+			<label index="pipes.typeConverter.label"/>
+			<label index="reference">Referenz auf den Inhalt von Seite '&amp;s' - Anklicken um zum Original zu springen.</label>
+			<label index="user.no_fields">Keine Felder im Formular gefunden</label>
+			<label index="user.no_selection"/>
+			<label index="user.no_template"/>
+			<label index="flux.this_table_does_not_exist.fields.input"/>
+			<label index="flux.this_table_does_not_exist"/>
+			<label index="new"/>
+			<label index="paste"/>
+			<label index="paste_reference"/>
+		</languageKey>
+  </data>
+</T3locallangExt>

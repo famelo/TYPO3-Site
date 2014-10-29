@@ -28,17 +28,11 @@ use FluidTYPO3\Flux\Form\AbstractFormField;
 use FluidTYPO3\Flux\Form\FieldInterface;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 
-
 /**
  * @package Flux
  * @subpackage Form\Field
  */
 class Input extends AbstractFormField implements FieldInterface {
-
-	/**
-	 * @var string
-	 */
-	protected $validate;
 
 	/**
 	 * @var integer
@@ -164,33 +158,6 @@ class Input extends AbstractFormField implements FieldInterface {
 	 */
 	public function getSize() {
 		return $this->size;
-	}
-
-	/**
-	 * @param string $validate
-	 * @return Input
-	 */
-	public function setValidate($validate) {
-		$this->validate = $validate;
-		return $this;
-	}
-
-	/**
-	 * @return string
-	 */
-	public function getValidate() {
-		if (FALSE === (boolean) $this->getRequired()) {
-			$validate = $this->validate;
-		} else {
-			if (TRUE === empty($this->validate)) {
-				$validate = 'required';
-			} else {
-				$validators = GeneralUtility::trimExplode(',', $this->validate);
-				array_push($validators, 'required');
-				$validate = implode(',', $validators);
-			}
-		}
-		return $validate;
 	}
 
 }

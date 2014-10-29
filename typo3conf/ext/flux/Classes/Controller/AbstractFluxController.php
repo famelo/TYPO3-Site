@@ -26,9 +26,9 @@ namespace FluidTYPO3\Flux\Controller;
 
 use FluidTYPO3\Flux\Service\FluxService;
 use FluidTYPO3\Flux\Service\WorkspacesAwareRecordService;
+use FluidTYPO3\Flux\Utility\ExtensionNamingUtility;
 use FluidTYPO3\Flux\Utility\RecursiveArrayUtility;
 use FluidTYPO3\Flux\Utility\ResolveUtility;
-use FluidTYPO3\Flux\Utility\ExtensionNamingUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Extbase\Configuration\ConfigurationManagerInterface;
 use TYPO3\CMS\Extbase\Mvc\Controller\ActionController;
@@ -182,17 +182,18 @@ abstract class AbstractFluxController extends ActionController {
 		$extensionKey = $this->provider->getExtensionKey($row);
 		$extensionName = ExtensionNamingUtility::getExtensionName($extensionKey);
 		$controller = $this->request->getControllerName();
-		$this->view = $this->configurationService->getPreparedExposedTemplateView($extensionKey, $controller, $this->setup, $this->data);
+		$view = $this->configurationService->getPreparedExposedTemplateView($extensionKey, $controller, $this->setup, $this->data);
 		$controllerActionName = $this->provider->getControllerActionFromRecord($row);
 		$this->request->setControllerExtensionName($extensionName);
 		$this->request->setControllerActionName($controllerActionName);
-		$this->view->setControllerContext($this->controllerContext);
+		$view->setControllerContext($this->controllerContext);
 		if (FALSE === empty($templatePathAndFilename)) {
-			$this->view->setTemplatePathAndFilename($templatePathAndFilename);
-		} elseif (TRUE === method_exists($this->view, 'setTemplateSource')) {
+			$view->setTemplatePathAndFilename($templatePathAndFilename);
+		} elseif (TRUE === method_exists($view, 'setTemplateSource')) {
 			$templateSource = $this->provider->getTemplateSource($row);
-			$this->view->setTemplateSource($templateSource);
+			$view->setTemplateSource($templateSource);
 		}
+		$this->view = $view;
 	}
 
 	/**

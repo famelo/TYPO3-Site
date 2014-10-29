@@ -1,0 +1,20 @@
+<?xml version='1.0' encoding='utf-8'?>
+<xliff version="1.0">
+  <file source-language="EN" datatype="plaintext" original="messages" date="2014-08-24T08:06:20Z" product-name="devlog" target-language="de">
+    <header/>
+    <body>
+      <trans-unit id="deprecated" xml:space="preserve" approved="yes">
+        <source>Deprecated</source>
+      <target state="translated">Veraltet</target></trans-unit>
+      <trans-unit id="limits" xml:space="preserve" approved="yes">
+        <source>Limits</source>
+      <target state="translated">Grenzen</target></trans-unit>
+      <trans-unit id="filtering" xml:space="preserve" approved="yes">
+        <source>Filtering</source>
+      <target state="translated">Filterung</target></trans-unit>
+      <trans-unit id="display" xml:space="preserve" approved="yes">
+        <source>Display</source>
+      <target state="translated">Anzeige</target></trans-unit>
+    </body>
+  </file>
+</xliff>

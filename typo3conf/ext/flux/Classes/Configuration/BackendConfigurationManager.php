@@ -92,7 +92,7 @@ class BackendConfigurationManager extends CoreBackendConfigurationManager implem
 			$this->getPageIdFromPost(),
 			$this->getPageIdFromRecordIdentifiedInEditUrlArgument(),
 			$this->getPageIdFromContentObject(),
-			$this->getPageIdFromTypoScriptRecordIfOnlyOneRecordExists(),
+			parent::getCurrentPageId(),
 		);
 	}
 
@@ -128,21 +128,43 @@ class BackendConfigurationManager extends CoreBackendConfigurationManager implem
 	 * @throws \UnexpectedValueException
 	 */
 	protected function getPageIdFromRecordIdentifiedInEditUrlArgument() {
-		$editArgument = GeneralUtility::_GET('edit');
-		if (FALSE === is_array($editArgument)) {
-			return 0;
-		}
+		list ($table, $id, $command) = $this->getEditArguments();
+		// if TYPO3 wants to insert a new page, URL argument is already the PID value.
+		// if any non-page record is being edited, load it and return the PID value.
+		return ('pages' === $table || 'new' === $command || 0 === $id) ? $id : $this->getPageIdFromRecordUid($table, $id);
+	}
+
+	/**
+	 * @param string $table
+	 * @param integer $uid
+	 * @return integer
+	 */
+	protected function getPageIdFromRecordUid($table, $uid) {
+		$record = $this->recordService->getSingle($table, 'pid', $uid);
+		return TRUE === is_array($record) ? $this->getPageIdFromRecord($record) : 0;
+	}
+
+	/**
+	 * @return array
+	 */
+	protected function getEditArguments() {
+		$editArgument = $this->getEditArgumentValuePair();
 		$table = key($editArgument);
 		$argumentPair = reset($editArgument);
-		$id = key($argumentPair);
-		if (0 > $id && 'tt_content' === $table) {
-			// TYPO3 wants to insert a new tt_content element after the element with uid=abs($id)
-			$id = -$id;
-		} elseif ('pages' === $table || 'new' === reset($argumentPair)) {
-			return (integer) $id;
-		}
-		$record = $this->recordService->getSingle($table, 'pid', $id);
-		return TRUE === is_array($record) ? $this->getPageIdFromRecord($record) : 0;
+		$id = (integer) key($argumentPair);
+		$command = reset($argumentPair);
+		// if TYPO3 wants to insert a new tt_content element after the element
+		// with uid=abs($id), translate ID.
+		$id = (integer) (0 > $id && 'tt_content' === $table) ? $id = -$id : $id;
+		return array($table, $id, $command);
+	}
+
+	/**
+	 * @return mixed
+	 */
+	protected function getEditArgumentValuePair() {
+		$editArgument = GeneralUtility::_GET('edit');
+		return TRIE === is_array($editArgument) ? $editArgument : array(array());
 	}
 
 	/**
@@ -155,27 +177,6 @@ class BackendConfigurationManager extends CoreBackendConfigurationManager implem
 	protected function getPageIdFromContentObject() {
 		$record = $this->getContentObject()->data;
 		return TRUE === is_array($record) ? $this->getPageIdFromRecord($record) : 0;
-	}
-
-	/**
-	 * Reads the PID of the root TypoScript record if there is only
-	 * one single, active TypoScript template in the site. If there
-	 * is more then one active template, no page UID is returned from
-	 * this method - but very likely, one is returned from one of the
-	 * other methods.
-	 *
-	 * @return integer
-	 */
-	protected function getPageIdFromTypoScriptRecordIfOnlyOneRecordExists() {
-		$time = time();
-		$condition = 'root = 1 AND hidden = 0 AND deleted = 0 AND (starttime = 0 OR starttime < ' . $time . ') AND (endtime = 0 OR endtime > ' . $time . ')';
-		$templates = $this->recordService->get('sys_template', 'pid', $condition);
-		$numberOfTemplates = count($templates);
-		if (1 !== $numberOfTemplates) {
-			return 0;
-		}
-		$record = reset($templates);
-		return $this->getPageIdFromRecord($record);
 	}
 
 	/**

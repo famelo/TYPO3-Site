@@ -1,6 +1,5 @@
 <?php
 namespace FluidTYPO3\Vhs\ViewHelpers\Random;
-
 /***************************************************************
  *  Copyright notice
  *
@@ -24,6 +23,7 @@ namespace FluidTYPO3\Vhs\ViewHelpers\Random;
  *
  *  This copyright notice MUST APPEAR in all copies of the script!
  * ************************************************************* */
+
 use FluidTYPO3\Vhs\ViewHelpers\AbstractViewHelperTest;
 
 /**
@@ -32,5 +32,15 @@ use FluidTYPO3\Vhs\ViewHelpers\AbstractViewHelperTest;
  * @package Vhs
  */
 class StringViewHelperTest extends AbstractViewHelperTest {
+
+	/**
+	 * @test
+	 */
+	public function generatesRandomStringWithDesiredCharactersOnlyAndOfDesiredLength() {
+		$arguments = array('minimumLength' => 32, 'maximumLength' => 32, 'characters' => 'abcdef');
+		$result = $this->executeViewHelper($arguments);
+		$this->assertEquals(32, strlen($result));
+		$this->assertEquals(0, preg_match('/[^a-f]+/', $result), 'Random string contained unexpected characters');
+	}
 
 }

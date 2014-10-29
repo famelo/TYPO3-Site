@@ -1,6 +1,5 @@
 <?php
 namespace FluidTYPO3\Vhs\ViewHelpers\Iterator;
-
 /***************************************************************
  *  Copyright notice
  *
@@ -23,7 +22,8 @@ namespace FluidTYPO3\Vhs\ViewHelpers\Iterator;
  *  GNU General Public License for more details.
  *
  *  This copyright notice MUST APPEAR in all copies of the script!
- * ************************************************************* */
+ ***************************************************************/
+
 use FluidTYPO3\Vhs\ViewHelpers\AbstractViewHelperTest;
 
 /**
@@ -43,7 +43,19 @@ class KeysViewHelperTest extends AbstractViewHelperTest {
 			'subject' => $array,
 		);
 		$output = $this->executeViewHelper($arguments);
+		$output2 = $this->executeViewHelperUsingTagContent('ObjectAccessor', 'v', array(), array('v' => $array));
 		$this->assertEquals($expected, $output);
+		$this->assertEquals($output, $output2);
+	}
+
+	/**
+	 * @test
+	 */
+	public function supportsAsArgument() {
+		$array = array('a' => 'A', 'b' => 'B', 'c' => 'C');
+		$arguments = array('as' => 'v', 'subject' => $array);
+		$result = $this->executeViewHelperUsingTagContent('ObjectAccessor', 'v.1', $arguments);
+		$this->assertEquals('b', $result);
 	}
 
 }

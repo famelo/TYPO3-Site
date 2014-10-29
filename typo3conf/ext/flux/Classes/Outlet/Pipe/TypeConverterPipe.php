@@ -24,12 +24,12 @@ namespace FluidTYPO3\Flux\Outlet\Pipe;
  *  This copyright notice MUST APPEAR in all copies of the script!
  *****************************************************************/
 
-use FluidTYPO3\Flux\Form\FieldInterface;
 use FluidTYPO3\Flux\Form\Field\Input;
 use FluidTYPO3\Flux\Form\Field\Select;
+use FluidTYPO3\Flux\Form\FieldInterface;
+use TYPO3\CMS\Extbase\Error\Error;
 use TYPO3\CMS\Extbase\Object\ObjectManagerInterface;
 use TYPO3\CMS\Extbase\Property\TypeConverterInterface;
-use TYPO3\CMS\Extbase\Error\Error;
 
 /**
  * Standard Input Pipe
@@ -72,11 +72,12 @@ class TypeConverterPipe extends AbstractPipe implements PipeInterface {
 		$fields = parent::getFormFields();
 		$converters = array_values((array) $GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['extbase']['typeConverters']);
 		$converters = array_combine($converters, $converters);
-		$fields['typeConverter'] = Select::create(array('type' => 'Select'))
-			->setName('typeConverter')
-			->setItems($converters);
-		$fields['targetType'] = Input::create(array('type' => 'Input'))
-			->setName('targetType');
+		/** @var Select $typeConverter */
+		$typeConverter = Select::create(array('type' => 'Select'));
+		$typeConverter->setName('typeConverter');
+		$typeConverter->setItems($converters);
+		$fields['typeConverter'] = $typeConverter;
+		$fields['targetType'] = Input::create(array('type' => 'Input'))->setName('targetType');
 		return $fields;
 	}
 

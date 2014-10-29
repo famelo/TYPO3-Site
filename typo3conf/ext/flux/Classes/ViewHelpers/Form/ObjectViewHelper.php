@@ -24,6 +24,7 @@ namespace FluidTYPO3\Flux\ViewHelpers\Form;
  *  This copyright notice MUST APPEAR in all copies of the script!
  *****************************************************************/
 
+use FluidTYPO3\Flux\Form\Container\Object as ObjectComponent;
 use FluidTYPO3\Flux\ViewHelpers\AbstractFormViewHelper;
 
 /**
@@ -55,7 +56,7 @@ class ObjectViewHelper extends AbstractFormViewHelper {
 	 * @return void
 	 */
 	public function render() {
-		/** @var Object $object */
+		/** @var ObjectComponent $object */
 		$object = $this->objectManager->get('FluidTYPO3\Flux\Form\Container\Object');
 		$object->setName($this->arguments['name']);
 		$object->setLabel($this->arguments['label']);

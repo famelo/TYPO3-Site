@@ -575,17 +575,8 @@ return array (
     ),
     'devlog' => 
     array (
-      'state' => 'active',
-      'packagePath' => 'typo3conf/ext/devlog/',
-      'classesPath' => 'Classes/',
-      'suggestions' => 
-      array (
-      ),
-    ),
-    'gridelements' => 
-    array (
       'state' => 'inactive',
-      'packagePath' => 'typo3conf/ext/gridelements/',
+      'packagePath' => 'typo3conf/ext/devlog/',
       'classesPath' => 'Classes/',
       'suggestions' => 
       array (

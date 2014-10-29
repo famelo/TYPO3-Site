@@ -1,0 +1,194 @@
+<?xml version='1.0' encoding='utf-8'?>
+<xliff version="1.0">
+  <file source-language="EN" datatype="plaintext" original="messages" date="2014-08-24T08:06:20Z" product-name="devlog" target-language="de">
+    <header/>
+    <body>
+      <trans-unit id="title" xml:space="preserve" approved="yes">
+        <source>Developer Log</source>
+      <target state="translated">Entwicklerprotokoll</target></trans-unit>
+      <trans-unit id="showlog" xml:space="preserve" approved="yes">
+        <source>Show Log</source>
+      <target state="translated">Protokoll anzeigen</target></trans-unit>
+      <trans-unit id="selectlog" xml:space="preserve" approved="yes">
+        <source>Select Log:</source>
+      <target state="translated">Protokoll auswählen:</target></trans-unit>
+      <trans-unit id="log_entries" xml:space="preserve" approved="yes">
+        <source>Log entries</source>
+      <target state="translated">Protokolleinträge</target></trans-unit>
+      <trans-unit id="entries" xml:space="preserve" approved="yes">
+        <source>Entries</source>
+      <target state="translated">Einträge</target></trans-unit>
+      <trans-unit id="cleanup" xml:space="preserve" approved="yes">
+        <source>Clean up</source>
+      <target state="translated">Aufräumen</target></trans-unit>
+      <trans-unit id="setup" xml:space="preserve" approved="yes">
+        <source>Setup</source>
+      <target state="translated">Konfiguration</target></trans-unit>
+      <trans-unit id="search" xml:space="preserve" approved="yes">
+        <source>Search</source>
+      <target state="translated">Suchen</target></trans-unit>
+      <trans-unit id="clear_search" xml:space="preserve" approved="yes">
+        <source>Clear search</source>
+      <target state="translated">Suche löschen</target></trans-unit>
+      <trans-unit id="clear_filters" xml:space="preserve" approved="yes">
+        <source>Clear all filters</source>
+      <target state="translated">Alle Filter löschen</target></trans-unit>
+      <trans-unit id="search_data" xml:space="preserve" approved="yes">
+        <source>Search log data</source>
+      <target state="translated">Protokolldaten durchsuchen</target></trans-unit>
+      <trans-unit id="latest_run" xml:space="preserve" approved="yes">
+        <source>latest log run</source>
+      <target state="translated">Neueste Ausführung der Protokollierung</target></trans-unit>
+      <trans-unit id="latest_25" xml:space="preserve" approved="yes">
+        <source>latest 25 entries</source>
+      <target state="translated">Neueste 25 Einträge</target></trans-unit>
+      <trans-unit id="latest_50" xml:space="preserve" approved="yes">
+        <source>latest 50 entries</source>
+      <target state="translated">Neueste 50 Einträge</target></trans-unit>
+      <trans-unit id="latest_100" xml:space="preserve" approved="yes">
+        <source>latest 100 entries</source>
+      <target state="translated">Neueste 100 Einträge</target></trans-unit>
+      <trans-unit id="all_entries" xml:space="preserve" approved="yes">
+        <source>all entries</source>
+      <target state="translated">Alle Einträge</target></trans-unit>
+      <trans-unit id="auto_refresh" xml:space="preserve" approved="yes">
+        <source>Auto refresh</source>
+      <target state="translated">Automatische Aktualisierung</target></trans-unit>
+      <trans-unit id="log_time" xml:space="preserve" approved="yes">
+        <source>Log time</source>
+      <target state="translated">Protokollzeit</target></trans-unit>
+      <trans-unit id="log_period" xml:space="preserve" approved="yes">
+        <source>Log period</source>
+      <target state="translated">Protokollspanne</target></trans-unit>
+      <trans-unit id="refresh" xml:space="preserve" approved="yes">
+        <source>Refresh</source>
+      <target state="translated">Aktualisieren</target></trans-unit>
+      <trans-unit id="crdate" xml:space="preserve" approved="yes">
+        <source>Date</source>
+      <target state="translated">Datum</target></trans-unit>
+      <trans-unit id="severity" xml:space="preserve" approved="yes">
+        <source>Severity</source>
+      <target state="translated">Schwere</target></trans-unit>
+      <trans-unit id="extkey" xml:space="preserve" approved="yes">
+        <source>Extension</source>
+      <target state="translated">Erweiterung</target></trans-unit>
+      <trans-unit id="msg" xml:space="preserve" approved="yes">
+        <source>Message</source>
+      <target state="translated">Nachricht</target></trans-unit>
+      <trans-unit id="location" xml:space="preserve" approved="yes">
+        <source>Called from</source>
+      <target state="translated">Aufgerufen von</target></trans-unit>
+      <trans-unit id="pid" xml:space="preserve" approved="yes">
+        <source>Page</source>
+      <target state="translated">Seite</target></trans-unit>
+      <trans-unit id="cruser_id" xml:space="preserve" approved="yes">
+        <source>User</source>
+      <target state="translated">Benutzer</target></trans-unit>
+      <trans-unit id="data_var" xml:space="preserve" approved="yes">
+        <source>Extra data</source>
+      <target state="translated">Zusätzliche Daten</target></trans-unit>
+      <trans-unit id="no_entries_found" xml:space="preserve" approved="yes">
+        <source>No entries found. Try to relax your filter and search criteria.</source>
+      <target state="translated">Keine Einträge gefunden. Versuchen Sie, die Filter und Suchkriterien aufzuweiten.</target></trans-unit>
+      <trans-unit id="open_view" xml:space="preserve" approved="yes">
+        <source>Open new window</source>
+      <target state="translated">Neues Fenster öffnen.</target></trans-unit>
+      <trans-unit id="line_call" xml:space="preserve" approved="yes">
+        <source>%s, line %d</source>
+      <target state="translated">%s, Zeile %d</target></trans-unit>
+      <trans-unit id="extra_data_error" xml:space="preserve" approved="yes">
+        <source>Error reading extra data</source>
+      <target state="translated">Fehler beim Lesen der zusätzlichen Daten</target></trans-unit>
+      <trans-unit id="tx_devlog_error.toolong" xml:space="preserve" approved="yes">
+        <source>The extra data exceeded the maximum size. It was not stored.</source>
+      <target state="translated">Die zusätzlichen Daten waren zu groß. Sie wurden nicht gespeichert.</target></trans-unit>
+      <trans-unit id="tx_devlog_error.invalid" xml:space="preserve" approved="yes">
+        <source>The extra data was not an array. It was not stored.</source>
+      <target state="translated">Die zusätzlichen Daten waren kein Array. Sie wurden nicht gespeichert.</target></trans-unit>
+      <trans-unit id="show_extra_data" xml:space="preserve" approved="yes">
+        <source>Show extra data</source>
+      <target state="translated">Zusätzliche Daten anzeigen</target></trans-unit>
+      <trans-unit id="hide_extra_data" xml:space="preserve" approved="yes">
+        <source>Hide extra data</source>
+      <target state="translated">Zusätzliche Daten verbergen</target></trans-unit>
+      <trans-unit id="severity_ok" xml:space="preserve" approved="yes">
+        <source>OK</source>
+      <target state="translated">OK</target></trans-unit>
+      <trans-unit id="severity_info" xml:space="preserve" approved="yes">
+        <source>Info</source>
+      <target state="translated">Info</target></trans-unit>
+      <trans-unit id="severity_notice" xml:space="preserve" approved="yes">
+        <source>Notice</source>
+      <target state="translated">Hinweis</target></trans-unit>
+      <trans-unit id="severity_warning" xml:space="preserve" approved="yes">
+        <source>Warning</source>
+      <target state="translated">Warnung</target></trans-unit>
+      <trans-unit id="severity_error" xml:space="preserve" approved="yes">
+        <source>Error</source>
+      <target state="translated">Fehler</target></trans-unit>
+      <trans-unit id="latest" xml:space="preserve" approved="yes">
+        <source>latest &gt;&gt;</source>
+      <target state="translated">neueste &gt;&gt;</target></trans-unit>
+      <trans-unit id="next" xml:space="preserve" approved="yes">
+        <source>next &gt;</source>
+      <target state="translated">nächste &gt;</target></trans-unit>
+      <trans-unit id="previous" xml:space="preserve" approved="yes">
+        <source>&lt; previous</source>
+      <target state="translated">&lt; vorherige</target></trans-unit>
+      <trans-unit id="oldest" xml:space="preserve" approved="yes">
+        <source>&lt;&lt; oldest</source>
+      <target state="translated">&lt;&lt; älteste</target></trans-unit>
+      <trans-unit id="expand_all_extra_data" xml:space="preserve" approved="yes">
+        <source>Expand all extra data</source>
+      <target state="translated">Alle Zusatzdaten erweitern</target></trans-unit>
+      <trans-unit id="info_excluded_key" xml:space="preserve" approved="yes">
+        <source>The following keys are currently not logged</source>
+      <target state="translated">Die folgenden Schlüssel werden momentan nicht protokolliert</target></trans-unit>
+      <trans-unit id="clearlog" xml:space="preserve" approved="yes">
+        <source>Clear Log</source>
+      <target state="translated">Protokoll löschen</target></trans-unit>
+      <trans-unit id="clearlog_intro" xml:space="preserve" approved="yes">
+        <source>Use any of the clean up options below to clear your developer log.</source>
+      <target state="translated">Nutzen Sie die unten stehenden Optionen, um das Entwicklerprotokoll zu löschen.</target></trans-unit>
+      <trans-unit id="clearalllog" xml:space="preserve" approved="yes">
+        <source>Clear All Entries!</source>
+      <target state="translated">Alle Einträge löschen!</target></trans-unit>
+      <trans-unit id="cleared_log" xml:space="preserve" approved="yes">
+        <source>%d log entries were deleted.</source>
+      <target state="translated">%d Protokolleinträge wurden gelöscht.</target></trans-unit>
+      <trans-unit id="cleanup_for_period" xml:space="preserve" approved="yes">
+        <source>Delete all log entries that are older than:</source>
+      <target state="translated">Alle Protokolleinträge löschen, die älter sind als:</target></trans-unit>
+      <trans-unit id="cleanup_for_extension" xml:space="preserve" approved="yes">
+        <source>Delete all log entries for extension:</source>
+      <target state="translated">Alle Protokolleinträge löschen für Erweiterung:</target></trans-unit>
+      <trans-unit id="cleanup_all" xml:space="preserve" approved="yes">
+        <source>Pressing the button below will actually delete ALL log entries. Make sure that this is really what you want to do!</source>
+      <target state="translated">Wenn Sie den Knopf unten anklicken, löschen Sie ALLE Protokolleinträge. Stellen Sie sicher, dass das wirklich das ist, was Sie wollen!</target></trans-unit>
+      <trans-unit id="1hour" xml:space="preserve" approved="yes">
+        <source>1 hour</source>
+      <target state="translated">1 Stunde</target></trans-unit>
+      <trans-unit id="1week" xml:space="preserve" approved="yes">
+        <source>1 week</source>
+      <target state="translated">1 Woche</target></trans-unit>
+      <trans-unit id="1month" xml:space="preserve" approved="yes">
+        <source>1 month</source>
+      <target state="translated">1 Monat</target></trans-unit>
+      <trans-unit id="3months" xml:space="preserve" approved="yes">
+        <source>3 months</source>
+      <target state="translated">3 Monate</target></trans-unit>
+      <trans-unit id="6months" xml:space="preserve" approved="yes">
+        <source>6 months</source>
+      <target state="translated">6 Monate</target></trans-unit>
+      <trans-unit id="1year" xml:space="preserve" approved="yes">
+        <source>1 year</source>
+      <target state="translated">1 Jahr</target></trans-unit>
+      <trans-unit id="no_entries" xml:space="preserve" approved="yes">
+        <source>There are currently no log entries in the Developer Log.</source>
+      <target state="translated">Es gibt im Moment keine Einträge im Entwicklerprotokoll.</target></trans-unit>
+      <trans-unit id="xx_entries" xml:space="preserve" approved="yes">
+        <source>There are currently %d log entries in the Developer Log.</source>
+      <target state="translated">Es gibt im Moment %d Einträge im Entwicklerprotokoll.</target></trans-unit>
+    </body>
+  </file>
+</xliff>

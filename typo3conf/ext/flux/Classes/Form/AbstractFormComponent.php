@@ -24,13 +24,13 @@ namespace FluidTYPO3\Flux\Form;
  *  This copyright notice MUST APPEAR in all copies of the script!
  *****************************************************************/
 
+use FluidTYPO3\Flux\Form;
 use FluidTYPO3\Flux\Form\Container\Column;
 use FluidTYPO3\Flux\Form\Container\Container;
 use FluidTYPO3\Flux\Form\Container\Grid;
 use FluidTYPO3\Flux\Form\Container\Object;
 use FluidTYPO3\Flux\Form\Container\Section;
 use FluidTYPO3\Flux\Form\Container\Sheet;
-use FluidTYPO3\Flux\Form;
 use FluidTYPO3\Flux\Service\FluxService;
 use FluidTYPO3\Flux\Utility\ExtensionNamingUtility;
 use TYPO3\CMS\Core\Utility\ExtensionManagementUtility;
@@ -85,7 +85,7 @@ abstract class AbstractFormComponent implements FormInterface {
 	 *
 	 * @var string
 	 */
-	protected $localLanguageFileRelativePath = '/Resources/Private/Language/locallang.xlf';
+	protected $localLanguageFileRelativePath = Form::DEFAULT_LANGUAGEFILE;
 
 	/**
 	 * @var string
@@ -143,6 +143,7 @@ abstract class AbstractFormComponent implements FormInterface {
 			}
 		}
 		if (TRUE === $object instanceof FieldContainerInterface && TRUE === isset($settings['fields'])) {
+			/** @var FieldContainerInterface $object */
 			foreach ($settings['fields'] as $fieldName => $fieldSettings) {
 				if (FALSE === isset($fieldSettings['name'])) {
 					$fieldSettings['name'] = $fieldName;
@@ -309,15 +310,9 @@ abstract class AbstractFormComponent implements FormInterface {
 			$id = $root->getName();
 			$extensionName = $root->getExtensionName();
 		}
-		$extensionKey = ExtensionNamingUtility::getExtensionKey( $extensionName );
+		$extensionKey = ExtensionNamingUtility::getExtensionKey($extensionName);
 		if (FALSE === empty($label)) {
-			if (0 === strpos($label, 'LLL:EXT:')) {
-				return LocalizationUtility::translate($label, NULL);
-			} else if (0 === strpos($label, 'LLL:') ) {
-				return LocalizationUtility::translate(substr($label, 4), $extensionKey);
-			} else {
-				return $label;
-			}
+			return $this->translateLabelReference($label, $extensionKey);
 		}
 		if ((TRUE === empty($extensionKey) || FALSE === ExtensionManagementUtility::isLoaded($extensionKey))) {
 			return $name;
@@ -335,6 +330,20 @@ abstract class AbstractFormComponent implements FormInterface {
 		$labelIdentifier = $filePrefix . ':' . trim('flux.' . $id . '.' . $path, '.');
 		$translated = LocalizationUtility::translate($labelIdentifier, $extensionKey);
 		return (NULL !== $translated ? $translated : $labelIdentifier);
+	}
+
+	/**
+	 * @param string $label
+	 * @param string $extensionKey
+	 * @return NULL|string
+	 */
+	protected function translateLabelReference($label, $extensionKey) {
+		if (0 === strpos($label, 'LLL:EXT:')) {
+			return LocalizationUtility::translate($label, NULL);
+		} else if (0 === strpos($label, 'LLL:') ) {
+			return LocalizationUtility::translate(substr($label, 4), $extensionKey);
+		}
+		return $label;
 	}
 
 	/**
