@@ -1,8 +1,0 @@
-#!/usr/bin/env php
-<?php
-
-$extensions = array('fluidcontent', 'fluidpages', 'flux', 'vhs');
-
-foreach ($extensions as $extension) {
-	system('cd typo3conf/ext/' . $extension . ' && git pull origin master');
-}

@@ -77,7 +77,7 @@ class SystemEnvironmentBuilder {
 	 */
 	static protected function defineBaseConstants() {
 		// This version, branch and copyright
-		define('TYPO3_version', '6.2.5');
+		define('TYPO3_version', '6.2.6');
 		define('TYPO3_branch', '6.2');
 		define('TYPO3_copyright_year', '1998-2014');
 
@@ -381,7 +381,7 @@ class SystemEnvironmentBuilder {
 		// Find out if path is relative or not
 		$isRelativePath = FALSE;
 		if (TYPO3_OS === 'WIN') {
-			if (!preg_match('/^([A-Z]:)?\\\\/', $scriptPath)) {
+			if (!preg_match('/^([a-zA-Z]:)?\\\\/', $scriptPath)) {
 				$isRelativePath = TRUE;
 			}
 		} else {

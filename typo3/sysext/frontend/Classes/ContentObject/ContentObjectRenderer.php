@@ -725,11 +725,9 @@ class ContentObjectRenderer {
 				$key = trim(substr($name, 1));
 				$cF = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\TypoScript\\Parser\\TypoScriptParser');
 				// $name and $conf is loaded with the referenced values.
-				$old_conf = $conf;
+				$confOverride = is_array($conf) ? $conf : array();
 				list($name, $conf) = $cF->getVal($key, $GLOBALS['TSFE']->tmpl->setup);
-				if (is_array($old_conf) && count($old_conf)) {
-					$conf = array_replace_recursive($conf, $old_conf);
-				}
+				$conf = array_replace_recursive(is_array($conf) ? $conf : array(), $confOverride);
 				// Getting the cObject
 				$GLOBALS['TT']->incStackPointer();
 				$content .= $this->cObjGetSingle($name, $conf, $key);
@@ -1176,7 +1174,7 @@ class ContentObjectRenderer {
 		if ($recursive === FALSE && is_string($flexData)) {
 			$flexData = GeneralUtility::xml2array($flexData, 'T3');
 		}
-		if (isset($flexData['data']['sDEF']['lDEF'])) {
+		if (is_array($flexData) && isset($flexData['data']['sDEF']['lDEF'])) {
 			$flexData = $flexData['data']['sDEF']['lDEF'];
 		}
 		if (!is_array($flexData)) {
@@ -5277,6 +5275,7 @@ class ContentObjectRenderer {
 				$processingConfiguration['minHeight'] = isset($fileArray['minH.']) ? (int)$this->stdWrap($fileArray['minH'], $fileArray['minH.']) : (int)$fileArray['minH'];
 				$processingConfiguration['noScale'] = isset($fileArray['noScale.']) ? $this->stdWrap($fileArray['noScale'], $fileArray['noScale.']) : $fileArray['noScale'];
 				$processingConfiguration['additionalParameters'] = isset($fileArray['params.']) ? $this->stdWrap($fileArray['params'], $fileArray['params.']) : $fileArray['params'];
+				$processingConfiguration['frame'] = isset($fileArray['frame.']) ? (int)$this->stdWrap($fileArray['frame'], $fileArray['frame.']) : (int)$fileArray['frame'];
 				// Possibility to cancel/force profile extraction
 				// see $TYPO3_CONF_VARS['GFX']['im_stripProfileCommand']
 				if (isset($fileArray['stripProfile'])) {

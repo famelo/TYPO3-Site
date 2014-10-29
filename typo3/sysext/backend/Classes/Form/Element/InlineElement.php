@@ -173,7 +173,6 @@ class InlineElement {
 			return FALSE;
 		}
 		$item = '';
-		$levelLinks = '';
 		$localizationLinks = '';
 		// Count the number of processed inline elements
 		$this->inlineCount++;
@@ -284,10 +283,10 @@ class InlineElement {
 			}
 			$selectorBox = $this->renderPossibleRecordsSelector($possibleRecords, $config, $uniqueIds);
 			$item .= $selectorBox . $localizationLinks;
-		// Render the level links (create new record):
-		} else {
-			$levelLinks = $this->getLevelInteractionLink('newRecord', $nameObject . self::Structure_Separator . $foreign_table, $config);
 		}
+		// Render the level links (create new record):
+		$levelLinks = $this->getLevelInteractionLink('newRecord', $nameObject . self::Structure_Separator . $foreign_table, $config);
+
 		// Wrap all inline fields of a record with a <div> (like a container)
 		$item .= '<div id="' . $nameObject . '">';
 		// Define how to show the "Create new record" link - if there are more than maxitems, hide it
@@ -1487,7 +1486,22 @@ class InlineElement {
 				} elseif ($localizationMode == 'select') {
 					$transOrigRec = $this->getRecord(0, $transOrigTable, $transOrigPointer);
 					$pid = $transOrigRec['pid'];
-					$recordsOriginal = $this->getRelatedRecordsArray($pid, $foreignTable, $transOrigRec[$field]);
+					$fieldValue = $transOrigRec[$field];
+
+					// Checks if it is a flexform field
+					if ($GLOBALS['TCA'][$table]['columns'][$field]['config']['type'] === 'flex') {
+						$flexFormParts = $this->extractFlexFormParts($PA['itemFormElName']);
+						$flexData = GeneralUtility::xml2array($fieldValue);
+						/** @var  $flexFormTools  \TYPO3\CMS\Core\Configuration\FlexForm\FlexFormTools */
+						$flexFormTools = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Configuration\\FlexForm\\FlexFormTools');
+						$flexFormFieldValue = $flexFormTools->getArrayValueByPath($flexFormParts, $flexData);
+
+						if ($flexFormFieldValue !== NULL) {
+							$fieldValue = $flexFormFieldValue;
+						}
+					}
+
+					$recordsOriginal = $this->getRelatedRecordsArray($pid, $foreignTable, $fieldValue);
 				}
 			}
 		}
@@ -2615,5 +2629,4 @@ class InlineElement {
 
 		return $flexFormParts;
 	}
-
 }
